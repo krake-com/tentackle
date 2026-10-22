@@ -29,7 +29,8 @@ import org.tentackle.pdo.DomainObjectService;
 import java.io.Serial;
 
 /**
- * NumberRange domain implementation.
+ * Number range domain implementation.<br>
+ * A range covers the numbers from {@code begin} (inclusive) to {@code end} (exclusive).
  *
  * @author harald
  */
@@ -40,14 +41,28 @@ public class NumberRangeDomainImpl extends AbstractDomainObject<NumberRange, Num
   private static final long serialVersionUID = 1L;
 
 
+  /**
+   * Creates the domain delegate for the given number range.
+   *
+   * @param pdo the number range PDO
+   */
   public NumberRangeDomainImpl(NumberRange pdo) {
     super(pdo);
   }
 
+  /**
+   * Creates the domain delegate without a PDO.<br>
+   * The PDO is linked later via {@link #setPdo}.
+   */
   public NumberRangeDomainImpl() {
     super();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Returns the number pool followed by {@code [begin,end]}.
+   */
   @Override
   public String toString() {
     return String.valueOf(me().getNumberPool()) + '[' + me().getBegin() + ',' + me().getEnd() + ']';
@@ -57,7 +72,7 @@ public class NumberRangeDomainImpl extends AbstractDomainObject<NumberRange, Num
   public long size() {
     long size = me().getEnd() - me().getBegin();
     if (size < 0) {
-      size = 0;   // how?
+      size = 0;   // inconsistent range (end < begin): treat as empty
     }
     return size;
   }
@@ -75,6 +90,11 @@ public class NumberRangeDomainImpl extends AbstractDomainObject<NumberRange, Num
     return number;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * If fewer numbers than requested are left, the returned range is truncated to the remaining size.
+   */
   @Override
   public Range popNumbers(long count) {
     assertNotEmpty();
@@ -94,7 +114,8 @@ public class NumberRangeDomainImpl extends AbstractDomainObject<NumberRange, Num
 
 
   /**
-   * Asserts that range is not empty.
+   * Asserts that the range is not empty.
+   *
    * @throws NumberSourceEmptyException if empty
    */
   protected void assertNotEmpty() {

@@ -16,7 +16,7 @@ proxies, interception is the natural extension point for everything that has to
 happen *around* a domain- or persistence method:
 
 ```java
-public interface Invoice extends PersistentDomainObject<Invoice> {
+public interface InvoiceDomain extends DomainObject<Invoice> {
 
   @Transaction                         // wrap in a transaction
   @Secured(BookInvoicePermission.class) // check permission first
@@ -49,7 +49,7 @@ visible in the implementing code.
 ### Design principles
 
 - **Interceptors are stateless and cached.** An `Interceptor` is created **once
-  per class and annotation occurrence** and reused for every invocation.
+  per intercepted method and annotation** and reused for every invocation.
   Therefore, an interceptor **MUST NOT hold per-invocation state** — all runtime
   context is passed in through the `invoke`/`proceed` parameters.
 - **Annotation and implementation are separated.** The annotation (e.g.
@@ -58,7 +58,10 @@ visible in the implementing code.
 - **Only the proxy is interceptable.** Interception is a feature of the dynamic
   proxy serving an [`Interceptable`](#the-interceptable-marker) interface, not of
   the plain delegate object. An interceptor only fires when the method is called
-  *through* the proxy.
+  *through* the proxy. A few methods — `getDomainDelegate()`/`getPersistenceDelegate()`
+  themselves — are invoked directly by the framework's own invocation handler and
+  therefore never reach the proxy's interceptor chain at all; see
+  [`@NotInterceptable`](#notinterceptable-sealing-a-method-against-interception).
 
 ---
 
@@ -207,7 +210,7 @@ This `@Offset(5)` example also shows that an interceptor may freely **transform
 the return value** (and likewise the `args` before proceeding).
 
 > **Statelessness is mandatory.** Because the framework caches one interceptor
-> instance per class + annotation, fields holding *per-call* state would leak
+> instance per intercepted method + annotation, fields holding *per-call* state would leak
 > across concurrent invocations. Only configuration derived from the annotation
 > (which is constant) may be stored in fields.
 
@@ -230,7 +233,7 @@ The order is deterministic:
 So for:
 
 ```java
-public interface Invoice extends PersistentDomainObject<Invoice> {
+public interface InvoiceDomain extends DomainObject<Invoice> {
   @Transaction
   @Secured(BookPermission.class)
   void book();
@@ -268,9 +271,10 @@ proxy machinery — but understanding the flow helps when debugging.
 3. Building an `InterceptableMethod` calls
    `InterceptionUtilities.createInterceptableMethod()`, which:
    - resolves the **implementing method** on the delegate class;
-   - scans the **interface method** for `PUBLIC`/`ALL` interceptor annotations;
-   - scans the **implementing method** for `HIDDEN`/`ALL` interceptor
-     annotations;
+   - scans the **interface method** for interceptor annotations (the build
+     ensures only `PUBLIC`/`ALL` ones can be there);
+   - scans the **implementing method** for interceptor annotations
+     (`HIDDEN`/`ALL`);
    - instantiates each interceptor (via `implementedBy` / name / service),
      calls `setAnnotation()`, and chains them.
 4. On invocation, `InterceptableMethod.invoke()` calls the head interceptor if
@@ -382,7 +386,7 @@ which must not silently leak into a unit of work that expects consistent reads.
 
 Domain contexts form a parent chain and can be **named**. `@WithinContext`
 requires that each name given in its `value` matches the name of the current
-[`DomainContext`](domain-context-provider.md) or one of its parents;
+[`DomainContext`](../../../../tentackle-pdo/src/main/docs/domain-context-provider.md) or one of its parents;
 `@NotWithinContext` requires the opposite. A violated assertion throws a
 `DomainException`. This turns workflow assumptions into checked contracts: a
 method that only makes sense inside, say, a named migration- or import context —
@@ -403,6 +407,72 @@ session on the server, so the restriction would be meaningless.
 
 ---
 
+## `@NotInterceptable` — sealing a method against interception
+
+Some methods never — or only partly — reach the interceptor chain, no matter
+what annotation is put on them. Applying an interceptor such as `@Transaction`
+to one of these would therefore silently do nothing: no error, no exception,
+just a dead annotation. `@NotInterceptable` turns that silent no-op into a
+**compile error**, on the method itself and on any method that overrides it,
+however deep the override chain:
+
+```java
+@Override
+@NotInterceptable
+PersistentObject<T> getPersistenceDelegate();
+```
+
+`@NotInterceptable` itself is a plain marker; it is not meta-annotated with
+`@Interception` and carries no runtime behavior of its own — it is only
+consulted by the compile-time processors described below. There are two
+reasons a method ends up sealed:
+
+- **Always bypassed.** `PdoInvocationHandler`/`OperationInvocationHandler`
+  (and, for `getEffectiveClass()`/`getEffectiveSuperClasses()`, the generic
+  `InterceptableInvocationHandler` too) special-case these methods by identity
+  and invoke them directly, before the interceptor chain is even consulted —
+  for *every* caller, always:
+  `PersistentDomainObject`/`Operation`'s `getDomainDelegate()`/`getPersistenceDelegate()`,
+  `EffectiveClassProvider.getEffectiveClass()`/`getEffectiveSuperClasses()`,
+  `Identifiable.toGenericString()`, `PdoProvider.getPdo()`,
+  `OperationProvider.getOperation()` (but *not* `on()`/`op()` — those are
+  explicitly routed through the chain).
+- **Bypassed by an internal shortcut.** Ordinary methods that *do* get
+  intercepted correctly when called through the proxy, but which some
+  framework-internal code (mostly `PdoCache`, `AbstractPersistentObject`,
+  `AbstractDomainObject`/`AbstractDomainOperation`) also calls directly on a
+  raw delegate (`.getPersistenceDelegate().x()` / `.getDomainDelegate().x()`)
+  as a performance/re-entrancy shortcut — so any interceptor on them would
+  fire inconsistently depending on the call path. Sealed for this reason:
+  `DomainObject.getUniqueDomainKey()`/`findByUniqueDomainKey()`;
+  `PersistentObject.getId()`, `getClassId()`, `isRootEntity()`, `isAbstract()`,
+  `isEmbedded()`, `getCache()`, `markCacheAccess()`, `isExpired()`,
+  `isCacheable()`, `setExpired()`, `requestTokenLock()`, `selectTokenLocked()`,
+  `selectForCache()`, `getTableName()`; `Snapshotable.createSnapshot()`,
+  `revertToSnapshot()`, `setCopy()`; `DomainContextProvider.getDomainContext()`;
+  `DomainContextDependable.setDomainContext()`, `createValidContext()`;
+  `SessionProvider.getSession()`.
+
+`hashCode()`/`equals()`/`toString()`/`clone()`/`compareTo()` are also
+always-bypassed by identity, but are deliberately **not** sealed — application
+code essentially never redeclares them on a PDO/operation interface, and for
+`compareTo()` a redeclaration already fails a different, worse way (a runtime
+`PdoRuntimeException`) that `@NotInterceptable` would not prevent anyway.
+
+**Placement note:** `@NotInterceptable` always sits on the method's actual,
+pre-existing declaration — never on a fresh redeclaration added just to carry
+it. A PDO/operation proxy's method dispatch identifies a method by its
+declaring class as seen through the specific interface it was reached from;
+introducing a *new* redeclaration on a "closer" interface changes that
+identity and can silently reroute dispatch to the wrong delegate. Where the
+true declaring interface is a generic, non-PDO utility (`Identifiable`,
+`Snapshotable` in `tentackle-core`, also implemented by unrelated types), the
+annotation is placed there directly rather than risking a redeclaration
+elsewhere — harmless for those unrelated implementors, since none of them are
+`Interceptable` proxies in the first place.
+
+---
+
 ## Compile-Time Verification
 
 `@Interception` is itself meta-annotated with `@Analyze`, hooking it into
@@ -417,9 +487,13 @@ a matching processor enforces correct usage:
 - `HiddenInterceptorAnnotationProcessor` — additionally requires the annotation
   to sit on an **implementing method** (`type = HIDDEN`).
 
+All three also verify that the annotated method — or any method it overrides —
+is not marked [`@NotInterceptable`](#notinterceptable-sealing-a-method-against-interception).
+
 Misplacing an interceptor annotation — e.g., putting a `PUBLIC` interceptor on a
-class method, or any interceptor on a method outside an `Interceptable` — is
-therefore reported as a compilation error.
+class method, any interceptor on a method outside an `Interceptable`, or any
+interceptor on a `@NotInterceptable` method — is therefore reported as a
+compilation error.
 
 ---
 
@@ -430,6 +504,17 @@ therefore reported as a compilation error.
    type = ...)`. Add attributes if the behavior is configurable.
 2. **Implement the interceptor.** Extend `AbstractInterceptor`, override
    `proceed(...)`, and call `method.invoke(proxy, args)` to continue the chain.
+   Interceptors for PDOs and operations that need the session extend one of the
+   two bases in `tentackle-pdo` instead:
+   - [`SessionProviderAwareInterceptor`](../../../../tentackle-pdo/src/main/java/org/tentackle/pdo/SessionProviderAwareInterceptor.java)
+     adds `getSession(orgProxy)`, which returns the session of the intercepted
+     object, or throws a `PersistenceException` if it has none — the base of
+     `@PreCommit`, `@PostCommit` and `@LocalSessionOnly`;
+   - [`RemoteMethodAwareInterceptor`](../../../../tentackle-pdo/src/main/java/org/tentackle/pdo/RemoteMethodAwareInterceptor.java)
+     adds `isRemoteMethod(orgMethod)`, which tells whether the method is a
+     `@RemoteMethod`. On a remote session, such a method runs on the server, where
+     the interceptor applies again, so the client side typically just proceeds —
+     the base of `@Transaction` and `@NoTransaction`.
 3. **Read configuration in `setAnnotation()`** and cache it in fields. Keep the
    interceptor otherwise **stateless**.
 4. **Apply the annotation** on a method of an `Interceptable` interface (PUBLIC)

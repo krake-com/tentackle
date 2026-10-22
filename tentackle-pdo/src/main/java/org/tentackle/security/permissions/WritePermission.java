@@ -19,7 +19,7 @@
 package org.tentackle.security.permissions;
 
 /**
- * Read permission interface.
+ * Write permission interface.
  *
  * @author harald
  */

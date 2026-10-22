@@ -25,6 +25,9 @@ import org.testng.annotations.Test;
 import org.tentackle.misc.TimeKeeper;
 import org.tentackle.pdo.testng.AbstractPdoTest;
 
+/**
+ * Compares simple inserts with batched inserts.
+ */
 public class BatchingTest extends AbstractPdoTest {
 
   private static final int BATCHSIZE = 100;             // rows per batch

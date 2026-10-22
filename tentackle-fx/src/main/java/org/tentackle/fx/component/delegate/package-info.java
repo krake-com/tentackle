@@ -17,6 +17,8 @@
  */
 
 /**
- * Delegates implementing tentackle features for FX components.
+ * Delegates implementing tentackle features for FX components.<br>
+ * Each component of {@code org.tentackle.fx.component} holds a delegate that implements the
+ * {@link org.tentackle.fx.FxComponent} contract and maps it to the JavaFX control.
  */
 package org.tentackle.fx.component.delegate;

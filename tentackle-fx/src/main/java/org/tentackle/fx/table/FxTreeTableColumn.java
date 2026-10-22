@@ -33,7 +33,7 @@ public class FxTreeTableColumn<S, T> extends TreeTableColumn<S, T> {
   private final TableColumnConfiguration<S, T> configuration;
 
   /**
-   * Creates a table column.
+   * Creates a tree table column.
    *
    * @param configuration the column configuration
    */
@@ -42,10 +42,10 @@ public class FxTreeTableColumn<S, T> extends TreeTableColumn<S, T> {
   }
 
   /**
-   * Creates a table column.
+   * Creates a tree table column.
    *
    * @param configuration the column configuration
-   * @param text the string to show when the TableColumn is placed within the TableView
+   * @param text the string to show when the TreeTableColumn is placed within the TreeTableView
    */
   public FxTreeTableColumn(TableColumnConfiguration<S, T> configuration, String text) {
     super(text);

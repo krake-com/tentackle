@@ -19,16 +19,18 @@
 package org.tentackle.dbms;
 
 /**
- * A provider for a connection manager.
+ * A provider for a connection manager.<br>
+ * Implemented by applications that provide the default connection manager for new local sessions,
+ * for example, server applications using an {@link MpxConnectionManager}.
  *
  * @author harald
  */
 public interface ConnectionManagerProvider {
 
   /**
-   * Gets the connection manager.<br>
+   * Gets the connection manager.
    *
-   * @return the connection manager, never null
+   * @return the connection manager, null to use the default
    */
   ConnectionManager getConnectionManager();
 

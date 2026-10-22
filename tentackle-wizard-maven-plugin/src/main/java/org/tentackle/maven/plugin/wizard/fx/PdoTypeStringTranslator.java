@@ -44,15 +44,17 @@ import java.util.function.Function;
 
 /**
  * Translator for PdoType.<br>
- * Implements camel-case keyboard navigation for entity names in combo-boxes.
+ * Fills the combobox with the PDO types, filtered by profile and root entities, sorted by their camel-case
+ * letters, and renders the uppercase letters in bold. The camel-case keyboard navigation itself is enabled
+ * via {@code PrefixSelectionFeature.CAMEL_CASE}.
  */
 @ValueTranslatorService(modelClass = PdoType.class, viewClass = String.class)
 public class PdoTypeStringTranslator extends ValueStringTranslator<PdoType> {
 
-  /** only root entities. */
+  /** Component property key: Boolean, true to show only root entities. */
   public static final String ROOT_ONLY = "rootOnly";
 
-  /** wizard profile. */
+  /** Component property key: the {@code PdoProfile} to filter by package, null for all. */
   public static final String PROFILE = "profile";
 
 
@@ -139,9 +141,9 @@ public class PdoTypeStringTranslator extends ValueStringTranslator<PdoType> {
 
   private void configureComboBox(FxComboBox<PdoType> comboBox) {
     comboBox.getSelectionModel().clearSelection();
-    // sort by camel case
+    // sort by camel-case letters, then by name
     List<PdoType> pdoTypes = new ArrayList<>(getPdoTypeMap().values());
-    pdoTypes.sort(Comparator.comparing(PdoType::getCamelCaseLetters));
+    pdoTypes.sort(Comparator.comparing(PdoType::getCamelCaseLetters).thenComparing(PdoType::getName));
     comboBox.getItems().setAll(pdoTypes);
   }
 

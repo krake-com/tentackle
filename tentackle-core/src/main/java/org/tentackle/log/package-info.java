@@ -18,5 +18,8 @@
 
 /**
  * Logging support.
+ * <p>
+ * A pluggable logging API. The backend defaults to {@code java.util.logging} and can be replaced
+ * by SLF4J or Log4j2 via the corresponding tentackle-log modules.
  */
 package org.tentackle.log;

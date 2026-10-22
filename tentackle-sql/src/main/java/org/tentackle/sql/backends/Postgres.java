@@ -29,6 +29,7 @@ import org.tentackle.sql.ScriptRunner;
 import org.tentackle.sql.SqlNameType;
 import org.tentackle.sql.SqlType;
 import org.tentackle.sql.metadata.ColumnMetaData;
+import org.tentackle.sql.metadata.Deferrability;
 import org.tentackle.sql.metadata.IndexColumnMetaData;
 import org.tentackle.sql.metadata.IndexMetaData;
 import org.tentackle.sql.metadata.PostgresColumnMetaData;
@@ -37,6 +38,8 @@ import org.tentackle.sql.metadata.PostgresIndexMetaData;
 import org.tentackle.sql.metadata.TableMetaData;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -46,6 +49,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -132,6 +136,11 @@ public class Postgres extends AbstractSql92Backend {
   }
 
   @Override
+  public String getXADataSourceClassName() {
+    return "org.postgresql.xa.PGXADataSource";
+  }
+
+  @Override
   public String getBackendId(Connection connection) {
     try (Statement stmt = connection.createStatement()) {
       ResultSet rs = stmt.executeQuery("select pg_backend_pid()");
@@ -157,7 +166,8 @@ public class Postgres extends AbstractSql92Backend {
         return true;
       }
     }
-    return super.isReservedSchemaName(name);
+    return !"public".equalsIgnoreCase(name) && // public is a legal schema name (it's the default schema)
+           super.isReservedSchemaName(name);
   }
 
   @Override
@@ -170,6 +180,28 @@ public class Postgres extends AbstractSql92Backend {
   @Override
   public boolean isClobSupported() {
     return false;   // use TEXT instead
+  }
+
+  @Override
+  public boolean isSqlxmlSupported() {
+    return true;   // pgjdbc registers a native "xml" type bound to Types.SQLXML
+  }
+
+  @Override
+  public boolean isJsonSupported() {
+    return true;   // native jsonb
+  }
+
+  @Override
+  public void setJson(PreparedStatement statement, int pos, String json) throws SQLException {
+    // pgjdbc refuses setString into a json/jsonb column ("column is of type jsonb but expression is
+    // of type character varying") unless the URL says stringtype=unspecified, which we must not require
+    if (json == null) {
+      statement.setNull(pos, Types.OTHER);
+    }
+    else {
+      statement.setObject(pos, json, Types.OTHER);
+    }
   }
 
   @Override
@@ -270,9 +302,26 @@ public class Postgres extends AbstractSql92Backend {
     return switch (jdbcType) {
       case Types.TINYINT, Types.SMALLINT -> new SqlType[]{SqlType.TINYINT, SqlType.SMALLINT};
       case Types.VARCHAR, Types.LONGVARCHAR, Types.NVARCHAR, Types.LONGNVARCHAR, Types.CLOB, Types.NCLOB -> new SqlType[]{SqlType.VARCHAR, SqlType.CLOB};
-      case Types.OTHER -> new SqlType[] { SqlType.UUID };
+      // uuid, json and jsonb are all reported as OTHER: without the type name all of them are possible
+      case Types.OTHER -> new SqlType[] { SqlType.UUID, SqlType.JSON };
       default -> super.jdbcTypeToSqlType(jdbcType, size, scale);
     };
+  }
+
+  @Override
+  public SqlType[] jdbcTypeToSqlType(int jdbcType, String typeName, int size, int scale) {
+    if (jdbcType == Types.OTHER && typeName != null) {
+      // the type name is the only thing telling the OTHER types apart. Without it the migration
+      // would mistake a jsonb column for a uuid one and alter or rename it for nothing.
+      if (typeName.equalsIgnoreCase(TYPE_JSON) || typeName.equalsIgnoreCase(TYPE_JSONB)) {
+        return new SqlType[] { SqlType.JSON };
+      }
+      if (typeName.equalsIgnoreCase(TYPE_UUID)) {
+        return new SqlType[] { SqlType.UUID };
+      }
+      return new SqlType[0];
+    }
+    return super.jdbcTypeToSqlType(jdbcType, typeName, size, scale);
   }
 
   @Override
@@ -292,6 +341,8 @@ public class Postgres extends AbstractSql92Backend {
       case TIMESTAMP -> TYPE_TIMESTAMP;
       case BLOB -> TYPE_BYTEA;
       case CLOB -> TYPE_TEXT;
+      case XML -> TYPE_XML;
+      case JSON -> TYPE_JSONB;   // jsonb is indexable and validates on write, unlike json
       case UUID -> TYPE_UUID;
       default -> super.sqlTypeToString(sqlType, size);
     };
@@ -339,6 +390,12 @@ public class Postgres extends AbstractSql92Backend {
     return NonStandardCommons.sqlCreateCommentOnIndex(this, tableName, indexName, comment);
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Changes only the type. The null constraint and the default are separate column alterations
+   * (see {@link org.tentackle.sql.MigrationStrategy#NULL} and {@link org.tentackle.sql.MigrationStrategy#DEFAULT}).
+   */
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
@@ -385,6 +442,12 @@ public class Postgres extends AbstractSql92Backend {
     return SQL_ARRAY_ALL.equals(operator) || SQL_ARRAY_ANY.equals(operator);
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Unlike the default implementation, an unsized {@code VARCHAR} or {@code CLOB} is declared as {@code TEXT},
+   * which the driver reports with the size {@link Integer#MAX_VALUE}.
+   */
   @Override
   public MigrationStrategy[] getMigrationStrategy(ColumnMetaData column, String columnName, String comment,
                                                   SqlType sqlType, int size, int scale, boolean nullable, Object defaultValue) {
@@ -435,22 +498,57 @@ public class Postgres extends AbstractSql92Backend {
   }
 
   @Override
-  protected String extractWhereClause(String sql, int whereOffset) {
-    sql = super.extractWhereClause(sql, whereOffset);
-    int ndx = sql.lastIndexOf(SQL_LIMIT);
-    if (ndx >= 0) {
-      sql = sql.substring(0, ndx);
-    }
-    ndx = sql.lastIndexOf(SQL_OFFSET);
-    if (ndx >= 0) {
-      sql = sql.substring(0, ndx);
-    }
-    return sql;
+  protected boolean isDropIfExistsSupported() {
+    return true;
   }
 
   @Override
-  protected boolean isDropIfExistsSupported() {
+  public boolean isSetConstraintsDeferredSupported() {
     return true;
+  }
+
+  @Override
+  public String sqlSetConstraintsDeferred(boolean deferred) {
+    return "SET CONSTRAINTS ALL " + (deferred ? "DEFERRED" : "IMMEDIATE");
+  }
+
+  @Override
+  public void enrichIndexDeferrability(TableMetaData tableMetaData, Map<String, IndexMetaData> indexesByName,
+                                        DatabaseMetaData metaData) throws SQLException {
+    if (indexesByName.isEmpty()) {
+      return;
+    }
+    String schemaName = tableMetaData.getSchemaName();
+    if (schemaName == null) {
+      schemaName = getDefaultSchema();
+    }
+    String sql = "SELECT c.conname, c.condeferrable, c.condeferred " +
+                 "FROM pg_catalog.pg_constraint c " +
+                 "JOIN pg_catalog.pg_class t ON t.oid = c.conrelid " +
+                 "JOIN pg_catalog.pg_namespace n ON n.oid = t.relnamespace " +
+                 "WHERE c.contype = 'u' AND t.relname = ? AND n.nspname = ?";
+    try (PreparedStatement stmt = metaData.getConnection().prepareStatement(sql)) {
+      stmt.setString(1, tableMetaData.getTableName());
+      stmt.setString(2, schemaName);
+      try (ResultSet resultSet = stmt.executeQuery()) {
+        while (resultSet.next()) {
+          IndexMetaData indexMetaData = indexesByName.get(resultSet.getString("conname"));
+          if (indexMetaData != null) {
+            Deferrability deferrability;
+            if (!resultSet.getBoolean("condeferrable")) {
+              deferrability = Deferrability.NOT_DEFERRABLE;
+            }
+            else if (resultSet.getBoolean("condeferred")) {
+              deferrability = Deferrability.DEFERRABLE_DEFERRED;
+            }
+            else {
+              deferrability = Deferrability.DEFERRABLE_IMMEDIATE;
+            }
+            indexMetaData.setDeferrability(deferrability);
+          }
+        }
+      }
+    }
   }
 
 }

@@ -41,7 +41,11 @@ public abstract class AbstractClientApplication extends AbstractApplication {
 
 
   /**
-   * Updates the session info after successful login.
+   * Updates the session info after successful login.<br>
+   * Copies the user's object ID and class ID into the session's info: from the server's view of the
+   * client session if the session is remote, otherwise from the domain context's session info
+   * (which is the same object, unless the application's domain context overrides
+   * {@link DomainContext#getSessionInfo()}).
    */
   protected void updateSessionInfoAfterLogin() {
     DomainContext context = getDomainContext();

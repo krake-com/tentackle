@@ -21,8 +21,9 @@ package org.tentackle.io;
 import java.io.ByteArrayOutputStream;
 
 /**
- * A byte array output stream notifying waiting threads when data was written.
+ * A byte array output stream notifying waiting threads when data was written or the stream was reset.
  *
+ * @see BlockingByteArrayInputStream
  * @author harald
  */
 public class NotifyingByteArrayOutputStream extends ByteArrayOutputStream {
@@ -40,7 +41,7 @@ public class NotifyingByteArrayOutputStream extends ByteArrayOutputStream {
    * specified size, in bytes.
    *
    * @param size the initial size.
-   * @exception IllegalArgumentException if size is negative.
+   * @throws IllegalArgumentException if size is negative.
    */
   public NotifyingByteArrayOutputStream(int size) {
     super(size);

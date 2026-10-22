@@ -17,6 +17,8 @@
  */
 
 /**
- * PDO editing.
+ * PDO editing.<br>
+ * The {@link org.tentackle.fx.rdc.crud.PdoCrud} controller wraps a {@link org.tentackle.fx.rdc.PdoEditor}
+ * with the toolbar to create, read, update and delete PDOs.
  */
 package org.tentackle.fx.rdc.crud;

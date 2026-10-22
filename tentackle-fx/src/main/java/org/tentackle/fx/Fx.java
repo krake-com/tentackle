@@ -19,6 +19,11 @@
 
 package org.tentackle.fx;
 
+import org.tentackle.fx.table.edit.ColumnWiseEditHandler;
+import org.tentackle.fx.table.edit.RowWiseEditHandler;
+import org.tentackle.fx.table.edit.RuleBasedEditHandler;
+import org.tentackle.fx.table.edit.SimpleEditHandler;
+
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
@@ -34,14 +39,16 @@ import java.util.ResourceBundle;
 import java.util.function.Consumer;
 
 /**
- * Often used factory and helper methods for FX-related stuff.
+ * Frequently used factory and helper methods of the FX layer.<br>
+ * A static facade for {@link FxFactory} and {@link FxUtilities}.
  *
  * @author harald
  */
 public class Fx {
 
   /**
-   * Loads an object hierarchy from a FXML document.<br>
+   * Loads an object hierarchy from an FXML document.<br>
+   * Uses the tentackle builder factory, so that the tentackle implementations of the nodes are created.
    *
    * @param <T> the object's type
    * @param location the url
@@ -54,7 +61,8 @@ public class Fx {
   }
 
   /**
-   * Loads an object hierarchy from a FXML document.<br>
+   * Loads an object hierarchy from an FXML document.<br>
+   * Uses the tentackle builder factory, so that the tentackle implementations of the nodes are created.
    *
    * @param <T> the object's type
    * @param location the url
@@ -68,7 +76,7 @@ public class Fx {
   }
 
   /**
-   * Loads a controller with its FXML-view.
+   * Loads a controller with its view.
    *
    * @param <T> the controller type
    * @param controllerClass the controller class
@@ -85,7 +93,7 @@ public class Fx {
    *
    * @param stageStyle the style
    * @param modality the modality
-   * @param owner the view or window, null if none
+   * @param owner the owner window or a node of it, null if none
    * @return the stage
    */
   public static Stage createStage(StageStyle stageStyle, Modality modality, Object owner) {
@@ -98,7 +106,7 @@ public class Fx {
    * because the stage will be configured to meet certain framework-wide conventions.
    *
    * @param modality the modality
-   * @param owner the view or window, null if none
+   * @param owner the owner window or a node of it, null if none
    * @return the stage
    */
   public static Stage createStage(Modality modality, Object owner) {
@@ -129,11 +137,13 @@ public class Fx {
 
   /**
    * Creates an object.<br>
-   * FX objects should not be created via the builder factory and not
+   * FX objects should be created via the builder factory and not
    * the traditional way by invoking a constructor.
    * Only the builder factory guarantees TT-compliant instances.
+   * If there is no builder for the type, the object is created via its no-arg constructor
+   * and configured by the {@link Configurator} registered for the type, if any.
    * <p>
-   * Throws {@link FxRuntimeException} if no builder for this type and/or
+   * Throws {@link FxRuntimeException} if there is no builder for this type and
    * the type does not provide a no-arg constructor.
    *
    * @param <T> the requested FX standard type
@@ -157,7 +167,7 @@ public class Fx {
       return bean;
     }
     catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-      throw new FxRuntimeException("cannot create " + clazz.getName());
+      throw new FxRuntimeException("cannot create " + clazz.getName(), e);
     }
   }
 
@@ -299,26 +309,68 @@ public class Fx {
 
 
   /**
-   * Creates the graphic node for a given realm and name.<br>
-   * Throws IllegalArgumentException if no such icon and/or realm.
+   * Creates the graphic node for a given realm and name.
    *
-   * @param realm the realm, null of empty if default tentackle realm
+   * @param realm the realm, null or empty for the framework's default realm
    * @param name the graphic name
    * @return the graphic node
+   * @throws IllegalArgumentException if there is no graphic provider for the realm
+   * @throws FxRuntimeException if the provider has no such graphic
    */
   public static Node createGraphic(String realm, String name) {
     return FxFactory.getInstance().createGraphic(realm, name);
   }
 
   /**
-   * Creates the graphic node for a given name and the default realm.<br>
-   * Throws IllegalArgumentException if no such icon.
+   * Creates the graphic node for a given name and the default realm.
    *
    * @param name the graphic name
    * @return the graphic node
+   * @throws FxRuntimeException if there is no such graphic
    */
   public static Node createGraphic(String name) {
     return createGraphic("", name);
+  }
+
+  /**
+   * Creates a table edit handler that ends editing when a value is committed.
+   *
+   * @param <S> type of the objects contained within the table's item list
+   * @return the handler
+   */
+  public static <S> SimpleEditHandler<S> simpleTableEditHandler() {
+    return FxFactory.getInstance().simpleTableEditHandler();
+  }
+
+  /**
+   * Creates a table edit handler that continues with the next or previous editable cell in the row,
+   * wrapping to the next or previous row.
+   *
+   * @param <S> type of the objects contained within the table's item list
+   * @return the handler
+   */
+  public static <S> RowWiseEditHandler<S> rowWiseTableEditHandler() {
+    return FxFactory.getInstance().rowWiseTableEditHandler();
+  }
+
+  /**
+   * Creates a table edit handler that continues with the editable cell below or above in the same column.
+   *
+   * @param <S> type of the objects contained within the table's item list
+   * @return the handler
+   */
+  public static <S> ColumnWiseEditHandler<S> columnWiseTableEditHandler() {
+    return FxFactory.getInstance().columnWiseTableEditHandler();
+  }
+
+  /**
+   * Creates a table edit handler that is configured by rules per column and navigates row-wise.
+   *
+   * @param <S> type of the objects contained within the table's item list
+   * @return the handler
+   */
+  public static <S> RuleBasedEditHandler<S> ruleBasedTableEditHandler() {
+    return FxFactory.getInstance().ruleBasedTableEditHandler();
   }
 
 
@@ -326,7 +378,7 @@ public class Fx {
    * Gets the stage for a node.
    *
    * @param node the node
-   * @return the stage, null if node does not belong to a scene or scene does not belong to a stage.
+   * @return the stage, null if the node does not belong to a scene or the scene does not belong to a stage
    */
   public static Stage getStage(Node node) {
     return FxUtilities.getInstance().getStage(node);
@@ -356,6 +408,8 @@ public class Fx {
 
   /**
    * Terminates the FX client.
+   *
+   * @see FxUtilities#terminate()
    */
   public static void terminate() {
     FxUtilities.getInstance().terminate();

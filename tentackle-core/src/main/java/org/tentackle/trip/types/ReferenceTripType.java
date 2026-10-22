@@ -29,7 +29,7 @@ import org.tentackle.trip.TripTypeService;
 import org.tentackle.trip.impl.DefaultOpCode;
 
 /**
- * Sends object reference as a compact long value.
+ * Sends an object reference as a compact reference ID of 1 to 4 bytes.
  * <p>
  * References must be sent immediately following the {@link OpCode} of the
  * corresponding {@link org.tentackle.trip.TripType} and are only allowed

@@ -44,10 +44,10 @@ public interface GuiProviderFactory {
   }
 
   /**
-   * Creates a service object that provides methods related to the rdc gui.
+   * Creates the GUI provider for a PDO.
    * <p>
-   * Throws a {@link RdcRuntimeException} if provider could not be created,
-   * or no {@link GuiProviderService} found at all.
+   * Throws a {@link RdcRuntimeException} if the provider could not be created,
+   * or no {@link GuiProviderService} was found at all.
    *
    * @param <T> the PDO type
    * @param pdo the PDO
@@ -58,11 +58,12 @@ public interface GuiProviderFactory {
   /**
    * Returns whether a {@link GuiProviderService} is available for the given PDO class.
    * <p>
-   * Throws a {@link RdcRuntimeException} if provider could not be created.
+   * Throws a {@link RdcRuntimeException} if the provider class has no public constructor
+   * with the PDO as its only argument.
    *
    * @param pdoClass the PDO class
    * @param <T> the PDO type
-   * @return true if provider exists, false if no {@link GuiProviderService} found
+   * @return true if a provider exists, false if no {@link GuiProviderService} was found
    */
   <T extends PersistentDomainObject<T>> boolean isGuiProviderAvailable(Class<T> pdoClass);
 

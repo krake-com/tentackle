@@ -1,6 +1,6 @@
 # Tentackle Wizard Maven Plugin
 
-The PDO wizard: scaffolds and maintains PDO sources from the data model.
+Developer wizards: scaffolds the sources of new PDOs and operations, browses persisted PDOs to generate test fixtures, and runs scripts against a live backend.
 
 ## Documentation & reports
 

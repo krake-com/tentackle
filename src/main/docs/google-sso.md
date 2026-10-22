@@ -52,17 +52,17 @@ Single sign-on is added by putting new classes next to the generated ones.
 
 Eight new classes, spread over three modules:
 
-| Module          | Class                                | Role                                                        |
-|-----------------|--------------------------------------|-------------------------------------------------------------|
-| `myapp-common`  | `Json`                               | A minimal JSON reader, shared by both tiers.                |
-| `myapp-client`  | `LoopbackReceiver`                   | Catches the browser's redirect on `127.0.0.1`.              |
-| `myapp-client`  | `GoogleOAuth`                        | The endpoints and the PKCE/token plumbing.                  |
-| `myapp-client`  | `GoogleCredentialsStore`             | Remembers a sign-in in the local preferences.               |
-| `myapp-client`  | `GoogleCredentialsProvider`          | **The client SPI**: runs the flow, returns `TokenCredentials`. |
-| `myapp-client`  | `ClientBundle`                       | The translations the flow needs.                            |
-| `myapp-server`  | `GoogleKeySource`                    | Google's public signing keys, cached.                       |
-| `myapp-server`  | `GoogleIdTokenAuthenticationProvider`| **The server SPI**: verifies the ID token.                  |
-| `myapp-server`  | `MyAppUserResolver`                  | Maps the verified e-mail onto a `User`.                     |
+| Module         | Class                                 | Role                                                           |
+|----------------|---------------------------------------|----------------------------------------------------------------|
+| `myapp-common` | `Json`                                | A minimal JSON reader, shared by both tiers.                   |
+| `myapp-client` | `LoopbackReceiver`                    | Catches the browser's redirect on `127.0.0.1`.                 |
+| `myapp-client` | `GoogleOAuth`                         | The endpoints and the PKCE/token plumbing.                     |
+| `myapp-client` | `GoogleCredentialsStore`              | Remembers a sign-in in the credential store of the OS.         |
+| `myapp-client` | `GoogleCredentialsProvider`           | **The client SPI**: runs the flow, returns `TokenCredentials`. |
+| `myapp-client` | `ClientBundle`                        | The translations the flow needs.                               |
+| `myapp-server` | `GoogleKeySource`                     | Google's public signing keys, cached.                          |
+| `myapp-server` | `GoogleIdTokenAuthenticationProvider` | **The server SPI**: verifies the ID token.                     |
+| `myapp-server` | `MyAppUserResolver`                   | Maps the verified e-mail onto a `User`.                        |
 
 > **Why an ID token and not an access token.** An access token is a key to Google's APIs and says
 > nothing verifiable about who is holding it. An OpenID Connect **ID token** is a JWT signed by
@@ -150,12 +150,12 @@ and give the existing users an address — the editor field follows in step 11.
 Four properties drive everything, and they are deliberately split between the tiers: only the client
 runs the flow, only the server verifies its result.
 
-| Key                    | Client `backend.properties`      | Server `backend.properties` / `server.properties` |
-|------------------------|----------------------------------|---------------------------------------------------|
-| `authentication`       | `google` — selects the provider  | —                                                 |
-| `google.clientId`      | required                         | required — the accepted `aud` claim               |
-| `google.clientSecret`  | required, `~`-encrypted          | — (the server never talks to Google's token endpoint) |
-| `google.hostedDomain`  | optional — pre-selects the domain | optional — **enforces** the domain                |
+| Key                   | Client `backend.properties`       | Server `backend.properties` / `server.properties`     |
+|-----------------------|-----------------------------------|-------------------------------------------------------|
+| `authentication`      | `google` — selects the provider   | —                                                     |
+| `google.clientId`     | required                          | required — the accepted `aud` claim                   |
+| `google.clientSecret` | required, `~`-encrypted           | — (the server never talks to Google's token endpoint) |
+| `google.hostedDomain` | optional — pre-selects the domain | optional — **enforces** the domain                    |
 
 Put the values in the root `pom.xml`, where the build filters them into the property files:
 
@@ -238,14 +238,14 @@ public final class Json {
 
 with the usual value mapping:
 
-| JSON        | Java                                |
-|-------------|-------------------------------------|
-| object      | `Map<String,Object>`, insertion ordered |
-| array       | `List<Object>`                      |
-| string      | `String`                            |
-| number      | `Long` if integral, else `Double`   |
-| true/false  | `Boolean`                           |
-| null        | `null`                              |
+| JSON       | Java                                    |
+|------------|-----------------------------------------|
+| object     | `Map<String,Object>`, insertion ordered |
+| array      | `List<Object>`                          |
+| string     | `String`                                |
+| number     | `Long` if integral, else `Double`       |
+| true/false | `Boolean`                               |
+| null       | `null`                                  |
 
 Malformed input throws `TentackleRuntimeException`; the callers below turn that into an
 `AuthenticationException`. Export the package so both tiers see it:
@@ -655,24 +655,42 @@ A user who has to visit the browser on every application start will not thank yo
 sign-on. The tokens are therefore kept on the local machine, so the browser is only needed when a
 remembered sign-in cannot carry the login anymore.
 
-Where they are kept matters. Tentackle's own
-[preferences](../../../tentackle-core/src/main/docs/preferences.md) are database-backed and roam
-with the user across machines — which is exactly wrong for a token bound to one device. This uses
-the plain Java `Preferences` of the application's package instead, next to the theme settings
-`ThemeUtilities` stores there.
+Where they are kept matters. The ID token and, even more, the refresh token are keys to the user's
+account for as long as they are valid. They go to the [keyring](../../../tentackle-core/src/main/docs/keyring.md) of tentackle-core, which
+by default keeps them in the Java preferences, encrypted with the application's
+[`Cryptor`](../../../tentackle-common/src/main/docs/cryptor.md). That keeps them from being picked up by
+simply looking at the file, but it doesn't make the file a safe place, and the keyring says so via
+`isSecure()`. Without a cryptor, the sign-in is only remembered for as long as the application runs.
 
-Both tokens are encrypted with the application's
-[`Cryptor`](../../../tentackle-common/src/main/docs/cryptor.md) before being written. That does not
-turn a preferences file into a safe, and it is not meant to: it is the same treatment the backend
-configuration gives its passwords, and it keeps the tokens from being picked up by simply looking at
-the file.
+The right place for them is the credential store of the operating system: the macOS keychain, the
+Windows Credential Manager, or the Secret Service on Linux. There, the secrets are bound to the
+logged-in user and encrypted with a key that the user's login unlocks. To use it, add
+[tentackle-keyring](../../../tentackle-keyring/src/main/docs/platform-keyring.md) to `myapp-client`. It replaces the default keyring, and the code below
+stays the same:
+
+```xml
+<dependency>
+  <groupId>org.tentackle</groupId>
+  <artifactId>tentackle-keyring</artifactId>
+</dependency>
+```
+
+If a machine has no usable credential store, typically a Linux box without a desktop session, it falls
+back to the preferences as before.
+
+What is not secret stays in the plain Java `Preferences` of the application's package, next to the
+theme settings `ThemeUtilities` stores there: the OAuth client the tokens belong to, the token type
+and the expiry. Tentackle's own [preferences](../../../tentackle-core/src/main/docs/preferences.md)
+would be the wrong place for them. They are database-backed and roam with the user across machines,
+while a sign-in belongs to one device.
 
 `myapp-client/src/main/java/com/example/myapp/client/auth/GoogleCredentialsStore.java`:
 
 ```java
 package com.example.myapp.client.auth;
 
-import org.tentackle.common.Cryptor;
+import org.tentackle.keyring.Keyring;
+import org.tentackle.keyring.SecretId;
 import org.tentackle.log.Logger;
 import org.tentackle.session.auth.TokenCredentials;
 
@@ -683,14 +701,11 @@ import java.util.prefs.Preferences;
 /**
  * Remembers the Google sign-in on the local machine.
  * <p>
- * The tokens are kept in the java preferences of the application's package, next to the theme
- * settings {@link org.tentackle.fx.ThemeUtilities} stores there, since a sign-in applies to a
- * machine and a user only and thus has no business in the preferences replicated by the database.
- * <p>
- * Both the ID token and the refresh token are encrypted with the application's {@link Cryptor}
- * before they are written. That is the same treatment the backend configuration gives to its
- * passwords: it does not turn the preferences file into a safe place, but it keeps the tokens
- * from being picked up by simply looking at it.
+ * The tokens are secrets and go to the credential store of the operating system via the
+ * {@link Keyring}. What is not secret &ndash; the OAuth client they belong to, the token type and
+ * the expiry &ndash; is kept in the java preferences of the application's package, next to the theme
+ * settings {@link org.tentackle.fx.ThemeUtilities} stores there. Both are local to the machine and
+ * the user, as a sign-in is.
  * <p>
  * Nothing here ever breaks a login: whatever goes wrong, the sign-in is forgotten and the caller
  * falls back to the browser.
@@ -706,45 +721,47 @@ public final class GoogleCredentialsStore {
   /** Preferences key of the epochal milliseconds the ID token expires. */
   public static final String EXPIRES_AT = "google.expiresAt";
 
-  /** Preferences key of the encrypted ID token. */
-  public static final String TOKEN = "google.token";
-
-  /** Preferences key of the encrypted refresh token. */
-  public static final String REFRESH_TOKEN = "google.refreshToken";
-
 
   private static final Logger LOGGER = Logger.get();
 
-  private static final String[] KEYS = { CLIENT_ID, TOKEN_TYPE, EXPIRES_AT, TOKEN, REFRESH_TOKEN };
+  private static final String[] KEYS = {
+      CLIENT_ID, TOKEN_TYPE, EXPIRES_AT,
+      "google.token", "google.refreshToken"     // left behind by versions keeping the tokens in the preferences
+  };
 
 
   /**
    * Remembers the credentials of a sign-in.
    *
-   * @param clazz the application class determining the preferences node
+   * @param clazz the application class determining the preferences node and the keyring service
    * @param clientId the OAuth client id the credentials belong to
    * @param credentials the credentials to remember
    */
   public static void save(Class<?> clazz, String clientId, TokenCredentials credentials) {
-    Cryptor cryptor = Cryptor.getInstance();
-    if (cryptor == null) {
-      LOGGER.warning("there is no cryptor: the sign-in is not remembered");
-      forget(clazz);
-      return;
-    }
     Preferences userPrefs = Preferences.userNodeForPackage(clazz);
+    if (!clientId.equals(userPrefs.get(CLIENT_ID, clientId))) {
+      forget(clazz);    // remembered for another OAuth client: don't leave its tokens behind
+    }
+    char[] token = credentials.getToken();
+    char[] refreshToken = credentials.getRefreshToken();
     try {
+      Keyring keyring = Keyring.getInstance();
+      putSecret(keyring, tokenId(clazz, clientId), "MyApp Google ID token", token);
+      putSecret(keyring, refreshTokenId(clazz, clientId), "MyApp Google refresh token", refreshToken);
       userPrefs.put(CLIENT_ID, clientId);
       userPrefs.put(TOKEN_TYPE, credentials.getTokenType());
       userPrefs.putLong(EXPIRES_AT, credentials.getExpiresAt());
-      putSecret(userPrefs, TOKEN, cryptor, credentials.getToken());
-      putSecret(userPrefs, REFRESH_TOKEN, cryptor, credentials.getRefreshToken());
       userPrefs.flush();
-      LOGGER.info("the sign-in has been remembered");
+      LOGGER.info("the sign-in has been remembered in the {0} keyring", keyring.getName());
     }
     catch (BackingStoreException | RuntimeException ex) {
       LOGGER.warning("the sign-in could not be remembered", ex);
       forget(clazz);
+    }
+    finally {
+      // the credentials hand out copies
+      wipe(token);
+      wipe(refreshToken);
     }
   }
 
@@ -754,15 +771,11 @@ public final class GoogleCredentialsStore {
    * The credentials may well be expired: it is up to the caller to decide whether to use them
    * as they are, to renew them or to sign in again.
    *
-   * @param clazz the application class determining the preferences node
+   * @param clazz the application class determining the preferences node and the keyring service
    * @param clientId the OAuth client id the credentials must belong to
    * @return the credentials, null if there is no usable sign-in remembered
    */
   public static TokenCredentials load(Class<?> clazz, String clientId) {
-    Cryptor cryptor = Cryptor.getInstance();
-    if (cryptor == null) {
-      return null;
-    }
     Preferences userPrefs = Preferences.userNodeForPackage(clazz);
     if (!clientId.equals(userPrefs.get(CLIENT_ID, null))) {
       // nothing remembered at all, or remembered for another OAuth client
@@ -772,21 +785,22 @@ public final class GoogleCredentialsStore {
     char[] token = null;
     char[] refreshToken = null;
     try {
-      token = getSecret(userPrefs, TOKEN, cryptor);
+      Keyring keyring = Keyring.getInstance();
+      token = keyring.load(tokenId(clazz, clientId));
       if (token == null) {
         return null;
       }
       TokenCredentials credentials = new TokenCredentials(userPrefs.get(TOKEN_TYPE, null), token);
       credentials.setIssuer(GoogleOAuth.ISSUER);
       credentials.setExpiresAt(userPrefs.getLong(EXPIRES_AT, 0));
-      refreshToken = getSecret(userPrefs, REFRESH_TOKEN, cryptor);
+      refreshToken = keyring.load(refreshTokenId(clazz, clientId));
       if (refreshToken != null) {
         credentials.setRefreshToken(refreshToken);
       }
       return credentials;
     }
     catch (RuntimeException rex) {
-      // a changed cryptor or a hand-edited preferences file, for example
+      // the user denied access to the keychain, or the cryptor of the preferences fallback changed, for example
       LOGGER.warning("the remembered sign-in is unreadable and has been discarded", rex);
       forget(clazz);
       return null;
@@ -801,10 +815,21 @@ public final class GoogleCredentialsStore {
   /**
    * Forgets a remembered sign-in.
    *
-   * @param clazz the application class determining the preferences node
+   * @param clazz the application class determining the preferences node and the keyring service
    */
   public static void forget(Class<?> clazz) {
     Preferences userPrefs = Preferences.userNodeForPackage(clazz);
+    String clientId = userPrefs.get(CLIENT_ID, null);
+    if (clientId != null) {
+      try {
+        Keyring keyring = Keyring.getInstance();
+        keyring.remove(tokenId(clazz, clientId));
+        keyring.remove(refreshTokenId(clazz, clientId));
+      }
+      catch (RuntimeException ex) {
+        LOGGER.warning("the remembered tokens could not be removed", ex);
+      }
+    }
     try {
       for (String key : KEYS) {
         userPrefs.remove(key);
@@ -818,41 +843,42 @@ public final class GoogleCredentialsStore {
 
 
   /**
-   * Writes a secret encrypted, or removes the key if there is no secret to write.
-   * <p>
-   * The encryption wipes the given array, which is fine since it is a copy handed out by the
-   * credentials.
+   * Gets the keyring id of the ID token.
    *
-   * @param userPrefs the preferences node
-   * @param key the preferences key
-   * @param cryptor the cryptor
-   * @param secret the secret, null if none
+   * @param clazz the application class
+   * @param clientId the OAuth client id
+   * @return the secret id
    */
-  private static void putSecret(Preferences userPrefs, String key, Cryptor cryptor, char[] secret) {
-    if (secret == null || secret.length == 0) {
-      userPrefs.remove(key);
-      return;
-    }
-    String encrypted = cryptor.encrypt64(secret);
-    if (encrypted.length() > Preferences.MAX_VALUE_LENGTH) {
-      LOGGER.warning("the encrypted {0} is too large for the preferences", key);
-      userPrefs.remove(key);
-      return;
-    }
-    userPrefs.put(key, encrypted);
+  private static SecretId tokenId(Class<?> clazz, String clientId) {
+    return new SecretId(clazz.getPackageName() + "/google/id-token", clientId);
   }
 
   /**
-   * Reads a secret and decrypts it.
+   * Gets the keyring id of the refresh token.
    *
-   * @param userPrefs the preferences node
-   * @param key the preferences key
-   * @param cryptor the cryptor
-   * @return the secret, null if there is none
+   * @param clazz the application class
+   * @param clientId the OAuth client id
+   * @return the secret id
    */
-  private static char[] getSecret(Preferences userPrefs, String key, Cryptor cryptor) {
-    String encrypted = userPrefs.get(key, null);
-    return encrypted == null ? null : cryptor.decrypt64ToChars(encrypted);
+  private static SecretId refreshTokenId(Class<?> clazz, String clientId) {
+    return new SecretId(clazz.getPackageName() + "/google/refresh-token", clientId);
+  }
+
+  /**
+   * Stores a secret, or removes it if there is no secret to store.
+   *
+   * @param keyring the keyring
+   * @param id the secret's id
+   * @param label the label shown by the OS tools
+   * @param secret the secret, null if none
+   */
+  private static void putSecret(Keyring keyring, SecretId id, String label, char[] secret) {
+    if (secret == null || secret.length == 0) {
+      keyring.remove(id);
+    }
+    else {
+      keyring.store(id, label, secret);
+    }
   }
 
   /**
@@ -874,8 +900,14 @@ public final class GoogleCredentialsStore {
 
 Two rules run through the class. The tokens are keyed by the **client id** they were issued for, so
 reconfiguring the OAuth client silently invalidates them. And **nothing here ever breaks a login**:
-whatever goes wrong — no cryptor, a changed key, a hand-edited file, a value beyond
-`Preferences.MAX_VALUE_LENGTH` — the sign-in is forgotten and the caller falls back to the browser.
+whatever goes wrong, the sign-in is forgotten and the caller falls back to the browser. That covers
+a user who denies the keychain access, a locked Secret Service, or a changed cryptor behind the
+preferences fallback.
+
+The keychain of macOS deserves a word. It hands an item to the application that created it without
+asking, but after an update of an **unsigned** application the binary differs, and macOS asks the
+user once to allow the access. Signed application bundles avoid that. See
+[OS Credential Stores](../../../tentackle-keyring/src/main/docs/platform-keyring.md#macos).
 
 ---
 
@@ -898,11 +930,11 @@ user takes — never freezes the FX thread.
 
 `createCredentials` walks down a ladder, cheapest rung first:
 
-| Situation                                            | What happens                                  |
-|------------------------------------------------------|-----------------------------------------------|
-| a remembered ID token, still valid for over a minute  | used as it is — no network, no browser        |
-| a remembered but expired token with a refresh token   | renewed silently at the token endpoint        |
-| nothing remembered, or the renewal failed             | the full browser flow                         |
+| Situation                                            | What happens                           |
+|------------------------------------------------------|----------------------------------------|
+| a remembered ID token, still valid for over a minute | used as it is — no network, no browser |
+| a remembered but expired token with a refresh token  | renewed silently at the token endpoint |
+| nothing remembered, or the renewal failed            | the full browser flow                  |
 
 `myapp-client/src/main/java/com/example/myapp/client/auth/GoogleCredentialsProvider.java`:
 
@@ -1260,15 +1292,15 @@ A few things deserve a second look.
 
 **The authorization request parameters.**
 
-| Parameter                                | Why                                                                  |
-|------------------------------------------|----------------------------------------------------------------------|
-| `response_type=code`                     | the authorization code flow — the only one a desktop app may use     |
-| `scope=openid email profile`             | `openid` is what makes Google return an ID token at all              |
-| `code_challenge` + `code_challenge_method=S256` | PKCE (step 5)                                                 |
-| `state`                                  | checked on return: ties the response to *this* request               |
-| `nonce`                                  | replay protection, carried through into the ID token's claims        |
-| `access_type=offline` + `prompt=consent` | ask for a refresh token, which is what makes step 6 worth having     |
-| `hd`                                     | optional: pre-selects the Google Workspace domain in the account picker |
+| Parameter                                       | Why                                                                     |
+|-------------------------------------------------|-------------------------------------------------------------------------|
+| `response_type=code`                            | the authorization code flow — the only one a desktop app may use        |
+| `scope=openid email profile`                    | `openid` is what makes Google return an ID token at all                 |
+| `code_challenge` + `code_challenge_method=S256` | PKCE (step 5)                                                           |
+| `state`                                         | checked on return: ties the response to *this* request                  |
+| `nonce`                                         | replay protection, carried through into the ID token's claims           |
+| `access_type=offline` + `prompt=consent`        | ask for a refresh token, which is what makes step 6 worth having        |
+| `hd`                                            | optional: pre-selects the Google Workspace domain in the account picker |
 
 **`CredentialsPrompt` keeps the provider UI-agnostic.** `browse(uri)` opens the system browser in
 the desktop client and merely logs the URL in a console application or a test; `showMessage` and
@@ -1306,6 +1338,12 @@ module com.example.myapp.client {
   provides org.tentackle.common.ModuleHook with com.example.myapp.client.service.Hook;
 }
 ```
+
+The keyring API is part of tentackle-core, so no `requires` is needed for it, not even with
+tentackle-keyring added: that module joins the module graph by itself, through service binding. It
+calls into the OS through the FFM API, though, so the client's launcher then needs
+`--enable-native-access=org.tentackle.keyring` among its JVM options. Without it, the JVM warns on the
+first access, and a future release will refuse it.
 
 The `META-INF` service entry itself is written at build time by the
 [tentackle-maven-plugin](../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md);
@@ -1497,14 +1535,14 @@ credential types anyway.
 Everything the token claims is then checked, and *what* a failed check means is as important as the
 check itself:
 
-| Check                                                        | On failure                                            |
-|--------------------------------------------------------------|-------------------------------------------------------|
-| `alg` is `RS256`, `kid` present, signature verifies           | veto — `AuthenticationException`                      |
-| `iss` is `https://accounts.google.com` or `accounts.google.com` | veto                                                |
-| `aud` equals the configured client id (a string *or* an array) | veto — the token was minted for another application   |
-| `email` present and `email_verified` true                     | veto                                                  |
-| `hd` equals `google.hostedDomain`, if configured              | veto                                                  |
-| `exp` not older than 60 s of clock skew                       | `CredentialsExpiredException` — **the client may retry** |
+| Check                                                           | On failure                                               |
+|-----------------------------------------------------------------|----------------------------------------------------------|
+| `alg` is `RS256`, `kid` present, signature verifies             | veto — `AuthenticationException`                         |
+| `iss` is `https://accounts.google.com` or `accounts.google.com` | veto                                                     |
+| `aud` equals the configured client id (a string *or* an array)  | veto — the token was minted for another application      |
+| `email` present and `email_verified` true                       | veto                                                     |
+| `hd` equals `google.hostedDomain`, if configured                | veto                                                     |
+| `exp` not older than 60 s of clock skew                         | `CredentialsExpiredException` — **the client may retry** |
 
 > **The expiry check comes last, deliberately.** It is the only failure the client is allowed to do
 > something about: a `CredentialsExpiredException` tells `LoginFailedHandler` that a
@@ -1966,6 +2004,7 @@ public class ClientBundle {
    * @param key the key
    * @return the string from the bundle
    */
+  @SuppressWarnings("bundle")
   public static String getString(String key) {
     return getBundle().getString(key);
   }
@@ -2007,15 +2046,15 @@ verifies at build time that every key exists in every locale.
 
 ## What the User Sees
 
-| Situation                                   | What happens                                                        |
-|---------------------------------------------|---------------------------------------------------------------------|
-| First start                                 | The sign-in button opens the browser; after consent the page says the window can be closed, and the application logs in. |
-| Every following start                       | Straight in. No browser, no network call to Google.                 |
-| The ID token expired since the last start   | "renewing the sign-in..." for a moment, then in. Still no browser.  |
-| The token expires mid-login                 | The server answers `CredentialsExpiredException`, the client refreshes and retries once, invisibly. |
-| The user revoked the application's access   | The refresh fails, the remembered sign-in is dropped, the browser opens again. |
-| A Google account belonging to no user       | The browser flow succeeds, the server refuses with "login refused".  |
-| The user presses *Cancel*                   | The wait ends within 250 ms and the loopback port is released.       |
+| Situation                                 | What happens                                                                                                             |
+|-------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| First start                               | The sign-in button opens the browser; after consent the page says the window can be closed, and the application logs in. |
+| Every following start                     | Straight in. No browser, no network call to Google.                                                                      |
+| The ID token expired since the last start | "renewing the sign-in..." for a moment, then in. Still no browser.                                                       |
+| The token expires mid-login               | The server answers `CredentialsExpiredException`, the client refreshes and retries once, invisibly.                      |
+| The user revoked the application's access | The refresh fails, the remembered sign-in is dropped, the browser opens again.                                           |
+| A Google account belonging to no user     | The browser flow succeeds, the server refuses with "login refused".                                                      |
+| The user presses *Cancel*                 | The wait ends within 250 ms and the loopback port is released.                                                           |
 
 ---
 
@@ -2025,7 +2064,7 @@ Everything above is generic OpenID Connect except four constants and two claim n
 provider publishes them at `https://<issuer>/.well-known/openid-configuration`:
 
 | In `GoogleOAuth` / `GoogleKeySource` | Field of the discovery document |
-|--------------------------------------|----------------------------------|
+|--------------------------------------|---------------------------------|
 | `AUTHORIZATION_ENDPOINT`             | `authorization_endpoint`        |
 | `TOKEN_ENDPOINT`                     | `token_endpoint`                |
 | `ISSUER`                             | `issuer`                        |
@@ -2033,12 +2072,12 @@ provider publishes them at `https://<issuer>/.well-known/openid-configuration`:
 
 A robust implementation fetches that document once at startup instead of hard-coding the four.
 
-| Provider              | What differs                                                                                     |
-|-----------------------|--------------------------------------------------------------------------------------------------|
-| Microsoft Entra ID    | The tenant is part of the issuer and must be checked as such; the identifying claim is usually `preferred_username`, and `email` may be absent. |
-| Keycloak              | Issuer and endpoints are realm-specific; a public client needs no secret at all — drop `addClientCredentials`. |
-| Okta, Auth0           | Endpoints under the tenant domain; some ID tokens are signed with `ES256`, which `verify()` must then accept alongside `RS256`. |
-| Any provider          | `hd` is Google's; restrict by the e-mail domain or a group claim instead.                        |
+| Provider           | What differs                                                                                                                                    |
+|--------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| Microsoft Entra ID | The tenant is part of the issuer and must be checked as such; the identifying claim is usually `preferred_username`, and `email` may be absent. |
+| Keycloak           | Issuer and endpoints are realm-specific; a public client needs no secret at all — drop `addClientCredentials`.                                  |
+| Okta, Auth0        | Endpoints under the tenant domain; some ID tokens are signed with `ES256`, which `verify()` must then accept alongside `RS256`.                 |
+| Any provider       | `hd` is Google's; restrict by the e-mail domain or a group claim instead.                                                                       |
 
 The loopback receiver, PKCE, the credentials store, the resolver and the whole Tentackle wiring are
 untouched by the choice.
@@ -2068,7 +2107,8 @@ per installation.
 
 - [Authentication — Credentials, Providers, and Single Sign-On](../../../tentackle-session/src/main/docs/authentication.md) — the SPI this walkthrough implements, and the credential model.
 - [Backend Properties](../../../tentackle-session/src/main/docs/backend-properties.md) — the `authentication` key and the other connection settings.
-- [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md) — how the client secret and the remembered tokens are encrypted.
+- [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md) — how the client secret is encrypted, and the remembered tokens where no credential store is usable.
+- [Keyring](../../../tentackle-core/src/main/docs/keyring.md) — where the remembered tokens are kept, and [OS Credential Stores](../../../tentackle-keyring/src/main/docs/platform-keyring.md) for the keychain, the Credential Manager and the Secret Service.
 - [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md) — the SPI behind `@Service` and `@CredentialsProviderService`.
 - [Rich Desktop Client](../../../tentackle-fx-rdc/src/main/docs/rdc.md) — the login view, `FxCredentialsPrompt` and the login failed handler.
 - [Security — Permissions, Rules, and Grantees](../../../tentackle-pdo/src/main/docs/security.md) — what the authenticated user may then do.

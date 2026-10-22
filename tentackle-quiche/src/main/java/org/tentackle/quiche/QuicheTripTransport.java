@@ -44,11 +44,12 @@ import java.security.KeyStore;
 import java.util.Map;
 
 /**
- * Transport implementation for QUIC on top of Cloudflare quiche.
+ * Transport implementation for QUIC on top of Cloudflare quiche, scheme {@value #PROTOCOL}.
  * <p>
- * The sibling of {@code tentackle-quic}, which provides the same transport on top of KWIK. Both speak
- * RFC-9000 and interoperate; they register different URI schemes so that an application can use either,
- * or both at once, and pick per connection.
+ * This is the sibling of {@code tentackle-quic}, which provides the same transport on top of KWIK. Both
+ * speak RFC-9000 and interoperate; they register different URI schemes so that an application can use
+ * either, or both at once, and pick per connection. The URI parameters are described in the module's
+ * documentation ({@code quiche.md}).
  */
 @TransportService(QuicheTripTransport.PROTOCOL)
 public class QuicheTripTransport extends AbstractTransport {
@@ -96,11 +97,33 @@ public class QuicheTripTransport extends AbstractTransport {
    */
   public static final int MIN_STREAM_WINDOW = 1500;
 
+  /**
+   * The default number of consecutive probe timeouts without any acknowledgment after which a client
+   * migrates its QUIC connection to a new source port, applied if the URI does not specify {@code migrate}.
+   * <p>
+   * Two is the smallest number that tells a stalled path from a single burst of losses: the first probe
+   * timeout alone fires on an ordinary lost tail, the second one means that not even the probe got through.
+   * Since the probe timeout backs off exponentially, two of them take about three times the first one,
+   * i.e., a few round trip times.
+   */
+  public static final int DEFAULT_MIGRATION_PROBE_TIMEOUTS = 2;
 
-  private QuicheEndpoint endpoint;          // the endpoint accepting connections, null if not accepting
+  /**
+   * The number of connection IDs each side is willing to hold for the peer, including the one in use.
+   * <p>
+   * Every migration needs a spare connection ID of the peer, and quiche keeps the network paths a
+   * connection has used for as long as they have connection IDs, so this also bounds how often a connection
+   * can migrate. A connection that cannot migrate any further stays where it is, and if its path does not
+   * recover, it runs into the idle timeout and the pool re-establishes it from a fresh source port.
+   */
+  public static final int ACTIVE_CONNECTION_ID_LIMIT = 8;
+
+
+  private volatile QuicheEndpoint endpoint; // the endpoint accepting connections, null if not accepting
   private QuicheServer server;              // the accept policy of that endpoint
   private QuicheConfig serverConfig;        // outlives every connection created from it
   private volatile boolean accepting;       // volatile: isAccepting() is not synchronized
+  private boolean closing;                  // true once close() was invoked
 
   /**
    * Creates a new QUIC transport.
@@ -114,6 +137,10 @@ public class QuicheTripTransport extends AbstractTransport {
 
   @Override
   public synchronized void accept() {
+    if (closing) {
+      // close() released the monitor to shut down the endpoint, but did not mark the transport closed yet
+      throw new TripRuntimeException("transport " + this + " is closed");
+    }
     super.accept();
 
     QuicheLogger.install();
@@ -145,18 +172,30 @@ public class QuicheTripTransport extends AbstractTransport {
     QuicheServer newServer = null;
     boolean started = false;
     try {
-      // quiche takes PEM file paths, not a KeyStore, so the entry has to be exported
-      Path certificateChain = PemExporter.writeCertificateChain(keyStore, certificateAlias);
-      Path privateKey = PemExporter.writePrivateKey(keyStore, certificateAlias, sslParameters.getKeyPassword());
-
+      // validates the URI parameters, before the private key leaves the keystore
       config = createConfig(alpnId)
-                 .loadCertChain(certificateChain)
-                 .loadPrivateKey(privateKey)
                  // a Tentackle server does not ask its clients for a certificate; they authenticate
                  // through TRIP once the connection stands
                  .verifyPeer(false);
 
-      // "0" binds all IPv4 interfaces, as it does for the TCP transports
+      // quiche takes PEM file paths, not a KeyStore, so the entry has to be exported. Quiche reads the
+      // files right away, so they are deleted as soon as they are loaded.
+      Path certificateChain = PemExporter.writeCertificateChain(keyStore, certificateAlias);
+      try {
+        config.loadCertChain(certificateChain);
+      }
+      finally {
+        PemExporter.delete(certificateChain);
+      }
+      Path privateKey = PemExporter.writePrivateKey(keyStore, certificateAlias, sslParameters.getKeyPassword());
+      try {
+        config.loadPrivateKey(privateKey);
+      }
+      finally {
+        PemExporter.delete(privateKey);
+      }
+
+      // "0" binds all interfaces, IPv6 as well where available, and "0.0.0.0" all IPv4 interfaces
       InetAddress bindAddress = "0".equals(host) ? null : InetAddress.getByName(host);
       newEndpoint = new QuicheEndpoint(bindAddress == null ? new InetSocketAddress(port)
                                                            : new InetSocketAddress(bindAddress, port));
@@ -178,12 +217,12 @@ public class QuicheTripTransport extends AbstractTransport {
     finally {
       // a local flag, not the instance field: the cleanup must apply to what this invocation built
       if (!started) {
-        // give the UDP port and the native memory back instead of leaking them
-        if (newServer != null) {
-          newServer.close();
-        }
+        // give the UDP port and the native memory back instead of leaking them, in the order of close()
         if (newEndpoint != null) {
           newEndpoint.close();
+        }
+        if (newServer != null) {
+          newServer.close();
         }
         if (config != null) {
           config.close();
@@ -192,9 +231,15 @@ public class QuicheTripTransport extends AbstractTransport {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * False as well once the endpoint closed itself because its event loop failed.
+   */
   @Override
   public boolean isAccepting() {
-    return accepting;
+    QuicheEndpoint currentEndpoint = endpoint;
+    return accepting && currentEndpoint != null && !currentEndpoint.isClosed();
   }
 
   /**
@@ -219,6 +264,7 @@ public class QuicheTripTransport extends AbstractTransport {
    * (see {@link QuicheTripConnectionPool}).
    *
    * @return the maximum number of streams, always &ge; 1
+   * @throws TripRuntimeException if the configured value is &lt; 1
    */
   public int getMaxStreams() {
     int maxStreams = getUriPars().getOrDefault("maxstreams", DEFAULT_MAX_STREAMS);
@@ -232,11 +278,13 @@ public class QuicheTripTransport extends AbstractTransport {
   /**
    * Gets the flow control window per stream in bytes.<br>
    * A peer may send at most that many bytes on a stream before the receiving side has to grant further
-   * credits (see RFC-9000, 4). The window should be at least as large as the largest call to be
-   * transferred without intermediate credit updates. The connection window is a multiple of it, see
-   * {@link #CONNECTION_WINDOW_FACTOR}.
+   * credits (see RFC-9000, 4). It is configured on both ends: on the server it applies to the data a client
+   * sends, i.e., to the size of the remote calls, and on the client to the size of the responses. The window
+   * should be at least as large as the largest call to be transferred without intermediate credit updates.
+   * The connection window is a multiple of it, see {@link #CONNECTION_WINDOW_FACTOR}.
    *
    * @return the window in bytes
+   * @throws TripRuntimeException if the configured window is smaller than {@link #MIN_STREAM_WINDOW}
    */
   public int getStreamWindow() {
     int streamWindow = getUriPars().getOrDefault("streamwindow", DEFAULT_STREAM_WINDOW);
@@ -249,6 +297,25 @@ public class QuicheTripTransport extends AbstractTransport {
   }
 
   /**
+   * Gets after how many consecutive probe timeouts without any acknowledgment a client migrates its QUIC
+   * connection to a new source port.<br>
+   * Some networks hash each flow onto one of several paths by its addresses and ports, and a flow that
+   * lands on a path that stopped delivering stays stuck there, whereas a new source port puts it onto
+   * another one. QUIC can move a connection without disturbing its streams (RFC-9000, 9).
+   *
+   * @return the number of probe timeouts, 0 if the client never migrates
+   * @throws TripRuntimeException if the configured value is &lt; 0
+   */
+  public int getMigrationProbeTimeouts() {
+    int probeTimeouts = getUriPars().getOrDefault("migrate", DEFAULT_MIGRATION_PROBE_TIMEOUTS);
+    if (probeTimeouts < 0) {
+      throw new TripRuntimeException(
+        "QUIC migrate must be >= 0, got " + probeTimeouts + " from URI " + getUri());
+    }
+    return probeTimeouts;
+  }
+
+  /**
    * Creates the QUIC configuration both ends of this transport share.
    * <p>
    * The client applies the same settings, so that the two directions are symmetric and the effective
@@ -256,6 +323,7 @@ public class QuicheTripTransport extends AbstractTransport {
    *
    * @param alpnId the ALPN protocol name
    * @return the configuration, to be closed after every connection created from it
+   * @throws TripRuntimeException if a URI parameter is invalid
    */
   QuicheConfig createConfig(String alpnId) {
     int streamWindow = getStreamWindow();
@@ -267,7 +335,9 @@ public class QuicheTripTransport extends AbstractTransport {
       .setInitialMaxStreamDataBidiRemote(streamWindow)
       .setInitialMaxStreamsBidi(getMaxStreams())
       // TRIP uses bidirectional streams only
-      .setInitialMaxStreamsUni(0);
+      .setInitialMaxStreamsUni(0)
+      // spare connection IDs are what a client migrates to a new source port with
+      .setActiveConnectionIdLimit(ACTIVE_CONNECTION_ID_LIMIT);
   }
 
   /**
@@ -277,35 +347,47 @@ public class QuicheTripTransport extends AbstractTransport {
    * connections of all clients.
    * <p>
    * The endpoint is closed <em>before</em> the transport's thread pools are shut down, so that no
-   * incoming stream is dispatched to a pool that is already gone. Closing it waits for the client
-   * connections to terminate, which is why it happens outside the transport's monitor: connection
-   * handlers still running must be able to invoke synchronized transport methods.
+   * incoming stream is dispatched to a pool that is already gone. Closing it sends every client a
+   * {@code CONNECTION_CLOSE} and waits up to a second for the event loop to stop, which is why it happens
+   * outside the transport's monitor: connection handlers still running must be able to invoke synchronized
+   * transport methods.
    */
   @Override
   public void close() {
-    QuicheEndpoint currentEndpoint;
-    QuicheServer currentServer;
-    QuicheConfig currentConfig;
-    synchronized (this) {
-      currentEndpoint = endpoint;
-      currentServer = server;
-      currentConfig = serverConfig;
-      endpoint = null;
-      server = null;
-      serverConfig = null;
-      accepting = false;
-    }
-    if (currentEndpoint != null) {
-      currentEndpoint.close();
-    }
-    if (currentServer != null) {
-      currentServer.close();
-    }
-    // the configuration must outlive the connections created from it, hence last
-    if (currentConfig != null) {
-      currentConfig.close();
-    }
+    stopAccepting().run();
     super.close();
+  }
+
+  /**
+   * Detaches the QUIC endpoint from this transport, the first step of {@link #close()}.
+   * <p>
+   * From then on {@link #accept()} fails. Since the endpoint is closed outside the transport's monitor and
+   * the transport is marked closed only afterward, an {@code accept()} getting in between would otherwise
+   * start an endpoint that nobody closes anymore.
+   *
+   * @return the action closing what was detached, to be run without holding the transport's monitor
+   */
+  protected synchronized Runnable stopAccepting() {
+    closing = true;
+    QuicheEndpoint currentEndpoint = endpoint;
+    QuicheServer currentServer = server;
+    QuicheConfig currentConfig = serverConfig;
+    endpoint = null;
+    server = null;
+    serverConfig = null;
+    accepting = false;
+    return () -> {
+      if (currentEndpoint != null) {
+        currentEndpoint.close();
+      }
+      if (currentServer != null) {
+        currentServer.close();
+      }
+      // the configuration must outlive the connections created from it, hence last
+      if (currentConfig != null) {
+        currentConfig.close();
+      }
+    };
   }
 
   /**
@@ -343,11 +425,11 @@ public class QuicheTripTransport extends AbstractTransport {
   }
 
   /**
-   * Creates a trip stream for the given QUIC stream.
+   * Creates a TRIP stream for the given QUIC stream.
    *
    * @param dictionary the dictionary to use for serialization/deserialization
    * @param quicStream the QUIC stream
-   * @return the trip stream
+   * @return the TRIP stream
    */
   TripStream createStream(Dictionary dictionary, QuicheStream quicStream) {
     TripFactory factory = TripFactory.getInstance();

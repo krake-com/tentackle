@@ -23,14 +23,14 @@ import org.tentackle.model.ModelException;
 /**
  * A line consisting of multiple physical lines.<br>
  * Such lines are concatenated by trailing commas or colons.
- * The first empty line or line ending with a semicolon ends the multiline.
+ * A semicolon or an empty line ends the multiline.
  *
  * @author harald
  */
 public abstract class MultiLine extends Line {
 
   /**
-   * Creates a multi-line.<br>
+   * Creates a multi-line.
    *
    * @param document the whole document
    * @param offset offset to first character within document
@@ -50,7 +50,7 @@ public abstract class MultiLine extends Line {
       char c = text.charAt(length);
       if (c == ';' ||
           c == '\n' && (!nextSectionFound || lastC == '\n')) {
-        // this is the last in the block
+        // end of the multiline
         break;
       }
       if (c == ',' || c == ':') {

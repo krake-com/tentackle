@@ -42,6 +42,10 @@ import java.lang.reflect.Method;
 
 /**
  * Handler for the {@code @RemoteMethod} annotation.
+ * <p>
+ * Writes a {@link RemoteMethodInfo} for each annotated method of a class to
+ * {@code <class>/<method>.remote} in the analyze directory.
+ * The method name in the filename can be overridden by the annotation's {@code value}.
  *
  * @author harald
  */
@@ -65,7 +69,7 @@ public class RemoteMethodAnalyzeHandler extends AbstractAnalyzeHandler {
 
     Class<Annotation> annotationClass;
     try {
-      annotationClass = (Class<Annotation>) Class.forName(annotationType.toString());
+      annotationClass = (Class<Annotation>) Class.forName(annotationType.toString(), true, getProcessor().getProcessingClassLoader());
     }
     catch (ClassNotFoundException nfe) {
       print(Kind.ERROR, "cannot load annotation class " + annotationType + ": " + nfe, annotationType);
@@ -90,7 +94,7 @@ public class RemoteMethodAnalyzeHandler extends AbstractAnalyzeHandler {
               methodName = value;
             }
           }
-          catch (IllegalAccessException | IllegalArgumentException | NoSuchMethodException | SecurityException |
+          catch (IllegalAccessException | IllegalArgumentException | NoSuchMethodException |
                  InvocationTargetException nme) {
             print(Kind.ERROR, "no value method for @" + StringHelper.lastAfter(annotationClass.getName(), '.'), element);
             continue;

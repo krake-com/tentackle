@@ -123,9 +123,9 @@ public interface OpCode extends Serializable, Convertible<Integer> {
 
   /**
    * Gets the fixed type of the trip type.<br>
-   * Throws a {@link TripRuntimeException} if {@link #isFixedType()} is false.
    *
    * @return the fixed type
+   * @throws TripRuntimeException if {@link #isFixedType()} is false
    */
   TripType<?> getFixedType();
 
@@ -138,11 +138,10 @@ public interface OpCode extends Serializable, Convertible<Integer> {
 
   /**
    * Converts an external Integer value to a {@link OpCode}.
-   * <p>
-   * Throws a {@link TripRuntimeException} if no valid type for the given Integer.
    *
    * @param code the unsigned byte value (0 ... 255)
    * @return the opcode, never null
+   * @throws TripRuntimeException if no valid type for the given Integer
    */
   static OpCode toInternal(Integer code) {
     return TripFactory.getInstance().getOpCode(code);

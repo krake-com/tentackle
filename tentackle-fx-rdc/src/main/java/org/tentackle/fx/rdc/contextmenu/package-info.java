@@ -17,6 +17,7 @@
  */
 
 /**
- * Predefined context menu items.
+ * Predefined context menu items.<br>
+ * Expand, collapse, view, and edit for PDO trees, and view for PDO tables.
  */
 package org.tentackle.fx.rdc.contextmenu;

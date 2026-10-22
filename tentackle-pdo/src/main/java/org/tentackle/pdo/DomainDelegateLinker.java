@@ -84,7 +84,7 @@ public interface DomainDelegateLinker {
 
 
   /**
-   * Link the domain delegate to its {@link PersistentDomainObject}.
+   * Links the domain delegate to its {@link PersistentDomainObject}.
    *
    * @param pdo the PDO proxy
    * @param delegate the domain delegate implementation

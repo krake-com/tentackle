@@ -38,10 +38,17 @@ public abstract class NumberStringTranslator<M extends Number> extends ValueStri
 
   private static final String DIGITS = "0123456789";
 
-  protected String pattern;             // the cached pattern
-  protected DecimalFormat format;       // the cached format
-  protected String signedValidChars;    // cached valid chars for signed numbers
-  protected String unsignedValidChars;  // cached valid chars for unsigned numbers
+  /** The cached pattern. */
+  protected String pattern;
+
+  /** The cached format. */
+  protected DecimalFormat format;
+
+  /** Cached valid chars for signed numbers. */
+  protected String signedValidChars;
+
+  /** Cached valid chars for unsigned numbers. */
+  protected String unsignedValidChars;
 
 
   /**
@@ -71,7 +78,9 @@ public abstract class NumberStringTranslator<M extends Number> extends ValueStri
 
 
   /**
-   * Gets the decimal format.
+   * Gets the decimal format.<br>
+   * Created from the component's pattern, or the {@linkplain #getDefaultPattern() default pattern},
+   * and the component's scale. The format is re-created if the pattern changes.
    *
    * @return the decimal format
    */
@@ -101,10 +110,12 @@ public abstract class NumberStringTranslator<M extends Number> extends ValueStri
   }
 
   /**
-   * Parses a string to a number.
+   * Parses a string to a number.<br>
+   * On failure, the error and error offset are set in the component.
    *
    * @param s the string
-   * @return the number
+   * @return the number, null if the string is null
+   * @throws FxRuntimeException if parsing failed
    */
   protected Number parse(String s) {
     if (s != null) {

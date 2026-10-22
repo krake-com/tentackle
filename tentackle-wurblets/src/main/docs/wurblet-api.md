@@ -161,7 +161,7 @@ the whole wurbel run:
 ### Locating the target: PDO, operation, interface, class
 
 `getPdoClassName()` figures out which entity the anchor belongs to by inspecting the parsed Java source, trying
-four strategies in order and caching the outcome:
+the strategies below in order and caching the outcome:
 
 | # | Source evidence                                                                                                                              | Result                                                                 |
 |---|----------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
@@ -171,7 +171,7 @@ four strategies in order and caching the outcome:
 | 4 | A class definition, e.g. `extends AbstractPersistentObject<Adresse, AdressePersistenceImpl>` or a generified `<T extends UmzugsListe<T>, …>` | the first type argument / the bound of `T`, `isPdo = true`             |
 | 5 | Fallback: the interface name itself (manually implemented PDOs, TT1 migrations)                                                              | the interface name; `isPdo` remains `false`                            |
 
-If none matches, a `WurbelException` is thrown. Two consequences are worth remembering when writing a template:
+If not even an interface name is available, a `WurbelException` is thrown. Two consequences are worth remembering when writing a template:
 
 - **Operations are not PDOs here.** For an operation, `isOperation()` is `true` while `isPdo()` is `false`.
 - **`isOperation()` and `isInterface()` are side effects.** Both fields are only assigned inside
@@ -296,7 +296,9 @@ inheritance prefix).
 ### The `Property` inner class
 
 Each property's *prefix* is everything before the first character that can start a Java identifier, so prefixes
-combine freely and order does not matter (`+!Foo bar` is the same as `!+Foo bar`).
+combine freely and order does not matter (`+!Foo bar` is the same as `!+Foo bar`). In record mode a `Property` is
+built from each `RecordDTOInfoParameter` with an empty comment, so it gets the default comment
+`the <name> property`, no annotations and `PUBLIC` scope, plus the `+` prefix when `--from`/`--with` is set.
 
 | Prefix | Field set                  | Meaning                                                             |
 |--------|----------------------------|---------------------------------------------------------------------|
@@ -344,7 +346,7 @@ Derived names the template uses directly:
 | `--validate[=<code>]`           | `validate`                         | Validate after construction. Defaults to `ValidationUtilities.getInstance().validate(this)`; rejected for records. See [validation](../../../../tentackle-core/src/main/docs/validation.md). |
 | `--names`                       | `withNames`                        | Emit the `PN_*` constants.                                                                                                                                                                   |
 | `--canonical`                   | `canonical`                        | Emit `@Canonical*` annotations for [TRIP](../../../../tentackle-core/src/main/docs/trip.md).                                                                                                 |
-| `--nofinal`                     | `noFinal`                          | Serialization-friendly non-final fields (JEP-500).                                                                                                                                           |
+| `--nofinal`                     | `noFinal`                          | Serialization-friendly non-final fields plus a `protected` no-args constructor (JEP-500). Not rejected for records, but the constructor does not compile there.                             |
 | `--nott`                        | `nott`                             | No Tentackle dependency in the generated code. **Mutually exclusive with `--canonical`.**                                                                                                    |
 
 `needConstructor` is set as soon as any property is immutable.
@@ -686,6 +688,24 @@ Three wurbelizer exception types are used deliberately and mean different things
 
 `ModelException`s from the model API are consistently wrapped into `WurbelException` with a message naming the
 offending attribute, relation or datatype.
+
+---
+
+## Thread Safety
+
+`ModelWurblet`, `DTOWurblet`, `IncludeWurblet` and the `Inject` wurblet override `Wurblet.isThreadSafe()` with
+`WurbletThreadSafety.isIsolated(getClass())`. It returns `true` only if the wurblet class was loaded by the
+wurblet classloader of the current wurbel run (`WurbelContext.current().getWurbletClassLoader()`). That is the
+case when the wurblets are declared as `<wurbletDependencies>` of the `wurbelizer-maven-plugin`, which creates a
+separate class realm for each execution. The realm holds its own copies of the realm-wide singletons that are
+not thread-safe: the `Model` of `Model.getInstance()`/`ModelManager`, the package cache of
+`determinePackageName`, `JoinPathFactory`, `BackendFactory`, `NamingRules` and Tentackle's `Settings`. If the
+wurblets are loaded by the plugin's classloader instead, those singletons are shared by all concurrent
+executions, and the wurblets run sequentially.
+
+Custom wurblets extending one of these base classes inherit this behavior. They must not keep mutable state
+outside their classloader, for example in system properties or in classes of the wurbelizer core. Otherwise,
+override `isThreadSafe()` to return `false`. See [Parallel builds](wurblets.md#parallel-builds).
 
 ---
 

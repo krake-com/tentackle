@@ -36,6 +36,10 @@ import java.util.function.Function;
 
 /**
  * Default compound value factory for validators.
+ * <p>
+ * All compound values are created cached and thread-safe. Scripts of the {@code value} and {@code condition}
+ * parameters are translated by the {@link ValidationScriptConverter}s, scripts of the {@code message} parameter
+ * by the {@link MessageScriptConverter}s, both selected by the scripting language.
  */
 @Service(ValidatorCompoundValueFactory.class)
 public class DefaultValidatorCompoundValueFactory implements ValidatorCompoundValueFactory {
@@ -47,6 +51,12 @@ public class DefaultValidatorCompoundValueFactory implements ValidatorCompoundVa
   private final Map<String, ScriptConverter> validationConverterMap;
 
 
+  /**
+   * Creates the factory.<br>
+   * Loads the message and validation script converters.
+   *
+   * @throws ValidationRuntimeException if a script converter could not be instantiated
+   */
   public DefaultValidatorCompoundValueFactory() {
     // load message converters
     messageConverterMap = new HashMap<>();
@@ -58,7 +68,7 @@ public class DefaultValidatorCompoundValueFactory implements ValidatorCompoundVa
         messageConverterMap.put(language, converter);
       }
       catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
-          NoSuchMethodException | SecurityException | InvocationTargetException ex) {
+          NoSuchMethodException | InvocationTargetException ex) {
         throw new ValidationRuntimeException("message script converter configuration failed", ex);
       }
     }
@@ -73,7 +83,7 @@ public class DefaultValidatorCompoundValueFactory implements ValidatorCompoundVa
         validationConverterMap.put(language, converter);
       }
       catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
-          NoSuchMethodException | SecurityException | InvocationTargetException ex) {
+          NoSuchMethodException | InvocationTargetException ex) {
         throw new ValidationRuntimeException("validation script converter configuration failed", ex);
       }
     }
@@ -109,7 +119,7 @@ public class DefaultValidatorCompoundValueFactory implements ValidatorCompoundVa
 
   /**
    * Creates a compound value.<br>
-   * The created compound value is always created as cached and threadsafe execution required.
+   * The compound value is always created cached and for thread-safe execution.
    *
    * @param value the string value
    * @param clazz the class of the value

@@ -36,10 +36,24 @@
       <artifactId>postgresql</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <!--
+        The wurblets are referenced only in the wurbelizer configuration, which Maven ignores
+        when sorting the reactor. This adds the missing edge for parallel builds (-T), without
+        putting the wurblets on the classpath.
+      -->
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-persistence-wurblets</artifactId>
+      <version>${project.version}</version>
+      <type>pom</type>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
 
   <properties>
     <rootBasedir>${project.parent.basedir}</rootBasedir>
+    <!-- the tests that need a real PostgreSQL server, see the postgres profile -->
+    <excludedTestGroups>postgres</excludedTestGroups>
   </properties>
 
   <build>
@@ -224,8 +238,30 @@
         </configuration>
       </plugin>
 
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <excludedGroups>${excludedTestGroups}</excludedGroups>
+        </configuration>
+      </plugin>
+
     </plugins>
 
   </build>
+
+  <profiles>
+    <profile>
+      <!--
+        Additionally run the tests that need a real PostgreSQL server.
+        The database is configured by the dbUrl/dbUser/dbPasswd properties,
+        filtered into src/test/filtered-resources/postgres.properties.
+      -->
+      <id>postgres</id>
+      <properties>
+        <excludedTestGroups/>
+      </properties>
+    </profile>
+  </profiles>
 
 </project>

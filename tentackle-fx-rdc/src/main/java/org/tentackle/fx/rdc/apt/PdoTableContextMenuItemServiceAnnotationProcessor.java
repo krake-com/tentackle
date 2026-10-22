@@ -33,7 +33,8 @@ import java.util.List;
 
 /**
  * Annotation processor for the {@code @PdoTableContextMenuItemService} annotation.<br>
- * Enforces the implementation of the following constructors:
+ * Verifies that the annotated class implements {@code PdoTableContextMenuItem} and
+ * enforces the implementation of the following constructors:
  *
  * <ul>
  *   <li>({@link PdoTableCell})</li>

@@ -69,7 +69,7 @@ import java.util.List;
  * Tenant -&gt; FiscalYear -&gt; Book.
  * </pre>
  * <p>
- * The domain model supports multi-tenancy by means of the option {@code CONTEXT}.
+ * The domain model supports multi-tenancy by means of the attribute option {@code context}.
  * When generating the finders, the {@code WHERE}-clause is automatically {@code AND}ed with the context column
  * using the value from the domain context.
  * <p>
@@ -84,6 +84,7 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    * Clones this context.
    * <p>
    * The clone gets the root entity and sessionImmutable cleared.
+   *
    * @return the context's clone
    */
   DomainContext clone();
@@ -92,6 +93,8 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    * Clones this context for another session.
    * <p>
    * The clone gets the root entity and sessionImmutable cleared.
+   *
+   * @param session the session, null if thread-local
    * @return the context's clone
    */
   DomainContext clone(Session session);
@@ -114,6 +117,7 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    *
    * @param name the name of the new context
    * @return the context's clone
+   * @throws DomainException if the name is illegal or already within this context
    */
   DomainContext clone(String name);
 
@@ -123,6 +127,7 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    *
    * @param name the name of the new context
    * @return the context's clone
+   * @throws DomainException if the name is illegal or already within this context
    */
   DomainContext cloneKeepRoot(String name);
 
@@ -193,7 +198,7 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    * security rule applies to a given context. Note that contextClassId is the
    * class id of the context object's class.
    * <p>
-   * The default implementation returns {@code contextId &lt; 0 || contextId == getContextId()}.<br>
+   * The default implementation returns {@code contextId < 0 || contextId == getContextId()}.<br>
    * This is enough for zero or one levels of context inheritance. For more than one
    * level this method must be overridden in each level. Example:
    * <pre>
@@ -211,7 +216,7 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    *  }
    * </pre>
    *
-   * @param contextId the object ID of a context object, 0 = default context
+   * @param contextId the object ID of a context object, 0 = default context, negative = any context
    * @param contextClassId the class id of the context object, 0 = default context
    * @return true if within that context, false if context does not apply
    */
@@ -232,7 +237,7 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    * <p>
    * Use this for logging as it will not invoke methods on other objects.
    *
-   * @return the String as <code>Classname[contextId]</code>
+   * @return the colon-separated context names, followed by <code>[contextId]</code> if the context ID is not 0
    */
   String toGenericString();
 
@@ -265,7 +270,8 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    * Gets a domain context which does not belong to a root entity.<br>
    * This is the original context the root-context has been cloned from.
    *
-   * @return the non-root context
+   * @return the non-root context, this context if it is not a root context
+   * @throws PersistenceException if the context is a root context without a non-root context
    */
   DomainContext getNonRootContext();
 

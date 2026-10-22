@@ -40,7 +40,7 @@ public interface TableCellType<T> {
    * or the spreadsheet export.<br>
    * Implementations rendering a graphic only should return a textual representation, nevertheless.
    *
-   * @param columnConfiguration the column configuration providing the format, case conversion, etc...
+   * @param columnConfiguration the column configuration providing the format, case conversion, etc.
    * @param item the item, never null
    * @return the displayed text, null if none
    */
@@ -62,7 +62,7 @@ public interface TableCellType<T> {
   }
 
   /**
-   * Updates the table cells view.
+   * Updates the table cell's view.
    *
    * @param tableCell the table cell, never null
    * @param item the item for the cell, never null
@@ -70,15 +70,16 @@ public interface TableCellType<T> {
   void updateItem(FxTableCell<?,T> tableCell, T item);
 
   /**
-   * Updates the treetable cells view.
+   * Updates the treetable cell's view.
    *
-   * @param treeTableCell the table cell, never null
+   * @param treeTableCell the treetable cell, never null
    * @param item the item for the cell, never null
    */
   void updateItem(FxTreeTableCell<?,T> treeTableCell, T item);
 
   /**
-   * Gets the editor component.
+   * Gets the editor component.<br>
+   * Used unless the column configuration provides an editor.
    *
    * @return the editor component, never null
    */

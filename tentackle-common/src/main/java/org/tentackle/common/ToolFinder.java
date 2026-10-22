@@ -43,15 +43,16 @@ public class ToolFinder {
   /**
    * Finds the file of a tool's executable.
    * <p>
-   * If the tool name does not point to a valid executable,
-   * the environment's PATH variable is consulted.
+   * If the tool name does not point to a valid executable and is just a name
+   * (i.e., contains no path separator), the environment's PATH variable is consulted.
+   * For each directory in PATH, it will also try to append well-known suffixes to the toolName,
+   * depending on the OS. Windows: ".exe", ".cmd" and ".bat". Others (Unixes): ".sh".
    * <p>
-   * Depending on the OS, it will also try to append well-known suffixes to the toolName.
-   * Windows: ".exe", ".cmd" and ".bat".
-   * Others (Unixes): ".sh".
+   * If the tool name contains a path, it is returned as is, even if it is not executable or does not exist.
    *
    * @param toolName the platform independent tool name
-   * @return file representing the tool's executable, or null if the tool can not be found
+   * @return file representing the tool's executable, or null if the tool name has no path
+   *         and the tool cannot be found along the PATH
    */
   public File find(String toolName) {
     File file = new File(toolName);
@@ -59,7 +60,7 @@ public class ToolFinder {
       file = null;
       // (!exists || !executable) && just a name without relative or absolute path prepended
       // try along the PATH
-      String path = System.getenv("PATH");    // same name for unixes and windozes
+      String path = System.getenv("PATH");    // same name for Unix and Windows
       if (path != null) {
         StringTokenizer stok = new StringTokenizer(path, File.pathSeparator);
         while (file == null && stok.hasMoreTokens()) {
@@ -74,7 +75,7 @@ public class ToolFinder {
 
   /**
    * Loads a tool by its name.<br>
-   * Tries OS specific suffixes.
+   * Tries OS-specific suffixes.
    *
    * @param toolDir the directory of the tool
    * @param toolName the tool's name

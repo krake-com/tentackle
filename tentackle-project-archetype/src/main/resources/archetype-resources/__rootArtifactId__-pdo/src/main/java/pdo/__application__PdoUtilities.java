@@ -18,12 +18,14 @@ import org.tentackle.pdo.PdoUtilities;
 public class ${application}PdoUtilities extends PdoUtilities {
 
   @Override
+  @SuppressWarnings("bundle")
   public String getSingular(Class<?> clazz) {
     String singular = super.getSingular(clazz);
     return singular == null ? null : PdoBundle.getString(singular);
   }
 
   @Override
+  @SuppressWarnings("bundle")
   public String getPlural(Class<?> clazz) {
     String plural = super.getPlural(clazz);
     return plural == null ? null : PdoBundle.getString(plural);

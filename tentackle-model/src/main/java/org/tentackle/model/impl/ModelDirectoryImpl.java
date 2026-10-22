@@ -19,8 +19,6 @@
 
 package org.tentackle.model.impl;
 
-import org.tentackle.model.EntityAliases;
-import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelDirectory;
 import org.tentackle.model.ModelException;
 
@@ -40,8 +38,6 @@ public class ModelDirectoryImpl implements ModelDirectory {
 
   private final File dir;                       // the directory file
   private final String path;                    // canonical path
-  private final ModelDefaults modelDefaults;    // the model defaults used for that directory
-  private final EntityAliases entityAliases;    // the aliases used for that directory
   private long lastModified;                    // the last modification time
 
 
@@ -49,11 +45,9 @@ public class ModelDirectoryImpl implements ModelDirectory {
    * Creates a model directory object.
    *
    * @param modelDir the directory name
-   * @param defaults optional model defaults, null if none
-   * @param aliases optional entity aliases, null if none
-   * @throws ModelException if directory does not exist or is not a directory
+   * @throws ModelException if the directory does not exist or is not a directory
    */
-  public ModelDirectoryImpl(String modelDir, ModelDefaults defaults, EntityAliases aliases) throws ModelException {
+  public ModelDirectoryImpl(String modelDir) throws ModelException {
     dir = new File(modelDir);
     if (!dir.exists()) {
       throw new ModelException(modelDir + " does not exist");
@@ -68,8 +62,6 @@ public class ModelDirectoryImpl implements ModelDirectory {
       throw new ModelException("cannot determine path of model directory " + dir, e);
     }
     lastModified = dir.lastModified();
-    modelDefaults = defaults;
-    entityAliases = aliases;
   }
 
   @Override
@@ -88,22 +80,12 @@ public class ModelDirectoryImpl implements ModelDirectory {
             paths.add(new File(path, file.getName()).toURI().toURL());
           }
           catch (MalformedURLException e) {
-            throw new ModelException("cannot convert file '" + file + " to URL", e);
+            throw new ModelException("cannot convert file '" + file + "' to URL", e);
           }
         }
       }
     }
     return paths;
-  }
-
-  @Override
-  public ModelDefaults getModelDefaults() {
-    return modelDefaults;
-  }
-
-  @Override
-  public EntityAliases getEntityAliases() {
-    return entityAliases;
   }
 
   @Override

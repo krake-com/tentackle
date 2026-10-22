@@ -4,6 +4,9 @@
 
 package ${persistenceImplPackage};
 
+<#if superPersistenceImplementationPackage != "" && superPersistenceImplementationPackage != persistenceImplPackage>
+import ${superPersistenceImplementationPackage}.${superPersistenceImplementation};
+</#if>
 import ${operationPackage}.${operationInterface};
 <#if persistencePackage != persistenceImplPackage>
 import ${persistencePackage}.${persistenceInterface};

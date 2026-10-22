@@ -39,7 +39,7 @@ import java.lang.annotation.Target;
 public @interface ValidationSeverityService {
 
   /**
-   * Determines the validation severity interface.<br>
+   * Determines the validation severity interface.
    *
    * @return the interface
    */

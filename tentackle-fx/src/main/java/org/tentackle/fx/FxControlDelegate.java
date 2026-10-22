@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * Base implementation for all fx delegates.
+ * Base implementation for all FX delegates.
  *
  * @author harald
  */
@@ -228,7 +228,8 @@ public abstract class FxControlDelegate implements FxControl {
   }
 
   /**
-   * Fires all model-to-view listeners.
+   * Fires all model-to-view listeners.<br>
+   * Continues with the listeners of the parent container, if any.
    */
   public void fireModelToViewListeners() {
     if (modelToViewListeners != null) {
@@ -255,7 +256,8 @@ public abstract class FxControlDelegate implements FxControl {
   }
 
   /**
-   * Fires all model-to-view listeners.
+   * Fires all view-to-model listeners.<br>
+   * Continues with the listeners of the parent container, if any.
    */
   public void fireViewToModelListeners() {
     if (viewToModelListeners != null) {

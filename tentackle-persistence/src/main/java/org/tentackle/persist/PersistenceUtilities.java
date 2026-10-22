@@ -63,6 +63,11 @@ public class PersistenceUtilities extends DbUtilities {
     // see -Xlint:missing-explicit-ctor since Java 16
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to create PDOs.
+   */
   @Override
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public <T> T createObject(Class<T> clazz) {
@@ -77,6 +82,11 @@ public class PersistenceUtilities extends DbUtilities {
     return obj;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to select PDOs. The PDO's domain context is replaced by its valid context.
+   */
   @Override
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public <T> T selectObject(Session session, Class<T> clazz, long objectId, boolean loadLazyReferences) {
@@ -98,6 +108,11 @@ public class PersistenceUtilities extends DbUtilities {
     return obj;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to take the table of the topmost superclass providing its own table into account.
+   */
   @Override
   public String determineTableSerialTableName(DbObjectClassVariables<?> clazzVar) {
     try {
@@ -123,6 +138,11 @@ public class PersistenceUtilities extends DbUtilities {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to use the connection manager of the application, if it is a {@link ConnectionManagerProvider}.
+   */
   @Override
   public ConnectionManager getDefaultConnectionManager() {
     ConnectionManager manager = null;
@@ -136,6 +156,11 @@ public class PersistenceUtilities extends DbUtilities {
     return manager;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to use the application, if it is a {@link SessionPoolProvider}.
+   */
   @Override
   public SessionPoolProvider getSessionPoolProvider() {
     Application application = Application.getInstance();
@@ -145,24 +170,45 @@ public class PersistenceUtilities extends DbUtilities {
     return super.getSessionPoolProvider();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to determine the PDO or operation interface via {@link PdoUtilities}.
+   */
   @Override
   public Class<?> getServicedClass(Class<?> implementingClass) {
     return PdoUtilities.getInstance().determineServicedClass(implementingClass);
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to release the user's token locks via the {@link LockManager},
+   * unless the session's token locks should linger.
+   */
   @Override
   public void cleanupRemoteSession(RemoteDbSessionImpl remoteSession) {
-    if (!remoteSession.getClientSessionInfo().isLockLingerEnabled()) {   // clean up tokens only once for the main session
+    if (!remoteSession.getClientSessionInfo().isLockLingerEnabled()) {   // skip sessions with lock linger enabled (e.g. cloned sessions)
       LockManager.getInstance().cleanupUserTokens(remoteSession.getSession(), remoteSession.getClientSessionInfo().getUserId());
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to notify the {@link LockManager}.
+   */
   @Override
   public void notifyRollback(Db session, long txNumber) {
     super.notifyRollback(session, txNumber);
     LockManager.getInstance().rollback(session, txNumber);
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to notify the {@link LockManager}.
+   */
   @Override
   public void notifyCommit(Db session, long txNumber) {
     super.notifyCommit(session, txNumber);
@@ -185,9 +231,13 @@ public class PersistenceUtilities extends DbUtilities {
   }
 
   /**
-   * Gets the caches to preload the PDOs for.
+   * Gets the caches to preload the PDOs for.<br>
+   * Instantiates the persistence classes returned by {@link #getPreloadCacheClassNames()}
+   * and collects their caches. Disabled caches are skipped. Caches that are not preloading
+   * and read-only are skipped with a warning.
    *
    * @return the caches, never null
+   * @throws PersistenceException if a persistence class cannot be instantiated
    */
   public List<PdoCache<? extends PersistentDomainObject<?>>> getPreloadingCaches() {
     List<PdoCache<? extends PersistentDomainObject<?>>> caches = new ArrayList<>();
@@ -207,7 +257,7 @@ public class PersistenceUtilities extends DbUtilities {
           }
         }
         else {
-          LOGGER.warning("{0} is not a preloading, read-only cache -> please remove @PreloadCache!", cache);
+          LOGGER.warning("{0} is not a preloading read-only cache -> please remove @PreloadCache!", cache);
         }
       }
       catch (InstantiationException | ClassNotFoundException | IllegalAccessException |

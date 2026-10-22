@@ -21,7 +21,8 @@ package org.tentackle.validate.scope;
 import org.tentackle.validate.ValidationScopeService;
 
 /**
- * Default scope default implementation.
+ * All scope default implementation.<br>
+ * Applies to all scopes.
  *
  * @author harald
  */

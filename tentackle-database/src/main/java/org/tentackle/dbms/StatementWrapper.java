@@ -43,13 +43,21 @@ public class StatementWrapper implements AutoCloseable {
   protected final ManagedConnection con;
 
   /** the sql statement, null if closed. */
-  protected Statement stmt;
+  protected volatile Statement stmt;
 
   /** the SQL string. */
   protected String sql;
 
   /** flag if the statement is marked ready for being consumed. */
   protected boolean ready;
+
+  /**
+   * The session that marked this statement ready, null if consumed.<br>
+   * The connection may be force-detached and attached to another session while the statement is in use,
+   * so the session cannot be determined from the connection.
+   * Guarded by the monitor of this statement.
+   */
+  private Db readySession;
 
   /** flag if the statement is currently running. */
   protected boolean running;
@@ -98,17 +106,17 @@ public class StatementWrapper implements AutoCloseable {
   }
 
   /**
-   * Returns whether parallel execution on the same connection should be logged.
+   * Returns whether parallel execution on the same connection is ok and thus should not be logged.
    *
+   * @return true if parallel select is ok
    * @see ManagedConnection#getLogLevelForParallelOpenResultSets()
-   * @return true if parallel is select ok
    */
   public boolean isParallelOk() {
     return parallelOk;
   }
 
   /**
-   * Sets whether parallel execution on the same connection should be logged.<br>
+   * Sets whether parallel execution on the same connection is ok and thus should not be logged.<br>
    * Multiple open result sets on a single connection usually mean that
    * other selects are submitted while processing the result set. Under rare conditions
    * this might be ok, but usually it's not.
@@ -166,6 +174,46 @@ public class StatementWrapper implements AutoCloseable {
   }
 
   /**
+   * Gets the session using this statement.<br>
+   * Same as {@link #getExecutingSession()}, but does not check the attachment.
+   *
+   * @return the session that marked this statement ready, else the attached session, null if not attached
+   */
+  protected Db getUsingSession() {
+    synchronized (this) {
+      if (readySession != null) {
+        return readySession;
+      }
+    }
+    return con.getSession();
+  }
+
+  /**
+   * Gets the session executing this statement.<br>
+   * This is the session that marked the statement ready, or the attached session if not marked ready.
+   * <p>
+   * The connection may have been force-detached from that session (for example, by the attach timeout)
+   * and attached to another session meanwhile. The statement must not be used by or on behalf of
+   * that other session, hence this is checked.
+   *
+   * @return the session, never null
+   * @throws PersistenceException if the connection is no longer attached to the session
+   */
+  public Db getExecutingSession() {
+    Db db;
+    synchronized (this) {
+      db = readySession;
+    }
+    if (db == null) {
+      return getAttachedSession();
+    }
+    if (con.getSession() != db) {
+      throw new PersistenceException(db, "connection " + con + " has been force-detached from statement " + this);
+    }
+    return db;
+  }
+
+  /**
    * Marks the statement to be ready for being consumed by a {@link Db} attached
    * to a {@link ConnectionManager}.<br>
    * This is an additional measure to enforce the programming rule that
@@ -186,35 +234,63 @@ public class StatementWrapper implements AutoCloseable {
    * JDBC-driver on the next usage of the first result set, and you wouldn't have any clue which
    * result set forced the closing.
    */
-  public synchronized void markReady() {
-    if (isMarkedReady()) {
-      String msg = "statement " + this + " marked ready and not consumed yet";
-      Db session = con.getSession();
-      forceDetached();
-      throw new PersistenceException(session, msg);
+  public void markReady() {
+    String msg;
+    Db session;
+    synchronized (this) {
+      if (!ready) {
+        ready = true;
+        canceled = false;
+        readySession = con.getSession();
+        return;
+      }
+      if (isMarkReadyAgainAllowed()) {
+        return;
+      }
+      msg = "statement " + this + " marked ready and not consumed yet";
+      session = con.getSession();
     }
-    ready = true;
-    canceled = false;
+    // not within the monitor: see forceDetached()
+    forceDetached();
+    throw new PersistenceException(session, msg);
   }
 
   /**
    * Un-marks (consumes) this statement previously marked ready.
    */
-  public synchronized void unmarkReady() {
-    if (!isClosed() && !isMarkedReady()) {
-      String msg = "statement " + this + " already consumed";
-      Db session = con.getSession();
-      forceDetached();
-      throw new PersistenceException(session, msg);
+  public void unmarkReady() {
+    String msg;
+    Db session;
+    synchronized (this) {
+      if (isClosed() || ready) {
+        ready = false;
+        readySession = null;    // don't keep the session from being garbage collected
+        setRunning(false);
+        return;
+      }
+      msg = "statement " + this + " already consumed";
+      session = con.getSession();
     }
-    ready = false;
-    setRunning(false);
+    // not within the monitor: see forceDetached()
+    forceDetached();
+    throw new PersistenceException(session, msg);
+  }
+
+  /**
+   * Returns whether marking this statement ready again while not consumed yet is allowed.<br>
+   * Invoked by {@link #markReady()} with the monitor held.
+   *
+   * @return true if allowed, false if a programming error (default)
+   */
+  protected boolean isMarkReadyAgainAllowed() {
+    return false;
   }
 
   /**
    * Returns whether this statement is marked ready.<br>
    * Used to determine unused pending statements in servers when closing
    * dead sessions.
+   *
    * @return true if pending
    */
   public synchronized boolean isMarkedReady() {
@@ -222,13 +298,14 @@ public class StatementWrapper implements AutoCloseable {
   }
 
   /**
-   * Consume a statement without executing it.<br>
+   * Consumes a statement without executing it.<br>
    * The method is invoked if a rollback is performed before consuming the statement.
    */
   public void consume() {
     LOGGER.fine("statement {0} consumed", this);
+    Db db = getUsingSession();
     unmarkReady(); // check for being marked ready and mark consumed
-    detachSession();
+    detachSession(db);
   }
 
   /**
@@ -270,8 +347,10 @@ public class StatementWrapper implements AutoCloseable {
    * @return the row count
    */
   public int executeUpdate(String sql) {
+    // the session executing this statement: the connection may be force-detached and attached to another session meanwhile
+    Db db = getExecutingSession();
     if (sql != null) {
-      getSession().executeBatch();    // not a batchable statement -> flush batch
+      db.executeBatch();    // not a batchable statement -> flush batch
     }
     LOGGER.finer("execute update {0} = {1}", this, sql);
     try {
@@ -279,25 +358,30 @@ public class StatementWrapper implements AutoCloseable {
       assertOpen();
       assertNotReadOnly();
       unmarkReady(); // check for being marked ready and mark it consumed again
-      Db db = getAttachedSession();
       db.setAlive(true);
       setRunning(true);
       StatementHistory history = con.logStatementHistory(this, sql);
-      int count = executeUpdateImpl(sql);
+      int count;
+      con.enterExecution(db, this);   // rejected if force-detached meanwhile
+      try {
+        count = executeUpdateImpl(sql);
+      }
+      finally {
+        con.exitExecution();
+      }
       history.end();
       return count;
     }
     catch (SQLException e)  {
-      Db db = getAttachedSession();
       boolean dead = con.checkForDeadLink(e);
       if (!dead && db.getBackend().isConstraintException(e)) {
         throw new ConstraintException(db, this.toString(), e);
       }
-      throw con.createFromSqlException(this.toString(), e);
+      throw con.createFromSqlException(db, this.toString(), e);
     }
     finally {
       setRunning(false);
-      detachSession();
+      detachSession(db);
     }
   }
 
@@ -346,33 +430,40 @@ public class StatementWrapper implements AutoCloseable {
    */
   public int[] executeBatch(boolean finish) {
     LOGGER.finer("execute batch {0} = {1}", this, sql);
+    // the session executing this statement: the connection may be force-detached and attached to another session meanwhile
+    Db db = getExecutingSession();
     try {
       con.countForClearWarnings();
       assertOpen();
       assertNotReadOnly();
       unmarkReady(); // check for being marked ready and mark it consumed again
-      Db db = getAttachedSession();
       db.setAlive(true);
       setRunning(true);
       StatementHistory history = con.logStatementHistory(this, sql);
-      int[] count = stmt.executeBatch();
+      int[] count;
+      con.enterExecution(db, this);   // rejected if force-detached meanwhile
+      try {
+        count = stmt.executeBatch();
+      }
+      finally {
+        con.exitExecution();
+      }
       history.end();
       return count;
     }
     catch (SQLException e)  {
-      Db db = getAttachedSession();
       boolean dead = con.checkForDeadLink(e);
       if (!dead && db.getBackend().isConstraintException(e)) {
         throw new ConstraintException(db, this.toString(), e);
       }
-      throw con.createFromSqlException(this.toString(), e);
+      throw con.createFromSqlException(db, this.toString(), e);
     }
     finally {
       setRunning(false);
       if (finish) {
-        detachSession();
+        detachSession(db);
       }
-      else {
+      else if (con.getSession() == db) {    // not if force-detached: the statement must not stay ready for another session
         markReady();
       }
     }
@@ -382,13 +473,14 @@ public class StatementWrapper implements AutoCloseable {
    * Executes a query.
    *
    * @param sql is the query SQL string
-   * @param withinTx is true if start a transaction for this query.
-   *
+   * @param withinTx true to run the query within a transaction, committed when the result set is closed
    * @return the result set as a ResultSetWrapper
    */
   public ResultSetWrapper executeQuery (String sql, boolean withinTx) {
 
-    getSession().executeBatch();    // not a batchable statement -> flush batch
+    // the session executing this statement: the connection may be force-detached and attached to another session meanwhile
+    Db db = getExecutingSession();
+    db.executeBatch();    // not a batchable statement -> flush batch
 
     LOGGER.finer("execute query {0} = {1}", this, sql);
     long txVoucher = 0;
@@ -396,15 +488,37 @@ public class StatementWrapper implements AutoCloseable {
     try {
       con.countForClearWarnings();
       assertOpen();
-      Db db = getAttachedSession();
       db.setAlive(true);
       setRunning(true);   // will be cleared when the result set is closed
       if (withinTx) {
         txVoucher = db.begin("executeQuery");
-        // returns true if autocommit on, i.e., we were not within a transaction, and begin() started a new one.
+        // voucher != 0 if we were not within a transaction and begin() started a new one
       }
       StatementHistory history = con.logStatementHistory(this, sql);
-      ResultSetWrapper resultSet = createResultSetWrapper(history, executeQueryImpl(sql));
+      try {
+        con.enterExecution(db, this);
+      }
+      catch (PersistenceException px) {
+        // force-detached meanwhile: the statement must not be executed on behalf of another session
+        setRunning(false);
+        if (txVoucher != 0) {
+          try {
+            db.rollback(txVoucher);   // already rolled back physically by the forced detach
+          }
+          catch (RuntimeException rex) {
+            px.addSuppressed(rex);
+          }
+        }
+        throw px;
+      }
+      ResultSet jdbcResultSet;
+      try {
+        jdbcResultSet = executeQueryImpl(sql);
+      }
+      finally {
+        con.exitExecution();
+      }
+      ResultSetWrapper resultSet = createResultSetWrapper(history, jdbcResultSet);
       history.end();
       if (withinTx) {
         resultSet.setCommitOnCloseVoucher(true, txVoucher);  // commit tx on closing the resultset
@@ -412,7 +526,6 @@ public class StatementWrapper implements AutoCloseable {
       return resultSet;
     }
     catch (SQLException e)  {
-      Db db = getAttachedSession();
       boolean dead = con.checkForDeadLink(e);
       if (withinTx && !dead) {
         try {
@@ -420,7 +533,7 @@ public class StatementWrapper implements AutoCloseable {
         }
         catch (RuntimeException rex) {
           // just log
-          LOGGER.severe("statement failed", e);
+          LOGGER.severe("rollback failed", rex);
         }
       }
       else  {
@@ -430,10 +543,10 @@ public class StatementWrapper implements AutoCloseable {
         }
         catch (RuntimeException rex) {
           // just log
-          LOGGER.severe("detach failed", e);
+          LOGGER.severe("detach failed", rex);
         }
       }
-      throw con.createFromSqlException(this.toString(), e);
+      throw con.createFromSqlException(db, this.toString(), e);
     }
   }
 
@@ -491,10 +604,19 @@ public class StatementWrapper implements AutoCloseable {
   public void close ()  {
     final Statement st = stmt;    // local copy in case of race-condition
     if (st != null) {
+      Db unconsumedSession = null;    // session to detach, if a one-shot statement is closed without being consumed
       try {
-        if (isMarkedReady()) {
-          LOGGER.warning("statement " + this + " not consumed -> cleanup");
-          ready = false;
+        synchronized (this) {
+          if (ready) {
+            LOGGER.warning("statement " + this + " not consumed -> cleanup");
+            ready = false;
+            if (isOneShot()) {
+              // e.g., applying the parameters failed: the attachment of Db#createStatement or
+              // Db#createPreparedStatement would otherwise never be released
+              unconsumedSession = readySession;
+            }
+          }
+          // readySession is kept: if force-detached, it tells the session that used this statement
         }
         st.close();   // closing an already closed statement is ok
       }
@@ -502,6 +624,9 @@ public class StatementWrapper implements AutoCloseable {
         throw new PersistenceException(getSession(), toString(), sqx);
       }
       finally {
+        // not within the monitor, as with consume()
+        detachSession(unconsumedSession);
+
         stmt = null;  // this marks it closed!
         stackTrace = null;
         final WeakReference<ResultSetWrapper> ref = openResultSet;    // local copy in case of race-condition
@@ -661,20 +786,42 @@ public class StatementWrapper implements AutoCloseable {
 
 
   /**
-   * Detach the session from the connection.<br>
+   * Detaches the session from the connection.<br>
    * Statements detach the session on executeUpdate or
    * on close() in the {@link ResultSetWrapper} after executeQuery.
    */
   protected void detachSession() {
-    Db db = con.getSession();
-    if (db != null) {
-      // if not already cleaned up
+    detachSession(con.getSession());
+  }
+
+  /**
+   * Returns whether this is a one-shot statement.<br>
+   * One-shot statements are created and closed by the application, whereas cached statements
+   * are closed by the connection.
+   *
+   * @return true if one-shot (default for non-prepared statements)
+   */
+  protected boolean isOneShot() {
+    return true;
+  }
+
+  /**
+   * Detaches the given session from the connection.<br>
+   * Nothing happens if the session is no longer attached to the connection of this statement.
+   * This is the case if the session was force-detached while the statement was still in use,
+   * and the connection may have been attached to another session in the meantime,
+   * which must not be detached by this statement.
+   *
+   * @param db the session that used this statement, null if already cleaned up
+   */
+  protected void detachSession(Db db) {
+    if (db != null && con.getSession() == db) {
       db.detach();
     }
   }
 
   /**
-   * Implementation of executeUpdate.<br>
+   * Implementation of executeUpdate.
    *
    * @param sql the SQL string
    * @return the number of affected rows
@@ -687,7 +834,7 @@ public class StatementWrapper implements AutoCloseable {
   }
 
   /**
-   * Implementation of executeQuery.<br>
+   * Implementation of executeQuery.
    *
    * @param sql the SQL string
    * @return the result set
@@ -749,7 +896,7 @@ public class StatementWrapper implements AutoCloseable {
   }
 
   /**
-   * Asserts db is writable.
+   * Asserts that the session is writable.
    */
   protected void assertNotReadOnly() {
     Db db = con.getSession();
@@ -765,6 +912,10 @@ public class StatementWrapper implements AutoCloseable {
    * and detach the db after a severe error.
    * This is a cleanup measure in case the application does not handle
    * exceptions properly.
+   * <p>
+   * Must not be invoked with the monitor of this statement held: the connection manager is locked
+   * while the connection cleans up its statements, which acquires their monitors.
+   * Hence, the locking order is connection manager first, then statement.
    */
   protected void forceDetached() {
     try {

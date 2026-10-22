@@ -72,7 +72,7 @@ public interface TableColumnConfiguration<S, T> {
   TableColumnConfiguration<S, T> setDisplayedName(String displayName);
 
   /**
-   * Determines the class for a given column.
+   * Gets the column type.
    *
    * @return the column class
    */
@@ -103,7 +103,7 @@ public interface TableColumnConfiguration<S, T> {
    * Gets the specific table cell type.
    *
    * @return the cell type, null to determine from the column type
-   * @see #getName()
+   * @see #getEffectiveCellType()
    */
   TableCellType<T> getCellType();
 
@@ -194,7 +194,8 @@ public interface TableColumnConfiguration<S, T> {
   TableColumnConfiguration<S, T> setAlignment(Pos alignment);
 
   /**
-   * Defines the {@code blankzero} attribute of the column.
+   * Defines the {@code blankzero} attribute of the column.<br>
+   * Notice that the built-in cell types don't evaluate this attribute.
    *
    * @return true if blank zeros, false if not, null to use default from the editor
    */
@@ -315,6 +316,7 @@ public interface TableColumnConfiguration<S, T> {
 
   /**
    * Determines whether the column is summable.<br>
+   * If not set explicitly, numeric columns are summable.
    *
    * @return true if the column is summable
    */
@@ -365,22 +367,25 @@ public interface TableColumnConfiguration<S, T> {
   /**
    * Returns whether the column is editable.
    *
-   * @return {@link Boolean#TRUE} if editable, {@link Boolean#FALSE} if not, NULL if depends on table configuration
+   * @return {@link Boolean#TRUE} if editable, {@link Boolean#FALSE} if not, NULL if depends on the table configuration's edit handler
    */
   Boolean getEditable();
 
   /**
    * Sets whether the column is editable.
    *
-   * @param editable {@link Boolean#TRUE} if editable, {@link Boolean#FALSE} if not, NULL if depends on table configuration
+   * @param editable {@link Boolean#TRUE} if editable, {@link Boolean#FALSE} if not, NULL if depends on the table configuration's edit handler
    * @return this configuration
    */
   TableColumnConfiguration<S, T> setEditable(Boolean editable);
 
   /**
-   * Returns whether the column is editable.
+   * Returns whether the column is editable.<br>
+   * A column is editable if configured as such. If the table configuration provides an edit handler,
+   * the column is editable unless configured as not editable.
    *
    * @return true if editable, the default is false
+   * @see TableConfiguration#setEditHandler
    */
   boolean isEditable();
 

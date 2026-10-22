@@ -34,6 +34,8 @@ import java.util.Optional;
 
 /**
  * Datatype for {@link Character}.
+ * <p>
+ * The MAPNULL option maps to a blank.
  */
 @Service(DataType.class)
 public sealed class CharacterType extends AbstractDataType<Character> permits CharacterPrimitiveType {

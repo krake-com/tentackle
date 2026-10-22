@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 
+// holder idiom: lazy and thread-safe creation of the singleton
 interface Log4J2MappedDiagnosticContextHolder {
   Log4J2MappedDiagnosticContext INSTANCE = ServiceFactory.createService(
                 Log4J2MappedDiagnosticContext.class, Log4J2MappedDiagnosticContext.class);
@@ -35,7 +36,12 @@ interface Log4J2MappedDiagnosticContextHolder {
 
 
 /**
- * The Log4J mdc implementation.
+ * The mapped diagnostic context for Log4J 2.
+ * <p>
+ * Delegates to Log4J's thread-local {@link ThreadContext}, so the keys can be referenced
+ * in Log4J layout patterns via {@code %X}.<br>
+ * The singleton is created via the {@link ServiceFactory} and can thus be replaced by an
+ * application-specific {@code @Service}.
  *
  * @author harald
  */
@@ -43,7 +49,7 @@ interface Log4J2MappedDiagnosticContextHolder {
 public class Log4J2MappedDiagnosticContext extends AbstractMappedDiagnosticContext {
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */
@@ -79,6 +85,11 @@ public class Log4J2MappedDiagnosticContext extends AbstractMappedDiagnosticConte
     ThreadContext.clearMap();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Log4J returns a copy of the current thread's context.
+   */
   @Override
   public Map<String, String> getContext() {
     Map<String, String> map = ThreadContext.getContext();

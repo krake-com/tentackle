@@ -23,6 +23,7 @@ import org.tentackle.common.Constants;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.reflect.Interceptable;
 import org.tentackle.reflect.Interception.Type;
+import org.tentackle.reflect.NotInterceptable;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -30,10 +31,13 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.NoType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.Kind;
 import java.io.BufferedReader;
@@ -48,6 +52,13 @@ import java.util.Set;
 /**
  * Processor for annotations annotated with {@code @Interception}.<br>
  * Provides annotation checking during compilation and IDE editing.
+ * <p>
+ * The processed annotation types are not discovered via {@code @SupportedAnnotationTypes} but loaded from
+ * {@code META-INF/services/<processor class name>}, one annotation class name per line. The annotations of
+ * the {@link Type} handled by the concrete processor must only be applied to methods of an {@code Interceptable}
+ * interface ({@link Type#PUBLIC}), of a class implementing {@code Interceptable} ({@link Type#HIDDEN}), or of
+ * either ({@link Type#ALL}). In addition, no interception annotation may be applied to a method that overrides
+ * a method marked {@link NotInterceptable}.
  *
  * @author harald
  */
@@ -56,13 +67,16 @@ public abstract class AbstractInterceptorAnnotationProcessor extends AbstractPro
   private final Type type;
   private final Set<String> annotationTypes;
   private Types typeUtils;
+  private Elements elementUtils;
   private SuperTypeVisitor typeVisitor;
 
 
   /**
-   * Creates an interception annotation processor.
+   * Creates an interception annotation processor.<br>
+   * Loads the supported annotation types from the {@code META-INF/services} resource named after the processor class.
    *
    * @param type the interceptor type
+   * @throws TentackleRuntimeException if loading the annotation types failed
    */
   public AbstractInterceptorAnnotationProcessor(Type type) {
     this.type = type;
@@ -84,6 +98,7 @@ public abstract class AbstractInterceptorAnnotationProcessor extends AbstractPro
     super.init(processingEnv);
     typeVisitor = new SuperTypeVisitor(processingEnv, true);
     typeUtils = processingEnv.getTypeUtils();
+    elementUtils = processingEnv.getElementUtils();
   }
 
   @Override
@@ -100,6 +115,8 @@ public abstract class AbstractInterceptorAnnotationProcessor extends AbstractPro
     outer:
     for (Element element : roundEnv.getElementsAnnotatedWith(annotationType)) {
       if (element.getKind().equals(ElementKind.METHOD)) {    // only annotated methods
+
+        checkNotInterceptable(annotationType, (ExecutableElement) element);
 
         Element enclosingElement = element.getEnclosingElement();
         if (type == Type.PUBLIC && enclosingElement.getKind().equals(ElementKind.INTERFACE) ||
@@ -163,6 +180,57 @@ public abstract class AbstractInterceptorAnnotationProcessor extends AbstractPro
                   element);
       }
     }
+  }
+
+
+  /**
+   * Verifies that the annotated method does not override a method marked
+   * {@code @NotInterceptable}, i.e. a method the framework invokes directly,
+   * bypassing the interceptor chain entirely.
+   *
+   * @param annotationType the interception annotation applied to the method
+   * @param method the annotated method
+   */
+  private void checkNotInterceptable(TypeElement annotationType, ExecutableElement method) {
+    ExecutableElement sealed;
+    if (method.getAnnotation(NotInterceptable.class) != null) {
+      sealed = method;    // marked and annotated on the very same declaration
+    }
+    else {
+      TypeElement enclosingType = (TypeElement) method.getEnclosingElement();
+      sealed = findNotInterceptable(method, enclosingType, enclosingType, new HashSet<>());
+    }
+    if (sealed != null) {
+      processingEnv.getMessager().printMessage(
+        Kind.ERROR,
+        "@" + annotationType.getSimpleName() + " cannot be applied to '" + method +
+        "': " + sealed.getEnclosingElement() + "." + sealed +
+        " is @NotInterceptable and is never routed through the interceptor chain",
+        method);
+    }
+  }
+
+  private ExecutableElement findNotInterceptable(ExecutableElement method, TypeElement searchType,
+                                                  TypeElement originatingType, Set<TypeElement> visited) {
+    if (!visited.add(searchType)) {
+      return null;    // already visited, e.g. diamond interface inheritance
+    }
+    for (ExecutableElement candidate : ElementFilter.methodsIn(searchType.getEnclosedElements())) {
+      if (candidate.getAnnotation(NotInterceptable.class) != null &&
+          elementUtils.overrides(method, candidate, originatingType)) {
+        return candidate;
+      }
+    }
+    for (TypeMirror superType : typeUtils.directSupertypes(searchType.asType())) {
+      if (superType.getKind() == TypeKind.DECLARED) {
+        ExecutableElement found = findNotInterceptable(
+          method, (TypeElement) typeUtils.asElement(superType), originatingType, visited);
+        if (found != null) {
+          return found;
+        }
+      }
+    }
+    return null;
   }
 
 

@@ -4,8 +4,7 @@ The `tentackle-maven-plugin` is the central build-time helper of the Tentackle f
 It bridges the gap between the Java sources of an application and the metadata Tentackle needs at
 runtime. Most importantly, it drives the [Service and Configuration API](../../../../tentackle-common/src/main/docs/services.md):
 it scans the sources for Tentackle annotations and generates the `META-INF` service descriptors
-that make services discoverable in both modular (JPMS) and classpath environments
-(see [Service and Configuration API](../../../../tentackle-common/src/main/docs/services.md)).
+that make services discoverable in both modular (JPMS) and classpath environments.
 
 Besides this core duty the plugin provides a handful of convenience goals to manage dependency
 versions, derive computed maven properties, and generate `BeanInfo` manifests.
@@ -16,7 +15,7 @@ All goals share the prefix `tentackle`, so they can be invoked directly from the
 ### Prerequisites
 
 The plugin requires the same JDK and Maven versions as the rest of the framework
-(JDK >= 25, Maven >= 3.9.0). It is platform independent.
+(JDK >= 25, Maven >= 3.9.10, Maven 4 is supported as well). It is platform independent.
 
 ### Overview of Goals
 
@@ -34,20 +33,28 @@ The plugin requires the same JDK and Maven versions as the rest of the framework
 
 All goals inherit a small set of common parameters:
 
-- `verbosity`: one of `default`, `info` or `debug`. Defaults to maven's global setting; debug is also
-  enabled by maven's `-X` switch.
-- `skip`: skips the goal. Defaults to `true` for projects with `pom` packaging, so the plugin can be
-  configured once in a parent pom without acting on aggregator modules.
-- `charset`: the encoding used to read and write files. Defaults to `${project.build.sourceEncoding}`.
+- `verbosity`: one of `default`, `info` or `debug` (other values are treated as `default`). Defaults to
+  the `tentackle.verbosity` property. If not set, debug is enabled by maven's `-X` switch.
+- `skip`: skips the goal. Defaults to `true` for projects with `pom` packaging (unless the build is
+  non-recursive or the goal is an aggregator), so the plugin can be configured once in a parent pom
+  without acting on aggregator modules.
+- `charset`: the encoding used to read and write files, such as the generated descriptors. Defaults to
+  `${project.build.sourceEncoding}`.
 - `jdkToolchain`: selects a specific `jdk` toolchain, overriding the one chosen by the
   maven-toolchain-plugin (only relevant for goals that run external tools).
+- `minLogLevel`: the minimum `java.util.logging` level of framework log records that are passed on
+  to the Maven log. Defaults to `WARNING`.
+
+All goals are thread-safe and run concurrently in a parallel build (`mvn -T …`); see
+[Parallel builds](../../../../tentackle-maven-support/src/main/docs/tentackle-maven-support.md#parallel-builds).
 
 ### The `analyze` Goal
 
 This is the goal you will use in almost every Tentackle module. It runs an annotation processor over
 the project's sources **before** the wurbelizer and the java compiler run, picking up all annotations
 that are themselves annotated with `org.tentackle.common.Analyze` — most prominently `@Service` and
-`@MappedService`.
+`@MappedService`. The sources are passed to the in-process java compiler with `-proc:only`, i.e.
+nothing is compiled: only the annotation processing runs.
 
 For each such annotation the corresponding handler either:
 
@@ -61,7 +68,8 @@ Because Tentackle's service mapping is based on `META-INF` rather than on the JP
 `uses`/`provides` declarations and `java.util.ServiceLoader`, this generation step is what makes the
 same artifact work unchanged on the module path and on the classpath.
 
-A typical configuration registers both the main and the test variant:
+A typical configuration registers both the main and the test variant, and adds the directories of the
+generated descriptors as resource directories:
 
 ```xml
 <plugin>
@@ -90,36 +98,87 @@ A typical configuration registers both the main and the test variant:
 </plugin>
 ```
 
+```xml
+<properties>
+  <tentackle.serviceDir>${project.build.directory}/generated-resources</tentackle.serviceDir>
+  <tentackle.testServiceDir>${project.build.directory}/generated-test-resources</tentackle.testServiceDir>
+</properties>
+...
+<build>
+  <resources>
+    <resource>
+      <directory>${project.basedir}/src/main/resources</directory>
+    </resource>
+    <resource>
+      <directory>${tentackle.serviceDir}</directory>
+    </resource>
+  </resources>
+  <testResources>
+    <testResource>
+      <directory>${project.basedir}/src/test/resources</directory>
+    </testResource>
+    <testResource>
+      <directory>${tentackle.testServiceDir}</directory>
+    </testResource>
+  </testResources>
+</build>
+```
+
+The plugin does **not** register these directories itself — without the `<resources>` entries the
+descriptors never reach the artifact. The Tentackle parent pom and the poms generated by the
+[project archetype](../../../../src/main/docs/quickstart.md) already contain this setup.
+
 Important parameters:
 
 - `sourceDir` (`wurbel.sourceDir`): the sources to process. Defaults to
   `${project.build.sourceDirectory}` (resp. the test source directory for `test-analyze`).
-- `filesets`: explicit file sets to process instead of `sourceDir`.
+- `filesets`: explicit file sets to process instead of `sourceDir`. A file set without a directory
+  defaults to `sourceDir`.
 - `analyzeDir` (`wurbel.analyzeDir`): where the analysis results are written. Defaults to
   `${project.build.directory}/analyze` (`.../test-analyze` for `test-analyze`). The wurbelizer reads
   the same directory, so the two plugins stay in sync.
 - `servicesDir` (`tentackle.serviceDir`): where the generated service descriptors are written.
-  Defaults to `${project.build.directory}/generated-resources/services`. This directory is added as a
-  resource root, so the descriptors end up in the final artifact.
-- `index`: if set, an additional index file listing all generated service resources is created
-  (e.g. `META-INF/RESOURCE-INDEX.LIST`). This index speeds up service discovery in modular runtimes.
-- `showCompileOutput` (`tentackle.showCompileOutput`): show the output of the internal compilation
-  used during analysis.
+  Defaults to `${project.build.directory}/generated-resources/services`. Must be registered as a
+  resource directory (see above).
+- `index`: if set, an additional index file is created in `servicesDir` (e.g.
+  `META-INF/RESOURCE-INDEX.LIST`). It lists the paths of all generated service resources, one per line,
+  and is read by `ServiceFactory.applyResourceIndex` to register a classloader for exactly these
+  services, for example by the activator of an [OSGi bundle](../../../../tentackle-osgi/src/main/docs/osgi.md).
+- `showCompileOutput` (`tentackle.showCompileOutput`): show the compiler diagnostics in the build log.
+  Since the sources have not been wurbeled yet, compilation errors are expected and only reported as a
+  warning. Errors reported by the annotation processors are always shown and fail the build.
+- `encoding`: the encoding of the source files passed to the internal compiler. Defaults to
+  `${project.build.sourceEncoding}`, or the compiler's default if not set.
+- `compilerArgs` (list) and `compilerArgument` (single string): additional arguments for the internal
+  compiler, as in the `maven-compiler-plugin`. By default, the compiler runs with `-proc:only`; pass
+  a `-proc:…` argument to override it.
 
-The goal is incremental: sources whose analysis output is newer than the source file are skipped.
-If the analysis compiler reports errors, a marker file is written to the `analyze` directory so that
-subsequent build phases know the metadata may be incomplete.
+The goal is incremental: every source file has a directory of the same path in `analyzeDir`, and
+sources that are not newer than this directory and its entries are skipped. Because a descriptor file
+is rewritten from the processed sources only, descriptors shared by several sources (such as the
+mapped services) and the `index` may lose entries after an incremental run. If a service suddenly
+cannot be found after editing an annotated class, run a clean build.
 
-> Note: because the annotation processor compiles the sources internally, modules that define their
-> own annotation processors usually disable annotation processing in the `maven-compiler-plugin`
-> (`-proc:none`) to avoid a chicken-and-egg problem.
+If the internal compilation reports errors, the file `error.log` is written to `analyzeDir`. Its mere
+existence tells the wurblets that the analyze info may be incomplete. A later run without errors does
+not remove it, only a clean build does.
+
+> Note: annotation processors cannot run in the module that defines them. Such modules compile with
+> `-proc:none` in the `maven-compiler-plugin`, see
+> [The Chicken-and-Egg Rule](../../../../tentackle-core/src/main/docs/annotation-processors.md#the-chicken-and-egg-rule).
 
 ### The `test-analyze` Goal
 
 Identical to `analyze`, but bound to `generate-test-sources` and operating on the test sources and
-test classpath. It writes to `${project.build.directory}/test-analyze` and
-`${project.build.directory}/generated-test-resources/services`. Use it whenever your tests rely on
-Tentackle services that are defined in test sources.
+test classpath. Its parameters have their own user properties, so main and test analysis can be
+configured independently:
+
+- `sourceDir` (`wurbel.testSourceDir`), defaults to `${project.build.testSourceDirectory}`;
+- `analyzeDir` (`wurbel.testAnalyzeDir`), defaults to `${project.build.directory}/test-analyze`;
+- `servicesDir` (`tentackle.testServiceDir`), defaults to
+  `${project.build.directory}/generated-test-resources/services`.
+
+Use it whenever your tests rely on Tentackle services that are defined in test sources.
 
 ### The `properties` Goal
 
@@ -159,33 +218,52 @@ never lands in the artifact:
 Each `propertyDescriptor` has three elements:
 
 - `input`: the value to convert (any maven expression is allowed).
-- `converter`: the fully qualified class name of a stateless singleton implementing
-  `java.util.function.Function<String,String>` with a no-args constructor. If the name starts with
-  `@`, the converter is looked up via `META-INF/services` instead of being instantiated directly by
-  its class name.
-- `property`: the name of the generated maven property, which becomes available to the rest of the
-  build.
+- `converter`: the fully qualified class name of a stateless class implementing
+  `java.util.function.Function<String,String>` with a public no-args constructor. If the name starts
+  with `@`, the implementation is looked up via `META-INF/services` under the name following the `@`.
+- `property`: the name of the generated maven property. It is visible to all plugins executed later
+  in the build of the same module, for example to resource filtering in `process-resources`, but not to
+  values of the pom that have already been interpolated.
+
+A converter must not return `null`.
 
 The `Cryptor` case above is the common one: it encrypts a build-time secret so the packaged image
 ships only ciphertext. See [cryptor.md](../../../../tentackle-common/src/main/docs/cryptor.md) for
 the end-to-end flow.
 
 Because the converter is loaded by the plugin, its artifact must be on the plugin's classpath — add
-it to the plugin's `<dependencies>`. Converters are cached and therefore must be stateless.
+it to the plugin's `<dependencies>`. One instance per converter is shared by all descriptors of an
+execution, so converters must be stateless.
 
 ### The `beaninfo` Goal
 
 Scans the sources for files ending in `BeanInfo.java` and generates a `MANIFEST.MF` that marks the
-matching classes as JavaBeans (`Java-Bean: True`). This manifest is written to
-`${project.build.directory}/generated-resources/manifest/META-INF` by default.
+matching classes as JavaBeans (`Name: com/example/Person.class` followed by `Java-Bean: True`). This
+manifest is written to `${project.build.directory}/generated-resources/manifest/META-INF` by default.
 
 - `sourceDir` (`tentackle.sourceDir`): the sources to scan, defaults to
   `${project.build.sourceDirectory}`.
-- `filesets`: explicit file sets, overriding `sourceDir`.
-- `manifestDirectory` (`tentackle.manifestDirectory`): the output directory for the manifest.
+- `filesets`: explicit file sets, overriding `sourceDir`. Every included file must end with
+  `BeanInfo.java`, otherwise it counts as an error.
+- `manifestDirectory` (`tentackle.manifestDirectory`): the output directory; the manifest is created
+  as `META-INF/MANIFEST.MF` below it.
 
-For every `XxxBeanInfo.java` a matching `Xxx.java` must exist or the build fails. Classes whose name
-contains `Abstract` are skipped — those `BeanInfo` files are assumed to only carry shared defaults.
+For every `XxxBeanInfo.java` a matching `Xxx.java` must exist or the build fails. Classes whose simple
+name contains `Abstract` are skipped — those `BeanInfo` files are assumed to only carry shared defaults.
+
+The manifest is not added to the jar automatically. Let the `maven-jar-plugin` merge it:
+
+```xml
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-jar-plugin</artifactId>
+  <configuration>
+    <archive>
+      <manifestFile>${tentackle.manifestDirectory}/META-INF/MANIFEST.MF</manifestFile>
+    </archive>
+  </configuration>
+</plugin>
+```
 
 ### The `versions` Goal
 
@@ -196,7 +274,8 @@ property names follow the pattern `version.groupIdInCamelCase.artifactIdInCamelC
 ```
 mvn -Dscope=compile tentackle:versions
 ...
-[INFO] versions of 3rd-party dependencies for scope 'compile':
+[INFO]
+<!-- 3rd-party dependencies of project 'myapp-parent' for scope 'compile' -->
 <version.orgOpenjfx.javafxBase>13.0.1</version.orgOpenjfx.javafxBase>
 <version.orgOpenjfx.javafxControls>13.0.1</version.orgOpenjfx.javafxControls>
 <version.orgSlf4j.slf4jApi>1.7.28</version.orgSlf4j.slf4jApi>
@@ -206,13 +285,17 @@ mvn -Dscope=compile tentackle:versions
 The artifacts produced by the reactor itself are excluded, so only true 3rd-party dependencies are
 listed. Parameters:
 
-- `scope` (`scope`): restrict the listing to a single dependency scope (`compile`, `runtime`, …). If
-  omitted, dependencies of all scopes are listed.
+- `scope` (`scope`): restrict the listing to a single dependency scope (`compile`, `runtime`, …),
+  case-insensitive. The transitive dependencies of a dependency with another scope are not followed.
+  If omitted, dependencies of all scopes are listed.
 - `outputFile` (`outputFile`): also write the result to a file. If the name ends with `.properties`,
   it is written in properties-file format, otherwise as XML.
-- `groupVersions` (`groupVersions`): collapse artifacts of the same `groupId` that share a version
-  into a single shared group property (see the goal's javadoc for the exact semantics of positive and
-  negative values).
+- `groupVersions` (`groupVersions`): adds a group property `version.groupIdInCamelCase` for the version
+  shared by most artifacts of a `groupId`, and lets the matching artifact properties refer to it
+  (`${version.orgOpenjfx}`). `0` (default) creates no group properties, a positive value `n` requires
+  at least `n` artifacts with that version, and a negative value `-n` requires at least two of them
+  while at most `n` artifacts of the group have a different version. Group properties are not
+  supported by the properties-file format.
 
 > The whole project must have been built successfully before invoking this goal, so that all
 > versions can be resolved.
@@ -225,12 +308,15 @@ across the reactor, again as XML properties ready to be centralized in a parent 
 ```
 mvn tentackle:plugin-versions
 ...
+[INFO]
+<!-- plugins of project 'myapp-parent' -->
 <version.orgApacheMavenPlugins.mavenCompilerPlugin>3.8.1</version.orgApacheMavenPlugins.mavenCompilerPlugin>
 <version.orgApacheMavenPlugins.mavenJarPlugin>3.1.2</version.orgApacheMavenPlugins.mavenJarPlugin>
 ...
 ```
 
-It shares the `outputFile` and `groupVersions` parameters with `versions`.
+Missing plugin versions and the meta versions `RELEASE` and `LATEST` are resolved against the
+plugin repositories. It shares the `outputFile` and `groupVersions` parameters with `versions`.
 
 ### How It Fits Into the Build
 
@@ -243,7 +329,12 @@ For a normal Tentackle module, the build-time tool chain runs in this order:
 3. The java compiler in `compile`.
 
 This ordering is why `analyze` and the wurbelizer share the same `analyzeDir`: the first produces the
-metadata the second consumes.
+metadata the second consumes. Since both run in the same phase, maven executes them in the order
+they are declared in the pom, so the `tentackle-maven-plugin` must be declared before the
+`wurbelizer-maven-plugin`.
+
+In Eclipse, the plugin's `META-INF/m2e/lifecycle-mapping-metadata.xml` tells m2e to ignore all goals
+during the incremental workspace build.
 
 ### Further Reading
 

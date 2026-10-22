@@ -27,6 +27,8 @@ interface NameVerifierHolder {
 /**
  * Enforces application-specific rules for names.<br>
  * This is an additional check to the backend rules.
+ * Covers the names of entities, tables, table aliases, attributes, columns, relations and indexes.<br>
+ * The default implementation can be replaced via {@code @Service(NameVerifier.class)}.
  */
 public interface NameVerifier {
 
@@ -38,6 +40,20 @@ public interface NameVerifier {
   static NameVerifier getInstance() {
     return NameVerifierHolder.INSTANCE;
   }
+
+  /**
+   * Sets the verifier enabled.
+   *
+   * @param enabled true if enabled (default)
+   */
+  void setEnabled(boolean enabled);
+
+  /**
+   * Returns whether the verifier is enabled.
+   *
+   * @return true if enabled (default)
+   */
+  boolean isEnabled();
 
   /**
    * Verifies the Java name of an entity.

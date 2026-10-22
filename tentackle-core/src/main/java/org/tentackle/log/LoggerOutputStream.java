@@ -25,7 +25,8 @@ import java.io.PrintStream;
 
 /**
  * Output stream for a logger.<br>
- * Nice to catch e.printStackTrace(Stream)
+ * Nice to catch {@code e.printStackTrace(Stream)}.
+ * The buffered bytes are logged on {@link #flush()} and {@link #close()}.
  *
  * @author harald
  */
@@ -121,9 +122,8 @@ public class LoggerOutputStream extends ByteArrayOutputStream {
   }
 
   /**
-   * Logs an exception stacktrace to the logger with a default buffer size
-   * and {@link Level#SEVERE} to
-   * the default logger of the util package.
+   * Logs an exception stacktrace with a default buffer size
+   * and {@link Level#SEVERE} to the logger of this class.
    *
    * @param e the exception
    */

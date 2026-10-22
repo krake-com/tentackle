@@ -135,6 +135,23 @@ public class ModelSessionTest {
   }
 
   @Test
+  public void withdrawsTheReloadWarningOnceTheSourceParsesAgain() throws Exception {
+    // no file removed: the session refreshes instead of loading, which must not keep the stale warning
+    edit("customer.map", "name := Customer", "@@@ this is not a model @@@");
+    try {
+      call("model_list_entities", Map.of());
+    }
+    catch (ModelException mex) {
+      // whether the broken source surfaces here is up to the model: the warning is what counts
+    }
+    assertTrue(session.getWarnings().stream().anyMatch(w -> w.startsWith(ModelSession.RELOAD_FAILED_WARNING)),
+               session.getWarnings().toString());
+    edit("customer.map", "@@@ this is not a model @@@", "name := Customer");
+    String text = call("model_overview", Map.of());
+    assertFalse(text.contains(ModelSession.RELOAD_FAILED_WARNING), text);
+  }
+
+  @Test
   public void picksUpAChangedFileBeforeTheNextCall() throws Exception {
     edit("product.map", "the list price", "what it costs");
     String text = call("model_source", Map.of("entity", "Product", "format", "raw"));
@@ -165,7 +182,7 @@ public class ModelSessionTest {
 
   @Test
   public void dropsAnEntityWhoseFileIsGone() throws Exception {
-    // a removed file needs the full reload: a refresh alone keeps the entity in the name and table maps
+    // a removed file forces the full reload: a refresh alone keeps the entity in the name and table maps
     Files.delete(modelDir.resolve("product.map"));
     String text = call("model_list_entities", Map.of());
     assertTrue(text.startsWith("3 of 3 entities"), text);

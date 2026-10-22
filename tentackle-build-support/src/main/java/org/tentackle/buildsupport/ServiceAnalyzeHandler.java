@@ -37,7 +37,14 @@ import java.util.Map;
 
 
 /**
- * Handler for the annotations that denote services.<br>
+ * Handler for the annotations that denote services.
+ * <p>
+ * Handles {@code @Service} and {@code @ServiceName}, used directly or as meta-annotations.
+ * Appends the servicing class (the provider) to {@code META-INF/services/<serviced class>} in the service
+ * directory, or to {@code META-INF/meta-services/<serviced class>} if {@code meta=true}.
+ * In the latter case, the servicing class is taken from the element of the annotated annotation
+ * named by {@code method}. In addition, the serviced class is logged to {@code <servicing class>/service.log}
+ * in the analyze directory.
  *
  * @author harald
  */
@@ -99,9 +106,10 @@ public class ServiceAnalyzeHandler extends AbstractAnalyzeHandler {
                 servicedClassName = extractServicedClassName(entry.getValue());
               }
               else if ("meta".equals(argName)) {
-                meta = true;    // get servicing class from value of annotated annotation
+                // if true: get servicing class from value of annotated annotation
+                meta = Boolean.parseBoolean(entry.getValue().toString());
               }
-              else if ("method".equals(entry.getKey().getSimpleName().toString())) {
+              else if ("method".equals(argName)) {
                 methodName = StringHelper.parseString(entry.getValue().toString());
               }
             }
@@ -157,7 +165,7 @@ public class ServiceAnalyzeHandler extends AbstractAnalyzeHandler {
         }
       }
       else {
-        print(Kind.ERROR, "annotated element '" + element + "' is not a class", element);
+        print(Kind.ERROR, "annotated element '" + element + "' is not a class or interface", element);
       }
     }
   }

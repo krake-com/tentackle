@@ -27,9 +27,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Class mapping invocation handler.
+ * Invocation handler for {@link Interceptable}s.
  * <p>
  * This invocation handler is for dynamic proxies serving only one interface.
+ * The method invocations are delegated to the implementation mapped via &#64;{@link InterceptionService}
+ * and its interceptors, if any. The methods of {@link EffectiveClassProvider} are handled by the invocation handler itself.
  *
  * @param <T> the interceptable type
  * @author harald
@@ -82,7 +84,8 @@ public class InterceptableInvocationHandler<T extends Interceptable & Serializab
 
 
   /**
-   * Creates the delegates for the given proxy instance and the domain context.
+   * Creates the delegate for the given proxy instance.<br>
+   * The delegate's constructor must accept the proxy instance.
    *
    * @param proxy the dynamic proxy instance
    * @param clazz the class to implement

@@ -8,10 +8,10 @@ Tentackle is a modular Maven reactor. Every module falls into one of three kinds
 
 ### Named modules and automatic modules
 
-Twenty artifacts — every module an application ships with, plus `tentackle-model` — are real
+Twenty-three artifacts — every module an application ships with, plus `tentackle-model` — are real
 [JPMS](https://openjdk.org/projects/jigsaw/) modules with an explicit `module-info.java`:
-`tentackle-common`, `-core`, `-sql`, `-model`, `-session`, `-database`, `-pdo`, `-persistence`,
-`-domain`, `-i18n`, `-quic`, `-quiche`, `-update`, `-web`, `-fx`, `-fx-rdc`, `-fx-atlanta`, `-fx-rdc-update`,
+`tentackle-common`, `-core`, `-sql`, `-model`, `-session`, `-database`, `-jta`, `-pdo`, `-persistence`,
+`-domain`, `-i18n`, `-quic`, `-quiche`, `-keyring`, `-update`, `-web`, `-fx`, `-fx-rdc`, `-fx-atlanta`, `-fx-rdc-update`,
 `-log-slf4j`, `-log-log4j2v` and `-script-jsr`.
 
 The remaining artifacts declare an `Automatic-Module-Name` in their JAR manifest instead. Those are
@@ -28,7 +28,9 @@ This is not a limitation of the programming model: the
 `META-INF` data written at build time, so Tentackle applications run on the module path, the class
 path, or a mix of both — and the
 [jlink/jpackage plugin](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md)
-derives the right packaging category for each artifact by itself.
+derives the right packaging category for each artifact by itself. An application that needs two,
+otherwise conflicting versions of the same dependency at once can additionally declare
+[isolated `ModuleLayer`s](../../../tentackle-common/src/main/docs/layers.md) via that same plugin.
 
 All artifacts are on [Maven Central](https://search.maven.org/search?q=tentackle).
 A [BOM](../../../tentackle-bom/src/main/docs/bom.md), a [project archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md)
@@ -59,6 +61,7 @@ implementation at runtime — so the API stays agnostic of its backend.
 | Core        | [tentackle-core](../../../tentackle-core/src/main/docs/core.md)                                                                                              | Runtime foundation: binding, validation, reflection/proxies/interceptors, tasks/daemon, preferences, plus the logging and scripting APIs. |
 | Core        | [tentackle-i18n](../../../tentackle-i18n/src/main/docs/i18n.md)                                                                                              | Database-persisted I18N bundle support.                                                                                                   |
 | Database    | [tentackle-session](../../../tentackle-session/src/main/docs/session.md) · [tentackle-database](../../../tentackle-database/src/main/docs/database.md)       | Session handling (interfaces + implementation).                                                                                           |
+| Database    | [tentackle-jta](../../../tentackle-jta/src/main/docs/jta.md)                                                                                              | Optional: global (JTA/XA) transactions across databases and other XA resources.                                                           |
 | Application | [tentackle-pdo](../../../tentackle-pdo/src/main/docs/pdo.md)                                                                                                 | Persistent Domain Object interfaces: entities, aggregates, components, operations, security, number sources.                              |
 | Application | [tentackle-persistence](../../../tentackle-persistence/src/main/docs/persistence.md) · [tentackle-domain](../../../tentackle-domain/src/main/docs/domain.md) | The persistence- and domain-side PDO implementations, injected at runtime.                                                                |
 | Application | [tentackle-update](../../../tentackle-update/src/main/docs/update.md)                                                                                        | Auto-update for jlink-based clients.                                                                                                      |
@@ -67,7 +70,7 @@ implementation at runtime — so the API stays agnostic of its backend.
 | UI          | tentackle-fx-rdc-poi · [tentackle-fx-rdc-update](../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)                                            | Pluggable Apache POI export and the client UI for `tentackle-update`.                                                                     |
 
 **Pluggable providers** (selected via the SPI): logging — [tentackle-log-slf4j](../../../tentackle-log-slf4j/src/main/docs/tentackle-log-slf4j.md),
-[tentackle-log-log4j2v](../../../tentackle-log-log4j2v/src/main/docs/tentackle-log-log4j2v.md), tentackle-log-log4j;
+[tentackle-log-log4j2v](../../../tentackle-log-log4j2v/src/main/docs/tentackle-log-log4j2v.md);
 scripting — [tentackle-script-groovy](../../../tentackle-script-groovy/src/main/docs/groovy.md),
 [tentackle-script-ruby](../../../tentackle-script-ruby/src/main/docs/ruby.md),
 [tentackle-script-jsr](../../../tentackle-script-jsr/src/main/docs/jsr.md) (JSR-223 / GraalVM).
@@ -94,10 +97,12 @@ Not part of the layered diagram, but each ships its own docs:
 - [tentackle-web](../../../tentackle-web/src/main/docs/web.md) — web tier support.
 - [tentackle-quic](../../../tentackle-quic/src/main/docs/quic.md) — QUIC ([TRIP](../../../tentackle-core/src/main/docs/trip.md)) transport, on the pure-Java KWIK stack.
 - [tentackle-quiche](../../../tentackle-quiche/src/main/docs/quiche.md) — the same transport on Cloudflare quiche, bound via the FFM API.
+- [tentackle-keyring](../../../tentackle-keyring/src/main/docs/platform-keyring.md) — opt-in: puts the credential store of the OS behind the keyring API of tentackle-core, bound via the FFM API.
 - [tentackle-fx-atlanta](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md) — the Atlanta JavaFX theme.
 - [tentackle-project-archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md) — project scaffolding ([walkthrough](../../../tentackle-project-archetype/src/main/docs/myapp-walkthrough.md)).
 - [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md), [tentackle-test-fx-rdc](../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md) — TestNG support.
 - [tentackle-pdo-mock](../../../tentackle-pdo-mock/src/main/docs/pdo-mock.md) — mock PDO/operation delegates for database-less unit tests, usable by the domain- and persistence layer themselves.
+- [tentackle-osgi](../../../tentackle-osgi/src/main/docs/osgi.md) — not a reactor module, but a separate build wrapping the runtime modules into OSGi bundles with activators.
 
 Full per-module API documentation is published under the
 [Tentackle site docs](https://tentackle.org/tentackle/).

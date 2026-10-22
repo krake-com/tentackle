@@ -49,7 +49,9 @@ public class RecordDTOInfoTest {
     info.addParameter(parameter(info, "java.util.List<?\\sextends\\scom.example.Item> items"));
     info.addParameter(parameter(info, "long id"));
 
-    RecordDTOInfoParameter[] parameters = writeAndRead(info).getParameters();
+    RecordDTOInfo readBack = writeAndRead(info);
+    assertEquals(readBack.getRecordName(), "com.example.InvoiceDTO");
+    RecordDTOInfoParameter[] parameters = readBack.getParameters();
 
     assertEquals(parameters.length, 2);
     assertEquals(parameters[0].getType(), "java.util.List<? extends com.example.Item>");
@@ -70,6 +72,7 @@ public class RecordDTOInfoTest {
         "type: com.example.InvoiceDTO\n" +
         "arg[0]: java.util.List<com.example.Item> items\n")));
 
+    assertEquals(info.getRecordName(), "com.example.InvoiceDTO");
     assertEquals(info.getParameters().length, 1);
     assertEquals(info.getParameters()[0].getType(), "java.util.List<com.example.Item>");
     assertEquals(info.getParameters()[0].getName(), "items");

@@ -21,7 +21,7 @@ package org.tentackle.security.permissions;
 import org.tentackle.security.Permission;
 
 /**
- * Read permission interface.
+ * Execute permission interface.
  *
  * @author harald
  */

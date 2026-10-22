@@ -97,6 +97,31 @@ public @interface Transaction {
   TransactionWritability writability() default TransactionWritability.DEFAULT;
 
   /**
+   * Determines whether deferrable constraints should be deferred to the end of the transaction.<br>
+   * If true, {@link org.tentackle.session.Session#setConstraintsDeferred(boolean)} is invoked with
+   * {@code true} right after the transaction is started (only if this call actually started a new
+   * transaction, i.e., not when joining an already running one). Requires a backend supporting it
+   * (see {@code isSetConstraintsDeferredSupported} in the SQL backend) and at least one
+   * deferrable unique index or foreign key (see the model's {@code deferred}/{@code deferrable}
+   * index keywords and model defaults).
+   *
+   * @return true to defer deferrable constraints, false is default
+   */
+  boolean deferred() default false;
+
+  /**
+   * Limits the statement history of the transaction.<br>
+   * If not negative, {@link org.tentackle.session.Session#setStatementHistoryLimit(int)} is invoked
+   * right after the transaction is started (only if this call actually started a new transaction,
+   * i.e., not when joining an already running one). Only the given number of most recent statements
+   * are kept for diagnostic purposes, which saves memory in large transactions such as bulk inserts.
+   * 0 keeps no history at all.
+   *
+   * @return the maximum number of statements kept in the history, -1 if unlimited (default)
+   */
+  int statementHistoryLimit() default -1;
+
+  /**
    * Determines whether a transaction rolled back due to a temporary exception should be retried.<br>
    * By default, transactions will not be retried.<br>
    * Isolation levels {@link TransactionIsolation#REPEATABLE_READ} and {@link TransactionIsolation#SERIALIZABLE}
@@ -116,7 +141,11 @@ public @interface Transaction {
   boolean retry() default false;
 
   /**
-   * Defines the retry policy.
+   * Defines the retry policy.<br>
+   * Only used if {@link #retry()} is true.
+   * The empty string denotes the default policy.
+   * An unknown policy name fails with a {@link org.tentackle.session.PersistenceException}
+   * before the transaction begins.
    *
    * @return the policy name
    * @see DefaultTransactionRetryPolicy

@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.security;
 
 import org.tentackle.common.MappedService;
@@ -26,8 +25,6 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-
 
 /**
  * Annotation to express that the annotated class
@@ -40,11 +37,10 @@ import java.lang.annotation.Target;
 public @interface PermissionService {
 
   /**
-   * Determines the permission interface.<br>
+   * Determines the permission interface.
    *
    * @return the interface
    */
   Class<? extends Permission> value();
 
 }
-

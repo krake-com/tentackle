@@ -32,6 +32,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A Groovy script.
+ * <p>
+ * The code is compiled lazily on first use into a {@link CompiledGroovyScript}, shared by all scripts with the
+ * same code if cached. Each execution creates a new script instance with its own {@link Binding}, hence
+ * Groovy scripts are thread-safe without any extra synchronization.
  *
  * @author harald
  */
@@ -48,10 +52,10 @@ public class GroovyScript extends AbstractScript {
   private final GroovyClassLoader groovyClassLoader;
 
   /**
-   * Creates a groovy script.
+   * Creates a Groovy script.
    *
    * @param language the language instance
-   * @param groovyClassLoader the groovy classloader
+   * @param groovyClassLoader the Groovy classloader
    * @param code the scripting code
    * @param cached true to use code caching
    * @param threadSafe true if thread safety required
@@ -79,7 +83,15 @@ public class GroovyScript extends AbstractScript {
       }
     }
     // groovy scripting is threadsafe (each execution gets its own instance and binding)
-    result = (T) script.createInstance(binding).run();
+    try {
+      result = (T) script.createInstance(binding).run();
+    }
+    catch (ScriptRuntimeException sx) {
+      throw sx;
+    }
+    catch (RuntimeException ex) {
+      throw new ScriptRuntimeException(ex);
+    }
     LOGGER.finer("returned: {0}", result);
     return result;
   }
@@ -87,7 +99,7 @@ public class GroovyScript extends AbstractScript {
 
   /**
    * Gets the compiled script.<br>
-   * Will be parsed if not done yet.
+   * Will be compiled if not done yet.
    *
    * @return the compiled script, never null
    */
@@ -111,6 +123,7 @@ public class GroovyScript extends AbstractScript {
    *
    * @param code the scripting source code
    * @return the compiled script
+   * @throws ScriptRuntimeException if compilation failed
    */
   @SuppressWarnings("unchecked")
   protected CompiledGroovyScript compileScript(String code) {

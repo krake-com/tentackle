@@ -21,7 +21,7 @@ package org.tentackle.trip.types;
 import org.tentackle.trip.TripTypeService;
 
 /**
- * Trip type for boolean primitive.
+ * Trip type for the {@code boolean} primitive.
  */
 @TripTypeService(boolean.class)
 public final class BooleanPrimitiveTripType extends BooleanTripType {

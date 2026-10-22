@@ -36,7 +36,7 @@ public interface Killable {
   /**
    * Returns whether thread has been killed.<br>
    * This doesn't necessarily mean that it's not alive anymore.
-   * It just means that the kill() method has been invoked.
+   * It just means that the {@link #kill()} method has been invoked.
    *
    * @return true if killed
    */

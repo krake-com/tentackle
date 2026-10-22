@@ -2,12 +2,17 @@
 
 Oracle deviates from the SQL standard — and from every other backend Tentackle supports — in more ways than any
 other product. Most of those deviations are handled silently by
-[`Oracle8`](../java/org/tentackle/sql/backends/Oracle8.java) (the deprecated backend for versions 8 to 11) and
-[`Oracle`](../java/org/tentackle/sql/backends/Oracle.java) (version 12 and newer), but a few of them leak into
-what you may reasonably expect from your model. This document collects them.
+[`Oracle8`](../java/org/tentackle/sql/backends/Oracle8.java) (the deprecated backend for versions 8 to 11),
+[`Oracle`](../java/org/tentackle/sql/backends/Oracle.java) (version 12 and newer) and
+[`Oracle21`](../java/org/tentackle/sql/backends/Oracle21.java) (an opt-in for 21c and newer, adding the native
+`JSON` column type) and [`Oracle23`](../java/org/tentackle/sql/backends/Oracle23.java) (an opt-in for 23c and
+newer, adding the native `BOOLEAN` column type and `DROP ... IF EXISTS`), but a few of them leak into what you
+may reasonably expect from your model. This document collects them.
 
-> Pick the backend by JDBC URL (`jdbc:oracle:...` selects `Oracle`) and append `|Oracle8` to the URL to pin the
-> legacy dialect. `Oracle` refuses to connect to a server older than 12 (`validateVersion`).
+> Pick the backend by JDBC URL (`jdbc:oracle:...` selects `Oracle`) and append `|Oracle8` to pin the legacy
+> dialect, `|Oracle21` to opt in to native JSON support on 21c and newer, or `|Oracle23` to additionally opt in
+> to native `BOOLEAN` and `DROP ... IF EXISTS` on 23c and newer. `Oracle` refuses to connect to a server older
+> than 12, `Oracle21` refuses one older than 21, `Oracle23` refuses one older than 23 (`validateVersion`).
 
 ---
 
@@ -168,7 +173,8 @@ Two model values do not reach the DDL unchanged, because `valueToLiteral` rewrit
 Comparing the model value with the stored text directly would therefore fail — `""` against `' '`, `TRUE` against
 `1` — and unlike the trailing-blank case above, re-applying the `MODIFY` would *not* settle it: the mismatch
 would be reported on every single migration run, forever. `Oracle8.isDefaultEqual()` applies the same mapping to
-the model value before comparing.
+the model value before comparing. `Oracle23`, which declares booleans as native `BOOLEAN` columns, writes and
+compares the defaults as `TRUE`/`FALSE` instead.
 
 ---
 
@@ -186,8 +192,10 @@ These are older, and are implemented in `Oracle8` (and thus inherited by `Oracle
   in the model will be rejected at build time.
 - **No leading underscore.** Identifiers must not start with `_`, so temporary objects created during a migration
   are prefixed `tmp_` instead of `_tmp` (`isTemporaryName`). Identifiers containing `$` are treated as reserved.
-- **Booleans are `NUMBER(1)`.** So are `BIT` and `TINYINT`; `SMALLINT`/`INTEGER`/`BIGINT` become `NUMBER(5|10|19)`.
-  `valueToLiteral` renders `true`/`false` as `1`/`0`.
+- **Booleans are `NUMBER(1)`, unless you opt in to `Oracle23`.** So are `BIT` and `TINYINT`;
+  `SMALLINT`/`INTEGER`/`BIGINT` become `NUMBER(5|10|19)`. `valueToLiteral` renders `true`/`false` as `1`/`0`.
+  Oracle's native `BOOLEAN` type only exists from 23c, so `Oracle`/`Oracle21` keep emitting `NUMBER(1)` for
+  correctness across every version they cover (see below).
 - **`DEFAULT` comes before `NOT NULL`** in a column declaration (see
   [Column Defaults Are Stored as Source Text](#column-defaults-are-stored-as-source-text)), and there is no real
   `DROP DEFAULT` — Tentackle emits `DEFAULT NULL`, which is functionally but not structurally equivalent
@@ -196,6 +204,30 @@ These are older, and are implemented in `Oracle8` (and thus inherited by `Oracle
 - **An extra commit is required** (`isExtraCommitRequired()`), and `SELECT` without a table needs `FROM DUAL`.
 - **Paging** uses `OFFSET ... ROWS FETCH NEXT ... ROWS ONLY` in `Oracle`, but the nested
   `ROWNUM` construct in `Oracle8`.
+- **XML is supported**, but needs `xdb.jar` and `xmlparserv2.jar` on the classpath.
+- **JSON is stored as a `CLOB`, unless you opt in to `Oracle21`.** Oracle's native `JSON` type only exists from
+  21c, while `Oracle` covers 12 and newer and `sqlTypeToString` has no version information at DDL-generation
+  time. A `CLOB` is readable by every supported version, so `Oracle.isJsonSupported()` stays `false` and the
+  document is bound as a plain string. If your server is 21c or newer, append `|Oracle21` to the connection URL:
+  `Oracle21.isJsonSupported()` is `true`, `sqlTypeToString` emits `JSON` instead of `CLOB`, and
+  `jdbcTypeToSqlType` recognizes an existing native `JSON` column (reported as `Types.OTHER` with type name
+  `"JSON"`) so the migrator does not try to recreate it on every run. `Oracle21.validateVersion` refuses to
+  connect to a server older than 21.
+- **`DROP ... IF EXISTS` is not emulated — a plain `DROP` is used, and fails if the object is missing —
+  unless you opt in to `Oracle23`.** `Backend.isDropIfExistsEnabled()` (used by `sqlDropTable`, `sqlDropIndex`,
+  `sqlDropColumn` and `sqlDropConstraint` to make migration scripts idempotent) is gated by
+  `isDropIfExistsSupported()`, which `Oracle`/`Oracle21` never override, so it stays `false`: the SQL plugin's
+  `useDropIfExists` option silently falls back to a plain `DROP` against Oracle, even on a 21c/23c server. Oracle
+  only added `DROP ... IF EXISTS` (and `CREATE ... IF NOT EXISTS`) in 23c. If your server is 23c or newer, append
+  `|Oracle23` to the connection URL: `Oracle23.isDropIfExistsSupported()` is `true`, so the generated DDL includes
+  `IF EXISTS` whenever `useDropIfExists` is requested. `Oracle23.validateVersion` refuses to connect to a server
+  older than 23.
+- **Booleans become the native `BOOLEAN` type with `Oracle23`.** On top of `Oracle21`'s JSON support,
+  `Oracle23.sqlTypeToString` emits `BOOLEAN` instead of `NUMBER(1)` for `SqlType.BIT`, and `valueToLiteral`
+  renders `true`/`false` as the bare SQL literals `TRUE`/`FALSE` instead of `1`/`0`. `TINYINT` is unaffected and
+  stays `NUMBER(1)`, since it is a small integer type, not a boolean. Reading an existing native `BOOLEAN` column
+  back needs no override: the JDBC driver reports it as `Types.BOOLEAN`, which every backend already maps to
+  `SqlType.BIT` by default.
 
 ---
 

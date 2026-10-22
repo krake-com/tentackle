@@ -69,9 +69,11 @@
           <plugin>
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
-              <suiteXmlFiles>
-                <suiteXmlFile>src/test/resources/initdb-testng.xml</suiteXmlFile>
-              </suiteXmlFiles>
+              <groups>initdb</groups>
+              <includes>
+                <!-- FillDatabase does not match surefire's default includes -->
+                <include>**/FillDatabase.java</include>
+              </includes>
             </configuration>
           </plugin>
         </plugins>

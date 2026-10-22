@@ -24,10 +24,20 @@ import java.util.StringTokenizer;
  * Defaults for model parsing.
  * <p>
  * Set a default attribute to a non-null value to be honored during model parsing.
- * Only logically "higher" values will be copied to the model.
- * For example, {@code fulltracked} will overwrite {@code tracked}, but a default of {@code tracked}
- * will not overwrite {@code fulltracked} if already defined in the model.
- * Accordingly, {@code deletionCascaded} will never clear the model setting to false if true.
+ * <ul>
+ *   <li>{@code bind}, {@code size} and {@code autoselect} are applied as initial entity options
+ *   before the model source is parsed. Hence, the entity's global options line may override them.</li>
+ *   <li>The track type is only raised, never lowered.
+ *   For example, {@code fulltracked} will overwrite {@code tracked}, but a default of {@code tracked}
+ *   will not overwrite {@code fulltracked} if already defined in the model.</li>
+ *   <li>Accordingly, {@code cascade} never clears the setting of a composite list relation.</li>
+ *   <li>{@code root}, {@code rootid} and {@code rootclassid} are applied to the top super entity, if the
+ *   model determines the entity to be a root entity or to need a root id or root class id.</li>
+ *   <li>{@code remote} overrides the entity's setting.</li>
+ *   <li>The deferrability applies to unique indexes and foreign keys without an explicit keyword.</li>
+ * </ul>
+ * Entities with the global option {@code nodefaults} ignore the model defaults, except for
+ * {@code bind}, {@code size}, {@code autoselect} and the deferrability of unique indexes.
  *
  * @author harald
  */
@@ -39,7 +49,8 @@ public class ModelDefaults {
   private TrackType trackType;
 
   /**
-   * cascaded delete in relations.
+   * Cascaded delete in composite list relations.<br>
+   * Only relevant if the integrity disables database integrity checks for components.
    */
   private Boolean deletionCascaded;
 
@@ -78,6 +89,16 @@ public class ModelDefaults {
    */
   private Boolean remote;
 
+  /**
+   * The default deferrability of unique indexes and foreign keys.<br>
+   * {@code deferred} and {@code deferrable} both auto-propagate as
+   * {@link Deferrability#DEFERRABLE_IMMEDIATE} to indexes/foreign keys without their own
+   * explicit keyword, never as {@link Deferrability#DEFERRABLE_DEFERRED} — so turning this on
+   * never changes existing behavior unless a transaction explicitly opts in.
+   * {@code immediate} is a documented no-op, kept for symmetry with the index-line grammar.
+   */
+  private Deferrability deferred;
+
   // more to come...
 
 
@@ -89,6 +110,7 @@ public class ModelDefaults {
 
   /**
    * Creates the defaults from a string.
+   *
    * @param str the string
    * @throws ModelException if parsing failed
    */
@@ -152,6 +174,24 @@ public class ModelDefaults {
         case "remote":
           remote = on;
           break;
+        case "deferred":
+          if (!on) {
+            throw new ModelException("'!deferred' is not supported, use 'immediate' instead");
+          }
+          deferred = Deferrability.DEFERRABLE_DEFERRED;
+          break;
+        case "deferrable":
+          if (!on) {
+            throw new ModelException("'!deferrable' is not supported, use 'immediate' instead");
+          }
+          deferred = Deferrability.DEFERRABLE_IMMEDIATE;
+          break;
+        case "immediate":
+          if (!on) {
+            throw new ModelException("'!immediate' is not supported, use 'deferred' or 'deferrable' instead");
+          }
+          deferred = Deferrability.NOT_DEFERRABLE;
+          break;
 
         default:
           throw new ModelException("unknown model default: " + token);
@@ -213,6 +253,13 @@ public class ModelDefaults {
       }
       buf.append("REMOTE, ");
     }
+    if (deferred != null) {
+      buf.append(switch (deferred) {
+        case DEFERRABLE_DEFERRED -> "DEFERRED";
+        case DEFERRABLE_IMMEDIATE -> "DEFERRABLE";
+        case NOT_DEFERRABLE -> "IMMEDIATE";
+      }).append(", ");
+    }
     String str = buf.toString();
     if (str.endsWith(", ")) {
       str = str.substring(0, str.length() - 2);
@@ -233,10 +280,11 @@ public class ModelDefaults {
     size = null;
     autoSelect = null;
     remote = null;
+    deferred = null;
   }
 
   /**
-   * Gets the trac type default.
+   * Gets the track type default.
    *
    * @return the track type
    */
@@ -314,6 +362,15 @@ public class ModelDefaults {
    */
   public Boolean getRemote() {
     return remote;
+  }
+
+  /**
+   * Gets the deferrability default for unique indexes and foreign keys.
+   *
+   * @return the deferrability, null if not specified
+   */
+  public Deferrability getDeferrability() {
+    return deferred;
   }
 
 }

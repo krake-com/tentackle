@@ -25,7 +25,7 @@ import org.tentackle.model.Relation;
 import java.util.List;
 
 /**
- * A simple java attribute or property of a PDO.<br>
+ * A simple Java attribute or property of a PDO.<br>
  * Such as <pre>String blah = "some text"</pre>
  */
 public class DataItem implements DataNode {
@@ -52,7 +52,7 @@ public class DataItem implements DataNode {
    * @param comment the optional comment
    * @param entity the effective entity
    * @param attribute the model attribute, null if not in model
-   * @param idOfCompositeRelation true if this an ID of a composite object relation
+   * @param idOfCompositeRelation true if this is an ID of a composite object relation
    * @param nonCompositeRelation the non-composite relation, may be null
    * @param sqlCondition the SQL where condition
    */
@@ -95,9 +95,10 @@ public class DataItem implements DataNode {
   }
 
   /**
-   * Gets the property value, may be null.
+   * Gets the formatted display value.<br>
+   * Includes the referenced PDO, if this item is the ID of a non-composite relation.
    *
-   * @return the property value, may be null
+   * @return the display value, empty if the value is null and there is no related PDO
    */
   @Override
   public String getValue() {
@@ -152,9 +153,10 @@ public class DataItem implements DataNode {
   }
 
   /**
-   * Returns whether this the ID of a composite object relation.
+   * Returns whether this is the ID of a composite object relation.<br>
+   * Such IDs are skipped in code generation and ignored when comparing data objects.
    *
-   * @return true if skip in code generation
+   * @return true if ID of a composite relation
    */
   public boolean isIdOfCompositeRelation() {
     return idOfCompositeRelation;

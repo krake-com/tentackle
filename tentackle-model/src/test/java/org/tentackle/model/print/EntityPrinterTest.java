@@ -25,6 +25,7 @@ import org.tentackle.model.Entity;
 import org.tentackle.model.Index;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
+import org.tentackle.model.Relation;
 import org.tentackle.model.impl.IndexImpl;
 import org.tentackle.model.parse.Document;
 
@@ -35,6 +36,7 @@ import static org.tentackle.model.impl.ModelTest.MODEL_FILENAME;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 
 /**
  * Entity printer test.
@@ -162,5 +164,73 @@ public class EntityPrinterTest {
      Document reparsed = new Document(text);
      assertNull(reparsed.getSourceInfo());
      assertEquals(Model.getInstance().getEntityFactory().createEntity(reparsed, null).getName(), "Simple");
+   }
+
+   /**
+    * Relation properties following {@code method} or {@code count} must be separated by a comma,
+    * otherwise the printed model cannot be parsed again.
+    */
+   @Test
+   public void printRelationPropertiesAfterMethod() throws Exception {
+     String modelSource = """
+                          name := Simple
+                          id := 1
+                          table := simple
+                          integrity := none
+
+                          []
+                          String(10)  code      code       the code
+                          long        clientId  client_id  the client
+
+                          Customer: method = Client, name = Client
+                          """;
+     Entity entity = Model.getInstance().getEntityFactory().createEntity(new Document(modelSource), null);
+     PrintConfiguration configuration = new PrintConfiguration(false, false, false, null, new ArrayList<>(), 2);
+     String text = new EntityPrinter(entity, configuration).print();
+     assertTrue(text.contains("method = Client,\n"), "missing comma after method:\n" + text);
+
+     Entity reparsed = Model.getInstance().getEntityFactory().createEntity(new Document(text), null);
+     Relation relation = reparsed.getRelations().getFirst();
+     assertEquals(relation.getMethodName(), "Client");
+     assertEquals(relation.getName(), "Client");
+   }
+
+   /**
+    * The default column prefix of an embedding relation must not be printed.
+    */
+   @Test
+   public void printEmbeddingRelationWithDefaultPrefix() throws Exception {
+     String modelSource = """
+                          name := Simple
+                          id := 1
+                          table := simple
+                          integrity := none
+
+                          []
+                          String(10)  code  code  the code
+
+                          Address: select = embedded
+                          """;
+     Entity entity = Model.getInstance().getEntityFactory().createEntity(new Document(modelSource), null);
+     assertEquals(entity.getRelations().getFirst().getColumnPrefix(), "address_");
+     PrintConfiguration configuration = new PrintConfiguration(false, false, false, null, new ArrayList<>(), 2);
+     String text = new EntityPrinter(entity, configuration).print();
+     assertFalse(text.contains("prefix"), "default prefix must not be printed:\n" + text);
+   }
+
+   /**
+    * An option annotation ending with {@code |} matches the annotation without parameters only.
+    */
+   @Test
+   public void optionAnnotationWithoutParameters() {
+     PrintConfiguration configuration = new PrintConfiguration(false, false, false, null,
+                                                               List.of("@NotNull|", "@NotZero"), 2);
+     assertTrue(configuration.isOptionAnnotation("@NotNull"));
+     assertFalse(configuration.isOptionAnnotation("@NotNull(scope=PersistenceScope.class)"));
+     assertFalse(configuration.isOptionAnnotation("@NotNullable"));
+     assertTrue(configuration.isOptionAnnotation("@NotZero"));
+     assertTrue(configuration.isOptionAnnotation("@NotZero(scope=PersistenceScope.class)"));
+     assertFalse(configuration.isOptionAnnotation("@NotZeroOrNull"));
+     assertFalse(configuration.isOptionAnnotation("@Greater(\"0\")"));
    }
 }

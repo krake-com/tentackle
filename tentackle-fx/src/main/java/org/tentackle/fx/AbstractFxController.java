@@ -151,9 +151,9 @@ public abstract class AbstractFxController implements FxController, ScopeConfigu
 
 
   /**
-   * Creates a binder for this form.<br>
+   * Creates a binder for this controller.<br>
    * The default implementation invokes
-   * {@code FormBindingFactory.createFormComponentBinder(this)}.
+   * {@code FxBindingFactory.getInstance().createComponentBinder(this)}.
    *
    * @return the binder
    */

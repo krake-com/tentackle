@@ -23,7 +23,7 @@ import org.tentackle.misc.Identifiable;
 import java.io.Serial;
 
 /**
- * Runtime exception thrown for not-removables.
+ * Runtime exception thrown if an object cannot be removed, for example because it is still referenced.
  *
  * @author harald
  */
@@ -62,7 +62,7 @@ public class NotRemovableException extends PersistenceException {
    * Constructs a new not-removable exception for a given session with the specified detail message and
    * cause.  <p>Note that the detail message associated with
    * <code>cause</code> is <i>not</i> automatically incorporated in
-   * this constraint's detail message.
+   * this exception's detail message.
    *
    * @param  session the session
    * @param  message the detail message (which is saved for later retrieval
@@ -94,23 +94,23 @@ public class NotRemovableException extends PersistenceException {
   }
 
   /**
-   * Constructs a new not-removable exception for a given pc object
+   * Constructs a new not-removable exception for a given {@link Identifiable}
    * with <code>null</code> as its detail message.
    * The cause is not initialized and may subsequently be
    * initialized by a call to {@link #initCause}.
    *
-   * @param object the persistent object
+   * @param object the identifiable
    */
   public NotRemovableException(Identifiable object) {
     super(object);
   }
 
   /**
-   * Constructs a new not-removable exception for a given session with the specified detail message.
+   * Constructs a new not-removable exception for a given {@link Identifiable} with the specified detail message.
    * The cause is not initialized and may subsequently be initialized by a
    * call to {@link #initCause}.
    *
-   * @param   object the persistent object
+   * @param   object the identifiable
    * @param   message   the detail message. The detail message is saved for
    *          later retrieval by the {@link #getMessage()} method.
    */
@@ -119,12 +119,12 @@ public class NotRemovableException extends PersistenceException {
   }
 
   /**
-   * Constructs a new not-removable exception for a given session with the specified detail message and
+   * Constructs a new not-removable exception for a given {@link Identifiable} with the specified detail message and
    * cause.  <p>Note that the detail message associated with
    * <code>cause</code> is <i>not</i> automatically incorporated in
-   * this constraint's detail message.
+   * this exception's detail message.
    *
-   * @param  object the persistent object
+   * @param  object the identifiable
    * @param  message the detail message (which is saved for later retrieval
    *         by the {@link #getMessage()} method).
    * @param  cause the cause (which is saved for later retrieval by the
@@ -137,13 +137,13 @@ public class NotRemovableException extends PersistenceException {
   }
 
   /**
-   * Constructs a new not-removable exception for a given session with the specified cause and a
+   * Constructs a new not-removable exception for a given {@link Identifiable} with the specified cause and a
    * detail message of <code>(cause==null ? null : cause.toString())</code>
    * (which typically contains the class and detail message of
    * <code>cause</code>).  This constructor is useful for runtime exceptions
    * that are little more than wrappers for other {@link Throwable}s.
    *
-   * @param  object the persistent object
+   * @param  object the identifiable
    * @param  cause the cause (which is saved for later retrieval by the
    *         {@link #getCause()} method).  (A <code>null</code> value is
    *         permitted and indicates that the cause is nonexistent or
@@ -154,7 +154,7 @@ public class NotRemovableException extends PersistenceException {
   }
 
   /**
-   * Constructs a new database constraint exception without a session and
+   * Constructs a new not-removable exception without a session and
    * with <code>null</code> as its detail message.
    * The cause is not initialized and may subsequently be
    * initialized by a call to {@link #initCause}.
@@ -164,7 +164,7 @@ public class NotRemovableException extends PersistenceException {
   }
 
   /**
-   * Constructs a new database constraint exception without a session with the specified detail message.
+   * Constructs a new not-removable exception without a session with the specified detail message.
    * The cause is not initialized and may subsequently be initialized by a
    * call to {@link #initCause}.
    *
@@ -176,7 +176,7 @@ public class NotRemovableException extends PersistenceException {
   }
 
   /**
-   * Constructs a new database constraint exception without a session with the specified detail message and
+   * Constructs a new not-removable exception without a session with the specified detail message and
    * cause.  <p>Note that the detail message associated with
    * <code>cause</code> is <i>not</i> automatically incorporated in
    * this runtime exception's detail message.

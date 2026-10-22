@@ -91,6 +91,8 @@ public class Document {
       int ndx = firstLine.indexOf(']');
       if (ndx > 3) {
         modelDefaults = new ModelDefaults(firstLine.substring(2, ndx));
+        // remove the defaults, but keep the line break to preserve the line numbers
+        text = text.substring(firstLine.length());
       }
       else {
         throw new ModelException("missing closing square bracket in first line of model: " + firstLine);
@@ -241,6 +243,7 @@ public class Document {
       int colonIndex = lineText.indexOf(':');
       int equalsIndex = lineText.indexOf('=');
 
+      // ':=' marks a configuration line
       if (colonIndex > 0 && colonIndex == equalsIndex - 1) {
         return LineType.CONFIGURATION.createLine(this, offset);
       }
@@ -263,7 +266,7 @@ public class Document {
         if (Character.isUpperCase(firstWord.charAt(0))) {
           // relation or relation option
           if (secondWord != null && secondWord.charAt(0) == '@') {
-            // annotation -> validation line
+            // annotation -> relation option line
             return LineType.RELATION_OPTION.createLine(this, offset);
           }
           return LineType.RELATION.createLine(this, offset);
@@ -281,6 +284,7 @@ public class Document {
             }
           }
           else {
+            // <lowercase name>: options -> attribute option line
             return LineType.ATTRIBUTE_OPTION.createLine(this, offset);
           }
         }
@@ -300,9 +304,9 @@ public class Document {
 
 
   /**
-   * Concatenate continuation lines.<br>
+   * Concatenates continuation lines.<br>
    * Lines ending with a backslash are continued on the next line.<br>
-   * Notice that any spaces following the backslash are ignored.
+   * Notice that any whitespace following the backslash is ignored.
    *
    * @param text the original text
    * @return the processed text
@@ -320,7 +324,7 @@ public class Document {
         if (c == '\\') {
           lastBackslashIndex = buf.length();
         }
-        else if (c != ' ') {
+        else if (c != ' ' && c != '\t' && c != '\r') {
           lastBackslashIndex = -1;
         }
         buf.append(c);

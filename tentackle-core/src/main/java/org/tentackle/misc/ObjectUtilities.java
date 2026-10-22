@@ -55,14 +55,15 @@ interface ObjectUtilitiesHolder {
 /**
  * Object utility methods.
  * <p>
- * Mainly used by {@link CompoundValue}.<br>
- * Applications should extend and replace via {@link Service} annotation for application-specific types.
+ * Mainly used by {@link CompoundValue} to convert strings to objects.<br>
+ * Applications may extend and replace it via the &#64;{@link Service} annotation to support application-specific types.
+ * See {@link #setConverter(Class, Function)}.
  */
 @Service(ObjectUtilities.class)   // defaults to self
 public class ObjectUtilities {
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */
@@ -74,6 +75,11 @@ public class ObjectUtilities {
   private final Map<Class<?>, Function<Object,?>> converterMap = new HashMap<>();
 
 
+  /**
+   * Creates the utilities with converters for the standard types:
+   * strings, numbers, booleans, characters, and the date and time types of {@code java.util},
+   * {@code java.sql}, {@code java.time} and tentackle.
+   */
   public ObjectUtilities() {
     setConverter(String.class, this::toString);
     setConverter(DMoney.class, this::toDMoney);
@@ -114,14 +120,24 @@ public class ObjectUtilities {
 
 
   /**
-   * Converts value to the given type.
+   * Converts a value to the given type.
    * <p>
-   * Throws {@link IllegalArgumentException} if unsupported type or conversion failed.
+   * The conversion is tried in the following order:
+   * <ol>
+   *   <li>no conversion if the value is already of the given type</li>
+   *   <li>a converter registered via {@link #setConverter(Class, Function)}</li>
+   *   <li>enums by name. Lowercase camel case names are converted to uppercase with underscores,
+   *   for example {@code oneTwo} to {@code ONE_TWO}</li>
+   *   <li>classes by name</li>
+   *   <li>a public static {@code valueOf} method of the given type, see {@link #valueOf(Class, Object)}</li>
+   * </ol>
    *
    * @param <T> the type
    * @param clazz the type
    * @param value the value
    * @return the converted value, null if value is null
+   * @throws IllegalArgumentException if the conversion is not supported or failed
+   * @throws RuntimeException the exception thrown by the converter, for example a {@link java.time.DateTimeException}
    */
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public <T> T convert(Class<T> clazz, Object value) {
@@ -175,15 +191,15 @@ public class ObjectUtilities {
 
 
   /**
-   * Invokes a matching valueOf method on the given class for a given value.
-   * <p>
-   * Throws {@link IllegalArgumentException} if no matching method found.<br>
-   * Throws {@link TentackleRuntimeException} if invocation failed.
+   * Invokes a matching valueOf method on the given class for a given value.<br>
+   * The method must be public and static and accept the value's class or one of its superclasses.
    *
    * @param clazz the class providing the valueOf method
    * @param value the value to pass to the valueOf method, usually a string
    * @param <T> the returned type
    * @return the created value
+   * @throws IllegalArgumentException if no matching method found
+   * @throws TentackleRuntimeException if the invocation failed
    */
   @SuppressWarnings("unchecked")
   public <T> T valueOf(Class<T> clazz, Object value) {
@@ -195,9 +211,9 @@ public class ObjectUtilities {
         if (Modifier.isStatic(valueOfMethod.getModifiers()) && Modifier.isPublic(valueOfMethod.getModifiers())) {
           break;
         }
-        else {
-          valueOfMethod = null;
-        }
+        // not usable: try the superclass, or the loop would never terminate
+        valueOfMethod = null;
+        valueType = valueType.getSuperclass();
       }
       catch (NoSuchMethodException exception) {
         // try superclass
@@ -218,17 +234,18 @@ public class ObjectUtilities {
 
 
   /**
-   * Checks whether a given number is zero.
+   * Checks whether a given number is zero.<br>
+   * The scale of decimal numbers does not matter.
    *
    * @param number the number
-   * @return true if the number is zero
+   * @return true if the number is zero, false if not zero or null
    */
   public boolean isZero(Number number) {
     return switch (number) {
       case null -> false;
       case BMoney bMoney -> bMoney.isZero();
       case BigInteger _ -> number.equals(BigInteger.ZERO);
-      case BigDecimal _ -> number.equals(BigDecimal.ZERO);
+      case BigDecimal bigDecimal -> bigDecimal.signum() == 0;    // equals() would compare the scale as well
       case Double v -> v == 0.0d;
       case Float v -> v == 0.0f;
       default -> number.longValue() == 0;
@@ -238,7 +255,8 @@ public class ObjectUtilities {
 
 
   /**
-   * Sets a converter for a given class.
+   * Sets a converter for a given class.<br>
+   * Replaces an existing converter for the same class.
    *
    * @param clazz the class to convert to
    * @param converter the converter function

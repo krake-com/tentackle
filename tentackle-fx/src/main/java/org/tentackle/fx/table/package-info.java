@@ -17,6 +17,8 @@
  */
 
 /**
- * FX table support.
+ * FX table support.<br>
+ * Configuration-driven tables and tree-tables: {@link org.tentackle.fx.table.TableConfiguration}s and their providers,
+ * the column configurations, the cell types rendering the values, and the totals table.
  */
 package org.tentackle.fx.table;

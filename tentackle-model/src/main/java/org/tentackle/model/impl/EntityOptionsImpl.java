@@ -141,7 +141,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
 
   /**
    * Clones the entity options.<br>
-   * The method is protected, since {@link #clone(EntityImpl)}  should be used instead,
+   * The method is protected, since {@link #clone(EntityImpl)} should be used instead,
    * which invokes {@code clone()}.
    *
    * @return the cloned options
@@ -260,10 +260,11 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
 
 
   /**
-   * Checks that the sorting string starts with a + or -.
+   * Processes a sorting token.<br>
+   * Tokens starting with '+' or '-' are added as is, tokens starting with a letter are added as ascending.
    *
    * @param token the sorting token
-   * @return true if applied
+   * @return true if applied, false if null, empty or starting with an invalid character
    */
   public boolean processSorting(String token) {
     boolean applied = false;
@@ -271,7 +272,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
       sorting = new ArrayList<>();
     }
     if (token != null && !token.isEmpty()) {
-      // must start with + or -
+      // must start with +, - or a letter
       char c = token.charAt(0);
       if (c == '-' || c == '+') {
         sorting.add(token);
@@ -356,6 +357,12 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
     this.trackType = trackType;
   }
 
+  /**
+   * Sets the TOKENLOCK option.<br>
+   * Adds or removes the implicit attributes editedBy, editedSince and editedExpiry accordingly.
+   *
+   * @param tokenLockProvided true if the entity provides a token lock
+   */
   public void setTokenLockProvided(boolean tokenLockProvided) {
     this.tokenLockProvided = tokenLockProvided;
     AttributeImpl editedByAttribute = (AttributeImpl) entity.getAttributeByJavaName(Constants.AN_EDITEDBY, false);
@@ -404,6 +411,12 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
     }
   }
 
+  /**
+   * Sets the NORMTEXT option.<br>
+   * Adds or removes the implicit attribute normText accordingly.
+   *
+   * @param normText true if the entity provides a normtext column
+   */
   public void setNormTextProvided(boolean normText) {
     this.normTextProvided = normText;
     AttributeImpl normTextAttribute = (AttributeImpl) entity.getAttributeByJavaName(Constants.AN_NORMTEXT, false);
@@ -427,6 +440,12 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
     this.noPrimary = noPrimary;
   }
 
+  /**
+   * Sets the TABLESERIAL option.<br>
+   * Adds or removes the implicit attribute tableSerial accordingly.
+   *
+   * @param tableSerial true if the entity provides a table serial
+   */
   public void setTableSerialProvided(boolean tableSerial) {
     this.tableSerialProvided = tableSerial;
     AttributeImpl tableSerialAttribute = (AttributeImpl) entity.getAttributeByJavaName(Constants.AN_TABLESERIAL, false);
@@ -450,6 +469,12 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
     this.rootEntity = rootEntity;
   }
 
+  /**
+   * Sets the ROOTID option.<br>
+   * Adds or removes the implicit attribute rootId accordingly.
+   *
+   * @param rootId true if the entity provides a root id
+   */
   public void setRootIdProvided(boolean rootId) {
     this.rootIdProvided = rootId;
     AttributeImpl rootIdAttribute = (AttributeImpl) entity.getAttributeByJavaName(Constants.AN_ROOTID, false);
@@ -469,6 +494,12 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
     }
   }
 
+  /**
+   * Sets the ROOTCLASSID option.<br>
+   * Adds or removes the implicit attribute rootClassId accordingly.
+   *
+   * @param rootClassId true if the entity provides a root class id
+   */
   public void setRootClassIdProvided(boolean rootClassId) {
     this.rootClassIdProvided = rootClassId;
     AttributeImpl rootClassIdAttribute = (AttributeImpl) entity.getAttributeByJavaName(Constants.AN_ROOTCLASSID, false);

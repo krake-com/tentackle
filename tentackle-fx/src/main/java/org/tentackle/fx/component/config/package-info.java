@@ -17,6 +17,8 @@
  */
 
 /**
- * FX component configurators.
+ * FX component configurators.<br>
+ * Registered via {@link org.tentackle.fx.ConfiguratorService}, they apply the framework-wide key handling,
+ * focus handling, and features such as the prefix selection to the components.
  */
 package org.tentackle.fx.component.config;

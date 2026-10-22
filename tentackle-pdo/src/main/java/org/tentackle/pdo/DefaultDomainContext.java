@@ -32,7 +32,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * The default application's domain context.
+ * The default domain context.
  *
  * @author harald
  */
@@ -55,7 +55,7 @@ public class DefaultDomainContext implements DomainContext {
   private transient boolean sessionValid;     // false if not created by constructor, i.e., sent over wire
 
   /**
-   * session immutable flag.
+   * session-immutable flag.
    */
   private transient boolean sessionImmutable;
 
@@ -69,12 +69,12 @@ public class DefaultDomainContext implements DomainContext {
 
   /**
    * Lazily created chained context name.<br>
-   * Defaults to {@code "<unnamed>"}.
+   * The empty string for the unnamed context.
    */
   private transient String chainedName;
 
 
-  // non transient
+  // non-transient
 
   /**
    * ID of the root entity.<br>
@@ -157,7 +157,7 @@ public class DefaultDomainContext implements DomainContext {
 
   /**
    * {@inheritDoc}<br>
-   * If the context's session is null the thread's local
+   * If the context's session is null, the thread's local
    * session is returned.
    *
    * @see Session#getCurrentSession()
@@ -333,6 +333,8 @@ public class DefaultDomainContext implements DomainContext {
    * and the session instance number.
    *
    * @param otherContext the context to compare this context to
+   * @return a negative integer, zero, or a positive integer as this context is less than, equal to,
+   *         or greater than the other context
    */
   @Override
   public int compareTo(DomainContext otherContext) {
@@ -351,6 +353,9 @@ public class DefaultDomainContext implements DomainContext {
    * Overridden to check whether contexts are equal.<br>
    * The default implementation checks the class, the contextId, and session for equality.
    * Checking against the null context returns false.
+   *
+   * @param obj the other object
+   * @return true if equal
    */
   @Override
   public boolean equals(Object obj) {
@@ -406,6 +411,7 @@ public class DefaultDomainContext implements DomainContext {
     }
     DefaultDomainContext context = cloneKeepRoot();
     context.namesList = null;
+    context.chainedName = null;   // cloned from the template, but the name chain differs
     if (context.names == null) {
       context.names = new String[]{"", name};
     }

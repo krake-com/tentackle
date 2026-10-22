@@ -25,6 +25,9 @@ import java.io.Serial;
 /**
  * Thrown by an {@link AuthenticationProvider} that vetoes the credentials it was given.
  * <p>
+ * The {@link AuthenticationManager} throws it as well, if no provider authenticated the credentials,
+ * or if the user could not be resolved because no {@link UserResolver} is configured.
+ * <p>
  * It extends {@link LoginFailedException} so that clients handling a failed login — most notably
  * the desktop client's {@code LoginFailedHandler} — treat it like any other refused login.
  * <p>
@@ -55,6 +58,14 @@ public class AuthenticationException extends LoginFailedException {
    */
   public AuthenticationException(String message, Throwable cause) {
     super(message, cause);
+  }
+
+  /**
+   * Constructs a new authentication exception.<br>
+   * No-args constructor mainly for serialization.
+   */
+  public AuthenticationException() {
+    super();
   }
 
 }

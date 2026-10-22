@@ -10,7 +10,8 @@ Its central abstraction is the [`Backend`](../java/org/tentackle/sql/Backend.jav
 *everything* dialect-specific about one kind of database: how to build a `SELECT` with a `LIMIT`/`OFFSET`, what an
 empty string looks like, how to create a sequence, whether `UUID` is supported natively, how to render a
 `CREATE TABLE` column, how to rename an index, which words are reserved, how to recognize a deadlock, and much
-more. Everything that differs between PostgreSQL, Oracle, DB2, SQL Server, MySQL/MariaDB, Informix, and H2 is
+more. Everything that differs between PostgreSQL, CockroachDB, Oracle, DB2, SQL Server, SAP HANA, MySQL/MariaDB,
+Firebird, Informix, and H2 is
 funneled through this one interface, so the layers above it can stay completely database-agnostic.
 
 The module serves two distinct audiences:
@@ -49,23 +50,23 @@ SQL you execute at runtime are guaranteed to agree.
 design — because it enumerates every point at which relational databases disagree. Its methods fall into a handful
 of groups:
 
-| Group                           | Examples                                                                                                                                                                     | Purpose                                                                                                               |
-|---------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
-| **Identification & connection** | `isMatchingUrl`, `isMatchingName`, `getDriverClassName`, `createConnection`, `validateVersion`                                                                               | Recognize the database from a JDBC URL or name and open connections to it.                                            |
-| **Query construction**          | `buildSelectSql`, `setLeadingSelectParameters`, `setTrailingSelectParameters`, `sqlJoin`, `sqlJoinSelects`, `sqlFunction`, `optimizeSql`                                     | Assemble `SELECT`s with dialect-correct paging, write-locking, joins and function calls.                              |
-| **DDL generation**              | `sqlCreateTableIntro`, `sqlCreateColumn`, `sqlCreateIndex`, `sqlCreateForeignKey`, `sqlCreateSequence`, `sqlCreateSchema`, `sqlDropTable`                                    | Emit `CREATE`/`DROP` statements for the schema generator.                                                             |
-| **Schema migration**            | `getMigrationStrategy`, `sqlRenameColumn`, `sqlAlterColumnType`, `sqlAlterColumnNullConstraint`, `sqlAlterColumnDefault`, `isDefaultEqual`                                   | Compute and emit the `ALTER` statements that morph an existing schema into the model's.                               |
-| **Type mapping**                | `sqlTypeToString`, `columnTypeToString`, `columnTypeNullDefaultToString`, `jdbcTypeToSqlType`, `getMaxSize`, `getMaxScale`, `valueToLiteral`                                 | Translate Tentackle [`SqlType`](#sqltype)s to the database's own type declarations and back.                          |
-| **Capability flags**            | `isSequenceSupported`, `isSchemaSupported`, `isClobSupported`, `isUUIDSupported`, `isFunctionBasedIndexSupported`, `isFilteredIndexSupported`, `isReleaseSavepointSupported` | Let callers ask what the database can do instead of hard-coding product checks.                                       |
-| **Naming & reserved words**     | `assertValidName`, `getMaxNameLength`, `getReservedWords`, `isReservedTableName`, `isTemporaryName`                                                                          | Validate identifiers against the dialect's rules.                                                                     |
-| **Error classification**        | `isConstraintException`, `isCommunicationLinkException`, `isTransientTransactionException`                                                                                   | Interpret vendor-specific `SQLException`s so the upper layers can decide whether to retry a transaction or reconnect. |
-| **Metadata**                    | `getMetaData`, `getModelMetaData`, `getTableMetaData`, `createColumnMetaData`, `createIndexMetaData`                                                                         | Read the live database schema for migration and verification.                                                         |
+| Group                           | Examples                                                                                                                                                                                                             | Purpose                                                                                                               |
+|---------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| **Identification & connection** | `isMatchingUrl`, `isMatchingName`, `getDriverClassName`, `createConnection`, `validateVersion`                                                                                                                       | Recognize the database from a JDBC URL or name and open connections to it.                                            |
+| **Query construction**          | `buildSelectSql`, `setLeadingSelectParameters`, `setTrailingSelectParameters`, `sqlJoin`, `sqlJoinSelects`, `sqlFunction`, `optimizeSql`                                                                             | Assemble `SELECT`s with dialect-correct paging, write-locking, joins and function calls.                              |
+| **DDL generation**              | `sqlCreateTableIntro`, `sqlCreateColumn`, `sqlCreateIndex`, `sqlCreateForeignKey`, `sqlCreateSequence`, `sqlCreateSchema`, `sqlDropTable`                                                                            | Emit `CREATE`/`DROP` statements for the schema generator.                                                             |
+| **Schema migration**            | `getMigrationStrategy`, `sqlRenameColumn`, `sqlAlterColumnType`, `sqlAlterColumnNullConstraint`, `sqlAlterColumnDefault`, `isDefaultEqual`                                                                           | Compute and emit the `ALTER` statements that morph an existing schema into the model's.                               |
+| **Type mapping**                | `sqlTypeToString`, `columnTypeToString`, `columnTypeNullDefaultToString`, `jdbcTypeToSqlType`, `getMaxSize`, `getMaxScale`, `valueToLiteral`                                                                         | Translate Tentackle [`SqlType`](#sqltype)s to the database's own type declarations and back.                          |
+| **Capability flags**            | `isSequenceSupported`, `isSchemaSupported`, `isClobSupported`, `isSqlxmlSupported`, `isJsonSupported`, `isUUIDSupported`, `isFunctionBasedIndexSupported`, `isFilteredIndexSupported`, `isReleaseSavepointSupported` | Let callers ask what the database can do instead of hard-coding product checks.                                       |
+| **Naming & reserved words**     | `assertValidName`, `getMaxNameLength`, `getReservedWords`, `isReservedTableName`, `isTemporaryName`                                                                                                                  | Validate identifiers against the dialect's rules.                                                                     |
+| **Error classification**        | `isConstraintException`, `isCommunicationLinkException`, `isTransientTransactionException`                                                                                                                           | Interpret vendor-specific `SQLException`s so the upper layers can decide whether to retry a transaction or reconnect. |
+| **Metadata**                    | `getMetaData`, `getModelMetaData`, `getTableMetaData`, `createColumnMetaData`, `createIndexMetaData`                                                                                                                 | Read the live database schema for migration and verification.                                                         |
 
 A long list of `SQL_*` string constants (`SQL_WHERE`, `SQL_SELECT`, `SQL_AND`, `SQL_EQUAL_PAR`, …) is also defined
 on the interface. These are the building blocks the persistence layer concatenates into statements; sharing them
 avoids scattering string literals throughout the framework and keeps generated and runtime SQL consistent.
 
-> **Stateless contract:** because there is exactly one backend per database type, implementations *must not* cache
+> **Stateless contract:** because there is exactly one backend instance per backend type, implementations *must not* cache
 > per-connection or per-transaction data. The one mutable exception is `setDropIfExistsEnabled` /
 > `isDropIfExistsEnabled`, a global toggle that controls whether generated `DROP` statements include `IF EXISTS`.
 
@@ -91,10 +92,10 @@ jdbc:oracle:thin:@//localhost:1521/xe|Oracle8
 ```
 
 `BackendInfo` can be built directly from arguments, from an
-[`EncryptedProperties`](../../../../tentackle-common/src/main/docs/common.md) configuration (honouring `Cryptor`-encrypted URLs and
-passwords), or copied with a different user/password. It also carries the optional **keep-alive** settings
-(`backendTimeout`, `backendKeepAliveEnabled`) used to survive cloud databases that silently drop idle
-connections — either by sending a dummy `SELECT` periodically, or by testing the connection just before it is
+[`EncryptedProperties`](../../../../tentackle-common/src/main/docs/cryptor.md) configuration (whose values may be
+`~`-encrypted), or copied with a different user/password. It also carries the optional **keep-alive** settings
+(the keys `jdbcIdleTimeout`, in minutes, and `jdbcKeepAlive`) used to survive cloud databases that silently drop
+idle connections — either by sending a dummy `SELECT` periodically, or by testing the connection just before it is
 reused.
 
 Passwords are held in `char[]` and can be wiped from memory with `clearPassword()`.
@@ -102,9 +103,9 @@ Passwords are held in `char[]` and can be wiped from memory with `clearPassword(
 ### SqlType
 
 [`SqlType`](../java/org/tentackle/sql/SqlType.java) is a small, type-safe enum that is Tentackle's curated subset
-of `java.sql.Types`: `VARCHAR`, `CHAR`, `CLOB`, `BLOB`, `DECIMAL`, `BIT`, `TINYINT`, `SMALLINT`, `INTEGER`,
-`BIGINT`, `FLOAT`, `DOUBLE`, `DATE`, `TIME`, `TIMESTAMP`, `UUID` and `JAVA_OBJECT`. Each value knows its Java
-default value and how to parse a literal coming back from JDBC metadata.
+of `java.sql.Types`: `VARCHAR`, `CHAR`, `CLOB`, `XML`, `JSON`, `BLOB`, `DECIMAL`, `BIT`, `TINYINT`,
+`SMALLINT`, `INTEGER`, `BIGINT`, `FLOAT`, `DOUBLE`, `DATE`, `TIME`, `TIMESTAMP`, `UUID` and `JAVA_OBJECT`. Each
+value knows its Java default value and how to parse a literal coming back from JDBC metadata.
 
 `SqlType` is the **physical** view — one `SqlType` corresponds to one database column. It is what the backend
 turns into an actual type declaration via `columnTypeToString` and friends.
@@ -117,15 +118,26 @@ more** columns. For example [`BMoneyType`](../java/org/tentackle/sql/datatypes/B
 `BMoney` value to two columns (amount + scale).
 
 `DataType` is deliberately an interface, not an enum, so that **applications can define their own column types**.
-The module ships ~36 predefined implementations under
+The module ships ~38 predefined implementations under
 [`org.tentackle.sql.datatypes`](../java/org/tentackle/sql/datatypes) covering the primitive wrappers and their
-primitives, `String`/`Character`, the `java.time` types (`LocalDate`, `LocalDateTime`, `Instant`,
-`ZonedDateTime`, `OffsetDateTime`, …), the legacy `java.sql` date/time types, `BigDecimal`, `UUID`, binary/large
-types, and the Tentackle money types `BMoney`/`DMoney`.
+primitives (including `Boolean`), `String`/`Character`, the `java.time` types (`LocalDate`, `LocalTime`,
+`LocalDateTime`, `Instant`, `OffsetTime`, `OffsetDateTime`, `ZonedDateTime`), the legacy `java.sql` date/time types,
+`BigDecimal`, `UUID`, raw `byte[]`, the Tentackle types `BMoney`/`DMoney`, `I18NText` and `Binary`/`TBinary`,
+and the pseudo type for application-specific `Convertible` wrappers. Notice that "predefined" means shipped with the module:
+`I18NTextType` and `UUIDType` nevertheless return `isPredefined() == false`, because they are persisted via the
+generic accessors.
 
 Each `DataType` is a stateless singleton annotated with `@Service(DataType.class)` and located through the
 [`DataTypeFactory`](../java/org/tentackle/sql/DataTypeFactory.java). It is keyed by the plain Java class name plus
-an optional *variant* (e.g., the `"Large"` variant distinguishes a `CLOB`-backed `String` from a `VARCHAR` one).
+an optional *variant* (e.g., the `"LargeString"` variant distinguishes a `CLOB`-backed `String` from a `VARCHAR` one,
+and the `"Sqlxml"` variant bridges a `String` through the JDBC [`SQLXML`](../java/org/tentackle/sql/datatypes/XMLType.java)
+interface to a native XML column where the backend supports it — see [`Backend.isSqlxmlSupported()`](../java/org/tentackle/sql/Backend.java)).
+The [`"Json"` variant](../java/org/tentackle/sql/datatypes/JsonType.java) does the same for a native JSON column,
+but JDBC offers no binding to bridge it with: there is no `Types.JSON` and no `createJSON()`. The backends
+therefore disagree on both ends — a `jsonb` parameter is set as `Types.OTHER`, H2 only accepts the UTF-8 bytes
+(a plain string would be stored as a JSON *string value*), and a JSON column is reported back as `Types.OTHER`
+with only the type name to tell it from a `uuid`. Both ends are hence the backend's business, via
+`setJson`/`getJson` and the type-name-aware `jdbcTypeToSqlType` overload.
 
 The interface serves three roles at once, which is why it is so broad:
 
@@ -146,13 +158,21 @@ The interface serves three roles at once, which is why it is so broad:
 
 [`ScriptRunner`](../java/org/tentackle/sql/ScriptRunner.java) executes multi-statement SQL scripts (e.g., generated
 DDL and migration scripts) against a `Connection`. It splits a script into statements using the backend's
-statement separators and comment syntax, then runs each one. It offers:
+statement separator and comment syntax, then runs each one. It offers:
 
 - control over **escape processing**, **max rows**, **per-statement timeout**, **read-only** mode, and whether to
   wrap the whole script in a **transaction**;
 - `cancel()` / `isCanceled()` to abort a long-running script;
-- listeners for each statement *submitted* (`addExecutionListener`), each *result* (`addResultListener`) and each
-  *result set* (`addResultSetListener`).
+- listeners for each statement *submitted* (`addExecutionListener`, receives the SQL text), each *result*
+  (`addResultListener`) and each *result set* (`addResultSetListener`, receives the SQL text and the open
+  `ResultSet`).
+
+`run(script)` returns — and a result listener receives — a
+[`ScriptRunnerResult`](../java/org/tentackle/sql/ScriptRunnerResult.java) record per executed statement: the SQL
+text and its offset within the script, the execution time, the JDBC warnings (empty if none), and either the update
+count or the rows of the result set together with the column count, JDBC types and names. Warnings not related to a
+single statement, such as those of the connection, are reported as an extra result without SQL text. Its
+`toString()` renders the rows as an aligned table — that is what `tentackle-sql:run` logs.
 
 A `Backend` creates an appropriate runner via `createScriptRunner(connection)`. The default is
 [`DefaultScriptRunner`](../java/org/tentackle/sql/DefaultScriptRunner.java); PostgreSQL supplies a specialized
@@ -171,7 +191,7 @@ URL-loaded driver in a system-classloader-visible delegate and registers it. The
 org.postgresql.Driver:jar:file:/usr/share/java/postgresql.jar!/
 ```
 
-This is triggered by the `backend.driver` configuration property and lets an application ship without bundling
+This is triggered by the `driver` key of the backend properties and lets an application ship without bundling
 every possible JDBC driver.
 
 ---
@@ -180,10 +200,10 @@ every possible JDBC driver.
 
 | Package                       | Contents                                                                                                                                                                                                                                |
 |-------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `org.tentackle.sql`           | The core API: `Backend`, `BackendInfo`, `BackendFactory`, `DataType`, `DataTypeFactory`, `SqlType`, `SqlNameType`, `JoinType`, `MigrationStrategy`, `ScriptRunner`, `DynamicDriver`, the `Default*` implementations and the exceptions. |
+| `org.tentackle.sql`           | The core API: `Backend`, `BackendInfo`, `BackendInfoFactory`, `BackendFactory`, `BackendVersionInfo`, `BackendPreparedStatement`, `DataType`, `DataTypeFactory`, `SqlType`, `SqlNameType`, `JoinType`, `MigrationStrategy`, `ScriptRunner`, `ScriptRunnerResult`, `DynamicDriver`, `NonStandardCommons` (SQL shared by several backends), the `Default*` implementations and the exceptions. |
 | `org.tentackle.sql.backends`  | The concrete `Backend` implementations and their abstract base classes (see below).                                                                                                                                                     |
-| `org.tentackle.sql.datatypes` | The ~36 predefined `DataType` implementations and the abstract bases `AbstractDataType`, `AbstractNumberType`, `AbstractDateTimeType`.                                                                                                  |
-| `org.tentackle.sql.metadata`  | Live-schema metadata model (`ModelMetaData`, `TableMetaData`, `ColumnMetaData`, `IndexMetaData`, `ForeignKeyMetaData` and backend-specific subclasses) used by the migrator and schema verifier.                                        |
+| `org.tentackle.sql.datatypes` | The ~38 predefined `DataType` implementations and the abstract bases `AbstractDataType`, `AbstractNumberType`, `AbstractDateTimeType`.                                                                                                  |
+| `org.tentackle.sql.metadata`  | Live-schema metadata model (`ModelMetaData`, `TableMetaData`, `ColumnMetaData`, `IndexMetaData`, `ForeignKeyMetaData` and backend-specific subclasses) used by the migrator and schema verifier, plus `MetaDataUtilities`, a replaceable `@Service` that names JDBC types and knows the table names reserved by the framework (`isReservedTable`, checked by the SQL plugin). |
 | `org.tentackle.sql.service`   | The `ModuleHook` for resource-bundle/i18n integration.                                                                                                                                                                                  |
 
 ---
@@ -200,53 +220,85 @@ AbstractBackend
     ├── H2
     ├── Informix
     ├── Postgres
+    │   └── CockroachDb
     ├── MySql
     │   └── MariaDb
     └── AbstractSql2003Backend
         ├── Db2
+        ├── Hana
         ├── MsSql
-        └── Oracle8
-            └── Oracle
-        (AbstractSql2008Backend extends AbstractSql2003Backend)
+        ├── Oracle8
+        │   └── Oracle
+        │       └── Oracle21
+        │           └── Oracle23
+        └── AbstractSql2008Backend
+            └── Firebird
 ```
 
-| Backend    | Name         | Matches JDBC URL containing           |
-|------------|--------------|---------------------------------------|
-| `Postgres` | `PostgreSQL` | `:postgresql`                         |
-| `H2`       | `H2`         | `:h2:` (in-memory when `:mem:`)       |
-| `MySql`    | `MySQL`      | `:mysql`                              |
-| `MariaDb`  | `MariaDB`    | `:mariadb`                            |
-| `Oracle`   | `Oracle`     | `:oracle:`                            |
-| `Oracle8`  | `Oracle8`    | `:oracle:` (legacy, selected by name) |
-| `Db2`      | `DB2`        | `:db2`                                |
-| `MsSql`    | `MsSQL`      | `:sqlserver`                          |
-| `Informix` | `Informix`   | `:informix`                           |
+| Backend       | Name          | Matches JDBC URL containing                               |
+|---------------|---------------|-----------------------------------------------------------|
+| `Postgres`    | `PostgreSQL`  | `:postgresql`                                             |
+| `CockroachDb` | `CockroachDB` | never (PostgreSQL driver, selected by name)               |
+| `H2`          | `H2`          | `:h2:` (in-memory when `:mem:`)                           |
+| `MySql`       | `MySQL`       | `:mysql`                                                  |
+| `MariaDb`     | `MariaDB`     | `:mariadb`                                                |
+| `Oracle`      | `Oracle`      | `:oracle:`                                                |
+| `Oracle8`     | `Oracle8`     | `:oracle:` (legacy, selected by name)                     |
+| `Oracle21`    | `Oracle21`    | never (native JSON opt-in, selected by name)              |
+| `Oracle23`    | `Oracle23`    | never (native BOOLEAN/IF EXISTS opt-in, selected by name) |
+| `Db2`         | `DB2`         | `:db2`                                                    |
+| `MsSql`       | `MsSQL`       | `:sqlserver`                                              |
+| `Hana`        | `HANA`        | `:sap:`                                                   |
+| `Firebird`    | `Firebird`    | `:firebird` (`jdbc:firebirdsql:`, `jdbc:firebird:`)       |
+| `Informix`    | `Informix`    | `:informix`                                               |
 
-When several backends could match the same URL (e.g. `Oracle` and the deprecated `Oracle8`), only one matches by
-URL and the others are selected explicitly by name via the `|<BackendName>` URL suffix. Backends marked
-`isDeprecated()` are excluded from `BackendFactory.getAllBackends()`.
+When several backends match the same URL (e.g. `Oracle` and the deprecated `Oracle8`), the first in the order of
+the backend names wins, and the others are selected explicitly by name via the `|<BackendName>` URL suffix.
+`CockroachDB` is reached through the PostgreSQL driver and cannot be told apart by its URL at all, so it never
+matches one. `Oracle21` and `Oracle23` are the same idea used for opt-ins rather than a legacy dialect: each shares
+its URL with `Oracle`, but never matches it, since it adds a version-specific native feature (JSON for `Oracle21`;
+`BOOLEAN` and `DROP ... IF EXISTS` for `Oracle23`, see [The Oracle Backend](oracle.md#other-oracle-peculiarities)).
+Hence, each must be requested explicitly with `|Oracle21`/`|Oracle23`. Backends marked `isDeprecated()` are excluded from
+`BackendFactory.getAllBackends()`.
 
-Two products deviate from the others far enough to warrant their own document:
+Several products deviate from the others far enough to warrant their own document:
 
+- [The PostgreSQL Backend](postgres.md) — the reference backend: type mapping, the `JSON`/`JSONB` choice,
+  deferrable constraints.
+- [The H2 Backend](h2.md) — the backend of Tentackle's own tests: standard paging order, decimals without a size,
+  native JSON bound as bytes.
 - [The Oracle Backend](oracle.md) — most notably how filtered indexes are emulated and what that means for the
   query optimizer.
 - [The MySQL and MariaDB Backends](mysql.md) — the type mapping (`LONGTEXT`/`LONGBLOB`, decimal scale, fractional
   seconds), the index key limits, migration by full column declaration, and sequences on MariaDB.
+- [The SAP HANA Backend](hana.md) — `NVARCHAR` strings, the unsigned `TINYINT`, and column alterations that
+  replace the whole declaration.
+- [The Firebird Backend](firebird.md) — the explicit row lock, the sort order per index, and tables that cannot
+  be renamed.
+- [The CockroachDB Backend](cockroachdb.md) — selecting it by name, index names per table, and serializable
+  transactions.
+- [The DB2 Backend](db2.md) — small integers for booleans, decimals without a size, line-oriented DDL scripts.
 
-Both refuse to connect to a server older than their minimum version (`validateVersion`): Oracle 12, MySQL 8.0,
-MariaDB 10.3.
+**Microsoft SQL Server and Informix** are supported less thoroughly than the others. Their generated SQL is not
+verified against a real server, and some of it is known to need manual adjustment:
+
+- **`MsSql`**: SQL Server renames tables and columns with `sp_rename` and drops an index with `DROP INDEX ... ON
+  table`, while the backend generates the standard `ALTER TABLE ... RENAME` and `DROP INDEX` statements. Dates and
+  times are declared as `DATETIME` (about 3 ms precision), unsized strings as `NVARCHAR(MAX)`, which cannot be part
+  of an index key, and large strings as `CLOB`, which SQL Server does not know. Paging with an offset uses
+  `ROW_NUMBER() OVER()` without an `ORDER BY`, which SQL Server refuses. A limit without an offset is implemented
+  with `TOP`, which ignores the write lock.
+- **`Informix`**: the credentials are passed as part of the URL, timestamps are declared as
+  `DATETIME YEAR TO SECOND` without fractional seconds, `XML` and `JSON` are stored as `CLOB`, and there is no
+  version check and no XA.
+
+The backends refuse to connect to a server older than their minimum version (`validateVersion`): Oracle 12
+(21 for `Oracle21`, 23 for `Oracle23`), MySQL 8.0, MariaDB 10.3, SAP HANA 2.0, Firebird 4.0.
 
 **H2 is the backend Tentackle's own tests run on** (see
-[tentackle-test-pdo](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md)), so two of its
-deviations from PostgreSQL are worth knowing when reading a generated script:
-
-- **Paging and locking follow the SQL standard**, not PostgreSQL's order: `buildSelectSql` emits
-  `OFFSET ? ROWS FETCH FIRST ? ROWS ONLY FOR UPDATE`. H2 rejects any other order as a syntax error, which is why
-  the trailing parameters are bound offset-first.
-- **An unsized `DECIMAL` needs a precision.** A bare `DECIMAL` is `DECIMAL(100000,0)` in H2 and would silently
-  round away every fraction digit, so `getDefaultSize` supplies 19 — the same remedy the MySQL backend applies
-  (see [Decimals](mysql.md#decimals)). As there, only PostgreSQL and Oracle keep the scale of a decimal column
-  the model declares no size for.
+[tentackle-test-pdo](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md)). Its deviations from
+PostgreSQL that are worth knowing when reading a generated script — the standard order of the paging and locking
+clauses, and the default precision of a decimal without a size — are described in [The H2 Backend](h2.md).
 
 ---
 
@@ -276,7 +328,7 @@ properties) and obtains a connection:
 BackendInfo info = new BackendInfo(backendProperties);   // url, user, password, schemas, driver, timeout...
 try (Connection con = info.connect()) {
     Backend backend = info.getBackend();
-    String sql = backend.buildSelectSql("FROM customer WHERE name LIKE ?",
+    String sql = backend.buildSelectSql("* FROM customer WHERE name LIKE ?",
                                         false /*writeLock*/, 50 /*limit*/, 0 /*offset*/);
     // ... prepare, set parameters via backend.setLeadingSelectParameters(...), execute
 }
@@ -333,8 +385,14 @@ where the dialect deviates (type strings, paging syntax, sequence support, reser
 
 ## Related Documentation
 
+- [The PostgreSQL Backend](postgres.md) — the reference backend: type mapping, `JSON` vs. `JSONB`, deferrable constraints.
+- [The H2 Backend](h2.md) — the peculiarities of H2: standard paging order, decimals without a size, native JSON.
 - [The Oracle Backend](oracle.md) — the peculiarities of Oracle: emulated filtered indexes, virtual index columns, empty strings and more.
 - [The MySQL and MariaDB Backends](mysql.md) — the peculiarities of MySQL and MariaDB: type mapping, index key limits, migration by full column declaration, sequences.
+- [The SAP HANA Backend](hana.md) — the peculiarities of SAP HANA: type mapping, migration by full column declaration, vendor error codes.
+- [The Firebird Backend](firebird.md) — the peculiarities of Firebird: row locks, index sort order, migration limits.
+- [The CockroachDB Backend](cockroachdb.md) — the deviations of CockroachDB from PostgreSQL and how to select it.
+- [The DB2 Backend](db2.md) — the peculiarities of DB2: type mapping, line-oriented DDL scripts, decimals without a size.
 - [Table Names](../../../../tentackle-session/src/main/docs/table-names.md) — schema mapping and table prefixes for the backends whose `isSchemaSupported()` returns `false`.
 - [Model Definition](../../../../tentackle-model/src/main/docs/model-definition.md) — where attributes and their data types are declared.
 - [Tentackle SQL Maven Plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) — generates DDL and migration scripts from the model using this module.

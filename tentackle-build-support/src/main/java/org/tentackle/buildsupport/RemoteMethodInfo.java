@@ -18,6 +18,7 @@
 
 package org.tentackle.buildsupport;
 
+import org.tentackle.common.NoBundle;
 import org.tentackle.common.Settings;
 
 import javax.annotation.processing.ProcessingEnvironment;
@@ -42,13 +43,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Holds information gathered by the {@link org.tentackle.common.Analyze}-annotation.
+ * Holds information gathered from a method annotated with {@link org.tentackle.common.RemoteMethod}.
  * <p>
- * The {@link AnalyzeProcessor} creates an info file in an apt run and
- * wurblets pick up this information to generate code.
+ * The {@link RemoteMethodAnalyzeHandler} creates an info file during the analyze phase, and
+ * the {@code RemoteMethod} wurblet picks up this information to generate the remote delegate code.
+ * <p>
+ * Parameters and return types are classified by comparing their type names against the classnames in
+ * {@code org/tentackle/buildsupport/ClassNames.properties}. The names are configurable to allow derived
+ * frameworks to point them at their own base classes.
  *
  * @author harald
  */
+@NoBundle
 public class RemoteMethodInfo {
 
   /**
@@ -58,21 +64,21 @@ public class RemoteMethodInfo {
   public static final String INFO_FILE_VERSION = "2.1";
 
   /**
-   * all remote method info files end with .remote
+   * All remote method info files end with {@code .remote}.
    */
   public static final String INFO_FILE_EXTENSION = ".remote";
 
-  // currently RemoteMethodInfo supports only the type METHOD, but other types will follow.
-
   /**
-   * Information type for a method.
+   * Information type for a method.<br>
+   * Also the key of the line holding the method name.
    */
   public static final String TYPE_METHOD = "method";
 
   /**
-   * Information type for a class.
+   * Key of the line holding the classname.<br>
+   * Not supported as an information type of its own.
    */
-  public static final String TYPE_CLASS = "class";    // not implemented yet!
+  public static final String TYPE_CLASS = "class";
 
 
 
@@ -91,7 +97,7 @@ public class RemoteMethodInfo {
    * Reads info from a file.
    *
    * @param infoFile the file to read from
-   * @return an RemoteMethodInfo object, null if file is empty or does not contain an RemoteMethodInfo-text
+   * @return the info, null if the file is empty or does not contain such info
    * @throws IOException if reading failed
    */
   public static RemoteMethodInfo readInfo(File infoFile) throws IOException {
@@ -108,8 +114,8 @@ public class RemoteMethodInfo {
   /**
    * Reads info from a line reader.
    *
-   * @param reader is the LineNumberReader
-   * @return an RemoteMethodInfo object, null if file is empty or does not contain an RemoteMethodInfo-text
+   * @param reader the line reader
+   * @return the info, null if the file is empty or does not contain such info
    * @throws IOException if reading failed
    */
   public static RemoteMethodInfo readInfo(LineNumberReader reader) throws IOException {
@@ -171,7 +177,7 @@ public class RemoteMethodInfo {
   }
 
 
-  // classnames from property file (we don't use <class>.getName() because we want to keep dependencies small
+  // classnames from the property file (we don't use <class>.getName() because we want to keep dependencies small)
   private final String nameCollection;
   private final String nameSession;
   private final String nameDbObject;
@@ -199,11 +205,11 @@ public class RemoteMethodInfo {
 
 
   /**
-   * Creates an RemoteMethodInfo for a given type.
-   * Used when reading from infofile.
+   * Creates a RemoteMethodInfo for a given type.<br>
+   * Used when reading from an info file.
    *
-   * @param type one of TYPE_...
-   * @throws IOException if unsupported TYPE_...
+   * @param type the information type, currently only {@link #TYPE_METHOD}
+   * @throws IOException if unsupported type
    */
   public RemoteMethodInfo(String type) throws IOException {
     ResourceBundle bundle = ResourceBundle.getBundle("org.tentackle.buildsupport.ClassNames");
@@ -222,8 +228,8 @@ public class RemoteMethodInfo {
 
 
   /**
-   * Creates an RemoteMethodInfo from a method element.
-   * Used during apt processing.
+   * Creates a RemoteMethodInfo from a method element.<br>
+   * Used during annotation processing.
    *
    * @param processingEnv the annotation processor's environment
    * @param methodElement the ExecutableElement to create an info from
@@ -245,7 +251,7 @@ public class RemoteMethodInfo {
     setGenericReturnType("");
     int ndx1 = getReturnType().indexOf('<');
     if (ndx1 > 0) {
-      int ndx2 = getReturnType().indexOf('>', ndx1);
+      int ndx2 = getReturnType().lastIndexOf('>');
       if (ndx2 > ndx1) {
         setGenericReturnType(getReturnType().substring(ndx1, ndx2 + 1));
       }
@@ -362,7 +368,7 @@ public class RemoteMethodInfo {
   }
 
   /**
-   * Sets the classname and the packagename from a given classname.
+   * Sets the name of the class this analyze-info is part of.
    *
    * @param className the full class name
    */
@@ -372,9 +378,9 @@ public class RemoteMethodInfo {
 
 
   /**
-   * Gets the name of the superclass this analyze-info is part of.
+   * Gets the name of the superclass of the class this analyze-info is part of.
    *
-   * @return the classname
+   * @return the classname, null if none
    */
   public String getSuperClassName() {
     return superClassName;
@@ -427,7 +433,7 @@ public class RemoteMethodInfo {
 
 
   /**
-   * Gets the generic return type.<br>
+   * Gets the generic part of the return type, e.g. {@code <Foo>} for {@code List<Foo>}.
    *
    * @return the generic type, null or empty if none
    */
@@ -448,14 +454,15 @@ public class RemoteMethodInfo {
   /**
    * Gets the formal parameters of the method.
    *
-   * @return the array of parameters
+   * @return the array of parameters, null if none
    */
   public RemoteMethodInfoParameter[] getParameters() {
     return parameterList == null ? null : parameterList.toArray(new RemoteMethodInfoParameter[0]);
   }
 
   /**
-   * Adds a formal parameter
+   * Adds a formal parameter.
+   *
    * @param parameter the formal parameter to add
    */
   public void addParameter(RemoteMethodInfoParameter parameter) {
@@ -552,7 +559,8 @@ public class RemoteMethodInfo {
   }
 
   /**
-   * Checks whether the method is returning a cursor.
+   * Checks whether the method is returning a cursor.<br>
+   * Also true for a PDO cursor.
    *
    * @return true if method returns a cursor
    */
@@ -568,10 +576,20 @@ public class RemoteMethodInfo {
     this.returningCursor = returningCursor;
   }
 
+  /**
+   * Checks whether the method is returning a cursor of PDOs.
+   *
+   * @return true if method returns a PDO cursor
+   */
   public boolean isReturningPdoCursor() {
     return returningPdoCursor;
   }
 
+  /**
+   * Sets whether the method is returning a cursor of PDOs.
+   *
+   * @param returningPdoCursor true if method returns a PDO cursor
+   */
   public void setReturningPdoCursor(boolean returningPdoCursor) {
     this.returningPdoCursor = returningPdoCursor;
   }
@@ -629,8 +647,8 @@ public class RemoteMethodInfo {
   /**
    * Writes this object to an info file.
    *
-   * @param writer is the PrintWriter object
-   * @throws IOException if write failed
+   * @param writer the writer
+   * @throws IOException if the information type is not supported
    */
   public void write(PrintWriter writer) throws IOException {
     if (type.equals(TYPE_METHOD)) {
@@ -668,8 +686,8 @@ public class RemoteMethodInfo {
 
 
   /**
-   * Simplifies some classnames by removing package names.<br>
-   * Makes generated code better readable.
+   * Simplifies the classnames within a type string by removing their package names.<br>
+   * Makes generated code more readable.
    * Can be used by wurblets.
    *
    * @param type the full type

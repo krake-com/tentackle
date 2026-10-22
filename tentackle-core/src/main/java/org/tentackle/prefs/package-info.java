@@ -18,5 +18,8 @@
 
 /**
  * Persistable preferences.
+ * <p>
+ * An interface-based replacement of {@link java.util.prefs.Preferences}. The implementation is provided
+ * by the {@link org.tentackle.prefs.PersistedPreferencesFactory}, usually storing the preferences in the database.
  */
 package org.tentackle.prefs;

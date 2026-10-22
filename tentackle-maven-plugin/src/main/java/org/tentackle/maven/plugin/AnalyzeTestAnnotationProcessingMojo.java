@@ -33,16 +33,16 @@ import java.util.List;
 /**
  * Generates code and meta-information prior to wurbeling and compiling the test sources.
  * <p>
- * Processes all annotations annotated with {@code @Analyze}, such as {@code @Service}.<br>
- * Processing results are either written to files in {@code analyzeDir} or placed on heap
- * for being picked up by wurblets, depending on the handler implementation for
- * each annotation.
+ * Same as the {@code analyze} goal, but for the test sources and the test classpath.
+ * The parameters have their own user properties, so that main and test analysis
+ * can be configured independently.
  *
  * @author harald
  */
 @Mojo(name = "test-analyze",
       defaultPhase = LifecyclePhase.GENERATE_TEST_SOURCES,
-      requiresDependencyResolution = ResolutionScope.TEST)
+      requiresDependencyResolution = ResolutionScope.TEST,
+      threadSafe = true)
 public class AnalyzeTestAnnotationProcessingMojo extends AbstractAnalyzeAnnotationProcessingMojo {
 
   /**
@@ -56,7 +56,7 @@ public class AnalyzeTestAnnotationProcessingMojo extends AbstractAnalyzeAnnotati
   protected File sourceDir;   // same as in wurbelizer's WurbelMojo
 
   /**
-   * Project classpath.
+   * The project's test classpath.
    */
   @Parameter(defaultValue = "${project.testClasspathElements}",
              readonly = true,
@@ -64,7 +64,7 @@ public class AnalyzeTestAnnotationProcessingMojo extends AbstractAnalyzeAnnotati
   protected List<String> classpathElements;
 
   /**
-   * Directory analyze results.
+   * Directory for the analyze results.
    */
   @Parameter(defaultValue = "${project.build.directory}/test-analyze",
              property = "wurbel.testAnalyzeDir",
@@ -72,7 +72,8 @@ public class AnalyzeTestAnnotationProcessingMojo extends AbstractAnalyzeAnnotati
   protected File analyzeDir;    // same as in wurbelizer's WurbelMojo
 
   /**
-   * Directory generated services.
+   * Directory for the generated services.<br>
+   * Must be registered as a test resource directory to end up on the test classpath.
    */
   @Parameter(defaultValue = "${project.build.directory}/generated-test-resources/services",
              property = "tentackle.testServiceDir",

@@ -18,8 +18,8 @@
 package org.tentackle.sql.metadata;
 
 /**
- * Index column metadata for postgres.<br>
- * Strips optional typecasts.
+ * Index column metadata for PostgreSQL.<br>
+ * Strips optional typecasts and enclosing parentheses from the column expression.
  */
 public class PostgresIndexColumnMetaData extends IndexColumnMetaData {
 
@@ -28,7 +28,7 @@ public class PostgresIndexColumnMetaData extends IndexColumnMetaData {
   /**
    * Creates an index column.
    *
-   * @param indexMetaData the index column belongs to
+   * @param indexMetaData the index this column belongs to
    */
   public PostgresIndexColumnMetaData(IndexMetaData indexMetaData) {
     super(indexMetaData);

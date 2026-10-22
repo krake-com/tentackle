@@ -33,7 +33,7 @@ import javafx.collections.ObservableList;
 import javafx.scene.Node;
 
 /**
- * Extended {@link FxTile}.
+ * Extended {@link Tile}.
  *
  * @author harald
  */

@@ -36,7 +36,7 @@
         <Button fx:id="loadButton" mnemonicParsing="false" text="Load" />
         <Button fx:id="saveButton" mnemonicParsing="false" text="Save" />
         <Button fx:id="saveAsButton" mnemonicParsing="false" text="Save as" />
-        <Button fx:id="copyScriptButton" mnemonicParsing="false" text="copy" />
+        <Button fx:id="copyScriptButton" mnemonicParsing="false" text="Copy" />
         <Button fx:id="runButton" mnemonicParsing="false" text="Run" />
         <Button fx:id="interruptButton" mnemonicParsing="false" text="Interrupt" />
         <Button fx:id="closeButton" mnemonicParsing="false" text="Close" />

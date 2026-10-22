@@ -1,6 +1,6 @@
 # Tentackle PDO
 
-The Persistent Domain Object interfaces: entities, aggregates, components, operations, security and number sources. The persistence- and domain implementations are injected at runtime as dynamic proxies.
+The Persistent Domain Object interfaces: entities, aggregates, components, operations, the PDO cache, transactions, security and number sources, plus the application framework and the annotation processors for the PDO services. The persistence- and domain implementations are injected at runtime as dynamic proxies.
 
 ## Documentation & reports
 

@@ -24,9 +24,13 @@ import java.util.ResourceBundle;
 import java.util.spi.ResourceBundleControlProvider;
 
 /**
- * Bundle control provider to use stored bundles.
+ * Provides the {@link StoredBundleControl} for all bundles.
  * <p>
- * Only used for non-modular applications! Not supported by jigsaw.
+ * Used in non-modular applications only, where the provider is picked up twice: by the
+ * {@link org.tentackle.common.DefaultBundleFactory}, which passes the control to
+ * {@link ResourceBundle#getBundle(String, java.util.Locale, ResourceBundle.Control)}, and by the JDK for plain
+ * {@link ResourceBundle} lookups. The JDK supports controls in unnamed modules only, so in a modular application,
+ * the bundles of named modules are loaded by the {@link StoredBundleFactory} instead.
  *
  * @author harald
  */

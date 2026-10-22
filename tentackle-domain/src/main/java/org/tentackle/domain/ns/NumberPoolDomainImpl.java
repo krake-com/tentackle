@@ -30,7 +30,7 @@ import java.io.Serial;
 import java.util.Iterator;
 
 /**
- * NumberPool domain implementation.
+ * Number pool domain implementation.
  *
  * @author harald
  */
@@ -41,14 +41,28 @@ public class NumberPoolDomainImpl extends AbstractDomainObject<NumberPool, Numbe
   private static final long serialVersionUID = 1L;
 
 
+  /**
+   * Creates the domain delegate for the given number pool.
+   *
+   * @param pdo the number pool PDO
+   */
   public NumberPoolDomainImpl(NumberPool pdo) {
     super(pdo);
   }
 
+  /**
+   * Creates the domain delegate without a PDO.<br>
+   * The PDO is linked later via {@link #setPdo}.
+   */
   public NumberPoolDomainImpl() {
     super();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Returns the pool's name, followed by a colon and the realm, if any.
+   */
   @Override
   public String toString() {
     StringBuilder buf = new StringBuilder();
@@ -105,8 +119,13 @@ public class NumberPoolDomainImpl extends AbstractDomainObject<NumberPool, Numbe
     return currentRange;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * A pool is a slave if both the low-water mark and the request size are positive.
+   */
   @Override
   public boolean isSlave() {
-    return me().getLowWaterMark() > 0 && me().getRequestSize() > 0;   // the uplink URL is checked in validator
+    return me().getLowWaterMark() > 0 && me().getRequestSize() > 0;   // the uplink URL is checked by the validator
   }
 }

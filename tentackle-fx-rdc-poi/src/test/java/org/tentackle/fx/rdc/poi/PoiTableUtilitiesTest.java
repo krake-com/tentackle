@@ -33,6 +33,8 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import org.tentackle.common.BMoney;
+import org.tentackle.common.Time;
+import org.tentackle.common.Timestamp;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.fx.rdc.RdcRuntimeException;
 import org.tentackle.fx.rdc.table.TableUtilities;
@@ -214,7 +216,7 @@ public class PoiTableUtilitiesTest {
     assertEquals(cells.getCell(3).getCellType(), CellType.NUMERIC);
     assertEquals(cells.getCell(3).getNumericCellValue(), 3.5);
 
-    // no special treatment: exported as toString()
+    // no native cell type: exported as the text the table displays
     assertEquals(cells.getCell(4).getCellType(), CellType.STRING);
     assertEquals(cells.getCell(4).getStringCellValue(), "CLOSED");
   }
@@ -335,6 +337,40 @@ public class PoiTableUtilitiesTest {
     assertEquals(cells.getCell(1).getCellType(), CellType.NUMERIC);
     assertEquals(cells.getCell(1).getNumericCellValue(), 0.75);
     assertEquals(cells.getCell(1).getCellStyle().getDataFormat(), TIME_FORMAT);
+  }
+
+  @Test
+  public void testSqlTimesAndTimestampsAreNotExportedAsDates() throws IOException {
+    // both extend java.util.Date, but a date-only format would hide the time
+    // or, for a time, show the epoch date
+    Time time = Time.valueOf("18:00:00");
+    Timestamp timestamp = Timestamp.valueOf("2026-08-07 14:30:00");
+    SpreadsheetRow row = new SpreadsheetRow();
+    row.setTime(time);
+    row.setTimestamp(timestamp);
+
+    HSSFRow cells = export(createConfiguration("time", "timestamp"), row).getRow(1);
+
+    assertEquals(cells.getCell(0).getCellType(), CellType.NUMERIC);
+    assertEquals(cells.getCell(0).getNumericCellValue(), 0.75, "a time is the fraction of a day");
+    assertEquals(cells.getCell(0).getCellStyle().getDataFormat(), TIME_FORMAT);
+
+    assertEquals(cells.getCell(1).getCellType(), CellType.NUMERIC);
+    assertEquals(cells.getCell(1).getLocalDateTimeCellValue(), LocalDateTime.of(2026, 8, 7, 14, 30));
+    assertEquals(cells.getCell(1).getCellStyle().getDataFormat(), DATE_TIME_FORMAT);
+  }
+
+  @Test
+  public void testTextCellsShowTheTextDisplayedInTheTable() throws IOException {
+    DefaultTableConfiguration<SpreadsheetRow> config = createConfiguration("name");
+    config.getColumnConfiguration("name").setCaseConversion(Boolean.TRUE);   // displayed in uppercase
+    SpreadsheetRow row = new SpreadsheetRow();
+    row.setName("Mixed Case");
+
+    HSSFRow cells = export(config, row).getRow(1);
+
+    assertEquals(cells.getCell(0).getCellType(), CellType.STRING);
+    assertEquals(cells.getCell(0).getStringCellValue(), "MIXED CASE", "same text as in the table, not toString()");
   }
 
   @Test

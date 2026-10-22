@@ -1,0 +1,9 @@
+## a logistic node (table per class)
+name := Node
+table := node
+inheritance := multi
+
+## attributes
+[root]
+
+String(20)      code            code            the node code

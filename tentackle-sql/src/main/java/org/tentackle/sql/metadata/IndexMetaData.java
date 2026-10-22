@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Meta data for an index.
+ * Metadata for an index.
  *
  * @author harald
  */
@@ -42,10 +42,11 @@ public class IndexMetaData {
   private boolean unique;                                   // true if unique index
   private String filterCondition;                           // filter condition
   private String comment;                                   // the comment
+  private Deferrability deferrability = Deferrability.NOT_DEFERRABLE;   // deferrability of the backing unique constraint, if any
 
 
   /**
-   * Creates an index meta data object.
+   * Creates an index metadata object.
    *
    * @param tableMetaData the table the index belongs to
    */
@@ -58,8 +59,8 @@ public class IndexMetaData {
   /**
    * Sets up the index from the database metadata result.
    *
-   * @param resultSet the column result set
-   * @throws SQLException the processing the result set failed
+   * @param resultSet the index info result set
+   * @throws SQLException if processing the result set failed
    */
   public void setupIndexFromMetaData(ResultSet resultSet) throws SQLException {
     indexName = StringHelper.toLower(resultSet.getString("INDEX_NAME"));
@@ -82,8 +83,8 @@ public class IndexMetaData {
   /**
    * Adds an index column from the database metadata result.
    *
-   * @param resultSet the column result set
-   * @throws SQLException the processing the result set failed
+   * @param resultSet the index info result set
+   * @throws SQLException if processing the result set failed
    */
   public void addIndexColumnFromMetaData(ResultSet resultSet) throws SQLException {
     IndexColumnMetaData column = tableMetaData.getModelMetaData().getBackend().createIndexColumnMetaData(this);
@@ -95,7 +96,7 @@ public class IndexMetaData {
   /**
    * Gets the table.
    *
-   * @return the table meta-data
+   * @return the table metadata
    */
   public TableMetaData getTableMetaData() {
     return tableMetaData;
@@ -180,6 +181,27 @@ public class IndexMetaData {
    */
   public void setComment(String comment) {
     this.comment = comment;
+  }
+
+  /**
+   * Gets the deferrability of the unique constraint backing this index, if any.<br>
+   * Not populated from the standard JDBC index metadata (which has no such column) but by
+   * {@link org.tentackle.sql.Backend#enrichIndexDeferrability}, and only for backends
+   * supporting {@link org.tentackle.sql.Backend#isSetConstraintsDeferredSupported()}.
+   *
+   * @return the deferrability, {@link Deferrability#NOT_DEFERRABLE} if none or not applicable
+   */
+  public Deferrability getDeferrability() {
+    return deferrability;
+  }
+
+  /**
+   * Sets the deferrability of the unique constraint backing this index.
+   *
+   * @param deferrability the deferrability
+   */
+  public void setDeferrability(Deferrability deferrability) {
+    this.deferrability = deferrability;
   }
 
   /**

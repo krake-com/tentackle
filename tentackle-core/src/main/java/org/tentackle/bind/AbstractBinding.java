@@ -37,6 +37,10 @@ import java.util.Objects;
 
 /**
  * Common implementation of a binding.
+ * <p>
+ * Transfers the values between model and view. The listeners of the binding are fired before
+ * those of the binder. If a listener vetoes, the transfer is skipped and, if requested, the
+ * other side is resynchronized.
  *
  * @author harald
  */
@@ -390,9 +394,9 @@ public abstract class AbstractBinding implements Binding {
       });
 
       if (honourResyncByVetoException && veto.isResyncRequested()) {
-        // update the model with the old value from the view
+        // update the model with the current value of the view
         LOGGER.fine("model resynced from view");
-        setModelValue(parent, value, false);
+        setModelValue(parent, getViewValue(), false);
       }
 
       if (veto.isRethrowEnabled()) {
@@ -423,7 +427,7 @@ public abstract class AbstractBinding implements Binding {
 
 
   /**
-   * Determines the view's component type.<br>
+   * Determines the view's component type.
    *
    * @return the component's type
    */
@@ -464,7 +468,9 @@ public abstract class AbstractBinding implements Binding {
 
 
   /**
-   * Determine the validators for this member.
+   * Determines the validators for this member.<br>
+   * Only validators applying to the binder's validation scope, the {@link MandatoryScope},
+   * the {@link ChangeableScope} or the {@link AllScope} are kept.
    */
   protected void determineValidators() {
     List<Validator> fieldValidators = ValidatorCache.getInstance().getFieldValidators(member.getField(), member.getGetter());

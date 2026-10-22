@@ -18,6 +18,7 @@
 package org.tentackle.session.auth;
 
 import org.tentackle.common.Cryptor;
+import org.tentackle.misc.Secret;
 import org.tentackle.session.DefaultSessionInfo;
 import org.tentackle.session.SessionInfo;
 

@@ -45,7 +45,7 @@ but you rarely write them by hand. They are normally part of the project-wide
 Listing them as defaults does **not** add a column to every table. It enables the
 model to add them *automatically, per entity, only where the topology demands it*.
 The inference runs over the model as a whole
-([`EntityImpl`](../../../../tentackle-model/src/main/java/org/tentackle/model/impl/EntityImpl.java))
+([`ModelImpl`](../../../../tentackle-model/src/main/java/org/tentackle/model/impl/ModelImpl.java))
 and applies three rules:
 
 1. **`root`** — If an entity is **not** used as a component of any aggregate, it is a
@@ -60,7 +60,10 @@ and applies three rules:
 3. **`rootClassId`** — If a component type is used in **more than one** aggregate
    (a *multi-homed* component — the same table is shared by different root classes),
    a `rootClassId` column is added so that a component row also records *which kind*
-   of root it belongs to, not just which id.
+   of root it belongs to, not just which id. The same applies to a component without a
+   single root entity that is the target of a [deep reference](#relation-to-security).
+   A component with exactly one root entity needs no column: its generated
+   `getRootClassId()` simply returns the root's class id as a constant.
 
 The model exposes what the raw model asked for through the
 `...AccordingToModel` predicates
@@ -74,10 +77,13 @@ Two combinations are rejected at model-validation time
 - an **embedded** entity may not provide `rootid`/`rootclassid` (it has no table); and
 - a **root** entity may not provide them either (it is its own root).
 
-You can override the inferred flags per entity in the global options line — e.g.
-`[-root, untracked]` forces an otherwise-standalone entity to be treated as a
-component, and the application may then steer the decision by overriding
-`isRootEntity()`.
+The global options line cannot switch the inferred flags off: neither `-root` nor
+`untracked` lowers what the model defaults and the topology imply (see
+[model-definition.md](../../../../tentackle-model/src/main/docs/model-definition.md)).
+An entity that is *programmatically* either a root entity or a component is modeled
+like a normal component with `[root]` in its global options, the `MethodsImpl` wurblet
+is given `--noisroot`, and the application overrides `isRootEntity()` to decide at
+runtime.
 
 ### Setting and reading the values at runtime
 
@@ -136,8 +142,10 @@ The principle is: **a component is visible only if its aggregate root is visible
 If you may not read the `Invoice`, you may not read its `InvoiceLine`s either — and the
 framework behaves as if the rows did not exist rather than raising an error.
 
-- For a **root entity**, the root context is checked directly against the read
-  permission
+- For a **root entity**, every loaded instance is checked against the read permission
+  (`isReadAllowed()`); a denied root entity is silently dropped. When loading within a
+  root context — which is how the components of an aggregate are loaded — the context's
+  root entity is checked once beforehand
   ([`assertRootContextIsAccepted()`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/AbstractPersistentObject.java)).
 
 - For a **component loaded outside its own root context** (a deep link / deep
@@ -201,7 +209,7 @@ This is where the columns earn their keep on the hot path. They exist primarily 
 integers instead of strings.
 
 - **One comparison instead of a join chain.** A condition on a deeply nested component
-  would naïvely require joining every intermediate aggregate level (root → child →
+  would naively require joining every intermediate aggregate level (root → child →
   grandchild → …) just to correlate the component row with its root. When a path from a
   root begins with a chain of composite component relations, the generator
   ([`pdo-select` → How the path to the root is reduced](../../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md#how-the-path-to-the-root-is-reduced--rootid--rootclassid))

@@ -26,7 +26,8 @@ import java.io.File;
 import java.util.Optional;
 
 /**
- * Finds java tools to execute on behalf of a maven plugin.
+ * Finds java tools to execute on behalf of a maven plugin.<br>
+ * Honors the toolchain, if any.
  */
 public class JavaToolFinder extends ToolFinder {
 
@@ -35,7 +36,7 @@ public class JavaToolFinder extends ToolFinder {
   /**
    * Creates the toolfinder.
    *
-   * @param toolchain the optional toolchain
+   * @param toolchain the optional toolchain, null if none
    */
   public JavaToolFinder(Toolchain toolchain) {
     this.toolchain = toolchain;
@@ -51,13 +52,13 @@ public class JavaToolFinder extends ToolFinder {
   /**
    * Finds the file of a java tool.
    * <p>
-   * If the finder was created with {@link #JavaToolFinder(Toolchain)}, the toolchain is consulted first.
-   * Otherwise or if not found by the toolchain, it looks in the same directory where the current command (usually java) is located.
-   * This is safe for all JDK tools, whether JAVA_HOME or PATH is configured correctly or not.<br>
-   * If not found, the environment JAVA_HOME ist tried.<br>
+   * If the finder was created with a toolchain, the toolchain is consulted first.
+   * Otherwise, or if not found by the toolchain, it looks in the directory of the currently running
+   * command (usually java). This is safe for all JDK tools, whether JAVA_HOME or PATH is configured correctly or not.<br>
+   * If not found, the environment's JAVA_HOME is tried.<br>
    * If still not found, the environment's PATH variable is consulted.
    * <p>
-   * Depending on the OS, it will also try to append well-known suffixes to the toolName.
+   * Except for the toolchain, it will also try to append well-known suffixes to the toolName, depending on the OS.
    * Windows: ".exe", ".cmd" and ".bat".
    * Others (Unixes): ".sh".
    *
@@ -100,8 +101,8 @@ public class JavaToolFinder extends ToolFinder {
   }
 
   /**
-   * Locate the directory of the currently running process.
-   * This is usually something like .../bin/java.
+   * Locates the directory of the currently running command.<br>
+   * The command is usually something like .../bin/java, so this is .../bin.
    *
    * @return the tool directory, null if the directory could not be determined
    */

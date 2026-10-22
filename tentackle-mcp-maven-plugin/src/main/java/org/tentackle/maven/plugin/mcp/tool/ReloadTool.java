@@ -26,8 +26,9 @@ import java.util.List;
 /**
  * Reloads the model.
  * <p>
- * Changed files are picked up automatically before every call, so this is only needed when that is not enough:
- * after a rebuild that removed or renamed an entity, or to force a clean reload.
+ * Changed, added and removed files are picked up automatically before every call, at most once per staleness
+ * interval, so this is only needed to pick up a change right away, to learn which entities changed, or to
+ * force a clean reload.
  *
  * @author harald
  */
@@ -55,10 +56,10 @@ public class ReloadTool implements ModelTool {
   @Override
   public String getDescription() {
     return """
-        Reloads the model from disk. Changed and added files are picked up automatically before every call, so \
-        you rarely need this -- reach for it after a build that deleted or renamed an entity, or when a result \
-        looks stale. 'full' clears the model first, which is slower but the only way to drop entities whose \
-        source is gone.""";
+        Reloads the model from disk and lists the entities whose source changed. Changed, added and removed \
+        files are picked up automatically before every call, so you rarely need this -- reach for it right \
+        after a build, to see what it changed, or when a result looks stale. 'full' clears the model and \
+        loads it from scratch, which is slower but also drops entities whose source is gone.""";
   }
 
   @Override

@@ -43,7 +43,7 @@ interface TableSerialHistoryHolder {
  * since the last query.
  * Those {@code id/tableserial} tuples are picked up by the {@link TableSerialExpirationBacklog} to fill
  * the gaps in its expiration sets avoiding unnecessary cache invalidations.<br>
- * An {@link IdSerialTuple}s with a positive tableserial and an ID of 0 represents an insert or update.
+ * An {@link IdSerialTuple} with a positive tableserial and an ID of 0 represents an insert or update.
  * A negative tableserial with a positive ID describes a deletion.
  * The history is only maintained by the server connected to the database. Intermediate servers or clients
  * retrieve their expiration sets from the remote server.<br>
@@ -128,7 +128,7 @@ public class TableSerialHistory {
 
 
   /**
-   * Memorizes a history entry.<br>
+   * Memorizes a history entry.
    *
    * @param tableName the tablename
    * @param id the object's ID, 0 for an update or insert
@@ -139,7 +139,7 @@ public class TableSerialHistory {
   }
 
   /**
-   * Memorizes a history entry.<br>
+   * Memorizes a history entry.
    *
    * @param tableName the tablename
    * @param tuple the id/tableserial tuple
@@ -193,34 +193,33 @@ public class TableSerialHistory {
   }
 
   /**
-   * Sets the maximum size of the history.
+   * Sets the maximum size of the history for a given tablename.<br>
+   * If the history holds more entries, the oldest ones are removed when the next entry is memorized.
    *
    * @param tableName the tablename
    * @param maxSize the new size
    */
   public void setMaxSize(String tableName, int maxSize) {
-    History history = tableMap.get(tableName);
-    if (history != null) {
-      synchronized (history) {
-        history.maxSize = maxSize;
-      }
+    History history = getHistory(tableName);
+    synchronized (history) {
+      history.maxSize = maxSize;
     }
   }
 
   /**
-   * Gets the maximum size of the history.
+   * Gets the maximum size of the history for a given tablename.
    *
    * @param tableName the tablename
    * @return the size
    */
-  public int getNaxSize(String tableName) {
+  public int getMaxSize(String tableName) {
     History history = tableMap.get(tableName);
     if (history != null) {
       synchronized (history) {
         return history.maxSize;
       }
     }
-    return 0;
+    return maxSize;
   }
 
   /**

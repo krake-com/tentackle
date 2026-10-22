@@ -35,14 +35,15 @@ interface ArtifactCreatorHolder {
  * within an application-specific plugin dependency. By default, the {@link DefaultArtifactCreator} is used.
  * <p>
  * For example, to further modify the files or create a bunch of artifacts with different configurations.
+ * Extending {@link DefaultArtifactCreator} keeps the default behavior of the methods not overridden.
  * <p>
  * Example:
  * <pre>
  *   &#64;Service(ArtifactCreator.class)
- *   public class SpecialArtifactCreator implements ArtifactCreator {
+ *   public class SpecialArtifactCreator extends DefaultArtifactCreator {
  *
  *     &#64;Override
- *     public void createAndAttachArtifact(JlinkMojo mojo) throws MojoExecutionException {
+ *     public void createAndAttachArtifact(JLinkMojo mojo) throws MojoExecutionException {
  *       // implement the logic here
  *     }
  *   }

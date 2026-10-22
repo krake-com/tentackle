@@ -36,7 +36,10 @@ import javafx.scene.Parent;
 import java.text.MessageFormat;
 
 /**
- * To handle login failed exceptions.
+ * Handles failed logins.<br>
+ * Expired credentials are renewed once via the {@link CredentialsProvider}. Refused logins may be retried
+ * twice by the user before the application terminates. Version mismatches and any other errors
+ * terminate the application after informing the user.
  *
  * @author harald
  */
@@ -45,7 +48,7 @@ public class LoginFailedHandler {
   private static final Logger LOGGER = Logger.get(LoginFailedHandler.class);
 
   /**
-   * Login failed exit-value.
+   * Login failed exit value.
    */
   public static final int EXIT_LOGIN_FAILED = 98;
 
@@ -102,7 +105,7 @@ public class LoginFailedHandler {
    * Handles the login failed exception.
    *
    * @param ex the login failed exception
-   * @return null if retry login, else a runnable to be executed within the login task
+   * @return a runnable to be executed within the login task, such as a retry with renewed credentials, else null
    */
   public Runnable handle(Exception ex) {
     LOGGER.severe(ex.getMessage(), ex);

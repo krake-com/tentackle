@@ -5,10 +5,9 @@
 usage:<br>
 &#064;wurblet &lt;tag&gt; DomainMethods
 <p>
-arguments:
-<ul>
-<li>--noif: if not part of an interface (adds "public static final")</li>
-</ul>
+Generates the unique domain key methods of the domain implementation, if the entity defines a unique domain key
+that differs from that of its super entity.
+<p>
 For more options, see {\@link ModelWurblet}.
 }@
 @[

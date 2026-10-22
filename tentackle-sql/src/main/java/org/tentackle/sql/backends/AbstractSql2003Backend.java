@@ -27,21 +27,24 @@ import java.util.Set;
 
 /**
  * Common to all SQL2003 backends.
+ * <p>
+ * Paging is implemented by numbering the rows of the original select with the window function
+ * {@code ROW_NUMBER()} and filtering on that number in an enclosing select.
  *
  * @author harald
  */
 public abstract class AbstractSql2003Backend extends AbstractSql92Backend {
 
-  /** window function part 1. */
+  /** window function part 1: inserted after the leading SELECT. */
   public static final String SQL_WINDOW_1 = "* FROM (SELECT F_O_O.*, ROW_NUMBER() OVER() AS R_O_W FROM (SELECT ";
 
-  /** window function part 2. */
+  /** window function part 2: appended to the original select. */
   public static final String SQL_WINDOW_2 = ") AS F_O_O) AS B_A_R WHERE ";
 
-  /** condition for limit and offset. */
+  /** condition for the limit (upper row number bound). */
   public static final String SQL_WINDOW_LIMIT = "R_O_W <= ?";
 
-  /** condition for limit and offset. */
+  /** condition for the offset (lower row number bound). */
   public static final String SQL_WINDOW_OFFSET = "R_O_W > ?";
 
 
@@ -75,13 +78,20 @@ public abstract class AbstractSql2003Backend extends AbstractSql92Backend {
     return reservedWords;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * With a limit or offset, the original select is wrapped into an enclosing select that filters by row number.
+   * A write lock cannot be combined with a limit or offset, since most databases refuse
+   * {@code FOR UPDATE} within a nested select.
+   */
   @Override
   public void buildSelectSql(StringBuilder sqlBuilder, boolean writeLock, int limit, int offset) {
-    boolean insertSelect = isLeadingSelectMissing(sqlBuilder);
     if (limit > 0 || offset > 0) {
-      sqlBuilder.insert(0, SQL_WINDOW_1);
+      removeLeadingSelect(sqlBuilder);
+      sqlBuilder.insert(0, SQL_WINDOW_1).insert(0, SQL_SELECT);
     }
-    if (insertSelect) {
+    else if (isLeadingSelectMissing(sqlBuilder)) {
       sqlBuilder.insert(0, SQL_SELECT);
     }
     if (writeLock) {
@@ -106,13 +116,18 @@ public abstract class AbstractSql2003Backend extends AbstractSql92Backend {
     return 1;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Because the limit is applied as an upper bound of the row number, it is bound as {@code offset + limit}.
+   */
   @Override
   public int setTrailingSelectParameters(BackendPreparedStatement stmt, int index, int limit, int offset) {
     if (offset > 0) {
       stmt.setInt(index++, offset);
     }
     if (limit > 0) {
-      stmt.setInt(index++, limit);
+      stmt.setInt(index++, offset > 0 ? offset + limit : limit);
     }
     return index;
   }

@@ -36,7 +36,7 @@ public class DataNodeTableConfiguration<T extends DataNode> extends DefaultTable
    * Creates a configuration.
    *
    * @param objectClass the object class
-   * @param name the table's name, null if basename from effective class of template
+   * @param name the table's name, null if basename of the object class
    */
   public DataNodeTableConfiguration(Class<T> objectClass, String name) {
     super(objectClass, name);

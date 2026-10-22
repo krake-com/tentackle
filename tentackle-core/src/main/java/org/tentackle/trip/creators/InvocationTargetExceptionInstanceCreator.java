@@ -25,9 +25,16 @@ import org.tentackle.trip.TripInstanceCreatorService;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
+/**
+ * Instance creator for {@link InvocationTargetException}.<br>
+ * The target exception can only be passed to the constructor.
+ */
 @TripInstanceCreatorService(InvocationTargetException.class)
 public class InvocationTargetExceptionInstanceCreator implements TripInstanceCreator<InvocationTargetException> {
 
+  /**
+   * Creates the instance creator.
+   */
   public InvocationTargetExceptionInstanceCreator() {
     // see -Xlint:missing-explicit-ctor since Java 16
   }

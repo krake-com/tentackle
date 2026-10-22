@@ -23,6 +23,7 @@ import org.testng.annotations.Test;
 
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendPreparedStatement;
+import org.tentackle.sql.BackendVersionInfo;
 import org.tentackle.sql.SqlNameType;
 import org.tentackle.sql.SqlType;
 
@@ -123,6 +124,8 @@ public class MySqlTest {
     Assert.assertEquals(backend.columnTypeToString(SqlType.VARCHAR, 0, 0), "LONGTEXT");
     // mysql has no CLOB, and TEXT is limited to 64k
     Assert.assertEquals(backend.columnTypeToString(SqlType.CLOB, 0, 0), "LONGTEXT");
+    // unlike MariaDB, mysql has a native JSON column type
+    Assert.assertEquals(backend.columnTypeToString(SqlType.JSON, 0, 0), "JSON");
     // BLOB is limited to 64k as well
     Assert.assertEquals(backend.columnTypeToString(SqlType.BLOB, 0, 0), "LONGBLOB");
   }
@@ -226,9 +229,9 @@ public class MySqlTest {
 
   @Test
   public void testValidateVersion() {
-    Assert.assertThrows(BackendException.class, () -> backend.validateVersion(5, 7));
-    backend.validateVersion(8, 0);
-    backend.validateVersion(9, 1);
+    Assert.assertThrows(BackendException.class, () -> backend.validateVersion(new BackendVersionInfo(5, 7)));
+    backend.validateVersion(new BackendVersionInfo(8, 0));
+    backend.validateVersion(new BackendVersionInfo(9, 1));
   }
 
 }

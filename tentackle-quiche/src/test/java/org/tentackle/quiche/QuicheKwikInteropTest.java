@@ -85,13 +85,13 @@ public class QuicheKwikInteropTest {
   }
 
 
-  @Test
+  @Test(timeOut = 90000)
   public void testQuicheClientAgainstKwikServer() throws Exception {
     Reporter.log("a Cloudflare quiche client invokes methods on a KWIK server", true);
     exchange(KWIK_SCHEME, QuicheTripTransport.PROTOCOL);
   }
 
-  @Test
+  @Test(timeOut = 90000)
   public void testKwikClientAgainstQuicheServer() throws Exception {
     Reporter.log("a KWIK client invokes methods on a Cloudflare quiche server", true);
     exchange(QuicheTripTransport.PROTOCOL, KWIK_SCHEME);
@@ -119,8 +119,9 @@ public class QuicheKwikInteropTest {
       assertTrue(server.isAccepting());
       server.getRegistry().register(service, "echo");
 
+      // this test is not about certificate checking, and the server's certificate is self-signed
       Transport client = TripFactory.getInstance().createTransport(URI.create(
-        clientScheme + "://localhost:" + port + "?alpnid=" + ALPN + "&idle=1&connecttimeout=60"));
+        clientScheme + "://localhost:" + port + "?alpnid=" + ALPN + "&idle=1&connecttimeout=60&certcheck=false"));
       try {
         EchoService remote = client.lookup(EchoService.class, "echo");
         assertEquals(remote.getName(), "interop");

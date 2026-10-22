@@ -38,7 +38,7 @@ public class SecurityException extends PersistenceException implements Loggable 
   @Serial
   private static final long serialVersionUID = 1L;
 
- /**
+  /**
    * Constructs a new security violation exception for a given session
    * with <code>null</code> as its detail message.
    * The cause is not initialized, and may subsequently be
@@ -100,7 +100,7 @@ public class SecurityException extends PersistenceException implements Loggable 
 
 
   /**
-   * Constructs a new security violation exception for a given pc object
+   * Constructs a new security violation exception for a given object
    * with <code>null</code> as its detail message.
    * The cause is not initialized, and may subsequently be
    * initialized by a call to {@link #initCause}.
@@ -113,7 +113,7 @@ public class SecurityException extends PersistenceException implements Loggable 
 
 
   /**
-   * Constructs a new security violation exception for a given session with the specified detail message.
+   * Constructs a new security violation exception for a given object with the specified detail message.
    * The cause is not initialized, and may subsequently be initialized by a
    * call to {@link #initCause}.
    *
@@ -126,7 +126,7 @@ public class SecurityException extends PersistenceException implements Loggable 
   }
 
   /**
-   * Constructs a new security violation exception for a given session with the specified detail message and
+   * Constructs a new security violation exception for a given object with the specified detail message and
    * cause.
    *
    * @param  object the persistent object
@@ -142,7 +142,7 @@ public class SecurityException extends PersistenceException implements Loggable 
   }
 
   /**
-   * Constructs a new security violation exception for a given session with the specified cause and a
+   * Constructs a new security violation exception for a given object with the specified cause and a
    * detail message of <code>(cause==null ? null : cause.toString())</code>
    * (which typically contains the class and detail message of
    * <code>cause</code>).  This constructor is useful for runtime exceptions

@@ -23,7 +23,7 @@ import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.ValueTranslatorService;
 
 /**
- * Boolean translator.
+ * Identity Boolean translator.
  *
  * @author harald
  */
@@ -31,7 +31,7 @@ import org.tentackle.fx.ValueTranslatorService;
 public class BooleanBooleanTranslator extends IdentityTranslator<Boolean>{
 
   /**
-   * Creates the dummy translator.
+   * Creates a Boolean translator.
    *
    * @param component the component
    */

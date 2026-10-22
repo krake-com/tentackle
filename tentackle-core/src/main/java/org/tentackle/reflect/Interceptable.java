@@ -19,9 +19,11 @@
 package org.tentackle.reflect;
 
 /**
- * The Interceptable interface.<br>
- * This is a marker interface making objects interceptable.
+ * Marker interface making objects interceptable.<br>
  * Interceptables are usually interfaces instantiated by a dynamic proxy.
+ *
+ * @see InterceptableFactory
+ * @see Interception
  *
  * @author harald
  */

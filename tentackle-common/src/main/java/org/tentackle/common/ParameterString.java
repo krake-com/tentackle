@@ -37,7 +37,11 @@ import java.util.Properties;
  * If the value contains a single quote, it is encoded as two consecutive single quotes.
  * The parameters are separated by a comma.
  * The empty string is encoded as nameX instead of nameX='' as a convenience to denote
- * just the presence of a name (e.g. for booleans).
+ * just the presence of a name (e.g., for booleans).
+ * <p>
+ * The parser is lenient: any characters between a name and its quoted value (such as {@code =} or {@code :})
+ * and between the parameters are ignored. A name without a value ends at the next comma or whitespace.
+ * The insertion order of the parameters is preserved.
  *
  * @author harald
  */
@@ -46,7 +50,7 @@ public class ParameterString implements Serializable {
   @Serial
   private static final long serialVersionUID = 1L;
 
-  // the name/value pairs
+  /** the name/value pairs. */
   @SuppressWarnings("serial")
   private final Map<String,String> parameters;
 
@@ -138,9 +142,10 @@ public class ParameterString implements Serializable {
 
 
   /**
-   * Parses the external string representation.
+   * Parses the external string representation.<br>
+   * Any parameters already held by this object are removed first.
    *
-   * @param parameterString the parameter string
+   * @param parameterString the parameter string, null to just clear the parameters
    * @throws ParseException if parsing the string failed
    */
   public void parse(String parameterString) throws ParseException {
@@ -172,8 +177,8 @@ public class ParameterString implements Serializable {
                 valueBuf = new StringBuilder();
                 valueStart = pos;
               }
-              else if (Character.isWhitespace(c)) {
-                // end of value: store parameter
+              else if (c == ',' || Character.isWhitespace(c)) {
+                // end of a name without value: store parameter
                 parameters.put(nameBuf.toString(), "");
                 nameBuf = null;
               }

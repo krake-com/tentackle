@@ -44,7 +44,7 @@ import static org.testng.Assert.expectThrows;
 @SuppressWarnings("missing-explicit-ctor")
 public class QuicTransportServiceTest {
 
-  @Test
+  @Test(timeOut = 30000)
   public void resolvesPlainQuicTransportByScheme() {
     Reporter.log("resolvesPlainQuicTransportByScheme", true);
     URI uri = URI.create(QuicTripTransport.PROTOCOL + "://localhost:12345");
@@ -61,7 +61,7 @@ public class QuicTransportServiceTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void resolvesCompressedQuicTransportByScheme() {
     Reporter.log("resolvesCompressedQuicTransportByScheme", true);
     URI uri = URI.create(CompressedQuicTripTransport.PROTOCOL + "://localhost:12345");
@@ -75,7 +75,7 @@ public class QuicTransportServiceTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void protocolConstantsMatchTheServiceAnnotations() {
     Reporter.log("protocolConstantsMatchTheServiceAnnotations", true);
     assertEquals(QuicTripTransport.PROTOCOL, "tripq");
@@ -86,7 +86,7 @@ public class QuicTransportServiceTest {
                  CompressedQuicTripTransport.PROTOCOL);
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void rejectsUnknownScheme() {
     Reporter.log("rejectsUnknownScheme", true);
     expectThrows(TripRuntimeException.class,
@@ -97,7 +97,7 @@ public class QuicTransportServiceTest {
    * Transports are keyed by their {@link org.tentackle.trip.TransportKey}, so the manager must hand
    * out the same instance for the same endpoint and distinct ones for different schemes.
    */
-  @Test
+  @Test(timeOut = 30000)
   public void transportManagerSharesTransportsPerEndpoint() {
     Reporter.log("transportManagerSharesTransportsPerEndpoint", true);
     TransportManager manager = TransportManager.getInstance();

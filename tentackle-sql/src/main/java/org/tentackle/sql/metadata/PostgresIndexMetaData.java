@@ -20,21 +20,26 @@
 package org.tentackle.sql.metadata;
 
 /**
- * Postgres index meta data.
+ * PostgreSQL index metadata.<br>
+ * Strips the type casts PostgreSQL adds to the values of a filter condition.
  *
  * @author harald
  */
 public class PostgresIndexMetaData extends IndexMetaData {
 
+  /** the postgres type names consisting of more than one word, which the simple regex below cannot strip. */
   private static final String[] CASTS = {
       "::timestamp without time zone",
       "::timestamp with time zone",
       "::time without time zone",
       "::time with time zone",
+      "::character varying",
+      "::bit varying",
+      "::double precision",
   };
 
   /**
-   * Creates an index meta data object.
+   * Creates an index metadata object.
    *
    * @param tableMetaData the table the index belongs to
    */
@@ -52,8 +57,8 @@ public class PostgresIndexMetaData extends IndexMetaData {
       for (String cast: CASTS) {
         condition = condition.replace(cast, "");
       }
-      // other simple casts such as ::long
-      setFilterCondition(condition.replaceAll("::[a-z|A-Z]*", ""));
+      // other simple casts such as ::bigint or ::int4
+      setFilterCondition(condition.replaceAll("::[a-zA-Z_][a-zA-Z0-9_]*", ""));
     }
   }
 

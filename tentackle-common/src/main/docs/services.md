@@ -158,6 +158,11 @@ public class ReferenceRegistryProviderImpl implements ReferenceRegistryProvider 
 as if it had carried `@Service(ReferenceRegistryProvider.class)` — but the intent is stated in your
 own words, and the registration cannot be spelled wrong.
 
+`tentackle-common` itself ships one such annotation:
+[`@AnnotationProcessor`](../java/org/tentackle/common/AnnotationProcessor.java) is meta-annotated with
+`@Service(javax.annotation.processing.Processor.class)`, so a class annotated with it is registered
+as an annotation processor for the compiler.
+
 ### `@MappedService` — relating three things
 
 `@Service` relates two things: an interface and its implementation. A great deal of framework wiring
@@ -258,15 +263,28 @@ My impl2 = ServiceFactory.createService(My.class, MyDefault.class);   // …or a
 Class<My> cl = ServiceFactory.createServiceClass(My.class);           // just the class
 ```
 
-It is itself loaded through the JDK's `ServiceLoader` and annotated `@Service(ServiceFactory.class)`
-— defaulting to itself — so an application can replace the factory too. (`ServiceFactory` cannot
-bootstrap itself with its own annotation: at the point `tentackle-common` is compiled, the analyze
-plugin does not exist yet. Its registration is a checked-in resource under
-`src/main/resources/META-INF/services`. A small chicken-and-egg detail, visible in the source as a
-comment.)
+`createService` throws a `TentackleRuntimeException` if no provider is found. The variant with a
+fallback class logs a warning (with a stacktrace) when it falls back; pass `false` as a third
+argument to suppress that.
+
+The factory is itself loaded through the JDK's `ServiceLoader` and annotated `@Service(ServiceFactory.class)`
+— defaulting to itself — so an application can replace the factory too: via
+`META-INF/services/org.tentackle.common.ServiceFactory` on the classpath, or, in modular mode, via a
+`provides org.tentackle.common.ServiceFactory with …` clause, since the JDK's `ServiceLoader` ignores
+`META-INF/services` inside named modules. (`ServiceFactory` cannot bootstrap itself with its own
+annotation: at the point `tentackle-common` is compiled, the analyze plugin does not exist yet. Its
+registration — like that of the other default services of `tentackle-common` — is a checked-in
+resource under `src/main/resources/META-INF/services`. A small chicken-and-egg detail, visible in
+the source as a comment.)
 
 `setFactoryClassname` / `setFactoryClassloader` provide an escape hatch for environments where
-`ServiceLoader` cannot be used — call them very early, typically in `main`.
+`ServiceLoader` cannot be used — call them very early, typically in `main`. The factory singleton is
+created lazily on first use; setting them afterward has no effect and only logs a warning.
+
+Finders are created per classloader and service path, and cached. Unless stated explicitly, the
+classloader is determined as follows: the fixed classloader set via `setFixedClassLoader`, if any,
+else the thread's context classloader, else the classloader that loaded the factory.
+`getFinderMap()` exposes the cache, so applications can register their own finders programmatically.
 
 ### ServiceFinder
 
@@ -287,14 +305,24 @@ The API splits along two axes — *first vs. unique vs. all*, and *configuration
 | `findFirstServiceProvider(Class)` | The first provider class along the path. **This is the override path** — an application's own provider shadows the framework's. |
 | `findUniqueServiceProvider(Class)` | The provider, verifying it is declared **exactly once**. For factories and singletons where two would be a bug. |
 | `findServiceProviders(Class)` | **All** provider classes, in path order. |
-| `findFirstServiceConfiguration(String)` / `findServiceConfigurations(String)` | The raw name → URL entries, **without loading anything**. |
+| `findFirstServiceConfiguration(String)` / `findUniqueServiceConfiguration(String)` / `findServiceConfigurations(String)` | The raw name → URL entries, **without loading anything**. |
 | `findServiceURLs(String)` | The resource URLs backing a service. |
 | `createNameMap(String)` | `value → provider` for mapped services; first along the path wins. |
-| `createNameMapToAll(String)` | `value → all providers`, for cases where every contribution counts. |
+| `createNameMapToAll(String)` | `value → all providers` (an unordered set), for cases where every contribution counts. |
+| `getClassLoader()` / `getServicePath()` / `getModuleLayer()` | The finder's classloader, its normalized service path (no leading, but a trailing slash), and its module layer (`null` unless [layer-based](#modulelayers)). |
 
 The `…Configuration` methods are the ones that make this more than a `ServiceLoader` clone: they let
 the framework read registrations as *data*. That is how `@ClassId` resolves without touching a class,
 and it is available to your code for the same trick.
+
+The `find…Provider` methods additionally verify that the provider really implements the service.
+Failures, such as a missing service, are reported as `TentackleRuntimeException`s.
+
+The configuration files themselves are plain text, one entry per line. Leading and trailing blanks
+are ignored, a `#` starts a comment (write `\#` for a literal hash), and empty lines are skipped. The
+same entry found in two different files is an error ("defined more than once"), since it usually
+means the same artifact is on the path twice. The one exception is the same resource reached via two
+URLs ending with the same service path, as happens in IDEs and test environments.
 
 
 ## Ordering and Overriding
@@ -306,7 +334,8 @@ mode it is more interesting than a classpath order.
 (via the [ModuleHook](#the-modulehook)s), topologically sorts it depth-first, and assigns each module
 an ordinal. When a finder collects URLs for a service name, they come back **highest module first**:
 modules at the top of the dependency hierarchy — your application, which requires everything else —
-precede the ones they depend on. Unnamed (classpath) and automatic modules come last.
+precede the ones they depend on. Unnamed (classpath) and automatic modules come last, and so do named
+modules without a `ModuleHook`: they are not part of the sorted graph.
 
 The practical consequence is the one you want: **a module can always override a service declared by a
 module it depends on**, simply by declaring its own. Your application overrides `tentackle-fx`, which
@@ -316,8 +345,8 @@ already wrote *is* the precedence order.
 Two adjustments exist for the cases where it is not:
 
 - [`@ModuleOrdinal`](../java/org/tentackle/common/ModuleOrdinal.java) — a module-level annotation
-  pinning an explicit ordinal. The automatic ordinals are spaced by 100 precisely to leave room to
-  insert between them.
+  pinning an explicit, non-zero ordinal. The automatic ordinals are the module's position in the
+  dependency sort multiplied by 100, precisely to leave room to insert between them.
 - [`@ClasspathFirst`](../java/org/tentackle/common/ClasspathFirst.java) — inverts the rule for **one
   named service**, putting classpath and automatic modules ahead of the module path. This exists for
   a real problem: a non-modularized artifact could otherwise never override a service from a real
@@ -327,6 +356,11 @@ Two adjustments exist for the cases where it is not:
   gets its own `META-INF/meta-services/` namespace: the provider it names lives in a different module
   from the annotation.
 
+One pitfall: a module that is only required `static` by the others does not count as a dependency
+for the sort. It ends up at the bottom of the hierarchy with the lowest precedence, unless another
+module requires it non-statically. Declaring an application module as statically required thus
+de facto turns off any service overrides it contains.
+
 In classpath mode there is no module graph, and the order is discovery order along the classpath.
 
 
@@ -335,7 +369,7 @@ In classpath mode there is no module graph, and the order is discovery order alo
 Tentackle's registry is `META-INF` data rather than jigsaw `provides` clauses — for the two reasons
 already given (a service is not always a class, and the JDK loader forces one shape of lookup). But
 JPMS still has to be told something, because a module's resources and its position in the graph are
-not discoverable from outside it. This matters most in a jlink'd application loaded from a jimage,
+not discoverable from outside it. This matters most in a jlink image, where modules are loaded from a jimage,
 and again for [resource bundles](bundle.md), which resolve differently in modular mode.
 
 So each module contributing services provides exactly one
@@ -366,21 +400,24 @@ mode indicator:
 
 ```
 INFO  o.tentackle.app.AbstractApplication.initialize - 14 module hooks found:
-org.tentackle.common []
-org.tentackle.core [org.tentackle.common]
-org.tentackle.session [org.tentackle.core]
-org.tentackle.pdo [org.tentackle.session]
-org.tentackle.domain [org.tentackle.pdo]
-com.example.tracker.common [org.tentackle.pdo]
-com.example.tracker.pdo [com.example.tracker.common]
-com.example.tracker.domain [org.tentackle.domain, com.example.tracker.pdo]
-org.tentackle.update [org.tentackle.common]
-org.tentackle.sql [org.tentackle.common]
-org.tentackle.database [org.tentackle.sql, org.tentackle.session]
-org.tentackle.persistence [org.tentackle.pdo, org.tentackle.database]
-com.example.tracker.persist [org.tentackle.persistence, com.example.tracker.pdo]
-com.example.tracker.server [com.example.tracker.domain, org.tentackle.update, com.example.tracker.persist]
+org.tentackle.common {} [100]
+org.tentackle.core {org.tentackle.common} [200]
+org.tentackle.session {org.tentackle.core} [300]
+org.tentackle.pdo {org.tentackle.session} [400]
+org.tentackle.domain {org.tentackle.pdo} [500]
+com.example.tracker.common {org.tentackle.pdo} [600]
+com.example.tracker.pdo {com.example.tracker.common} [700]
+com.example.tracker.domain {org.tentackle.domain, com.example.tracker.pdo} [800]
+org.tentackle.update {org.tentackle.common} [900]
+org.tentackle.sql {org.tentackle.common} [1000]
+org.tentackle.database {org.tentackle.sql, org.tentackle.session} [1100]
+org.tentackle.persistence {org.tentackle.pdo, org.tentackle.database} [1200]
+com.example.tracker.persist {org.tentackle.persistence, com.example.tracker.pdo} [1300]
+com.example.tracker.server {com.example.tracker.domain, org.tentackle.update, com.example.tracker.persist} [1400]
 ```
+
+Each line shows the module, the application modules it requires directly (in braces), and its
+ordinal (in brackets).
 
 Classpath mode:
 
@@ -388,8 +425,21 @@ Classpath mode:
 INFO  o.tentackle.app.AbstractApplication.initialize - no module hooks found
 ```
 
-That listing is the precedence order from the previous section, printed. If a service is not being
-overridden the way you expect, read it bottom-up.
+That listing is the dependency order from the previous section, printed. The precedence is the
+reverse: if a service is not being overridden the way you expect, read it bottom-up (or by
+descending ordinal, if `@ModuleOrdinal` is involved).
+
+
+## ModuleLayers
+
+`ServiceFinder`/`ServiceFactory`/`ModuleSorter` also work against an explicit `java.lang.ModuleLayer`
+instead of a plain `ClassLoader`, which is what lets an application isolate two conflicting versions
+of the same dependency in sibling module layers — `ServiceFactory.getServiceFinder(ModuleLayer,
+String)`, `DefaultServiceFinder(ModuleLayer, String)`, `ServiceFinder.getModuleLayer()`,
+`ModuleSorter.forLayer(ModuleLayer)` and the `ModuleSorter(ModuleLayer)` constructor are the
+new entry points, all purely additive. This is new, separate ground built on top of everything above;
+see [layers.md](layers.md) for the full runtime story, the `tentackle-jlink-maven-plugin` integration,
+and a worked example.
 
 
 ## What Is Built On This
@@ -440,7 +490,7 @@ where a type must be related to a type:
 | [Security](../../../../tentackle-pdo/src/main/docs/security.md) | `@PermissionService` | Permission types |
 | [FX](../../../../tentackle-fx/src/main/docs/fx.md) / [RDC](../../../../tentackle-fx-rdc/src/main/docs/rdc.md) | `@GuiProviderService`, `@TableCellTypeService`, `@TableConfigurationProviderService`, `@BuilderService`, `@ConfiguratorService`, `@Pdo*ContextMenuItemService` | GUI providers, cell types, table configs, context menus |
 | [Secrets](cryptor.md) | `@Service(Cryptor.class)` | The application's own `Cryptor`, resolved identically at build time and runtime |
-| [Bundles](bundle.md) / [i18n](internationalization.md) | `META-INF/bundles/` + `ModuleHook` | Bundle discovery in both modes |
+| [Bundles and i18n](bundle.md) | `META-INF/bundles/` + `ModuleHook` | Bundle discovery in both modes |
 
 Two entries deserve a note. The **`Cryptor`** case is the neatest demonstration of registrations
 being *data*: the `tentackle-maven-plugin`'s `properties` goal writes `@org.tentackle.common.Cryptor`
@@ -460,14 +510,17 @@ publishes, which is the useful test of whether one is real.
 ## OSGi Bundles
 
 The artifacts on Maven Central are not OSGi bundles, but you can build them: clone the
-[tentackle repo](https://bitbucket.org/krake-oss/tentackle/src/master/), build it, then run a second
+[tentackle repo](https://github.com/krake-com/tentackle), build it, then run a second
 build in the `tentackle-osgi` subfolder. That produces the bundles with their activators and sources
-(the latter are handy in the Eclipse IDE).
+(the latter are handy in the Eclipse IDE). See [OSGi Bundles](../../../../tentackle-osgi/src/main/docs/osgi.md)
+for the build, the bundle list and how to prepare your own bundles.
 
-OSGi is the reason `ServiceFactory` supports **per-service classloaders**. Each service (path + name)
-keeps a stack of explicit loaders: setting one pushes, removing pops — so deactivating a bundle
-re-activates whatever was registered before it. The activator drives that with a resource index
-generated by the analyze goal:
+OSGi is the reason `ServiceFactory` supports **per-service classloaders** ([module layers](layers.md)
+use layer-bound finders instead). Each service (path + name) keeps a stack of explicit loaders: adding
+one pushes it on top (or moves it there, if already present), removing deletes that particular loader
+wherever it is — so deactivating a bundle re-activates whatever was registered before it. The
+activator drives that with a resource index generated by the analyze goal — a plain list of the
+bundle's `META-INF` resource paths, of which only the first found by the classloader is applied:
 
 ```java
 public class Activator implements BundleActivator {
@@ -490,13 +543,15 @@ There is no public P2 repository yet, though that may change.
 
 ## Related Documentation
 
+- [OSGi Bundles](../../../../tentackle-osgi/src/main/docs/osgi.md) — building the bundles, and the activators driving the per-service classloaders.
 - [Tentackle Common](common.md) — the module these classes belong to.
+- [Isolated Module Layers](layers.md) — the `ModuleLayer`-aware extension of this API.
 - [Tentackle Build Support](../../../../tentackle-build-support/src/main/docs/build-support.md) — the analyze phase, the processor, and the full handler roster.
 - [Tentackle Maven Plugin](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md) — the `analyze` goal that writes the `META-INF` configurations, and the `properties` goal's `@`-converters.
 - [Tentackle Modules](../../../../src/main/docs/modules.md) — the interface/implementation split this API makes possible.
 - [Reflection](../../../../tentackle-core/src/main/docs/reflect.md) — `ClassMapper`, the runtime engine resolving `@MappedService`, including lenient lookup.
 - [PDO / Persistent Domain Objects](../../../../tentackle-pdo/src/main/docs/pdo.md) — the proxies assembled from two mapped services.
-- [Resource Bundles](bundle.md) — bundle handling, which (like services) differs between classpath and modular mode.
-- [Internationalization](internationalization.md) — database-backed I18N built on the bundle and service infrastructure.
+- [Resource Bundles and Internationalization](bundle.md) — bundle handling, which (like services) differs between classpath and modular mode, plus `LocaleProvider` and `I18NText`.
+- [Tentackle I18N](../../../../tentackle-i18n/src/main/docs/i18n.md) — database-backed bundles built on the bundle and service infrastructure.
 - [Cryptor](cryptor.md) — a service resolved identically at build time and runtime.
 - [Wurblets](../../../../tentackle-wurblets/src/main/docs/wurblets.md) — code generators consuming analysis results.

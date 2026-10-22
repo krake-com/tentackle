@@ -29,8 +29,10 @@ import org.tentackle.session.BackendConfiguration;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
+import org.tentackle.session.SessionClosedException;
 import org.tentackle.session.SessionPoolProvider;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendInfo;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.DataTypeFactory;
 
@@ -40,9 +42,13 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.RecordComponent;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 interface DbUtilitiesHolder {
@@ -72,6 +78,41 @@ public class DbUtilities {
   }
 
 
+  private static class BackendKey {
+    private volatile int fastHash;
+    private final Backend backend;
+    private final String url;
+
+    private BackendKey(BackendInfo backendInfo) {
+      this.backend = backendInfo.getBackend();
+      this.url = backendInfo.getUrl();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (o == null || getClass() != o.getClass()) return false;
+
+      BackendKey that = (BackendKey) o;
+      return Objects.equals(backend, that.backend) && Objects.equals(url, that.url);
+    }
+
+    @Override
+    public int hashCode() {
+      if (fastHash != 0) {
+        return fastHash;
+      }
+      int result = 31 * Objects.hashCode(backend);
+      result = 31 * result + Objects.hashCode(url);
+      if (result == 0) {
+        result++;
+      }
+      fastHash = result;
+      return result;
+    }
+  }
+
+  private final Map<BackendKey, Integer> backendIdentityMap = new ConcurrentHashMap<>();
+
   private ConnectionManager connectionManager;
   private volatile String[] preloadDelegateClassNames;   // cached names of the preload candidates
 
@@ -80,6 +121,26 @@ public class DbUtilities {
    */
   public DbUtilities() {
     // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
+   * Gets the physical backend identity to speed up lookups.
+   * <p>
+   * The default implementation returns a unique integer for the same backend and url.
+   * <p>
+   * Important: if the application connects more than once to the same backend with effectively the same
+   * URL, but different connection options (for example, readonly), different IDs will be returned.
+   * In this case, the backend identity of BackendInfo is used if set, otherwise a unique integer is returned.
+   * Use high or negative values for backend identities to avoid conflicts. Created numbers start at 1.
+   *
+   * @param backendInfo the backend info
+   * @return the backend identity
+   */
+  public int getBackendIdentity(BackendInfo backendInfo) {
+    return backendIdentityMap.computeIfAbsent(new BackendKey(backendInfo),
+                                              _ -> backendInfo.getBackendIdentity() != 0 ?
+                                                     backendInfo.getBackendIdentity() :
+                                                     backendIdentityMap.size() + 1);
   }
 
   /**
@@ -102,8 +163,8 @@ public class DbUtilities {
    * Loads an object from the database.
    *
    * @param <T> the object type
-   * @param clazz the object class
    * @param session the session
+   * @param clazz the object class
    * @param objectId the object id
    * @param loadLazyReferences true if load lazy references
    * @return the object, null if no such object
@@ -122,7 +183,7 @@ public class DbUtilities {
   }
 
   /**
-   * Determines whether table serial is valid for this pdo class.
+   * Determines the name of the table holding the tableserial for a PDO class.
    *
    * @param clazzVar the class variables
    * @return the tablename holding the tableserial, null if no tableserial
@@ -230,7 +291,7 @@ public class DbUtilities {
     if (oldGroup != 0) {
       if (sessionGroupId != oldGroup) {
         throw new PersistenceException(session, "session already belongs to group " + oldGroup +
-                                                " (requested was " + sessionGroupId);
+                                                " (requested was " + sessionGroupId + ")");
       }
       return;   // nothing to do
     }
@@ -262,7 +323,7 @@ public class DbUtilities {
   }
 
   /**
-   * Close session groups if the session is a root session of a group.
+   * Closes session groups if the session is a root session of a group.
    *
    * @param session the closing session
    */
@@ -272,11 +333,16 @@ public class DbUtilities {
     boolean isExportedGroupRoot = sessionId == session.getExportedSessionGroupId();
     if (isGroupRoot || isExportedGroupRoot) {
       for (Db db: Db.getAllOpenSessions()) {
-        if (isGroupRoot && db.getSessionGroupId() == sessionId) {
-          db.setSessionGroupId(0);
+        try {
+          if (isGroupRoot && db.getSessionGroupId() == sessionId) {
+            db.setSessionGroupId(0);
+          }
+          if (isExportedGroupRoot && db.getExportedSessionGroupId() == sessionId) {
+            db.setExportedSessionGroupId(0);
+          }
         }
-        if (isExportedGroupRoot && db.getExportedSessionGroupId() == sessionId) {
-          db.setExportedSessionGroupId(0);
+        catch (SessionClosedException ex) {
+          // closed by another thread in the meantime: nothing to ungroup
         }
       }
     }
@@ -286,7 +352,7 @@ public class DbUtilities {
    * Applies the given backend configuration to properties.
    *
    * @param backendConfiguration the backend configuration
-   * @param properties the session properties.
+   * @param properties the session properties
    */
   public void applyBackendConfiguration(BackendConfiguration backendConfiguration, EncryptedProperties properties) {
     if (backendConfiguration.getUser() != null) {
@@ -330,6 +396,16 @@ public class DbUtilities {
       // may be costly if a lot of counters are registered
       ModificationTracker.getInstance().rollbackModification(session, txNumber);
     }
+    notifyModificationLogSerializer(session);
+  }
+
+  /**
+   * Notifies interested parties that a rollback to a savepoint has happened.
+   *
+   * @param session the session
+   */
+  public void notifySavepointRollback(Db session) {
+    notifyModificationLogSerializer(session);
   }
 
   /**
@@ -339,7 +415,22 @@ public class DbUtilities {
    * @param txNumber the transaction number
    */
   public void notifyCommit(Db session, long txNumber) {
-    // nothing to do
+    if (session.getTransactionProperty(ModificationLogSerializer.class) instanceof ModificationLogSerializer serializer) {
+      serializer.commit(session);
+    }
+  }
+
+
+  /**
+   * Notifies the {@link ModificationLogSerializer} about a rollback if it registered
+   * itself as a transaction property.
+   *
+   * @param session the session
+   */
+  protected void notifyModificationLogSerializer(Db session) {
+    if (session.getTransactionProperty(ModificationLogSerializer.class) instanceof ModificationLogSerializer serializer) {
+      serializer.rollback(session);
+    }
   }
 
 
@@ -414,20 +505,22 @@ public class DbUtilities {
     // find all setters
     if (clazz.isRecord()) {
       RecordComponent[] recordComponents = clazz.getRecordComponents();
-      // find the record constructor
-      for (Constructor<?> constructor : clazz.getDeclaredConstructors()) {
-        List<ColumnMapping> mappings = new ArrayList<>();
-        for (RecordComponent recordComponent : recordComponents) {
-          ColumnMapping mapping = createColumnMapping(backend, recordComponent.getName(), columnNames, recordComponent.getType());
-          if (mapping != null) {
-            mappings.add(mapping);
-          }
+      List<ColumnMapping> mappings = new ArrayList<>();
+      for (RecordComponent recordComponent : recordComponents) {
+        ColumnMapping mapping = createColumnMapping(backend, recordComponent.getName(), columnNames, recordComponent.getType());
+        if (mapping != null) {
+          mappings.add(mapping);
         }
-        if (mappings.size() == recordComponents.length) {
-          // canonical constructor found!
-          recordConstructor = (Constructor<T>) constructor;
+      }
+      if (mappings.size() == recordComponents.length) {
+        // all components found in the result set: use the canonical constructor
+        Class<?>[] parameterTypes = Arrays.stream(recordComponents).map(RecordComponent::getType).toArray(Class<?>[]::new);
+        try {
+          recordConstructor = clazz.getDeclaredConstructor(parameterTypes);
           recordMappings = mappings;
-          break;
+        }
+        catch (NoSuchMethodException ex) {
+          throw new PersistenceException("missing canonical constructor in " + clazz, ex);
         }
       }
     }

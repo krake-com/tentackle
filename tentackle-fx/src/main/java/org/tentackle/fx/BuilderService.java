@@ -31,7 +31,10 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation to express that the annotated class
- * is a builder for a given class.
+ * is the FXML {@link Builder} for a given class.
+ * <p>
+ * The {@link FxBuilderFactory} uses the registered builders to create the
+ * tentackle implementations of the nodes declared in FXML files.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -40,7 +43,7 @@ import java.lang.annotation.Target;
 public @interface BuilderService {
 
   /**
-   * Determines the class for which the annotated class is a builder for.<br>
+   * Determines the class the annotated builder builds.
    *
    * @return the class of the instances to be built
    */

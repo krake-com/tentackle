@@ -17,7 +17,12 @@
  */
 
 /**
- * tentackle-fx module.
+ * The extended JavaFX layer.<br>
+ * Provides the tentackle implementations of the JavaFX controls and containers with binding,
+ * validation feedback, value translators, configuration-driven tables and tree-tables with column filters,
+ * auto-completion, notifications, and theme support.
+ * The FXML builders and configurators make the {@code FXMLLoader} create the tentackle implementations
+ * transparently, so that views can be designed with the standard JavaFX tools.
  */
 module org.tentackle.fx {
 
@@ -36,6 +41,7 @@ module org.tentackle.fx {
   exports org.tentackle.fx.container.delegate;
   exports org.tentackle.fx.nofxml;
   exports org.tentackle.fx.table;
+  exports org.tentackle.fx.table.edit;
   exports org.tentackle.fx.table.filter;
   exports org.tentackle.fx.table.type;
   exports org.tentackle.fx.translate;
@@ -51,7 +57,7 @@ module org.tentackle.fx {
   requires transitive org.kordamp.ikonli.javafx;
   requires transitive org.kordamp.ikonli.materialdesign2;
 
-  requires java.desktop;
+  requires transitive java.desktop;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.fx.service.Hook;
 

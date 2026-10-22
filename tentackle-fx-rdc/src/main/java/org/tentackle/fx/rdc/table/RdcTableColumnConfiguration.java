@@ -28,7 +28,9 @@ import org.tentackle.fx.table.DefaultTableColumnConfiguration;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
- * PDO-aware configuration for a table column.
+ * PDO-aware configuration for a table column.<br>
+ * Columns holding PDOs get a {@link PdoTableCell} or {@link PdoTreeTableCell}, which provide
+ * the PDO's context menu.
  *
  * @param <S> type of the objects contained within the table's items list
  * @param <T> type of the content in all cells in this column
@@ -38,9 +40,9 @@ public class RdcTableColumnConfiguration<S, T> extends DefaultTableColumnConfigu
   private boolean pdoTypeConfigured;
 
   /**
-   * Create a column config.
+   * Creates a column configuration.
    *
-   * @param tableConfiguration the table config
+   * @param tableConfiguration the table configuration
    * @param name the column's binding path
    * @param displayedName the displayed column name
    */

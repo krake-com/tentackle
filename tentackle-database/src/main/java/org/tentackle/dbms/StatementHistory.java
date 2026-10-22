@@ -28,6 +28,10 @@ import java.util.TreeSet;
 
 /**
  * History of statement execution.
+ * <p>
+ * Records the SQL code, the parameters, the transaction name, and the durations of a single
+ * statement execution. Within a transaction, the {@link ManagedConnection} keeps the history of all
+ * statements for diagnostics, see {@link ManagedConnection#toDiagnosticString()}.
  *
  * @author harald
  */
@@ -66,11 +70,11 @@ public class StatementHistory {
   private int fetchCount;                                     // query only: number of rows fetched
 
   /**
-    * Creates a statement execution history.
-    *
-    * @param statement the executed statement
+   * Creates a statement execution history.
+   *
+   * @param statement the executed statement
    * @param sql optional SQL string if statement does not provide it
-    */
+   */
   public StatementHistory(StatementWrapper statement, String sql) {
     this.parameters = statement instanceof PreparedStatementWrapper ? ((PreparedStatementWrapper) statement).getParameters() : null;
     this.batchParameters = statement instanceof PreparedStatementWrapper ? ((PreparedStatementWrapper) statement).getBatchParameters() : null;
@@ -83,6 +87,26 @@ public class StatementHistory {
     else {
       this.sql = statement.getSql();
     }
+  }
+
+  /**
+   * Creates a statement execution history.
+   *
+   * @param txName the transaction name, null if none
+   * @param executionStart the execution start time
+   * @param executionDuration the execution duration
+   * @param sql the SQL string
+   * @param parameters the parameters
+   * @param batchParameters the batch parameters
+   */
+  public StatementHistory(String txName, long executionStart, TimeKeeper executionDuration, String sql,
+                          Map<Integer, Object> parameters, List<Map<Integer, Object>> batchParameters) {
+    this.txName = txName;
+    this.executionStart = executionStart;
+    this.executionDuration = executionDuration;
+    this.sql = sql;
+    this.parameters = parameters;
+    this.batchParameters = batchParameters;
   }
 
 
@@ -168,7 +192,7 @@ public class StatementHistory {
   /**
    * Gets the batched parameter map.
    *
-   * @return the batched parameter, null if not batched or not a prepared statement
+   * @return the batched parameters, null if not batched or not a prepared statement
    */
   public List<Map<Integer, Object>> getBatchParameters() {
     return batchParameters;

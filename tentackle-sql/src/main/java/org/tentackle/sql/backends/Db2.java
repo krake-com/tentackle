@@ -33,6 +33,9 @@ import java.sql.Types;
 
 /**
  * Backend for DB2.
+ * <p>
+ * The lines of a {@code CREATE TABLE} statement end with a backslash, the continuation character
+ * of the DB2 command line processor, since DB2 scripts are line-oriented.
  *
  * @author harald
  */
@@ -108,6 +111,11 @@ public class Db2 extends AbstractSql2003Backend {
   }
 
   @Override
+  public boolean isSqlxmlSupported() {
+    return true;
+  }
+
+  @Override
   public String sqlCreateTableIntro(String tableName, String comment) {
     return appendContinuationString(super.sqlCreateTableIntro(tableName, comment));
   }
@@ -123,10 +131,13 @@ public class Db2 extends AbstractSql2003Backend {
       case DECIMAL -> TYPE_DECIMAL;
       case CHAR -> TYPE_CHAR_1;
       case VARCHAR -> TYPE_VARCHAR;
-      case DATE, TIME -> TYPE_DATE;
+      case DATE -> TYPE_DATE;
+      case TIME -> TYPE_TIME;
       case TIMESTAMP -> TYPE_TIMESTAMP;
       case BLOB -> TYPE_BLOB;
       case CLOB -> TYPE_CLOB;
+      case XML -> TYPE_XML;
+      case JSON -> TYPE_CLOB;   // no native JSON column type
       default -> super.sqlTypeToString(sqlType, size);
     };
   }
@@ -172,14 +183,22 @@ public class Db2 extends AbstractSql2003Backend {
             ");\n";
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Changes only the type. The null constraint and the default are separate column alterations
+   * (see {@link org.tentackle.sql.MigrationStrategy#NULL} and {@link org.tentackle.sql.MigrationStrategy#DEFAULT}).
+   */
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
     return  SQL_ALTER_TABLE + tableName +
             SQL_ALTER_COLUMN +
             columnName +
-            " DATA TYPE " +
-            sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false) +
+            " SET DATA TYPE " +
+            // DB2 takes only the type here: the column name is already part of the ALTER COLUMN
+            // clause, and the NOT NULL and DEFAULT constraints are separate column alterations
+            columnTypeToString(sqlType, size, scale) +
             ";\n";
   }
 

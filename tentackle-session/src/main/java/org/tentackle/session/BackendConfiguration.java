@@ -86,7 +86,6 @@ public class BackendConfiguration extends AbstractSessionConfiguration {
         BackendConfiguration configuration = new BackendConfiguration(application, name, url, options, driver, user, password);
         configuration.setPersisted(true);
         backends.put(name, configuration);
-        // else ignore silently (we don't have a logger available)
       }
     }
     catch (BackingStoreException bx) {
@@ -99,7 +98,7 @@ public class BackendConfiguration extends AbstractSessionConfiguration {
    * Removes all backend configurations for the given application.
    *
    * @param application the application name
-   * @param system true if load from system preferences, else user preferences
+   * @param system true if remove from system preferences, else user preferences
    */
   public static void removeBackendConfigurations(String application, boolean system) {
     Preferences prefs = getPrefNode(system);
@@ -178,9 +177,11 @@ public class BackendConfiguration extends AbstractSessionConfiguration {
    * @param application the application name
    * @param name the symbolic backend name
    * @param url the host- or service url
-   * @param driver the symbolic driver name, see {@link DriverConfiguration}, null or empty if remote
+   * @param options other options, one per line, null if none
+   * @param driver the driver configuration, null if remote or the driver is loaded from the classpath
    * @param user the optional username, null or empty if none
-   * @param password the optional password, null or empty if none
+   * @param password the optional password as stored, i.e. already encrypted if a {@link Cryptor} is configured,
+   *                 null or empty if none. Use {@link #setPassword(String)} for a plain-text password.
    */
   public BackendConfiguration(String application, String name, String url, String options, DriverConfiguration driver, String user, String password) {
     setName(name);
@@ -287,7 +288,7 @@ public class BackendConfiguration extends AbstractSessionConfiguration {
   }
 
   /**
-   * Gets the username.
+   * Sets the username.
    *
    * @param user the username
    */
@@ -297,9 +298,10 @@ public class BackendConfiguration extends AbstractSessionConfiguration {
   }
 
   /**
-   * Gets the optional password.
+   * Gets the optional password.<br>
+   * The password is decrypted if a {@link Cryptor} is configured.
    *
-   * @return the password
+   * @return the plain-text password, null if none
    */
   @Bindable
   public String getPassword() {
@@ -311,9 +313,10 @@ public class BackendConfiguration extends AbstractSessionConfiguration {
   }
 
   /**
-   * Sets the password.
+   * Sets the password.<br>
+   * The password is stored encrypted if a {@link Cryptor} is configured.
    *
-   * @param password the password
+   * @param password the plain-text password, null if none
    */
   @Bindable
   public void setPassword(String password) {
@@ -370,7 +373,7 @@ public class BackendConfiguration extends AbstractSessionConfiguration {
   /**
    * Removes this configuration.
    *
-   * @param system true if store in system preferences (requires extra permission), else user preferences
+   * @param system true if remove from system preferences (requires extra permission), else user preferences
    */
   public void remove(boolean system) {
     Preferences prefs = getPrefNode(system);

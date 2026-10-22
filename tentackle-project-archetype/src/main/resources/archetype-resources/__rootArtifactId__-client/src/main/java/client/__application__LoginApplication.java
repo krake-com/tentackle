@@ -7,6 +7,8 @@
 
 package ${package}.client;
 
+import ${package}.gui.GuiHelper;
+
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.ThemeUtilities;
 import org.tentackle.fx.rdc.app.LoginApplication;
@@ -24,6 +26,7 @@ public class ${application}LoginApplication extends LoginApplication {
       getClass().getResource(ThemeUtilities.getInstance().isDarkMode() ?
           "/${packageInPathFormat}/client/Login-dark.css" : "/${packageInPathFormat}/client/Login.css"));
     loginController.setInactivityTimeout(30);
+    GuiHelper.configureInputAlerts();
     return loginController;
   }
 

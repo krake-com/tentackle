@@ -22,7 +22,7 @@
 
     <menu name="Tentackle" inherit="top">
       <item name="Documentation" href="https://tentackle.org/"/>
-      <item name="Source (Bitbucket)" href="https://bitbucket.org/krake-oss/tentackle/"/>
+      <item name="Source (GitHub)" href="https://github.com/krake-com/tentackle"/>
       <item name="Maven Central" href="https://search.maven.org/search?q=org.tentackle"/>
       <item name="Krake Softwaretechnik" href="https://krake.de/"/>
     </menu>

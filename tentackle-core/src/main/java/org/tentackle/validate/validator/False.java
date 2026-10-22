@@ -32,13 +32,13 @@ import java.lang.annotation.Target;
 
 /**
  * The annotated element must be false.
- * Supported types are <code>boolean</code> and <code>Boolean</code>
+ * Supported types are <code>boolean</code> and <code>Boolean</code>.
  * <p>
  * <code>null</code> elements are considered valid.
  * <p>
  * This validator can also be used as an object validator with the value
- * providing a compoundv alue, usually a script that must evaluate to false.
-
+ * providing a compound value, usually a script that must evaluate to false.
+ *
  * @author harald
  */
 @Target({ElementType.METHOD, ElementType.FIELD, ElementType.TYPE})
@@ -97,7 +97,7 @@ public @interface False {
    * Replaces the annotated object with an expression.<br>
    * Used in conjunction with scripts.
    *
-   * @return value the value
+   * @return the value
    */
   String value() default "";
 

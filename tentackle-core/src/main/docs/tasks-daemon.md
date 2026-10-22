@@ -12,7 +12,7 @@ packages for this:
 - `org.tentackle.daemon` — a **daemon supervisor** that owns the life cycle of background threads
   and shuts them down gracefully.
 
-The two connect naturally: the default dispatcher is itself a supervised daemon thread.
+The two connect naturally: the default dispatcher is itself a daemon thread that can be supervised.
 
 ## Tasks (`org.tentackle.task`)
 
@@ -28,6 +28,10 @@ task.setScheduledEpochalTime(when);   // absolute time (epoch millis) at which t
 task.setRepeatInterval(millis);       // > 0 to re-queue the task this many ms after each run
 ```
 
+`AbstractTask.setRepeatInterval` also schedules the first run one interval from now. Tasks with the
+same scheduled time run in the order they were added. A task that throws does not stop the
+dispatcher: the exception is logged and kept as the task's `getCause()`.
+
 ### `TaskDispatcher` and `DefaultTaskDispatcher`
 
 A [`TaskDispatcher`](../java/org/tentackle/task/TaskDispatcher.java) executes its tasks **serially**.
@@ -39,7 +43,7 @@ TaskDispatcher dispatcher = new DefaultTaskDispatcher("background");
 dispatcher.start();
 
 dispatcher.addTask(task);                 // queue a task
-boolean done = dispatcher.addTaskAndWait(task);   // queue and block until it finished
+boolean added = dispatcher.addTaskAndWait(task);  // queue and block until it finished, false if already queued
 dispatcher.waitForTask(task);             // block until a queued task finished
 dispatcher.removeTask(task);              // de-queue if still pending
 ```
@@ -48,24 +52,39 @@ Useful operations on the dispatcher:
 
 - **Queue inspection** — `getQueueSize()`, `isQueueEmpty()`, `getTask(id)`, `getAllTasks()`,
   `isTaskPending(task)`, `isInstanceOfTaskPending(MyTask.class)`.
-- **Mutual exclusion** — `lock(key)` / `unlock(key)` hand out a
-  [`TaskDispatcherLock`](../java/org/tentackle/task/TaskDispatcherLock.java); enable it with
-  `setUsingMutexLocking(true)` so tasks sharing a key never run concurrently.
-- **Timing** — `setSleepInterval`, `setWaitInterval`, `setDeadInterval` and
-  `setShutdownIdleTimeout` tune the polling loop and the idle auto-shutdown.
+- **Locking** — another thread can `lock(key)` the dispatcher to share resources with the tasks:
+  while locked, no task is executed until `unlock(key)`. The returned
+  [`TaskDispatcherLock`](../java/org/tentackle/task/TaskDispatcherLock.java) holds the key. Locking
+  is *counter-based* by default, so any thread presenting the right key may unlock (TRIP requests,
+  for example, are served by different pool threads). With `setUsingMutexLocking(true)` (before
+  `start()`), the lock is a reentrant mutex that only the locking thread may release.
+- **Timing** — `setSleepInterval` caps how long the idle dispatcher sleeps before polling again;
+  `setDeadInterval` declares the dispatcher dead (for a supervisor) if its loop shows no activity for
+  that long; `setWaitInterval` (default: half the dead interval) times out `waitForTask` if the
+  dispatcher is inactive meanwhile, removing the task; `setShutdownIdleTimeout` terminates an idle
+  dispatcher.
+- **Termination** — `terminate()` asks the dispatcher to stop and waits up to the dead interval
+  for its thread. A thread that does not stop in time, for example because a task is stuck in a
+  blocking call, is marked killed, and `cleanup()` runs in the terminating thread while the
+  dispatcher thread is still running. Resources owned by the dispatcher thread, such as the session
+  of a session dispatcher, are left to the dispatcher thread: it runs `cleanup()` itself as soon
+  as it returns (see `isCleanupDeferred()`).
 - **Diagnostics** — `toDiagnosticString()`, `isAlive()`.
 
 ### `TaskListener`
 
 Register a [`TaskListener`](../java/org/tentackle/task/TaskListener.java) on a dispatcher or on an
 individual task to observe task life-cycle events.
-[`TaskException`](../java/org/tentackle/task/TaskException.java) reports task failures.
+[`TaskException`](../java/org/tentackle/task/TaskException.java) reports dispatching errors, such
+as a timed-out `waitForTask`, a dispatcher locking itself, or using a killed dispatcher.
 
 ## Daemons (`org.tentackle.daemon`)
 
 Daemons are ordinary background threads whose life cycle is owned by a
-[`DaemonSupervisor`](../java/org/tentackle/daemon/DaemonSupervisor.java). The supervisor periodically
-checks its daemons and can terminate or kill them — for example on application shutdown.
+[`DaemonSupervisor`](../java/org/tentackle/daemon/DaemonSupervisor.java). A subclass creates the
+daemons in `createDaemon(index)`; the supervisor checks them every check interval, restarts terminated
+ones (up to a maximum start count), kills `Supervisable` daemons that report themselves dead, and kills
+the `Supervisable` daemons on termination — for example on application shutdown.
 
 The package is a small set of capability interfaces:
 

@@ -28,12 +28,25 @@ import org.tentackle.session.SessionPool;
 import java.util.Collection;
 
 /**
- * Web Server Application.
+ * The Tentackle side of a bridge to a web framework.
  * <p>
- * Web applications usually run in a web container or application server.
+ * A web application is an {@link AbstractServerApplication}: it logs into its backend (a database or an
+ * upstream Tentackle server) and owns a session pool, so it is a regular node of a multi-tier cascade.
+ * Unlike a {@code ServerApplication}, however, it opens no TRIP endpoint, i.e., it is a leaf toward HTTP.
+ * <p>
+ * On top of that, it maps the web framework's session keys to the users' {@link SessionInfo}s and lends
+ * a pooled persistence session per request:
+ * <ol>
+ *   <li>{@link #addWebSession} after authentication,</li>
+ *   <li>{@link #getSession} at the beginning of each request,</li>
+ *   <li>{@link #putSession} after the response has been sent (in a finally-block),</li>
+ *   <li>{@link #removeWebSession} on logout or when the web session expires.</li>
+ * </ol>
+ * The recommended boot order is to start the Tentackle application first and launch the web framework
+ * from within {@link #finishStartup()}.
  *
  * @author harald
- * @param <T> the web session key type
+ * @param <T> the web session key type, must provide proper {@code equals} and {@code hashCode}
  */
 public abstract class WebApplication<T> extends AbstractServerApplication {
 
@@ -86,10 +99,13 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
 
 
   /**
-   * Gets the web session keys for user session info.<br>
+   * Gets the web session keys for user session info.
+   * <p>
+   * The session infos are compared by {@code SessionInfo.equals}, i.e., by username for the default
+   * implementation. Hence, any session info describing the user finds all web sessions of that user.
    *
    * @param sessionInfo the user session info
-   * @return the web session keys, never null
+   * @return the web session keys, never null, independent of the cache
    */
   public Collection<T> getSessionKeys(SessionInfo sessionInfo) {
     return sessionInfoCache.getSessionKeys(sessionInfo);
@@ -97,10 +113,16 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
 
 
   /**
-   * Gets a persistence session from the session pool by a web session key.<br>
+   * Gets a persistence session from the session pool by a web session key.
+   * <p>
+   * The session is taken from the local session pool if the application is connected to a database,
+   * or from the remote session pool if it is a client of another server. The user's session info is
+   * attached to it, so that it executes as the user that has been authenticated by the web framework.
+   * The session must be given back via {@link #putSession} when the request is finished.
    *
    * @param sessionKey the web session key
-   * @return the attached session or null if no such session
+   * @return the session, null if the key is unknown, its session info has been reclaimed by the garbage
+   * collector or there is no session pool (startup not finished yet or application already cleaned up)
    */
   public Session getSession(T sessionKey) {
     SessionInfo sessionInfo = sessionInfoCache.getSessionInfo(sessionKey);
@@ -127,8 +149,12 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
 
 
   /**
-   * Release a persistence session.<br>
-   * Should be invoked after sending/rendering the response to the web browser.
+   * Releases a persistence session.<br>
+   * Should be invoked after the response has been sent to the web client.
+   * <p>
+   * If the application is connected to a database, the user's session info is detached from the session,
+   * since pooled sessions are shared among all users. Sessions of the remote session pool remain bound to
+   * their user. In both cases, the session is returned to its own pool (see {@link Session#getPool()}).
    *
    * @param session the persistence session to release
    */
@@ -145,6 +171,11 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to start the cleanup thread of the web session key cache.
+   */
   @Override
   protected void finishStartup() {
     super.finishStartup();
@@ -154,6 +185,11 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to terminate the cleanup thread of the web session key cache, if started.
+   */
   @Override
   protected void cleanup() {
     try {

@@ -32,9 +32,10 @@ import java.util.Map;
  * The model provides the following variables:
  * <ul>
  *   <li>url: the connection URL</li>
- *   <li>migrate: the names of all processed entities mapped to a boolean indicating whether migrated or not.</li>
- *   <li>all system-environment with the keys converted to camelCase.</li>
- *   <li>all maven-properties with the keys converted to camelCase.</li>
+ *   <li>migrate: the names of all processed entities mapped to a boolean indicating whether the entity's table
+ *   needs migration or not.</li>
+ *   <li>all system properties with the keys converted to camelCase.</li>
+ *   <li>all maven properties with the keys converted to camelCase.</li>
  * </ul>
  *
  * <pre>
@@ -54,8 +55,8 @@ public class MigrateTemplateModel extends TemplateModel {
    *
    * @param mojo the migrate mojo
    * @param backendInfo the backend info
-   * @param migratedEntitiesMap set of migrated tables
-   * @throws MojoExecutionException if module path could not be generated
+   * @param migratedEntitiesMap the processed entity names mapped to whether they need migration
+   * @throws MojoExecutionException if the model could not be created
    */
   public MigrateTemplateModel(MigrateSqlMojo mojo, BackendInfo backendInfo, Map<String, Boolean> migratedEntitiesMap) throws MojoExecutionException {
 

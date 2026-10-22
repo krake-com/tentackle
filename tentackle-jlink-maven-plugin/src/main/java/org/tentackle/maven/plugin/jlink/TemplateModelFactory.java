@@ -31,7 +31,8 @@ interface TemplateModelFactoryHolder {
  * Factory for the freemarker template model.
  * <p>
  * May be replaced via &#64;{@link org.tentackle.common.Service} annotation from within an application-specific plugin dependency.
- * For example, to add template variables from other sources.
+ * For example, to add template variables from other sources. Extending {@link DefaultTemplateModelFactory}
+ * keeps the built-in variables.
  * <p>
  * Example:
  * <pre>
@@ -39,7 +40,7 @@ interface TemplateModelFactoryHolder {
  *   public class SpecialTemplateModelFactory implements TemplateModelFactory {
  *
  *     &#64;Override
- *     public TemplateModel create(AbstractJlinkMojo mojo, JlinkResolver.Result result) throws MojoExecutionException {
+ *     public TemplateModel create(AbstractJLinkMojo mojo, JLinkResolver.Result result) throws MojoExecutionException {
  *       ...
  *     }
  *   }
@@ -54,7 +55,7 @@ interface TemplateModelFactoryHolder {
  *     &lt;dependencies&gt;
  *       &lt;dependency&gt;
  *         &lt;groupId&gt;com.example&lt;/groupId&gt;
- *         &lt;artifactId&gt;special-creator&lt;/artifactId&gt;
+ *         &lt;artifactId&gt;special-model-factory&lt;/artifactId&gt;
  *         &lt;version&gt;1.0&lt;/version&gt;
  *       &lt;/dependency&gt;
  *     &lt;/dependencies&gt;

@@ -25,6 +25,7 @@ import java.util.Calendar;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertThrows;
 
 /**
  * Test for DateHelper.
@@ -105,6 +106,27 @@ public class DateHelperTest {
     // month and day are read via separate calendars, allow the value to be plausible
     assertTrue(DateHelper.getCurrentMonth() >= 0 && DateHelper.getCurrentMonth() <= 11);
     assertTrue(DateHelper.getCurrentDay() >= 1 && DateHelper.getCurrentDay() <= 31);
+  }
+
+  @Test
+  public void testDeriveMonthFromDayAt31() {
+    // day 31 must not wrap to 0
+    assertEquals(DateHelper.deriveMonthFromDay(31, 31, 5, 15), 5);
+    // 21 days ahead -> previous month
+    assertEquals(DateHelper.deriveMonthFromDay(31, 10, 5, 15), 4);
+    // out of range days return the current month
+    assertEquals(DateHelper.deriveMonthFromDay(0, 10, 5, 15), 5);
+    assertEquals(DateHelper.deriveMonthFromDay(32, 10, 5, 15), 5);
+  }
+
+  @Test
+  public void testMinValuesAreFrozen() {
+    assertTrue(DateHelper.MIN_DATE.isFrozen());
+    assertTrue(DateHelper.MIN_TIMESTAMP.isFrozen());
+    assertEquals(DateHelper.MIN_DATE.getTime(), 0L);
+    assertEquals(DateHelper.MIN_TIMESTAMP.getTime(), 0L);
+    assertThrows(TentackleRuntimeException.class, () -> DateHelper.MIN_DATE.setTime(1000L));
+    assertThrows(TentackleRuntimeException.class, () -> DateHelper.MIN_TIMESTAMP.setTime(1000L));
   }
 
 }

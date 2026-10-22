@@ -54,7 +54,7 @@ and `SendInvoicePersistenceImpl` (the exact names come from the framework's nami
 | `abstract`                  | Generate an abstract operation.                                                             |
 | `domainInterface`           | Override the derived name. Empty or `-` generates no domain side at all.                    |
 | `persistenceInterface`      | Likewise for the persistence side. Suppressing it also disables remoting.                   |
-| `domainImplementation`      | Override; empty or `-` generates the interface without an implementation.                   |
+| `domainImplementation`      | Override; empty or `-` generates the interface without an implementation. Ignored if the domain side is dropped. |
 | `persistenceImplementation` | Likewise for the persistence implementation.                                                |
 | `overwrite`                 | Regenerate over existing files.                                                             |
 

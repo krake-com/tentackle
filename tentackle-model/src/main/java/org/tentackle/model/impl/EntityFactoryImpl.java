@@ -47,7 +47,6 @@ import org.tentackle.sql.DataTypeFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -60,7 +59,7 @@ public class EntityFactoryImpl implements EntityFactory {
   /** the model to use. */
   private final Model model;
 
-  /** last pending comment line. */
+  /** pending comment lines, joined by newline, null if none. */
   private String pendingComment;
 
   /** list of backends to validate against. */
@@ -273,7 +272,7 @@ public class EntityFactoryImpl implements EntityFactory {
       }
     }
 
-    // find associated attributes associated with object relations
+    // associate the first method-argument attribute with its object relation
     for (Relation relation: entity.getRelations()) {
       if (relation.getRelationType() == RelationType.OBJECT) {
         MethodArgument firstArg = relation.getMethodArgs().getFirst();
@@ -295,7 +294,7 @@ public class EntityFactoryImpl implements EntityFactory {
       entity.getAttributes().addFirst(classIdAttribute);    // comes first
     }
 
-    // move from start to end of the model
+    // move id and serial to the end of the attribute list; drop them for embedded entities and subclasses
     entity.getAttributes().remove(idAttribute);
     entity.getAttributes().remove(serialAttribute);
     if (!entity.isEmbedded() && entity.getSuperEntityName() == null) {
@@ -304,7 +303,7 @@ public class EntityFactoryImpl implements EntityFactory {
       entity.getAttributes().add(serialAttribute);
     }
 
-    // creates the sorting info, if any
+    // create the sorting info, if any
     List<String> sortOpts = entity.getOptions().getSorting();
     if (sortOpts != null && !sortOpts.isEmpty()) {
       List<AttributeSorting> sorting = new ArrayList<>();
@@ -352,7 +351,8 @@ public class EntityFactoryImpl implements EntityFactory {
 
   /**
    * Processes an index configuration line.<br>
-   * Requires the attribute already processed.
+   * The line is only stored here. It is parsed later, once the whole model is known
+   * (see {@link ModelImpl#updateRelations()}).
    *
    * @param entity the entity
    * @param line the configuration line
@@ -424,7 +424,7 @@ public class EntityFactoryImpl implements EntityFactory {
         }
       }
       else  {
-        if (!attributeOptions.processOption(option.toUpperCase(Locale.ROOT))) {
+        if (!attributeOptions.processOption(option)) {
           throw line.createModelException("illegal option '" + option + "' for attribute " + attribute);
         }
       }
@@ -436,7 +436,7 @@ public class EntityFactoryImpl implements EntityFactory {
    * Processes a relation option line.
    *
    * @param entity the entity
-   * @param line the attribute option line
+   * @param line the relation option line
    * @throws ModelException if processing failed
    */
   protected void processRelationOption(EntityImpl entity, OptionLine line) throws ModelException {
@@ -547,7 +547,7 @@ public class EntityFactoryImpl implements EntityFactory {
 
 
   /**
-   * Takes a probably multi-line comment and extracts the first line w/o trailing punctuation characters.
+   * Takes a possibly multi-line comment and extracts the first line without trailing whitespace or punctuation.
    *
    * @param comment the comment defined in the model
    * @return the comment header, null if empty comment

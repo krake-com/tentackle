@@ -36,6 +36,8 @@ import java.util.Collection;
 /**
  * PDO-aware collection to TreeItem translator for {@link FxTreeView} and {@link FxTreeTableView}.<br>
  * Used if the model provides a collection.
+ * The PDOs are displayed as top-level items, with the tree cells or table configuration provided
+ * by the element type's {@link GuiProvider}.
  *
  * @author harald
  * @param <T> the PDO type

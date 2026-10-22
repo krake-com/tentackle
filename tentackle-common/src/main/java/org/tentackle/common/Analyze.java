@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.common;
 
 import java.lang.annotation.Documented;
@@ -25,14 +24,14 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-
-
 /**
- * Annotation to mark an annotation to be processed during the analyze-phase.
+ * Annotation to mark an annotation to be processed during the analyze phase,
+ * i.e., by the analyze goal of the tentackle-maven-plugin.
  * <p>
- * These are usually annotations like @RemoteMethod that gather information
- * for subsequent wurblet invocations or services like @{@link Service}
- * to be configured for the ServiceLoader.
+ * These are usually annotations like @{@link RemoteMethod} that gather information
+ * for subsequent wurblet invocations, or services like @{@link Service}
+ * to be configured for the {@link ServiceFinder}.
+ * The handler processing the annotation is given by {@link #value()}.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

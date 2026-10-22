@@ -27,7 +27,6 @@ import org.tentackle.trip.TripStream;
 import org.tentackle.trip.TripTypeService;
 import org.tentackle.trip.impl.DefaultOpCode;
 
-import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -41,9 +40,6 @@ import java.nio.charset.StandardCharsets;
  */
 @TripTypeService(String.class)
 public class StringTripType extends AbstractTripType<String> {
-
-  /** the number of bytes read at once for longer strings. */
-  private static final int CHUNK_SIZE = 8192;
 
   /**
    * Creates the type.
@@ -163,19 +159,20 @@ public class StringTripType extends AbstractTripType<String> {
     }
 
     if (readContent) {
-      int len = switch (orgCode) {
-        case DefaultOpCode.STRING -> deserializer.deserializeInt();
-        case DefaultOpCode.STRING2 -> deserializer.deserializeShortAsUnsigned();
-        case DefaultOpCode.STRING1 -> deserializer.deserializeByteAsUnsigned();
-        case DefaultOpCode.STRING_EMPTY -> 0;
-        default -> -1;
-      };
+      // narrowed to DefaultOpCode before switching, see AbstractPredefinedArrayTripType#readSkip
+      int len = orgCode instanceof DefaultOpCode code ?
+                  switch (code) {
+                    case STRING -> deserializer.deserializeInt();
+                    case STRING2 -> deserializer.deserializeShortAsUnsigned();
+                    case STRING1 -> deserializer.deserializeByteAsUnsigned();
+                    case STRING_EMPTY -> 0;
+                    default -> -1;
+                  } : -1;
       if (len == 0) {
         value = "";
       }
       else if (len > 0) {
-        value = readString(deserializer, len);
-
+        value = deserializer.deserializeUtf8(len);
         if (reference != null) {
           stream.addReference(reference, value, isDeduplicateable(value));
           reference.markReceived();
@@ -187,36 +184,6 @@ public class StringTripType extends AbstractTripType<String> {
     }
 
     return value;
-  }
-
-
-  /**
-   * Reads a string of the given length in UTF-8.
-   * <p>
-   * Longer strings are read in chunks instead of allocating the announced length up front, so that
-   * a corrupted length cannot allocate more than the stream actually delivers: it runs out of data
-   * and reports a closed stream rather than an {@link OutOfMemoryError}.
-   *
-   * @param deserializer the deserializer to read from
-   * @param len the number of bytes, greater than zero
-   * @return the string
-   */
-  protected String readString(Deserializer deserializer, int len) {
-    if (len <= CHUNK_SIZE) {
-      byte[] readBuffer = new byte[len];
-      deserializer.deserialize(readBuffer, 0, len);
-      return new String(readBuffer, 0, len, StandardCharsets.UTF_8);
-    }
-    ByteArrayOutputStream buffer = new ByteArrayOutputStream(CHUNK_SIZE);
-    byte[] chunk = new byte[CHUNK_SIZE];
-    int remaining = len;
-    while (remaining > 0) {
-      int count = Math.min(remaining, chunk.length);
-      deserializer.deserialize(chunk, 0, count);
-      buffer.write(chunk, 0, count);
-      remaining -= count;
-    }
-    return buffer.toString(StandardCharsets.UTF_8);
   }
 
 }

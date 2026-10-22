@@ -39,9 +39,12 @@ import java.util.Properties;
 /**
  * Pulls resource bundles from the database backend.<br>
  * If the database contents differ from the resource bundle property files, the property files will be updated.
+ * Only bundles whose package belongs to the project's (non-filtered) resource roots are written.
+ * Missing property files are created. Keys that are not stored in the database are left in place.
  */
 @Mojo(name = "pull",
-      requiresDependencyResolution = ResolutionScope.COMPILE)
+      requiresDependencyResolution = ResolutionScope.COMPILE,
+      threadSafe = true)
 public class PullMojo extends AbstractI18nMojo {
 
   private Map<String, PackageInfo> packageMap;
@@ -62,6 +65,12 @@ public class PullMojo extends AbstractI18nMojo {
     PackageInfo info = packageMap.get(packageName);
     if (info != null) {   // if part of the project
       bundleCount++;
+      if (bundle == null) {
+        // never pushed, or not translated for that locale: there is nothing to pull
+        getLogger().warn("missing stored bundle: {}", resourceName);
+        warnings++;
+        return;
+      }
       int ndx = resourceName.lastIndexOf('/');
       String fileName = ndx >= 0 ? resourceName.substring(ndx + 1) : resourceName;
       File file = new File(info.getPath(), fileName);
@@ -70,7 +79,7 @@ public class PullMojo extends AbstractI18nMojo {
       try {
         properties = loadProperties(file);
         if (properties == null) {
-          getLog().warn("created resource: " + resourceName);
+          getLogger().warn("created resource: {}", resourceName);
           warnings++;
           properties = new OrderedProperties();
         }
@@ -78,14 +87,14 @@ public class PullMojo extends AbstractI18nMojo {
           String propValue = properties.getProperty(bundleKey.getKey());
           if (!bundleKey.getValue().equals(propValue)) {
             properties.setProperty(bundleKey.getKey(), bundleKey.getValue());
-            getLog().info(resourceName + ": '" + bundleKey.getKey() + "' " + (propValue == null ? "added" : "updated"));
+            getLogger().info("{}: '{}' {}", resourceName, bundleKey.getKey(), propValue == null ? "added" : "updated");
             updates++;
             differs = true;
           }
         }
       }
       catch (IOException iox) {
-        getLog().error("cannot load resource bundle properties file " + file.getAbsolutePath(), iox);
+        getLogger().error("cannot load resource bundle properties file {}", file.getAbsolutePath(), iox);
         errors++;
         return;
       }
@@ -96,7 +105,7 @@ public class PullMojo extends AbstractI18nMojo {
           properties.store(writer, comment);
         }
         catch (IOException iox) {
-          getLog().error("cannot update resource bundle properties file " + file.getAbsolutePath(), iox);
+          getLogger().error("cannot update resource bundle properties file {}", file.getAbsolutePath(), iox);
           errors++;
         }
       }

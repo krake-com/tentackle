@@ -17,6 +17,9 @@
  */
 
 /**
- * Predefined PDO value translators.
+ * Predefined PDO value translators.<br>
+ * They configure the components bound to PDOs or PDO collections via the PDO's
+ * {@link org.tentackle.fx.rdc.GuiProvider} and add the PDO features of the
+ * {@link org.tentackle.fx.rdc.translate.PdoComponentAddon}.
  */
 package org.tentackle.fx.rdc.translate;

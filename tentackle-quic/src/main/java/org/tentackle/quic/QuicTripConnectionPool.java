@@ -21,6 +21,7 @@ package org.tentackle.quic;
 import tech.kwik.core.QuicClientConnection;
 import tech.kwik.core.QuicStream;
 
+import org.tentackle.io.SslParameters;
 import org.tentackle.io.UriHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.PoolSlot;
@@ -30,28 +31,41 @@ import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.transport.AbstractConnectionPool;
 import org.tentackle.trip.transport.ConnectionPoolSlot;
 
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.net.URI;
+import java.security.GeneralSecurityException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * The QUIC client connection pool.
  * <p>
  * All pooled connections are streams multiplexed over a single QUIC connection. Since that
  * connection is discarded silently by both peers as soon as it stays idle for longer than the QUIC
- * max idle timeout (see {@link QuicTripTransport#getMaxIdleSeconds()}), which is way shorter than
+ * max idle timeout (see {@link QuicTripTransport#getMaxIdleSeconds()}), which is much shorter than
  * the pool's idle timeout, it is kept alive by sending PING frames. Otherwise, the pool would hand
- * out connections belonging to a QUIC connection that is long gone.
+ * out connections belonging to a QUIC connection that is long gone. Should it be lost nevertheless,
+ * it is re-established when the next connection is requested from the pool, see
+ * {@link #restoreMinimumSize(int)}.
  * <p>
  * Because each pooled connection holds one of the streams the peer allows for the whole time it is
  * in the pool, the pool's maximum size defaults to {@link QuicTripTransport#getMaxStreams()} instead
- * of being unlimited. Running into the peer's stream limit does not fail an individual request. It
- * blocks the requesting thread indefinitely, and with it every other thread using this transport.
+ * of being unlimited. Should the peer nevertheless grant fewer streams, opening another one is bounded
+ * by {@code streamtimeout} and fails with a <em>temporary</em> {@link TripRuntimeException}, see
+ * {@link #createQuicStream(QuicClientConnection)}.
+ * <p>
+ * The QUIC connection is established right away when the pool is created, which in turn happens
+ * when the transport hands out its first client connection.
  */
 public class QuicTripConnectionPool extends AbstractConnectionPool {
 
@@ -83,17 +97,23 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
 
 
   private final QuicTripTransport transport;
-  private final QuicClientConnection.Builder connectionBuilder;
+  private final String alpnId;
+  private final int maxIdleSeconds;
+  private final int streamWindow;
   private final int keepAliveSeconds;
   private final int connectTimeoutSeconds;
   private final int streamTimeoutSeconds;
+  private final X509TrustManager trustManager;    // checks the server certificate, null if certcheck is disabled
   private QuicClientConnection connection;
 
   /**
-   * Creates a QUIC connection pool.
+   * Creates a QUIC connection pool and establishes the QUIC connection.
    *
    * @param transport     the transport associated with this pool
    * @param dictionary    the dictionary associated with this pool
+   * @throws IllegalArgumentException if the URI has no port &gt; 0, or {@code connecttimeout} or
+   *         {@code streamtimeout} is not &gt; 0
+   * @throws TripRuntimeException if the QUIC connection cannot be established
    */
   public QuicTripConnectionPool(QuicTripTransport transport, Dictionary dictionary) {
     super(transport, dictionary);
@@ -124,19 +144,12 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     }
     Map<String, String> queryParameters = UriHelper.getQueryParameters(uri.getQuery(), String::valueOf);
     String scheme = uri.getScheme();    // default alpnId is the same as the scheme
-    String alpnId = queryParameters.getOrDefault("alpnid", scheme);
+    alpnId = queryParameters.getOrDefault("alpnid", scheme);
     keepAliveSeconds = transport.getUriPars().getOrDefault("keepalive", -1);
-    connectionBuilder = QuicClientConnection.newBuilder()
-                                            .uri(uri)  // only host and port are used
-                                            .applicationProtocol(alpnId)
-                                            .connectTimeout(Duration.ofSeconds(connectTimeoutSeconds))
-                                            .maxIdleTimeout(Duration.ofSeconds(transport.getMaxIdleSeconds()))
-                                            // the window the server may use for its responses, configured
-                                            // explicitly so that both directions are symmetric
-                                            .defaultStreamReceiveBufferSize((long) transport.getStreamWindow());
-    if (!Boolean.parseBoolean(queryParameters.getOrDefault("certcheck", "false"))) {
-      connectionBuilder.noServerCertificateCheck();
-    }
+    maxIdleSeconds = transport.getMaxIdleSeconds();
+    streamWindow = transport.getStreamWindow();   // validated here rather than by every connect attempt
+    trustManager = Boolean.parseBoolean(queryParameters.getOrDefault("certcheck", "true")) ?
+                   createTrustManager(uri) : null;
 
     connect();
   }
@@ -162,6 +175,23 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to do nothing while the QUIC connection is gone. Creating a slot would re-establish it
+   * first, which waits for the handshake for as long as {@code connecttimeout} allows if the server is
+   * not reachable &mdash; with the pool's monitor held, on the thread that monitors all pools, and again
+   * with every round. The connection is re-established by the next {@link #get()} instead, i.e., when it
+   * is needed.
+   */
+  @Override
+  protected void restoreMinimumSize(int num) {
+    QuicClientConnection quicConnection = connection;
+    if (quicConnection != null && quicConnection.isConnected()) {
+      super.restoreMinimumSize(num);
+    }
+  }
+
   @Override
   protected PoolSlot<Connection> createSlot(int slotNumber) {
     QuicStream quicStream = createQuicStream();   // may re-establish the QUIC connection
@@ -181,10 +211,10 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
   }
 
   /**
-   * Creates a new client quic stream.<br>
+   * Creates a new client QUIC stream.<br>
    * Re-establishes the QUIC connection if it has been terminated meanwhile.
    *
-   * @return the quic stream
+   * @return the QUIC stream
    */
   protected QuicStream createQuicStream() {
     QuicClientConnection quicConnection = connection;
@@ -202,7 +232,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
    * <p>
    * KWIK's {@code createStream} blocks until the peer grants the credits to open another stream, and the
    * only way to get them is closing one of the streams already open. Since all of them belong to pooled
-   * connections and this method runs with the pool's (and the transport's) monitor held, no other thread
+   * connections and this method runs with the pool's monitor held, no other thread
    * could return one: the wait must be bounded, or the whole client transport deadlocks.
    * <p>
    * Under normal circumstances the limit is never reached because the pool's maximum size is capped to
@@ -218,7 +248,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
    * deadline is absolute, so no number of interrupts can stretch the wait beyond {@code streamtimeout}.
    *
    * @param quicConnection the established QUIC connection
-   * @return the quic stream
+   * @return the QUIC stream
    */
   protected QuicStream createQuicStream(QuicClientConnection quicConnection) {
     CompletableFuture<QuicStream> future = new CompletableFuture<>();
@@ -235,19 +265,10 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
       }
     });
     long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(streamTimeoutSeconds);
-    boolean interrupted = false;
     try {
-      for (;;) {
-        try {
-          return future.get(Math.max(deadline - System.nanoTime(), 0), TimeUnit.NANOSECONDS);
-        }
-        catch (InterruptedException e) {
-          interrupted = true;   // keep waiting, see above
-        }
-      }
+      return await(future, deadline);
     }
     catch (TimeoutException e) {
-      future.completeExceptionally(e);    // marks the stream abandoned, should it still show up
       creator.interrupt();                // KWIK aborts a blocked createStream when interrupted
       TripRuntimeException tex = new TripRuntimeException(
         "no QUIC stream available on " + getTransport().getUri() + " within " + streamTimeoutSeconds +
@@ -257,11 +278,6 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     }
     catch (ExecutionException e) {
       throw new TripRuntimeException("creating QUIC stream failed", e.getCause());
-    }
-    finally {
-      if (interrupted) {
-        Thread.currentThread().interrupt();
-      }
     }
   }
 
@@ -284,59 +300,208 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
      */
     closeConnection();
     URI uri = getTransport().getUri();
+    /*
+     * What the trust manager rejected the server certificate for, if it did. Deliberately local to this
+     * attempt: the connector of an attempt given up on may still be at work when the next one is started,
+     * and its certificate failure must not be taken for the reason the next one failed for.
+     */
+    AtomicReference<CertificateException> certificateFailure = new AtomicReference<>();
+    X509TrustManager attemptTrustManager =
+      trustManager == null ? null : createRecordingTrustManager(trustManager, certificateFailure);
 
     CompletableFuture<QuicClientConnection> future = new CompletableFuture<>();
     Thread connector = Thread.ofVirtual().name("QUIC connector " + uri).start(() -> {
-      QuicClientConnection quicConnection = null;
       try {
-        quicConnection = connectionBuilder.build();
-        quicConnection.connect();
+        QuicClientConnection quicConnection = establishConnection(attemptTrustManager);
         if (!future.complete(quicConnection)) {
           // we were too late: close it instead of leaking the connection and its threads
           closeQuietly(quicConnection);
         }
       }
       catch (Throwable t) {
-        if (quicConnection != null) {
-          closeQuietly(quicConnection);
-        }
         future.completeExceptionally(t);
       }
     });
 
     // KWIK bounds the handshake itself, this is the outer bound in case its wait does not return at all
     long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(connectTimeoutSeconds + CONNECT_TIMEOUT_GRACE);
-    boolean interrupted = false;
     try {
-      for (;;) {
-        try {
-          QuicClientConnection quicConnection =
-            future.get(Math.max(deadline - System.nanoTime(), 0), TimeUnit.NANOSECONDS);
-          if (keepAliveSeconds != 0) {
-            // negative means: as long as this pool lives
-            quicConnection.keepAlive(keepAliveSeconds < 0 ? Integer.MAX_VALUE : keepAliveSeconds);
-          }
-          connection = quicConnection;
-          return;
-        }
-        catch (InterruptedException e) {
-          interrupted = true;   // keep waiting, see above
-        }
+      QuicClientConnection quicConnection = await(future, deadline);
+      if (keepAliveSeconds != 0) {
+        // negative means: as long as this pool lives
+        quicConnection.keepAlive(keepAliveSeconds < 0 ? Integer.MAX_VALUE : keepAliveSeconds);
       }
+      connection = quicConnection;
     }
     catch (TimeoutException e) {
-      future.completeExceptionally(e);    // marks the connection abandoned, should it still show up
       connector.interrupt();
       throw new TripRuntimeException("creating QUIC connection to " + uri + " failed", e);
     }
     catch (ExecutionException e) {
-      throw new TripRuntimeException("creating QUIC connection to " + uri + " failed", e.getCause());
+      throw new TripRuntimeException("creating QUIC connection to " + uri + " failed",
+                                      wrapCertificateFailure(e.getCause(), certificateFailure.get()));
+    }
+  }
+
+  /**
+   * Waits for a result provided by another thread, up to an absolute deadline.
+   * <p>
+   * Waiting is interrupt-agnostic, see {@link #createQuicStream(QuicClientConnection)}: an interrupt of the
+   * calling thread is only remembered and re-asserted before returning.
+   * <p>
+   * Giving up <em>abandons</em> the future by completing it exceptionally, which tells the providing thread
+   * that its result is not wanted anymore and must be released. That thread may well complete the future
+   * just after the wait timed out, though, in which case it rightly assumes the result was taken. Hence
+   * the timeout is only reported if abandoning succeeded. Otherwise, the result is returned as if it had
+   * arrived in time, or it would be owned by nobody and leak.
+   *
+   * @param future the future the other thread completes
+   * @param deadline the deadline in terms of {@link System#nanoTime()}
+   * @param <T> the result type
+   * @return the result
+   * @throws TimeoutException if there was no result until the deadline; the future is abandoned
+   * @throws ExecutionException if the other thread failed
+   */
+  static <T> T await(CompletableFuture<T> future, long deadline) throws TimeoutException, ExecutionException {
+    boolean interrupted = false;
+    try {
+      for (;;) {
+        try {
+          return future.get(Math.max(deadline - System.nanoTime(), 0), TimeUnit.NANOSECONDS);
+        }
+        catch (InterruptedException e) {
+          interrupted = true;   // keep waiting, see above
+        }
+        catch (TimeoutException e) {
+          if (future.completeExceptionally(e)) {
+            throw e;
+          }
+          // completed meanwhile: the next turn gets the result without waiting
+        }
+      }
     }
     finally {
       if (interrupted) {
         Thread.currentThread().interrupt();
       }
     }
+  }
+
+  /**
+   * Builds a QUIC connection and performs the handshake with the server.
+   * <p>
+   * Invoked by {@link #connect()} on a thread of its own, once per connect attempt.
+   *
+   * @param attemptTrustManager the trust manager checking the server certificate for this attempt,
+   *        null if {@code certcheck} is disabled
+   * @return the established connection
+   * @throws IOException if the connection could not be established
+   */
+  protected QuicClientConnection establishConnection(X509TrustManager attemptTrustManager) throws IOException {
+    QuicClientConnection.Builder builder =
+      QuicClientConnection.newBuilder()
+                          .uri(getTransport().getUri())  // only host and port are used
+                          .applicationProtocol(alpnId)
+                          .connectTimeout(Duration.ofSeconds(connectTimeoutSeconds))
+                          .maxIdleTimeout(Duration.ofSeconds(maxIdleSeconds))
+                          // the window the server may use for its responses, configured
+                          // explicitly so that both directions are symmetric
+                          .defaultStreamReceiveBufferSize((long) streamWindow);
+    if (attemptTrustManager == null) {
+      builder.noServerCertificateCheck();
+    }
+    else {
+      builder.customTrustManager(attemptTrustManager);
+    }
+    QuicClientConnection quicConnection = builder.build();
+    try {
+      quicConnection.connect();
+      return quicConnection;
+    }
+    catch (IOException | RuntimeException e) {
+      closeQuietly(quicConnection);
+      throw e;
+    }
+  }
+
+  /**
+   * Creates the {@link X509TrustManager} checking the server certificate when {@code certcheck} is enabled.
+   * <p>
+   * It is built exactly the way KWIK's own default trust manager is: a {@code PKIX}
+   * {@link TrustManagerFactory} initialized with the truststore configured via {@code tsfile}/{@code tspass}
+   * ({@link SslParameters#getTrustStore()}), or the JVM's default cacerts if none is configured - so
+   * behavior is unchanged for callers that do not set a truststore.
+   *
+   * @param uri the transport URI
+   * @return the trust manager
+   */
+  private static X509TrustManager createTrustManager(URI uri) {
+    try {
+      TrustManagerFactory factory = TrustManagerFactory.getInstance("PKIX");
+      factory.init(new SslParameters(uri).getTrustStore());
+      return (X509TrustManager) factory.getTrustManagers()[0];
+    }
+    catch (GeneralSecurityException e) {
+      throw new TripRuntimeException("cannot create the trust manager for " + uri, e);
+    }
+  }
+
+  /**
+   * Creates the {@link X509TrustManager} installed for a single connect attempt.<br>
+   * KWIK converts any {@link CertificateException} thrown by the trust manager into its own
+   * {@code BadCertificateAlert}, which is in turn downgraded to a plain, causeless {@link java.net.ConnectException}
+   * by the time {@link #connect()} sees it (see {@link #wrapCertificateFailure}). Delegating to a trust
+   * manager of our own, rather than leaving KWIK to build its default one internally, is the only way to
+   * recover the original exception describing <em>why</em> the certificate was rejected.
+   *
+   * @param delegate the trust manager deciding whether the certificate is trusted
+   * @param certificateFailure where to record the exception the delegate rejected the server certificate with
+   * @return the trust manager
+   */
+  private static X509TrustManager createRecordingTrustManager(
+      X509TrustManager delegate, AtomicReference<CertificateException> certificateFailure) {
+
+    return new X509TrustManager() {
+      @Override
+      public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+        delegate.checkClientTrusted(chain, authType);
+      }
+
+      @Override
+      public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+        try {
+          delegate.checkServerTrusted(chain, authType);
+        }
+        catch (CertificateException e) {
+          certificateFailure.set(e);
+          throw e;
+        }
+      }
+
+      @Override
+      public X509Certificate[] getAcceptedIssuers() {
+        return delegate.getAcceptedIssuers();
+      }
+    };
+  }
+
+  /**
+   * Wraps a QUIC connect failure caused by a rejected server certificate as an {@link SSLHandshakeException},
+   * matching what the TCP/SSL transport throws for the same failure, so code reacting to a certificate
+   * failure (such as {@code LoginFailedWithUpdateHandler}) does not need to know which transport is in use.
+   *
+   * @param cause the exception KWIK threw, typically a causeless {@code ConnectException}
+   * @param certEx the certificate failure seen by the trust manager of the same connect attempt, null if none
+   * @return an {@code SSLHandshakeException} wrapping the certificate failure, or {@code cause} unchanged if
+   *         there was none
+   */
+  private static Throwable wrapCertificateFailure(Throwable cause, CertificateException certEx) {
+    if (certEx == null) {
+      return cause;
+    }
+    SSLHandshakeException sslEx = new SSLHandshakeException(certEx.getMessage());
+    sslEx.initCause(certEx);
+    return sslEx;
   }
 
   /**
@@ -357,7 +522,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
   }
 
   /**
-   * Closes a quic connection, ignoring any errors.
+   * Closes a QUIC connection, logging instead of propagating a failure.
    *
    * @param quicConnection the connection to close
    */
@@ -371,7 +536,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
   }
 
   /**
-   * Closes a quic stream, ignoring any errors.
+   * Closes a QUIC stream, logging instead of propagating a failure.
    *
    * @param quicStream the stream to close
    */

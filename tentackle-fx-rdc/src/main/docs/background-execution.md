@@ -48,7 +48,7 @@ static <V> void bg(Node node, Supplier<V> runner, Consumer<V> updateUI, Consumer
 // 2. failures become an error dialog:  rx -> Fx.error(node, rx.getLocalizedMessage(), rx)
 static <V> void bg(Node node, Supplier<V> runner, Consumer<V> updateUI);
 
-// 3. fire and forget — no result, no UI update
+// 3. no result, no UI update — failures still become an error dialog
 static void bg(Node node, Runnable runner);
 ```
 
@@ -59,18 +59,19 @@ static void bg(Node node, Runnable runner);
 | `updateUI` | **FX** | optional; posted via `Platform.runLater(...)` |
 | `failedUI` | **FX** | optional; receives the `RuntimeException`. If `null`, the failure is only logged as severe |
 
-Overload 3 wraps the `Runnable` into a `Supplier` returning `null`, so all three funnel into the same
-`runInBackground(...)` call.
+Overload 3 wraps the `Runnable` into a `Supplier` returning `null` and delegates to overload 2, so all
+three funnel into the same `runInBackground(...)` call.
+
+A failure is only logged if overload 1 is called with `failedUI == null`; overloads 2 and 3 always show an
+error dialog.
 
 The division of labor is the whole point: **the runner touches data, the consumers touch the UI.** Neither
 should do the other's job.
 
 ```java
 Rdc.bg(getView(),
-       () -> {
-         on(Invoice.class).selectByCustomer(customerId)   // database — background
-       },
-       invoices -> table.setItems(observableList(invoices)));   // scene graph — FX thread
+       () -> on(Invoice.class).selectByCustomer(customerId),     // database — background
+       invoices -> table.setItems(observableList(invoices)));    // scene graph — FX thread
 ```
 
 ---
@@ -232,8 +233,9 @@ handler that itself touches the database cannot deadlock against its own task's 
 not `RuntimeException` are wrapped in a `TentackleRuntimeException` — or logged and rethrown if there is no
 fail handler.
 
-`RdcUtilitiesWithBackgroundPool` wraps both handlers in `Platform.runLater(...)` and restores the node's cursor,
-so the `Rdc.bg(...)` contract is identical to the default's.
+`RdcUtilitiesWithBackgroundPool` wraps both handlers in `Platform.runLater(...)`, restores the node's cursor,
+and logs the failure as severe if there is no `failedUI`, so the `Rdc.bg(...)` contract is identical to the
+default's.
 
 ### Threads and sessions are sized together
 
@@ -248,7 +250,8 @@ session pool (`maximumSize = 0`) gets a **cached** thread pool that grows and sh
 
 > **Do not size the thread pool above the session pool.** As `getThreadPoolSize()` warns, more threads than
 > sessions means a thread will eventually ask an exhausted pool for a session and get an exception. Queuing is
-> the correct behavior; failing is not. Override `getThreadPoolSize()` only to make the thread pool *smaller*.
+> the correct behavior; failing is not. Override `getThreadPoolSize()` — in a `SessionPooledExecutor` subclass
+> returned from `createExecutor()` — only to make the thread pool *smaller*.
 
 Pool threads are daemons, named `BG(1)`, `BG(2)`, … in a thread group named after the pool — which makes them
 easy to spot in a thread dump.
@@ -288,8 +291,9 @@ public <V> void runInBackground(Node node, Collection<Supplier<V>> runners, long
                                 Consumer<Map<Supplier<V>, V>> finishedUI);
 ```
 
-Every runner goes to the pool on its own session; a `CountDownLatch` waits for all of them, then the handlers
-fire on the FX thread with results keyed **by the runner that produced them**:
+Every runner goes to the pool on its own session; a dedicated waiter thread — not one of the pool's — waits on a
+`CountDownLatch` for all of them, then the handlers fire on the FX thread with results keyed **by the runner
+that produced them**:
 
 ```java
 List<Supplier<Object>> panels = List.of(
@@ -306,6 +310,8 @@ Three queries, three sessions, one round of wall-clock time instead of three. Se
 
 - `timeoutMillis <= 0` waits forever; otherwise a timeout adds a synthetic `PersistenceException` to the
   failure map.
+- The variant without `failedUI` shows the failure messages in a warning dialog; passing `null` as `failedUI`
+  only logs them.
 - `failedUI` is invoked **before** `finishedUI`, and only when something failed.
 - `finishedUI` is invoked **always** — including when some runners failed. Its map holds only the successful
   results, so check the failure map before treating it as complete.

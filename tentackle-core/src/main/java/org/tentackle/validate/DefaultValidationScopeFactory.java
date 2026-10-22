@@ -56,7 +56,11 @@ public class DefaultValidationScopeFactory implements ValidationScopeFactory {
 
 
   /**
-   * Creates the factory.
+   * Creates the factory.<br>
+   * Instantiates all scopes annotated with &#64;{@link ValidationScopeService}.
+   *
+   * @throws ValidationRuntimeException if a scope could not be instantiated, its name is invalid or not unique,
+   *         or one of the predefined scopes is missing
    */
   public DefaultValidationScopeFactory() {
     scopesByName = new HashMap<>();
@@ -119,7 +123,7 @@ public class DefaultValidationScopeFactory implements ValidationScopeFactory {
       }
     }
     catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
-           NoSuchMethodException | SecurityException | InvocationTargetException | ValidationRuntimeException nfe) {
+           NoSuchMethodException | InvocationTargetException | ValidationRuntimeException nfe) {
       throw new ValidationRuntimeException("supported scopes could not be determined", nfe);
     }
   }

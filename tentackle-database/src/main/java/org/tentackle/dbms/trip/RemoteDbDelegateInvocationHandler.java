@@ -36,6 +36,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -46,6 +47,21 @@ import java.util.regex.Pattern;
 public class RemoteDbDelegateInvocationHandler implements InvocationHandler {
 
   private static final Logger LOGGER = Logger.get(RemoteDbDelegateInvocationHandler.class);
+
+  /**
+   * The keep-alive methods, which may be invoked concurrently to the other methods of the same session.
+   */
+  private static final Set<Method> KEEP_ALIVE_METHODS;
+
+  static {
+    try {
+      KEEP_ALIVE_METHODS = Set.of(DbRemoteDelegate.class.getMethod("isAlive"),
+                                  DbRemoteDelegate.class.getMethod("setAlive", boolean.class));
+    }
+    catch (NoSuchMethodException ex) {
+      throw new ExceptionInInitializerError(ex);
+    }
+  }
 
 
   /**
@@ -249,7 +265,8 @@ public class RemoteDbDelegateInvocationHandler implements InvocationHandler {
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
     // TRIP dispatches the method invocations to a thread pool (regular threads, not virtual).
-    // This ensures the happen-before visibility, and we don't need extra synchronization.
+    // Successive invocations of the same session are serialized by enterInvocation/exitInvocation below,
+    // which also ensures the happens-before visibility.
 
     RemoteDbSessionImpl serverSession = delegate.getServerSession();
 
@@ -264,32 +281,55 @@ public class RemoteDbDelegateInvocationHandler implements InvocationHandler {
       invocationFilter.filter(proxy, method, args);
     }
 
-    try {
-      updateThreadInfo();
-      updateMDC();
+    if (KEEP_ALIVE_METHODS.contains(method)) {
+      // The client's keep-alive pings the session from another thread, concurrently to its regular invocations.
+      // The alive-flag is thread-safe: no ownership of the session.
+      return invokeImpl(proxy, method, args);
     }
-    catch (Throwable t) {
-      LOGGER.severe("cleanup server session locals after exception", t);
-      clearThreadInfo();
-      clearMDC();
-      throw t;
+
+    // The local session is not thread-safe: reject invocations running in parallel for the same session.
+    if (!serverSession.enterInvocation()) {
+      throw new PersistenceException(delegate.getSession(), "invocation of " + method.getName() + " rejected: " +
+                                     serverSession + " is in use by " + serverSession.getInvokingThread() +
+                                     " -> client misbehaving?");
     }
 
     try {
-      if (durationNecessary) {
-        TimeKeeper timeKeeper = new TimeKeeper();
-        Object returnValue = invokeImpl(proxy, method, args);
-        timeKeeper.end();
-        log(method, args, returnValue, timeKeeper);
-        return returnValue;
+      if (!serverSession.isOpen()) {
+        // closed by the client or the cleanup thread after the check above
+        throw new RemoteSessionClosedException(serverSession + " already closed since " + new Date(serverSession.getClosedSince()));
       }
-      else {
-        return invokeImpl(proxy, method, args);
+
+      try {
+        updateThreadInfo();
+        updateMDC();
+      }
+      catch (Throwable t) {
+        LOGGER.severe("cleanup server session locals after exception", t);
+        clearThreadInfo();
+        clearMDC();
+        throw t;
+      }
+
+      try {
+        if (durationNecessary) {
+          TimeKeeper timeKeeper = new TimeKeeper();
+          Object returnValue = invokeImpl(proxy, method, args);
+          timeKeeper.end();
+          log(method, args, returnValue, timeKeeper);
+          return returnValue;
+        }
+        else {
+          return invokeImpl(proxy, method, args);
+        }
+      }
+      finally {
+        clearThreadInfo();
+        clearMDC();
       }
     }
     finally {
-      clearThreadInfo();
-      clearMDC();
+      serverSession.exitInvocation();
     }
   }
 
@@ -335,11 +375,9 @@ public class RemoteDbDelegateInvocationHandler implements InvocationHandler {
     Thread ownerThread = session.getOwnerThread();
     if (ownerThread != null) {
       if (ownerThread != currentThread) {
-        // Since the session is exclusively used by the TRIP thread pool,
-        // and no two threads must run in parallel for the same session, the
-        // client must be misbehaving and using multiple threads for the same session.
-        // There is nothing we can do but log that.
-        LOGGER.warning("session {0} owned by thread {1} -> client misbehaving?", session, ownerThread);
+        // Invocations running in parallel for the same session are rejected by the invocation handler.
+        // Hence, the owner thread was set by some other code using this session.
+        LOGGER.warning("session {0} owned by thread {1}", session, ownerThread);
       }
       else {
         // The owner thread is the current thread and was not released at the end of the last invocation.

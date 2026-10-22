@@ -45,10 +45,20 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A mocked persistence object.
+ * Mock persistence delegate of a {@link PersistentDomainObject}.
+ * <p>
+ * Pairs with a real domain delegate to test domain logic without a session or database.
+ * It keeps only the state a database-less PDO needs: PDO, domain context, session, ID, serials, root ID/class ID
+ * and the immutable flags. Security checks pass, validation and token locking are no-ops,
+ * and the cached selects delegate to their uncached counterparts.
+ * Every other method throws an {@link UnsupportedOperationException} with message {@link #UNSUPPORTED}.
+ * Subclasses override what the code under test needs.
+ * <p>
+ * {@link PdoMethodCacheProvider} is implemented because the PDO invocation handler requires it
+ * from every persistence delegate.
  *
- * @param <T> the pdo type
- * @param <P> the persistent type
+ * @param <T> the PDO type
+ * @param <P> the concrete mock type
  * @author harald
  */
 public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends MockPersistentObject<T,P>>
@@ -69,24 +79,25 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
   private static final Map<Class, PdoMethodCache> METHOD_CACHE_MAP = new ConcurrentHashMap<>();
 
 
-  private DomainContext context;                  // application database context
+  private DomainContext context;                  // the domain context
   private T pdo;                                  // the pdo instance this is a delegate for
   private transient Session session;              // the session
   private transient boolean sessionImmutable;     // true if session is immutable
   private boolean immutable;                      // true if all attributes are immutable
   private boolean finallyImmutable;               // true if object cannot be made mutable again
-  private long id;                                // unique Object ID
-  private long serial;                            // serial-nummer (version to detect simultaneous updates)
-  private long tableSerial;                       // last table serial from countModification (only if isTableSerialValid() == true)
-  private long rootId;                            // root entity id
-  private int rootClassId;                        // class if of the root entity
+  private long id;                                // unique object ID
+  private long serial;                            // serial number (version to detect simultaneous updates)
+  private long tableSerial;                       // table serial (only meaningful if isTableSerialProvided())
+  private long rootId;                            // root entity ID
+  private int rootClassId;                        // class ID of the root entity
 
 
   /**
-   * Creates an application database object.
+   * Creates a persistence delegate for a PDO with a domain context.<br>
+   * The session is taken from the context.
    *
    * @param pdo the persistent domain object this is a delegate for
-   * @param context the database context
+   * @param context the domain context, may be null
    */
   public MockPersistentObject(T pdo, DomainContext context) {
     this.pdo     = pdo;
@@ -96,12 +107,10 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
 
 
   /**
-   * Creates an application database object without a domain context
-   * for a given connection.<p>
-   * Note: the application must set the context.
+   * Creates a persistence delegate for a PDO with a session, but without a domain context.
    *
    * @param pdo the persistent domain object this is a delegate for
-   * @param session the session (must be an instance of {@link Session}).
+   * @param session the session
    */
   public MockPersistentObject(T pdo, Session session) {
     this.pdo = pdo;
@@ -109,8 +118,7 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
   }
 
   /**
-   * Creates an application database object without a database context.<p>
-   * Note: the application must set the context.
+   * Creates a persistence delegate for a PDO without a domain context and session.
    *
    * @param pdo the persistent domain object this is a delegate for
    */
@@ -120,7 +128,7 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
 
 
   /**
-   * Creates an application database object without a database context.
+   * Creates a persistence delegate without a PDO, domain context and session.
    */
   public MockPersistentObject() {
   }
@@ -137,7 +145,7 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
   }
 
   /**
-   * Sets the PDO.<br>
+   * Sets the PDO.
    *
    * @param pdo the pdo
    */
@@ -145,6 +153,11 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
     this.pdo = pdo;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The mock shares one cache per effective PDO class.
+   */
   @SuppressWarnings("unchecked")
   @Override
   public PdoMethodCache<T> getPdoMethodCache() {
@@ -176,15 +189,31 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
     return session;
   }
 
+  /**
+   * Sets the object ID.<br>
+   * A negative value denotes a reserved ID, as in the real persistence layer.
+   *
+   * @param id the object ID
+   */
   public void setId(long id) {
     this.id = id;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Returns the absolute value of the ID, as the real persistence layer does.
+   */
   @Override
   public long getId() {
     return id < 0 ? -id : id;
   }
 
+  /**
+   * Sets the serial number.
+   *
+   * @param serial the serial
+   */
   public void setSerial(long serial) {
     this.serial = serial;
   }
@@ -194,6 +223,11 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
     return serial;
   }
 
+  /**
+   * Sets the table serial.
+   *
+   * @param tableSerial the table serial
+   */
   public void setTableSerial(long tableSerial) {
     this.tableSerial = tableSerial;
   }
@@ -641,7 +675,7 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
 
   @Override
   public T selectCachedOnly(long id) {
-    throw new UnsupportedOperationException(UNSUPPORTED);
+    return select(id);
   }
 
   @Override
@@ -719,6 +753,11 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
     return rootId;
   }
 
+  /**
+   * Sets the ID of the root entity.
+   *
+   * @param rootId the root ID
+   */
   public void setRootId(long rootId) {
     this.rootId = rootId;
   }
@@ -728,6 +767,11 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
     return rootClassId;
   }
 
+  /**
+   * Sets the class ID of the root entity.
+   *
+   * @param rootClassId the root class ID
+   */
   public void setRootClassId(int rootClassId) {
     this.rootClassId = rootClassId;
   }

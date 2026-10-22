@@ -32,7 +32,7 @@ import java.util.concurrent.ExecutorService;
  * <p>
  * Transports are used to send and receive serialized objects. Each transport is uniquely identified
  * by its id (UUID). Multiple transports can point to the same remote endpoint URI. A server accepts connections
- * on his transport from different clients, while each client has its own transport per server endpoint.
+ * on its transport from different clients, while each client has its own transport per server endpoint.
  * For outgoing connections, the transport provides a dictionary and a connection pool that is dynamically sized
  * and contains at least one connection.
  * For incoming connections, the transport provides a separate dictionary per client transport ID
@@ -80,9 +80,11 @@ public interface Transport {
   UUID getId();
 
   /**
-   * Gets a free connection from the pool.
+   * Gets a free connection from the pool.<br>
+   * Puts the transport into client mode.
    *
    * @return the connection
+   * @throws TripRuntimeException if the transport is closed or in server mode
    */
   Connection getConnection();
 
@@ -94,7 +96,10 @@ public interface Transport {
   void putConnection(Connection connection);
 
   /**
-   * Accepts connections from clients.
+   * Accepts connections from clients.<br>
+   * Puts the transport into server mode.
+   *
+   * @throws TripRuntimeException if the transport is closed, in client mode or already accepting
    */
   void accept();
 
@@ -108,7 +113,7 @@ public interface Transport {
   /**
    * Gets the dictionary for client transport.
    *
-   * @return the dictionary
+   * @return the dictionary, null if not in client mode yet
    */
   Dictionary getClientDictionary();
 
@@ -150,6 +155,7 @@ public interface Transport {
    * @param name the symbolic name of the remote object
    * @return the remote object, never null
    * @param <T> the type of the remote object
+   * @throws TripRuntimeException if the class is not a remote interface or there is no such remote object
    */
   <T> T lookup(Class<T> clazz, String name);
 

@@ -26,7 +26,9 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * The freemarker template model.
+ * The FreeMarker template model.
+ * <p>
+ * All values are stored as strings, see {@link #putValue(String, Object)}.
  */
 public class TemplateModel extends HashMap<String, Object> {
 
@@ -57,7 +59,7 @@ public class TemplateModel extends HashMap<String, Object> {
    * Adds a map to the model.<br>
    * Keys are translated to camel case.
    *
-   * @param map the properties
+   * @param map the map
    */
   public void addMap(Map<String, Object> map) {
     for (Entry<String, Object> entry : map.entrySet()) {
@@ -68,7 +70,7 @@ public class TemplateModel extends HashMap<String, Object> {
   /**
    * Adds a key-value pair to the model.<br>
    * The value is converted to a string.<br>
-   * {@code null} is mapped to the empty string.<br>
+   * {@code null} is mapped to the empty string.
    *
    * @param key the key
    * @param value the value

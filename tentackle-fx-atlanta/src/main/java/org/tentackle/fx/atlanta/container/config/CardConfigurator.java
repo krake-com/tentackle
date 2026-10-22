@@ -34,7 +34,7 @@ import org.tentackle.fx.ConfiguratorService;
 public class CardConfigurator<T extends Card> implements Configurator<T> {
 
   /**
-   * Creates the configurator for an {@link Card}.
+   * Creates the configurator for a {@link Card}.
    */
   public CardConfigurator() {
     // see -Xlint:missing-explicit-ctor since Java 16

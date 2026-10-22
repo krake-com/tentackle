@@ -18,6 +18,8 @@
 
 package org.tentackle.session.auth;
 
+import org.tentackle.misc.Secret;
+
 import java.io.Serializable;
 
 /**

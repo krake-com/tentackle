@@ -53,8 +53,9 @@ class and listeners — but the **lenient** variant carries the weight:
 
 Lenient mapping is why a provider registered for a base class or an interface serves every subclass
 without further registration — one `GuiProvider` for an entity hierarchy, one `TableCellType` for
-`PersistentDomainObject` covering every PDO. Note the asymmetry, which the javadoc calls out: when
-mapping a *class*, its interfaces are ignored until the superclass chain is exhausted.
+`PersistentDomainObject` covering every PDO. Note the order: when mapping a *class*, its interfaces
+(and those of its superclasses) are tried only after the whole superclass chain has failed, so a
+mapping for a superclass always wins over one for an interface.
 
 `setDefaultClass(...)` supplies a fallback for unmapped classes instead of an exception, and
 [`ClassMappedListener`](../java/org/tentackle/reflect/ClassMappedListener.java)s fire the first time
@@ -66,8 +67,10 @@ provides the lenient and package/basename lookup and caches every resolved name 
 (configurable per mapper) — the log line `<mapper>: added <from> -> <to>` is the first place to look
 when an implementation isn't found.
 
-- [`DefaultClassMapper`](../java/org/tentackle/reflect/DefaultClassMapper.java) — initialized from a
-  `Map` or a `Properties` object (a file, XML, or built at runtime).
+- [`DefaultClassMapper`](../java/org/tentackle/reflect/DefaultClassMapper.java) — initialized from the
+  mapped services found by the `ServiceFinder` (the common case behind `ClassMapper.create(...)`), or
+  from a `Map` or a `Properties` object (a file, XML, or built at runtime). It caches the loaded classes
+  as well.
 - [`ClassToServicesMapper`](../java/org/tentackle/reflect/ClassToServicesMapper.java) — maps a class
   to **all** matching services rather than the first, for cases where every implementation on the
   path should contribute.
@@ -127,8 +130,10 @@ thinks in terms of.
 
 This matters more than it sounds: validation, scripting, the FX table configuration and the security
 interceptors all key off the effective class, and all of them would silently misbehave against a
-proxy class name. Implementors include `AbstractDomainObject`, `AbstractDomainOperation`,
-`ValidationUtilities`, `ScriptVariable`, `DefaultTableConfiguration`, and the security interceptors.
+proxy class name. The PDO and operation interfaces extend it, and their implementations
+(`AbstractDomainObject`, `AbstractPersistentObject`, `AbstractDomainOperation`,
+`AbstractPersistentOperation`) report the entity or operation interface. For proxies created by the
+`InterceptableFactory`, the invocation handler answers both methods itself.
 
 #### `getClass()`, `getEffectiveClass()` and `instanceof`
 
@@ -177,6 +182,7 @@ lineage the application declared, not the proxy's.
 
 The interception types — [`Interceptable`](../java/org/tentackle/reflect/Interceptable.java),
 [`@Interception`](../java/org/tentackle/reflect/Interception.java),
+[`@NotInterceptable`](../java/org/tentackle/reflect/NotInterceptable.java),
 [`Interceptor`](../java/org/tentackle/reflect/Interceptor.java),
 [`AbstractInterceptor`](../java/org/tentackle/reflect/AbstractInterceptor.java),
 [`InterceptableMethod`](../java/org/tentackle/reflect/InterceptableMethod.java),
@@ -280,7 +286,10 @@ back-reference the container itself without restriction.
 [`ReflectiveVisitor`](../java/org/tentackle/reflect/ReflectiveVisitor.java) implements the visitor
 pattern without the accept-method boilerplate: the visit method for a concrete class is found by
 reflection, choosing the **most specific** match, so one method can serve a whole class hierarchy
-and a more specific one overrides it for a subclass. It backs
+and a more specific one overrides it for a subclass. Subclasses *overload* `visit` with the concrete
+types; callers invoke `visit(object, types, args)`, where `types[0]` is a placeholder for the
+object's effective class and `args` starts with the object itself. The method found is cached per
+visitor class and visited class. It backs
 [`PersistenceVisitor`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/PersistenceVisitor.java),
 which is how applications add behavior across entity types without touching the entities — see
 [database.md](../../../../tentackle-database/src/main/docs/database.md).
@@ -289,7 +298,9 @@ which is how applications add behavior across entity types without touching the 
 
 [`PropertyMap<T>`](../java/org/tentackle/reflect/PropertyMap.java) exposes a bean's properties as a
 `Map<String,Object>`, with [`PropertyMapping<T>`](../java/org/tentackle/reflect/PropertyMapping.java)
-describing each one — `get`/`set` or `is`/`set` pairs, or a read-only method. `AbstractBuilder` in
+describing each one — `get`/`set` or `is`/`set` pairs, or a read-only method. Values written through
+the map are converted to the property's type via `ObjectUtilities`; properties cannot be added or
+removed. The mappings are determined once per bean type and cached. `AbstractBuilder` in
 [tentackle-fx](../../../../tentackle-fx/src/main/docs/fx.md) uses it to configure components
 generically by property name.
 
@@ -306,7 +317,9 @@ rest of the framework reaches for. Beyond the canonical-construction lookups alr
 | Type tests            | `isAssignableFrom`, `isAnnotationPresent` (both with all/any semantics), `isNonStaticInnerClass`, `isImmutableCollection` |
 | Generics              | `extractGenericInnerTypeClass`                                                                        |
 | Members               | `getAllFields`, `getAllMethods` (walking the hierarchy)                                               |
-| Bean conventions      | `getGetterName`, `getFieldName`, `getGetter`, `getSetter`, `isGetter`, `isSetter`                     |
+| Bean conventions      | `getGetterName`, `getFieldName`, `getGetter`, `getSetter`, `isGetter`, `isSetter`, `isFunction`, `getGetterPathName`, `getSetterPathName`, `getFromPathName` |
+| Paths                 | `getValueByPath`, `getStaticValueByPath` — the dotted-path evaluation behind [`CompoundValue`](compound-value.md) references |
+| Interfaces & proxies  | `findInterface`, `findAllInterfaces`, `createProxyClass`                                              |
 
 The small details matter here: it knows about synthetic `this$0` parameters of inner classes and
 about `java.util.ImmutableCollections`, both of which trip up naive reflection over serialized

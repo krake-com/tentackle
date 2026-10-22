@@ -59,6 +59,35 @@ public class ReflectiveVisitorTest {
     assertEquals(visitor.visited, "circle");
   }
 
+  /**
+   * Visitor class used only by {@link #testCacheDoesNotMixUpClasses()}, since the method cache is static.
+   */
+  @SuppressWarnings({"missing-explicit-ctor", "unused"})
+  private static class CachingVisitor extends ReflectiveVisitor {
+    String visited;
+    public void visit(Shape shape) { visited = "shape"; }
+    public void visit(Circle circle) { visited = "circle"; }
+  }
+
+  /**
+   * The first element of the types is a placeholder for the visited class.
+   * The cached method of one class must not be returned for another class.
+   */
+  @Test
+  public void testCacheDoesNotMixUpClasses() throws NoSuchMethodException {
+    CachingVisitor visitor = new CachingVisitor();
+    Shape shape = new Shape();
+    Circle circle = new Circle();
+    visitor.visit(shape, shapeSlot(), shape);
+    assertEquals(visitor.visited, "shape");
+    visitor.visit(circle, shapeSlot(), circle);
+    assertEquals(visitor.visited, "circle");
+    visitor.visit(circle, shapeSlot(), circle);   // now from the cache
+    assertEquals(visitor.visited, "circle");
+    visitor.visit(shape, shapeSlot(), shape);
+    assertEquals(visitor.visited, "shape");
+  }
+
   @Test
   public void testFallbackToSuperclass() throws NoSuchMethodException {
     RecordingVisitor visitor = new RecordingVisitor();

@@ -30,6 +30,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Test for TrackedArrayList.
@@ -257,6 +259,72 @@ public class TrackedArrayListTest {
     for (int i = 8; i < 12; i++) {
       Assert.assertFalse(list.contains(i));
     }
+  }
+
+  @Test
+  public void testBulkRemovals() {
+    TrackedArrayList<Integer> list = new TrackedArrayList<>();
+    list.addAll(List.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9));
+    List<Integer> removedEvents = new ArrayList<>();
+    list.addListener(new TrackedListListener<>() {
+      @Override
+      public void added(Integer element) {
+        // not of interest here
+      }
+
+      @Override
+      public void removed(Integer element) {
+        Assert.assertFalse(list.contains(element), "listener must be notified after the removal");
+        removedEvents.add(element);
+      }
+    });
+
+    Assert.assertTrue(list.removeAll(List.of(1, 3, 5)));
+    Assert.assertEquals(list, List.of(0, 2, 4, 6, 7, 8, 9));
+    Assert.assertEquals(removedEvents, List.of(1, 3, 5));
+
+    Assert.assertTrue(list.retainAll(Set.of(0, 2, 4, 6)));
+    Assert.assertEquals(list, List.of(0, 2, 4, 6));
+    Assert.assertEquals(removedEvents, List.of(1, 3, 5, 7, 8, 9));
+
+    AtomicInteger evaluations = new AtomicInteger();
+    Assert.assertTrue(list.removeIf(e -> {
+      evaluations.incrementAndGet();
+      return e > 3;
+    }));
+    Assert.assertEquals(list, List.of(0, 2));
+    Assert.assertEquals(evaluations.get(), 4, "predicate must be evaluated once per element");
+    Assert.assertEquals(removedEvents, List.of(1, 3, 5, 7, 8, 9, 4, 6));
+    Assert.assertEquals(new ArrayList<>(list.getRemovedObjects()), List.of(1, 3, 5, 7, 8, 9, 4, 6));
+    Assert.assertTrue(list.isSomeRemoved());
+
+    // nothing to remove
+    Assert.assertFalse(list.removeAll(List.of(42)));
+    Assert.assertFalse(list.retainAll(List.of(0, 2)));
+    Assert.assertFalse(list.removeIf(e -> false));
+    Assert.assertEquals(removedEvents.size(), 8);
+  }
+
+  @Test
+  public void testBulkRemovalOfDuplicates() {
+    TrackedArrayList<Integer> list = new TrackedArrayList<>();
+    list.addAll(List.of(1, 2, 1, 3, 1));
+    Assert.assertTrue(list.removeAll(List.of(1)));
+    Assert.assertEquals(list, List.of(2, 3));
+    Assert.assertEquals(new ArrayList<>(list.getRemovedObjects()), List.of(1));
+  }
+
+  @Test
+  public void testBulkRemovalsWhenImmutable() {
+    TrackedArrayList<Integer> list = new TrackedArrayList<>();
+    list.addAll(List.of(1, 2, 3));
+    list.setImmutable(true);
+    Assert.assertThrows(ImmutableException.class, () -> list.removeAll(List.of(2)));
+    Assert.assertThrows(ImmutableException.class, () -> list.retainAll(List.of(2)));
+    Assert.assertThrows(ImmutableException.class, () -> list.removeIf(e -> e == 2));
+    Assert.assertEquals(list, List.of(1, 2, 3));
+    Assert.assertFalse(list.isSomeRemoved());
+    Assert.assertFalse(list.removeIf(e -> false));
   }
 
 }

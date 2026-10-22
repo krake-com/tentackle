@@ -17,6 +17,8 @@
  */
 
 /**
- * Higher-level PDO-aware persistence implementation.
+ * The PDO-aware persistence layer: the base classes of the persistence implementations
+ * of PDOs and operations, joins, cursors, token locks and the PDO-aware replacements
+ * of the database layer's services.
  */
 package org.tentackle.persist;

@@ -17,6 +17,9 @@ import java.io.Serial;
 
 /**
  * Common persistence implementation for transaction data.
+ *
+ * @param <T> the PDO type
+ * @param <P> the persistence implementation type
  */
 public abstract class AbstractPersistentTransactionData<T extends TransactionData<T>, P extends AbstractPersistentTransactionData<T,P>>
        extends AbstractPersistentObject<T,P> {
@@ -27,29 +30,29 @@ public abstract class AbstractPersistentTransactionData<T extends TransactionDat
   //<editor-fold defaultstate="collapsed" desc="constructors">
 
   /**
-   * Creates an application database object.
+   * Creates a persistent object for a PDO.
    *
    * @param pdo the persistent domain object this is a delegate for
-   * @param context the database context
+   * @param context the domain context
    */
   public AbstractPersistentTransactionData(T pdo, DomainContext context) {
     super(pdo, context);
   }
 
   /**
-   * Creates an application database object without a domain context
-   * for a given connection.<p>
+   * Creates a persistent object for a PDO without a domain context
+   * for a given session.<p>
    * Note: the application must set the context.
    *
    * @param pdo the persistent domain object this is a delegate for
-   * @param session the session (must be an instance of {@link Session}).
+   * @param session the session
    */
   public AbstractPersistentTransactionData(T pdo, Session session) {
     super(pdo, session);
   }
 
   /**
-   * Creates an application database object without a database context.<p>
+   * Creates a persistent object for a PDO without a domain context.<p>
    * Note: the application must set the context.
    *
    * @param pdo the persistent domain object this is a delegate for
@@ -59,7 +62,7 @@ public abstract class AbstractPersistentTransactionData<T extends TransactionDat
   }
 
   /**
-   * Creates an application database object without a database context.
+   * Creates a persistent object.
    */
   public AbstractPersistentTransactionData() {
     super();

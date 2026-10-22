@@ -27,6 +27,9 @@ public class NonStandardCommons {
 
   /**
    * Creates a COMMENT ON TABLE statement.
+   * <p>
+   * Unlike the other comments, a missing table comment is set to the empty string rather than {@code NULL},
+   * since that is the only way to drop a table comment in all backends using this method (Oracle, for example).
    *
    * @param backend the backend
    * @param tableName the table name with optional schema separated by a dot
@@ -96,8 +99,8 @@ public class NonStandardCommons {
    * Creates the SQL string to create a sequence.
    *
    * @param name the sequence name
-   * @param start the optional start value, defaults to 1
-   * @param increment the optional increment, defaults to 1
+   * @param start the optional start value, null for the database default (usually 1)
+   * @param increment the optional increment, null for the database default (usually 1)
    * @return the SQL code
    */
   public static String sqlCreateSequence(String name, Long start, Long increment) {
@@ -136,7 +139,7 @@ public class NonStandardCommons {
 
 
   /**
-   * don't instantiate.
+   * Prevents instantiation.
    */
   private NonStandardCommons() {
   }

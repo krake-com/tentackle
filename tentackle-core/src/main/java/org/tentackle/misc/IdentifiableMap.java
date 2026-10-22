@@ -28,9 +28,9 @@ import java.util.TreeMap;
 /**
  * A map of {@link Identifiable}s.
  * <p>
- * By default, the map uses a hashing key composed by the class and object id.
+ * By default, the map uses a hashing key composed of the class and object id.
  * The first invocation of one of the methods {@link #getAllSorted()} or {@link #getAllSorted(Class)}
- * changes the map to treemap (which is a bit slower).
+ * creates an additional sorted map, which is maintained from then on (and makes modifications a bit slower).
  * <p>
  * The map is <em>not</em> thread-safe and is meant to be built and consumed by a single thread,
  * typically to collect the components of an aggregate. Sharing it between threads requires
@@ -60,7 +60,8 @@ public class IdentifiableMap<T extends Identifiable> implements Serializable {
 
 
   /**
-   * Clears the map.
+   * Clears the map.<br>
+   * Also drops the sorted map.
    */
   public void clear() {
     // creating new maps is faster than clear() for large maps
@@ -175,25 +176,26 @@ public class IdentifiableMap<T extends Identifiable> implements Serializable {
   /**
    * Gets all objects in the map.
    * <p>
-   * The returned objects are in the order they were appended.
+   * The returned objects are in the order they were added.
    *
-   * @return all objects
+   * @return all objects (a live view)
    */
   public Collection<T> getAll() {
     return objectMap.values();
   }
 
   /**
-   * Gets all objects sorted by class + ID.
+   * Gets all objects sorted by class name and ID.
    *
-   * @return all objects
+   * @return all objects (a live view)
    */
   public Collection<T> getAllSorted() {
     return getSortedMap().values();
   }
 
   /**
-   * Gets all objects for a given class.
+   * Gets all objects for a given class.<br>
+   * Objects of subclasses are not included.
    *
    * @param <P> the given class
    * @param clazz the object class
@@ -208,8 +210,8 @@ public class IdentifiableMap<T extends Identifiable> implements Serializable {
 
 
   /**
-   * Transforms from hashmap to treemap if not yet done.<br>
-   * Hashmaps are a lot faster.
+   * Gets the sorted map.<br>
+   * Creates it from the hash map, if not done yet.
    */
   private Map<IdentifiableKey<T>, T> getSortedMap() {
     if (sortedObjectMap == null) {

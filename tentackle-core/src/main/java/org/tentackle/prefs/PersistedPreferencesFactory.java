@@ -32,15 +32,19 @@ interface PersistedPreferencesFactoryHolder {
  * Factory for {@link PersistedPreferences}.
  * <p>
  * Tentackle does not use the {@link java.util.prefs.Preferences}.
- * Instead, it provides an implementation that stores the preferences in the databases.
+ * Instead, it provides an implementation that stores the preferences in the database (see tentackle-database).
  * By default, {@link PersistedPreferences} and {@link java.util.prefs.Preferences} co-exist independently.
  * However, the {@link PersistedPreferences} can be used as a drop-in replacement for the {@link java.util.prefs.Preferences},
  * so that 3rd-party software using the preferences-API may use the database backing store as well.
+ * <p>
+ * The implementation is located via &#64;{@link org.tentackle.common.Service}. There is no default in tentackle-core:
+ * either the database implementation or an application-specific one, such as an extension of the
+ * {@link DefaultPreferencesFactory}, must be provided.
  */
 public interface PersistedPreferencesFactory extends PreferencesFactory {
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */
@@ -58,16 +62,16 @@ public interface PersistedPreferencesFactory extends PreferencesFactory {
   /**
    * Returns whether the preferences are automatically synchronized
    * with the database backend.<p>
-   * The default is autoSync enabled.
+   * The default depends on the implementation.
    *
    * @return true if auto sync, false if {@link PersistedPreferences#sync()} must be invoked explicitly
    */
   boolean isAutoSync();
 
   /**
-   * Sets the autosync feature.
+   * Sets the auto-sync feature.
    *
-   * @param autoSync true if autosync
+   * @param autoSync true if auto-sync
    */
   void setAutoSync(boolean autoSync);
 
@@ -77,7 +81,7 @@ public interface PersistedPreferencesFactory extends PreferencesFactory {
    * If readonly all modifications to the preferences will be silently ignored.
    * The default is read-write.
    *
-   * @return true readonly
+   * @return true if readonly
    */
   boolean isReadOnly();
 
@@ -124,9 +128,9 @@ public interface PersistedPreferencesFactory extends PreferencesFactory {
   /**
    * Returns the preference node from the calling user's preference tree that is associated (by convention) with the
    * specified class's package.
-   * <p>
+   *
    * @param c the class for whose package a user preference node is desired.
-   * <p>
+   *
    * @return the user preference node associated with the package of which
    * <code>c</code> is a member.
    *
@@ -137,9 +141,9 @@ public interface PersistedPreferencesFactory extends PreferencesFactory {
   /**
    * Returns the preference node from the calling system's preference tree that is associated (by convention) with the
    * specified class's package.
-   * <p>
+   *
    * @param c the class for whose package a system preference node is desired.
-   * <p>
+   *
    * @return the system preference node associated with the package of which
    * <code>c</code> is a member.
    *

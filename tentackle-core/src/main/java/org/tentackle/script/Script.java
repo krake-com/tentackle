@@ -37,9 +37,9 @@ public interface Script {
 
 
   /**
-   * Returns whether script may be invoked from more than one thread in parallel.
+   * Returns whether the script may be invoked from more than one thread in parallel.
    *
-   * @return true if thread-safe execution required, false if parallel execution allowed
+   * @return true if thread-safe execution required, false if the script is used by one thread at a time
    */
   boolean isThreadSafe();
 
@@ -62,34 +62,32 @@ public interface Script {
 
   /**
    * Validates the script.<br>
-   * The script will be compiled, if not already done, but not executed.<br>
-   * <p>
-   * Throws {@link ScriptRuntimeException} if compiling failed.
+   * The script will be compiled, if not already done, but not executed.
+   *
+   * @throws ScriptRuntimeException if compiling failed
    */
   void validate();
 
 
   /**
    * Executes a script.
-   * <p>
-   * Throws {@link ScriptRuntimeException} if execution failed.
    *
    * @param <T> the result type
    * @param variables the script variables, null if none
    * @return the evaluated value, null if none
+   * @throws ScriptRuntimeException if execution failed
    */
   <T> T execute(Set<ScriptVariable> variables);
 
 
   /**
    * Executes a script.
-   * <p>
-   * Throws {@link ScriptRuntimeException} if execution failed.<br>
-   * Throws {@link IllegalArgumentException} if there are any duplicate variable names.
    *
    * @param <T> the result type
    * @param variables the optional script variables
    * @return the evaluated value, null if none
+   * @throws ScriptRuntimeException if execution failed
+   * @throws IllegalArgumentException if there are any duplicate variable names
    */
   <T> T execute(ScriptVariable... variables);
 

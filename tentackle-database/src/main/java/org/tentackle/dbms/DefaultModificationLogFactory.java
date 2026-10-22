@@ -19,6 +19,11 @@
 package org.tentackle.dbms;
 
 import org.tentackle.common.Service;
+import org.tentackle.misc.SerialNumbered;
+import org.tentackle.session.SessionDependable;
+
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Default implementation of a modification log factory.
@@ -28,11 +33,24 @@ import org.tentackle.common.Service;
 @Service(ModificationLogFactory.class)
 public class DefaultModificationLogFactory implements ModificationLogFactory {
 
+  // holds the serialization-enabled flag for each backend identity
+  private final ConcurrentMap<Integer, ModificationLogSerializer> serializationEnabled = new ConcurrentHashMap<>();
+
   /**
    * Creates the modification log factory.
    */
   public DefaultModificationLogFactory() {
     // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  @Override
+  public void setSerializer(int backendIdentity, ModificationLogSerializer serializer) {
+    serializationEnabled.put(backendIdentity, serializer);
+  }
+
+  @Override
+  public ModificationLogSerializer getSerializer(int backendIdentity) {
+    return serializationEnabled.get(backendIdentity);
   }
 
   @Override
@@ -51,8 +69,40 @@ public class DefaultModificationLogFactory implements ModificationLogFactory {
   }
 
   @Override
-  public ModificationLog createModificationLog(ModificationLoggable object, ModificationType modType) {
-    return new ModificationLog(object, modType);
+  public <T extends SessionDependable & SerialNumbered> ModificationLog createModificationLog(T object, ModificationType modType) {
+    Db db = (Db) object.getSession();
+    ModificationLog modlog = new ModificationLog(db, modType);
+    modlog.setObject(object);
+    if (modType.isSerializable()) {
+      db.assertNotRemote();
+      ModificationLogSerializer serializer = getSerializer(db.getBackendIdentity());
+      if (serializer != null) {
+        if (modlog.getIdSource().isLockFree()) {
+          synchronized (serializer) {
+            modlog.reserveId();   // the order of IDs and serialization must be in sync!
+            modlog.setObjectData(serializer.serialize(object));
+          }
+        }
+        else {
+          /*
+           * A transactional ID source locks its counter until the end of the transaction.
+           * Reserving the ID with the monitor held would deadlock: a thread waiting for the lock would hold the monitor,
+           * which the lock owner needs for its next modlog. Hence, the ID is reserved before acquiring the monitor.
+           * The order is still in sync, since the lock keeps all other transactions from reserving an ID until
+           * this one has ended. The transaction makes sure that the lock is held while serializing, even if
+           * the session is not within a transaction yet.
+           */
+          db.transaction(() -> {
+            modlog.reserveId();
+            synchronized (serializer) {
+              modlog.setObjectData(serializer.serialize(object));
+            }
+            return null;
+          });
+        }
+      }
+    }
+    return modlog;
   }
 
   @Override

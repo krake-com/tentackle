@@ -31,7 +31,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * The annotated element must be greater or equal than another value.
+ * The annotated element must be greater than or equal to another value.
  *
  * @author harald
  */
@@ -90,14 +90,14 @@ public @interface GreaterOrEqual {
   /**
    * The <code>String</code> representation of the value.
    *
-   * @return value the upper bound value
+   * @return the lower bound value (inclusive)
    */
   String value();
 
   /**
    * If either the object or the value to compare with is null, the result is valid.
    *
-   * @return true if ignore nulls (default), false to treat nulls as "logically zero"
+   * @return true if ignore nulls (default), false to treat null as smaller than any other value
    */
   boolean ignoreNulls() default true;
 

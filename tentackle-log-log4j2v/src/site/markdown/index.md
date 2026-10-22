@@ -1,6 +1,6 @@
 # Tentackle Logging Log4J2V
 
-A Log4j2 provider for the Tentackle logging API.
+A Log4J 2 provider for the Tentackle logging API.
 
 ## Documentation & reports
 

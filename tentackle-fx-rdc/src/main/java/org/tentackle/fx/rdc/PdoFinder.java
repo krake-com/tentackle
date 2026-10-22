@@ -32,11 +32,13 @@ import javafx.event.EventHandler;
 import java.util.List;
 
 /**
- * FxController to search for PDOs.<br>
- * Holds the view of the selection criteria and runs the query.
+ * Controller to search for PDOs.<br>
+ * Holds the view of the selection criteria and runs the query.<br>
+ * Created by {@link GuiProvider#createFinder()} and embedded in a {@link org.tentackle.fx.rdc.search.PdoSearch},
+ * which displays the result.
  *
  * @author harald
- * @param <T> the pdo type
+ * @param <T> the PDO type
  */
 public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends AbstractValidateableFxController
                 implements PdoController<T>, DomainContextProvider {
@@ -64,12 +66,14 @@ public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends Abs
   public abstract List<T> runSearch();
 
   /**
-   * Requests the initial focus after stage is shown.
+   * Requests the initial focus after the stage is shown.
    */
   public abstract void requestInitialFocus();
 
   /**
-   * Gets the search action property.
+   * Gets the search action property.<br>
+   * The search dialog sets it to an action that starts the search. Usually it is the {@code onActionProperty}
+   * of a text field, so that the enter key runs the search.
    *
    * @return the search action property, null if there is no such property
    */
@@ -86,7 +90,7 @@ public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends Abs
   /**
    * Returns whether the query might block the client for a longer time.
    *
-   * @return true if better run in background, false if in event-thread (default)
+   * @return true if better run in the background, false if in the FX thread (default)
    */
   public boolean isSearchRunningInBackground() {
     return searchRunningInBackground;
@@ -95,7 +99,7 @@ public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends Abs
   /**
    * Defines whether the query might block the client for a longer time.
    *
-   * @param searchRunningInBackground true if better run in background, false if in event-thread (default)
+   * @param searchRunningInBackground true if better run in the background, false if in the FX thread (default)
    */
   public void setSearchRunningInBackground(boolean searchRunningInBackground) {
     this.searchRunningInBackground = searchRunningInBackground;
@@ -160,7 +164,7 @@ public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends Abs
 
 
   /**
-   * Returns whether the finder is visible.
+   * Returns whether the finder's view is visible.
    *
    * @return true if visible (default)
    */
@@ -181,8 +185,8 @@ public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends Abs
   /**
    * Creates the optional totals from the search results.<br>
    * By default, all numeric columns are candidates for being summed up.
-   * If a primitive numeric column must not be shown in the totals view, its column configurator
-   * must return isSummable() = false.
+   * If a primitive numeric column must not be shown in the totals view, its column configuration
+   * must return {@code isSummable() == false}.
    *
    * @param items the items to create the totals from
    * @return the totals (usually one item), null or empty if no totals (default)

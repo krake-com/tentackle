@@ -32,7 +32,10 @@ import java.net.URL;
 /**
  * Extended model aware of heap-files and global loading exception.
  * <p>
- * Heap files are files with names starting with a dot.
+ * Heap files are files with names starting with a dot. They are read via the Wurbelizer.<br>
+ * The loading exception holds the first model error that could be associated with an entity.
+ * {@link ModelWurblet} throws it only when wurbling an entity it is related to.<br>
+ * Furthermore, the model uses the Wurbelizer's encoding charset.
  *
  * @author harald
  */
@@ -43,6 +46,7 @@ public class TentackleWurbletsModel extends ModelImpl {
    * Creates a model.
    *
    * @param name the model name
+   * @throws ModelException if the model defaults or entity aliases given as system properties are malformed
    */
   public TentackleWurbletsModel(String name) throws ModelException {
     super(name);

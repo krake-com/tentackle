@@ -40,6 +40,8 @@ import java.util.function.Supplier;
 
 /**
  * String translator for date- and/or time types based on {@link Temporal}.<br>
+ * Parses the input via a {@link SmartDateTimeParser}, which supports shortcuts and sliding input windows.
+ * In addition, {@code @} is replaced by the date provided by the {@link #REFERENCE_DATE_SUPPLIER}.
  *
  * @param <T> the {@link Temporal} type
  */
@@ -51,7 +53,7 @@ public abstract class TemporalStringTranslator<T extends Temporal> extends Value
    * '@' as input will be replaced by the supplier's date.<br>
    * Example:
    * <pre>
-   *   blahField.getProperties.put(REFERENCE_DATE_SUPPLIER, (Supplier&lt;LocalDate&gt;) () -&gt; otherDate);
+   *   blahField.getProperties().put(REFERENCE_DATE_SUPPLIER, (Supplier&lt;LocalDate&gt;) () -&gt; otherDate);
    * </pre>
    * @see #connectAsReferenceDateSuppliers(FxTextComponent, FxTextComponent)
    */
@@ -96,8 +98,8 @@ public abstract class TemporalStringTranslator<T extends Temporal> extends Value
    * Each field provides the reference date for the other one.<br>
    * Replaces code like:
    * <pre>
-   *   fromField.getProperties().put(TemporalStringTranslator.REFERENCE_DATE_SUPPLIER, (Supplier<Date>) () -&gt; until);
-   *   untilField.getProperties().put(TemporalStringTranslator.REFERENCE_DATE_SUPPLIER, (Supplier<Date>) () -&gt; from);
+   *   fromField.getProperties().put(TemporalStringTranslator.REFERENCE_DATE_SUPPLIER, (Supplier&lt;Date&gt;) () -&gt; until);
+   *   untilField.getProperties().put(TemporalStringTranslator.REFERENCE_DATE_SUPPLIER, (Supplier&lt;Date&gt;) () -&gt; from);
    * </pre>
    * by
    * <pre>
@@ -204,6 +206,11 @@ public abstract class TemporalStringTranslator<T extends Temporal> extends Value
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Implements the {@code @} shortcut for the reference date.
+   */
   @Override
   public SmartDateTimeParser.TextRange test(SmartDateTimeParser<? extends Temporal> parser, String text) {
     if (!text.isEmpty()) {
@@ -215,6 +222,11 @@ public abstract class TemporalStringTranslator<T extends Temporal> extends Value
     return null;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Returns the date provided by the {@link #REFERENCE_DATE_SUPPLIER}, null if none.
+   */
   @Override
   @SuppressWarnings("unchecked")
   public <V extends Temporal> V parse(SmartDateTimeParser<V> parser, V currentValue, String part) {
@@ -227,7 +239,9 @@ public abstract class TemporalStringTranslator<T extends Temporal> extends Value
   }
 
   /**
-   * Gets the list of default shortcuts.
+   * Gets the list of default shortcuts.<br>
+   * The {@code @} shortcut comes first, followed by the shortcuts of {@link DateTimeUtilities}.
+   * The {@link NumberShortcut} is replaced by one using the sliding windows of this translator.
    *
    * @return the list of shortcuts
    */
@@ -305,10 +319,11 @@ public abstract class TemporalStringTranslator<T extends Temporal> extends Value
   }
 
   /**
-   * Parses the input.
+   * Parses the input.<br>
+   * On failure, the error and error offset are set in the component.
    *
    * @param s the input string
-   * @return the model value
+   * @return the model value, null if the input is empty or parsing failed
    */
   protected T parse(String s) {
     try {

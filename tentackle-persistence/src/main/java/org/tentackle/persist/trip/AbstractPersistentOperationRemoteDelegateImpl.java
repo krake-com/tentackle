@@ -26,10 +26,10 @@ import org.tentackle.pdo.Pdo;
 import org.tentackle.persist.AbstractPersistentOperation;
 
 /**
- * Implementation of the remote delegate for {@link AbstractPersistentOperation}.<br>
+ * Implementation of the remote delegate for {@link AbstractPersistentOperation}.
  *
- * @param <T> the {@code AbstractPersistentOperation} class
- * @param <P> the database operation class
+ * @param <T> the operation class (interface)
+ * @param <P> the persistence implementation class
  * @author harald
  */
 public class AbstractPersistentOperationRemoteDelegateImpl<T extends Operation<T>, P extends AbstractPersistentOperation<T,P>>
@@ -37,20 +37,20 @@ public class AbstractPersistentOperationRemoteDelegateImpl<T extends Operation<T
        implements AbstractPersistentOperationRemoteDelegate<T,P> {
 
   /**
-   * The PDO interface class.
+   * The operation interface class.
    */
   protected final Class<T> opClass;
 
   /**
-   * Operation with a default domain context associated to the delegate's session.
+   * Operation with a default domain context associated with the delegate's session.
    */
   protected T operation;
 
 
   /**
-   * Creates a delegate on the serverSession socket.
+   * Creates a delegate for the given TRIP session.
    *
-   * @param serverSession the TRIP serverSession
+   * @param serverSession the TRIP session
    * @param clazz the class of the persistence implementation
    * @param opClass the operation class
    */
@@ -61,7 +61,7 @@ public class AbstractPersistentOperationRemoteDelegateImpl<T extends Operation<T
 
 
   /**
-   * Instantiates a singe object and connect it to the database context.
+   * Instantiates a single object and connects it to the domain context.
    * The object is used for all methods not returning a new object and thus
    * minimizes object construction.
    */

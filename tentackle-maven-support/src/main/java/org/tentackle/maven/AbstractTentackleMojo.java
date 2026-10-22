@@ -24,7 +24,6 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.settings.crypto.SettingsDecrypter;
@@ -32,35 +31,46 @@ import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
-import org.apache.maven.toolchain.java.JavaToolchainImpl;
+import org.eclipse.aether.RepositorySystem;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wurbelizer.misc.Verbosity;
 
 import org.tentackle.common.Settings;
 import org.tentackle.common.ToolRunner;
 
+import javax.inject.Inject;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.io.UncheckedIOException;
+import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
-import java.util.logging.LogManager;
 import java.util.stream.Collectors;
 
 /**
- * Base tentackle mojo.
+ * Base class of all Tentackle mojos.
+ * <p>
+ * {@link #execute()} is final and runs the lifecycle {@link #prepareExecute()}, {@link #validate()},
+ * {@link #executeImpl()} and {@link #finishExecute()}. Mojos working on JVM-wide state serialize their
+ * executions in parallel builds via {@link #getExecutionLock()}. During the execution, {@code java.util.logging}
+ * is redirected to the mojo's logger (see {@link MavenLogDispatcher}).
+ * <p>
+ * Furthermore, the class provides access to the Maven project, session, settings, toolchains and the
+ * repository system, and a set of utility methods shared by the plugins.
  *
  * @author harald
  */
@@ -68,6 +78,15 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
 
   /** Name of the default JDK toolchain. */
   public static final String JDK_TOOLCHAIN = "jdk";
+
+  /** Guards the JVM-wide encoding settings. */
+  private static final Object ENCODING_LOCK = new Object();
+
+  /** The encoding charset set by {@link #determineEncoding()}. */
+  private static Charset encodingCharset;
+
+  /** The session that set {@link #encodingCharset}. Weak, because a daemon such as mvnd runs many sessions. */
+  private static WeakReference<MavenSession> encodingSessionRef;
 
 
   /**
@@ -87,13 +106,15 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   private MojoExecution mojoExecution;
 
   /**
-   * The settings.<br>
-   * From settings.xml.
+   * The settings from settings.xml.
    */
   @Parameter(defaultValue = "${settings}", readonly = true)
   private org.apache.maven.settings.Settings settings;
 
-  @Component
+  /**
+   * Decrypter for credentials in settings.xml.
+   */
+  @Inject
   private SettingsDecrypter settingsDecrypter;
 
   /**
@@ -113,7 +134,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    * Example:
    * <pre>
    *   &lt;jdkToolchain&gt;
-   *     &lt;version&gt;14&lt;/version&gt;
+   *     &lt;version&gt;25&lt;/version&gt;
    *   &lt;/jdkToolchain&gt;
    * </pre>
    * To deselect the toolchain configured by the maven-toolchain-plugin:
@@ -127,40 +148,51 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   /**
    * Toolchain manager to locate tools.
    */
-  @Component
+  @Inject
   private ToolchainManager toolchainManager;
+
+  /**
+   * The Maven Resolver's repository system.<br>
+   * Used to collect and resolve dependencies via the {@code org.eclipse.aether} API.
+   */
+  @Inject
+  private RepositorySystem repositorySystem;
 
 
   /**
    * The verbosity.<br>
-   * One of "default", "info" or "debug".
-   * Debug is also turned on (if not set explicitly) by Maven's global debug flag (see command line switch <code>-X</code>).
+   * One of "default", "info" or "debug". Other values are treated as "default".<br>
+   * If not set, debug is turned on by Maven's global debug flag (see command line switch <code>-X</code>).
    */
   @Parameter(defaultValue = "${tentackle.verbosity}")
   protected String verbosity;
 
   /**
    * Skips processing.<br>
-   * Defaults to true if packaging is "pom".
+   * If not set, defaults to true if packaging is "pom" and the execution is recursive
+   * (see {@link #isSkippedByDefault()}).
    */
   @Parameter
   private Boolean skip;
 
   /**
-   * The encoding to read and write files.
+   * The encoding to read and write files.<br>
+   * Applied JVM-wide, see {@link #determineEncoding()}.
    */
   @Parameter(defaultValue = "${project.build.sourceEncoding}")
   protected String charset;   // don't use the name "encoding" as maven handles this
 
 
   /**
-   * The minimum logging {@link Level} to redirect java.util logging to the maven logger.
+   * The minimum logging {@link Level} to redirect java.util logging to the maven logger.<br>
+   * Any name or value accepted by {@link Level#parse(String)}.
    */
   @Parameter(defaultValue = "WARNING")
   protected String minLogLevel;
 
   /**
-   * mapped verbosity level.
+   * The mapped verbosity level.<br>
+   * Set by {@link #determineVerbosity()}.
    */
   protected Verbosity verbosityLevel;
 
@@ -179,13 +211,44 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    */
   private JavaToolFinder toolFinder;
 
+  /**
+   * The logger.
+   */
+  private Logger logger;
+
 
   /**
-   * Installs a java.util log handler that redirects to the maven logger.
+   * Gets the logger.<br>
+   * Plugins use SLF4J, which is provided by Maven 3 and Maven 4, instead of the deprecated
+   * {@code AbstractMojo.getLog()}.
+   *
+   * @return the logger, never null
+   */
+  public Logger getLogger() {
+    if (logger == null) {
+      logger = LoggerFactory.getLogger(getClass());
+    }
+    return logger;
+  }
+
+  /**
+   * Sets the logger.<br>
+   * Only needed to capture the log output, for example in tests.
+   *
+   * @param logger the logger, null to use the default logger
+   */
+  public void setLogger(Logger logger) {
+    this.logger = logger;
+  }
+
+  /**
+   * Installs a java.util log handler that redirects to the maven logger.<br>
+   * The handler is bound to the current thread until the execution finishes.
+   *
+   * @see MavenLogDispatcher
    */
   public void installJavaLoggingHandler() {
-    LogManager.getLogManager().reset();
-    LogManager.getLogManager().getLogger("").addHandler(new MavenLogHandler(getLog(), Level.parse(minLogLevel)));
+    MavenLogDispatcher.install(new MavenLogHandler(getLogger(), Level.parse(minLogLevel)));
   }
 
   /**
@@ -234,6 +297,15 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   }
 
   /**
+   * Gets the repository system of the Maven Resolver.
+   *
+   * @return the repository system, never null
+   */
+  public RepositorySystem getRepositorySystem() {
+    return repositorySystem;
+  }
+
+  /**
    * Gets the toolchain manager.
    *
    * @return the manager, never null
@@ -245,6 +317,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   /**
    * Gets the <code>"jdk"</code> toolchain.
    *
+   * @see #getToolchain(String)
    * @return the toolchain, null if none
    * @throws MojoExecutionException if toolchain specified but cannot be loaded
    */
@@ -261,23 +334,19 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    * @throws MojoExecutionException if loading the toolchain failed
    */
   public Toolchain getToolchain(String type, Map<String, String> selector) throws MojoExecutionException {
-    try {
-      Method method = toolchainManager.getClass().getMethod("getToolchains", MavenSession.class, String.class, Map.class);
-      @SuppressWarnings("unchecked")
-      List<Toolchain> toolchains = (List<Toolchain>) method.invoke(toolchainManager, mavenSession, type, selector);
-      return toolchains != null && !toolchains.isEmpty() ? toolchains.get(0) : null;
-    }
-    catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-      throw new MojoExecutionException("loading toolchain failed for type=" + type + ", selector=" + selector, e);
-    }
+    List<Toolchain> toolchains = toolchainManager.getToolchains(mavenSession, type, selector);
+    return toolchains != null && !toolchains.isEmpty() ? toolchains.get(0) : null;
   }
 
   /**
-   * Gets the toolchain for a given type.
+   * Gets the toolchain for a given type.<br>
+   * If the {@code jdkToolchain} parameter is configured, its selector is used (regardless of the type),
+   * and an empty selector deselects any toolchain. Otherwise, the toolchain selected by the
+   * maven-toolchain-plugin, if any, is returned.
    *
    * @param type the toolchain type
    * @return the toolchain, null if none
-   * @throws MojoExecutionException if toolchain specified but cannot be loaded
+   * @throws MojoExecutionException if a toolchain is configured, but no matching toolchain is found
    */
   public Toolchain getToolchain(String type) throws MojoExecutionException {
     Toolchain toolchain;
@@ -297,7 +366,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
       toolchain = toolchainManager.getToolchainFromBuildContext(type, mavenSession);
     }
 
-    if (getLog().isDebugEnabled()) {
+    if (getLogger().isDebugEnabled()) {
       StringBuilder buf = new StringBuilder();
       buf.append("using ");
       if (toolchain == null) {
@@ -307,33 +376,30 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
       if (toolchain != null) {
         buf.append(": ").append(toolchain);
       }
-      getLog().debug(buf);
+      getLogger().debug(buf.toString());
     }
 
     return toolchain;
   }
 
   /**
-   * Gets the java home directory from a toolchain.
+   * Gets the java home directory from a toolchain.<br>
+   * Derived from the location of the toolchain's {@code java} tool, i.e. the parent of its {@code bin} directory.
    *
-   * @param toolchain the toolchain
-   * @return the java home directory, null if not a {@link JavaToolchainImpl} or undefined by the toolchain
-   * @throws MojoExecutionException if the given directory does not exist or is not a directory
+   * @param toolchain the toolchain; may be null
+   * @return the java home directory, null if no toolchain or not a {@value #JDK_TOOLCHAIN} toolchain
+   * @throws MojoExecutionException if the toolchain is a {@value #JDK_TOOLCHAIN} toolchain, but its java home
+   *         does not exist or is not a directory
    */
   public File getJavaHome(Toolchain toolchain) throws MojoExecutionException {
-    if (toolchain instanceof JavaToolchainImpl javaToolchain) {
-      String javaHome = javaToolchain.getJavaHome();
-      if (javaHome != null && !javaHome.isBlank()) {
-        File javaHomeDir = new File(javaHome);
-        if (javaHomeDir.isDirectory()) {
-          return javaHomeDir;
-        }
-        else {
-          throw new MojoExecutionException("JAVA_HOME=" + javaHomeDir.getAbsolutePath() +
-                                           " given by toolchain " + toolchain.getType() +
-                                           " does not exist or is not a directory");
-        }
+    if (toolchain != null && JDK_TOOLCHAIN.equals(toolchain.getType())) {
+      String javaTool = toolchain.findTool("java");
+      File javaHomeDir = javaTool == null ? null : new File(javaTool).getAbsoluteFile().getParentFile().getParentFile();
+      if (javaHomeDir == null || !javaHomeDir.isDirectory()) {
+        throw new MojoExecutionException("JAVA_HOME given by toolchain " + toolchain +
+                                         " does not exist or is not a directory");
       }
+      return javaHomeDir;
     }
     return null;
   }
@@ -341,7 +407,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   /**
    * Gets the hostname.
    *
-   * @return the hostname
+   * @return the hostname, the loopback address if the local hostname cannot be resolved
    */
   public String getHostName() {
     String hostName;
@@ -359,6 +425,43 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   @Override
   public final void execute() throws MojoExecutionException, MojoFailureException {
     installJavaLoggingHandler();
+    try {
+      Lock lock = getExecutionLock();
+      if (lock == null) {
+        executeLifecycle();
+      }
+      else {
+        if (!lock.tryLock()) {
+          getLogger().info("waiting for concurrent execution to finish");
+          lock.lock();
+        }
+        try {
+          executeLifecycle();
+        }
+        finally {
+          lock.unlock();
+        }
+      }
+    }
+    finally {
+      MavenLogDispatcher.uninstall();
+    }
+  }
+
+  /**
+   * Gets the lock to serialize concurrent executions in parallel builds.<br>
+   * Mojos working on JVM-wide state that cannot be made thread-safe otherwise, such as singletons of
+   * the plugin's class realm, return a lock shared by all their instances. The lock is held while
+   * {@link #prepareExecute()}, {@link #validate()}, {@link #executeImpl()} and {@link #finishExecute()}
+   * are invoked.
+   *
+   * @return the lock, null if executions may run concurrently (default)
+   */
+  protected Lock getExecutionLock() {
+    return null;
+  }
+
+  private void executeLifecycle() throws MojoExecutionException, MojoFailureException {
     prepareExecute();
     if (validate()) {
       executeImpl();
@@ -368,7 +471,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
 
   /**
    * Prepares the execution.<br>
-   * Invoked before validate().
+   * Invoked before {@link #validate()}, i.e. even if the execution is skipped.
    *
    * @throws MojoExecutionException if an unexpected problem occurs.
    * @throws MojoFailureException if an expected problem occurs.
@@ -390,7 +493,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
 
   /**
    * Finishes the execution.<br>
-   * The method is invoked after {@link #executeImpl()}.
+   * The method is invoked after {@link #executeImpl()} completed successfully.
    *
    * @throws MojoExecutionException if an unexpected problem occurs.
    * @throws MojoFailureException if an expected problem occurs.
@@ -400,18 +503,35 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   }
 
   /**
-   * Determines the encoding charset.
+   * Determines the encoding charset.<br>
+   * The {@link #charset} is applied to the static settings of Tentackle and Wurbelizer, i.e. JVM-wide.
+   * Therefore, all projects of a parallel build must use the same charset.
+   * If the charset is not set, the settings are left untouched.
+   *
+   * @throws MojoExecutionException if the charset conflicts with the one of a concurrent execution
    */
-  public void determineEncoding() {
+  public void determineEncoding() throws MojoExecutionException {
     if (charset != null) {
       Charset cs = Charset.forName(charset);
-      Settings.setEncodingCharset(cs);
-      org.wurbelizer.misc.Settings.setEncodingCharset(cs);
+      synchronized (ENCODING_LOCK) {
+        MavenSession encodingSession = encodingSessionRef == null ? null : encodingSessionRef.get();
+        if (encodingSession == mavenSession && mavenSession != null && mavenSession.isParallel() &&
+            encodingCharset != null && !encodingCharset.equals(cs)) {
+          throw new MojoExecutionException("conflicting encodings in parallel build: " + cs.name() +
+                                           " requested, but " + encodingCharset.name() + " already in use");
+        }
+        Settings.setEncodingCharset(cs);
+        org.wurbelizer.misc.Settings.setEncodingCharset(cs);
+        encodingCharset = cs;
+        encodingSessionRef = new WeakReference<>(mavenSession);
+      }
     }
   }
 
   /**
-   * sets the verbosity.
+   * Determines the {@link #verbosityLevel} from the {@link #verbosity} parameter.<br>
+   * Unknown values map to {@link Verbosity#DEFAULT}. If not set, the level is {@link Verbosity#DEBUG}
+   * if Maven's debug logging is enabled, else {@link Verbosity#DEFAULT}.
    */
   public void determineVerbosity() {
     if (verbosity != null) {
@@ -424,19 +544,32 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
     }
     else  {
       // use maven's global setting
-      verbosityLevel = getLog().isDebugEnabled() ? Verbosity.DEBUG : Verbosity.DEFAULT;
+      verbosityLevel = getLogger().isDebugEnabled() ? Verbosity.DEBUG : Verbosity.DEFAULT;
     }
   }
 
   /**
-   * Gets the path relative to the basedir.<br>
-   * Parent dirs of the basedir will also be tried.
+   * Gets the base directory of the project.<br>
+   * This is the directory containing the pom.xml.
+   *
+   * @return the base directory, null if the project has no pom file
+   */
+  public File getBaseDir() {
+    File pomFile = mavenProject.getFile();
+    return pomFile == null ? null : pomFile.getAbsoluteFile().getParentFile();
+  }
+
+  /**
+   * Gets a path relative to the parent of the basedir.<br>
+   * Used to shorten paths in log messages. The path keeps the name of the basedir, e.g.
+   * {@code myproject/src/main/java}. If the path is not within the basedir, its parent dirs are tried
+   * likewise.
    *
    * @param path the absolute path
-   * @return the shortened path
+   * @return the shortened path, the unchanged path if not below any parent of the basedir
    */
   public String getPathRelativeToBasedir(String path) {
-    String basePath = mavenProject.getBasedir().getAbsolutePath();
+    String basePath = getBaseDir().getAbsolutePath();
     while (!basePath.isEmpty()) {
       if (path.startsWith(basePath)) {
         int len = basePath.lastIndexOf(File.separatorChar);
@@ -461,9 +594,10 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   }
 
   /**
-   * Gets the names of all resource directories.
+   * Gets the names of all resource directories.<br>
+   * The result is cached.
    *
-   * @param test true if load test resource directories
+   * @param test true for the test resource directories, false for the main resource directories
    * @return the names provided by the maven project model, never null
    */
   public List<String> getResourceDirs(boolean test) {
@@ -474,7 +608,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
         if (resource != null) {
           String name = resource.getDirectory();
           if (name != null) {
-            getLog().debug("found resource directory " + name);
+            getLogger().debug("found resource directory {}", name);
             dirs.add(name);
           }
         }
@@ -490,10 +624,10 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   }
 
   /**
-   * Checks if the given file resides in a resource directory.
+   * Gets the resource directory the given file resides in.
    *
    * @param file the file
-   * @param test true if load test resource directories
+   * @param test true for the test resource directories, false for the main resource directories
    * @return the resource dir, null if not a resource
    * @throws MojoExecutionException if calculating a canonical pathname failed
    */
@@ -502,7 +636,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
     for (String resourceDirName: getResourceDirs(test)) {
       File resourceDir = new File(resourceDirName);
       String resourceDirPath = getCanonicalPath(resourceDir);
-      if (filePath.startsWith(resourceDirPath)) {
+      if (filePath.equals(resourceDirPath) || filePath.startsWith(resourceDirPath + File.separator)) {
         return resourceDir;
       }
     }
@@ -510,9 +644,9 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   }
 
   /**
-   * Gets the canonical path of the diven directory.
+   * Gets the canonical path of a file or directory.
    *
-   * @param dir the directory
+   * @param dir the file or directory
    * @return the path
    * @throws MojoExecutionException if failed
    */
@@ -526,7 +660,8 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   }
 
   /**
-   * Gets the default toolfinder to locate tools like java, jdeps, jlink, etc.
+   * Gets the default toolfinder to locate tools like java, jdeps, jlink, etc.<br>
+   * The toolfinder honors the <code>"jdk"</code> toolchain, see {@link #getToolchain()}.
    *
    * @return the toolfinder, never null
    * @throws MojoExecutionException if the toolchain cannot be loaded
@@ -563,10 +698,11 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   }
 
   /**
-   * Determines the major version number integer of a given version string.
+   * Determines the major version number of a given version string.
    *
-   * @param version the version string
-   * @return the version number
+   * @param version the version string, such as {@code 25}, {@code 25.0.1} or {@code 26-ea}
+   * @return the major version number
+   * @throws NumberFormatException if the major version is not a number
    */
   public int getMajorVersion(String version) {
     int ndx = version.indexOf('.');
@@ -577,23 +713,33 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   }
 
   /**
-   * Loads a resource file into a string.
+   * Loads a UTF-8 encoded resource file into a string.<br>
+   * The resource is loaded via {@link Class#getResourceAsStream(String)} of the concrete mojo class, i.e.
+   * a path without a leading slash is relative to the mojo's package.
+   * The lines are joined with the platform's line separator.
    *
    * @param path the path to the resource file
    * @return the contents
-   * @throws MojoExecutionException if no such resource
+   * @throws MojoExecutionException if no such resource or reading failed
    */
   public String loadResourceFileIntoString(String path) throws MojoExecutionException {
     InputStream inputStream = getClass().getResourceAsStream(path);
     if (inputStream == null) {
       throw new MojoExecutionException("no such resource: " + path);
     }
-    BufferedReader buffer = new BufferedReader(new InputStreamReader(inputStream));
-    return buffer.lines().collect(Collectors.joining(System.lineSeparator()));
+    try (BufferedReader buffer = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+      return buffer.lines().collect(Collectors.joining(System.lineSeparator()));
+    }
+    catch (IOException | UncheckedIOException ex) {
+      throw new MojoExecutionException("cannot read resource " + path, ex);
+    }
   }
 
   /**
-   * Creates a descriptor name from an artifact file.
+   * Creates a descriptor name from an artifact file.<br>
+   * Removes the extension, {@code -SNAPSHOT}, the version and everything following it, such as
+   * classifiers for platform and architecture. For example,
+   * {@code xx-native-1.8.4-SNAPSHOT-win32-amd64.jar} becomes {@code xx-native}.
    *
    * @param file the artifact file
    * @return the descriptor name
@@ -633,7 +779,8 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   /**
    * Creates a fileset manager.
    *
-   * @return the fileset manager.
+   * @param verbose true to log verbosely
+   * @return the fileset manager
    */
   public FileSetManager createFileSetManager(boolean verbose) {
     return new FileSetManager(LoggerFactory.getLogger(FileSetManager.class), verbose);
@@ -643,7 +790,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    * Gets the filenames included by the given fileset.
    *
    * @param fileSet the fileset
-   * @return the filenames
+   * @return the filenames relative to the fileset's directory
    */
   public String[] getIncludedFiles(FileSet fileSet) {
     return createFileSetManager(verbosityLevel.isDebug()).getIncludedFiles(fileSet);
@@ -660,9 +807,10 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   }
 
   /**
-   * Determines whether mojo should be skipped by default.
+   * Determines whether the mojo should be skipped if the {@code skip} parameter is not set.<br>
+   * The default implementation skips projects with packaging "pom" in recursive executions.
    *
-   * @return true if mojo should be skipped by default
+   * @return true if the mojo should be skipped by default
    */
   protected boolean isSkippedByDefault() {
     return "pom".equals(mavenProject.getPackaging()) && isExecutionRecursive();
@@ -670,21 +818,24 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
 
   /**
    * Checks the configuration.<br>
+   * Determines the encoding and verbosity, requires the project's base directory
+   * and checks whether the execution should be skipped.<br>
+   * Subclasses may add their own checks, but must invoke {@code super.validate()} first.
    *
-   * @return true if continue with execution, false to skip
+   * @return true to continue with the execution, false to skip
    * @throws MojoExecutionException if validation failed
    */
   protected boolean validate() throws MojoExecutionException {
     determineEncoding();
     determineVerbosity();
-    if (mavenProject.getBasedir() == null) {
+    if (getBaseDir() == null) {
       throw new MojoExecutionException("missing project.baseDir");
     }
     if (skip == null && isSkippedByDefault()) {
       skip = true;    // nothing to do here
     }
     if (Boolean.TRUE.equals(skip)) {
-      getLog().info("skipped");
+      getLogger().info("skipped");
       return false;
     }
     return true;
@@ -692,10 +843,16 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
 
   /**
    * Creates a map of package names to package infos.
+   * <p>
+   * In recursive executions, only the current project is scanned, otherwise all projects collected by
+   * the reactor. A package is a directory containing files or an empty directory. Hidden files are ignored.
+   * Split packages, i.e. packages containing files in more than one project, are illegal. Empty
+   * packages, however, may occur more than once. If there is also a non-empty one, the non-empty one wins.
+   * Otherwise, the other empty ones are registered as {@link PackageInfo#getEmptyDuplicates()}.
    *
-   * @param resourceRoots true if collect all resource roots, else all source roots
+   * @param resourceRoots true to scan all non-filtered resource roots, false for all compile source roots
    * @return the packages
-   * @throws MojoExecutionException if split package detected
+   * @throws MojoExecutionException if a split package is detected
    */
   protected Map<String, PackageInfo> createPackageMap(boolean resourceRoots) throws MojoExecutionException {
     Map<String, PackageInfo> map = new HashMap<>();
@@ -711,10 +868,10 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
     for (MavenProject project : projects) {
       List<String> paths;
       if (resourceRoots) {
-        paths = project.getResources().stream().filter(resource -> !resource.isFiltering()).map(resource -> resource.getDirectory()).toList();
+        paths = project.getBuild().getResources().stream().filter(resource -> !resource.isFiltering()).map(resource -> resource.getDirectory()).toList();
       }
       else {
-        paths = project.getCompileSourceRoots();
+        paths = getCompileSourceRoots(project);
       }
       for (String path : paths) {
         for (PackageInfo info : getPackages(project, path)) {
@@ -727,7 +884,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
                     append(" in ").append(project.getName()).
                        append(" and ").append(splitPkg.getProject().getName());
               }
-              // the other package is empty: keep existing with java files
+              // the other package is empty: keep the existing one with files
               continue;
             }
             else if (!infoContainingFiles) {
@@ -740,7 +897,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
               dups.add(info);
               continue;
             }
-            // else: split is empty and info contains java files -> replace empty
+            // else: existing package is empty and info contains files -> replace the empty one
           }
           // add new or replace empty package
           map.put(info.getName(), info);
@@ -758,6 +915,20 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
     return map;
   }
 
+
+  /**
+   * Gets the compile source roots of a project.<br>
+   * Maven 4 deprecates {@link MavenProject#getCompileSourceRoots()} in favor of a source-root API that
+   * doesn't exist in Maven 3. As long as Maven 3 is supported, this is the only way to get all roots,
+   * including the ones added by other plugins (generated sources).
+   *
+   * @param project the project
+   * @return the source root paths
+   */
+  @SuppressWarnings("deprecation")
+  private List<String> getCompileSourceRoots(MavenProject project) {
+    return project.getCompileSourceRoots();
+  }
 
   private List<PackageInfo> getPackages(MavenProject project, String dirName) {
     List<PackageInfo> packages = new ArrayList<>();

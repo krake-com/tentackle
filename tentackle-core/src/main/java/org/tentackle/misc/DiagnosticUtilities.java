@@ -39,6 +39,8 @@ interface DiagnosticUtilitiesHolder {
 
 /**
  * Utilities for diagnostic purposes.
+ * <p>
+ * Replaceable via &#64;{@link Service}.
  *
  * @author harald
  */
@@ -46,7 +48,7 @@ interface DiagnosticUtilitiesHolder {
 public class DiagnosticUtilities {
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */
@@ -68,11 +70,12 @@ public class DiagnosticUtilities {
   }
 
   /**
-   * Creates the stackdump string for the whole application.
+   * Creates the stack dump string for all threads of the JVM.<br>
+   * Includes lock information and detected deadlocks.
    * <p>
-   * Useful for debugging, crash analysis.
+   * Useful for debugging and crash analysis.
    *
-   * @return the stackdump
+   * @return the stack dump
    */
   public String createStackDump() {
     StringBuilder buf = new StringBuilder("\n-------------------- Stackdump ");
@@ -95,10 +98,11 @@ public class DiagnosticUtilities {
   }
 
   /**
-   * Logs the stackdump.
+   * Logs the stack dump.
    *
    * @param level the logging level
    * @param message the header message
+   * @see #createStackDump()
    */
   public void logStackDump(Logger.Level level, String message) {
     LOGGER.log(level, null, () -> message + createStackDump());
@@ -106,11 +110,12 @@ public class DiagnosticUtilities {
 
 
   /**
-   * Creates the stackdump string for a given thread.
+   * Creates the stack dump string for a given thread.<br>
+   * Adds the diagnostic info for {@link TaskDispatcher}s.
    *
    * @param buf the string buffer
    * @param info the thread info
-   * @param thread the thread instance
+   * @param thread the thread instance, null if unknown
    */
   protected void doCreateStackDump(StringBuilder buf, ThreadInfo info, Thread thread) {
     buf.append(info.toString());
@@ -122,7 +127,7 @@ public class DiagnosticUtilities {
   }
 
   /**
-   * Creates the stackdump.
+   * Creates the stack dump.
    *
    * @param buf the string buffer
    */

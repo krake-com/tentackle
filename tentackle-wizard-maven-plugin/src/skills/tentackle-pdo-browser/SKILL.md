@@ -32,15 +32,17 @@ mvn tentackle-wizard:browse \
     -Doutput=target/fixtures/Customers.java
 ```
 
-- `-Dpdo=<entity>[<id>,<id>,…]` — the entity's **simple name** and one or more **object ids**.
-- `-Doutput=<file>` — the file to write; parent directories are created.
+- `-Dpdo=<entity>[<id>,<id>,…]` — the entity's **simple name** and one or more **object ids**,
+  separated by commas or spaces. The square brackets are literal.
+- `-Doutput=<file>` — the file to write; parent directories are created. Supplying only one of `-Dpdo`
+  and `-Doutput` fails the goal.
 - `-Ddistinct` — number the variable names instead of reusing one per entity for the 2nd, 3rd, …
   instance. With distinct variables the generated code ends in `persist()` rather than `save()`, so
   every object stays reachable under its own name. Use this when the fixture has to reference the
   objects afterwards.
 - `-Doffset=<n>` — the number the variable names start at when `-Ddistinct` is set. Without it the first
   instance is left unnumbered.
-- `-DmaxLines=<n>` — cap the number of lines emitted in multi-line string literals.
+- `-DmaxLines=<n>` — cap the number of lines emitted in multi-line string literals (unlimited by default).
 
 The output starts with a comment recording the generation time, the user, the host and the session, so
 a fixture always says where it came from. Paste it into a test base class or an `@BeforeClass` fixture
@@ -57,12 +59,9 @@ on(Customer.class).selectAll().each { println "${it.getId()}\t${it.getName()}" }
 
 ## Things that will trip you up
 
-- **A wrong entity name fails silently.** The name is matched against the simple class names of the
-  registered PDOs; if nothing matches, the goal writes a file containing only the header comment and
-  the build succeeds. Always check that the output file actually holds code.
-- **A wrong id fails loudly.** An id that is not in the database aborts the goal with
-  `entity … with ID … not found in database`. That asymmetry is worth remembering: silence means the
-  entity name, an error means the ids.
+- **Names and ids are checked.** The name is matched case-sensitively against the simple class names
+  of the registered PDOs; an unknown name aborts the goal with `no such entity: …`. An id that is not in
+  the database aborts it with `entity … with ID … not found in database`.
 - **One entity per run.** `-Dpdo` takes a single entity with its ids. Fixtures spanning several entities
   need several runs into several files — or one run per entity plus manual assembly.
 - **Batch mode has no code-path configuration.** The check boxes the interactive browser offers fall

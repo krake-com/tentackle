@@ -24,6 +24,8 @@ import org.tentackle.common.ModuleHook;
 
 /**
  * Hook for the i18n module.
+ * <p>
+ * Provides access to the resources of this module, such as its bundles, from within the named module.
  *
  * @author harald
  */

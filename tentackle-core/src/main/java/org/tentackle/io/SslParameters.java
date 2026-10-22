@@ -76,8 +76,13 @@ import java.util.Map;
  *   <tr><td>{@code protocols}</td><td>{@code protocols}</td><td>&mdash;</td><td>comma-separated list of enabled protocols, e.g. {@code TLSv1.3,TLSv1.2}</td></tr>
  *   <tr><td>{@code ciphers}</td><td>{@code cipherSuites}</td><td>&mdash;</td><td>comma-separated list of enabled cipher suites</td></tr>
  *   <tr><td>{@code clientauth}</td><td>{@code clientAuth}</td><td>&mdash;</td><td>server-side client-certificate policy: {@code none} (default), {@code want} or {@code need}</td></tr>
- *   <tr><td>{@code endpointid}</td><td>{@code endpointIdentification}</td><td>&mdash;</td><td>client-side endpoint identification algorithm, e.g. {@code HTTPS} (default: none)</td></tr>
+ *   <tr><td>{@code endpointid}</td><td>{@code endpointIdentification}</td><td>&mdash;</td><td>client-side endpoint identification algorithm (default: {@code HTTPS})</td></tr>
+ *   <tr><td>{@code hostcheck}</td><td>{@code hostCheck}</td><td>&mdash;</td><td>client-side check of the server's host name against its certificate (default: {@code true}); any value but {@code true} turns it off</td></tr>
  * </table>
+ * <p>
+ * The client verifies the server's certificate against the host name of the URI by default, just like the
+ * QUIC transports do. A client that connects to a server by an address its certificate is not issued for
+ * (e.g. by IP address) can opt out with {@code hostcheck=false}; the certificate chain is still verified.
  * <p>
  * Client certificates are supported by simply providing a keystore (and, if the certificate should be
  * chosen explicitly, an alias) on the client side.
@@ -112,7 +117,8 @@ public class SslParameters {
   private final String[] enabledProtocols;      // enabled protocols, null for JDK default
   private final String[] enabledCipherSuites;   // enabled cipher suites, null for JDK default
   private final ClientAuth clientAuth;          // server-side client-certificate policy
-  private final String endpointIdentification;  // client-side endpoint identification, null for none
+  private final String endpointIdentification;  // client-side endpoint identification algorithm
+  private final boolean hostCheck;              // true if the client verifies the server's host name
 
   private KeyStore keyStore;                    // lazily loaded, shared keystore
   private KeyStore trustStore;                  // lazily loaded, shared truststore
@@ -141,7 +147,10 @@ public class SslParameters {
     enabledProtocols       = split(resolve("protocols",  "protocols",         null));
     enabledCipherSuites    = split(resolve("ciphers",    "cipherSuites",      null));
     clientAuth             = parseClientAuth(resolve("clientauth", "clientAuth", null));
-    endpointIdentification = resolve("endpointid", "endpointIdentification", null);
+    String endpointId      = resolve("endpointid", "endpointIdentification", null);
+    endpointIdentification = endpointId == null ? "HTTPS" : endpointId;
+    String hostCheckValue  = resolve("hostcheck",  "hostCheck",              null);
+    hostCheck              = hostCheckValue == null || Boolean.parseBoolean(hostCheckValue);
   }
 
 
@@ -270,6 +279,15 @@ public class SslParameters {
   }
 
   /**
+   * Returns whether the client verifies the server's host name against its certificate.
+   *
+   * @return true if the host name is verified (the default), false if only the certificate chain is
+   */
+  public boolean isHostCheck() {
+    return hostCheck;
+  }
+
+  /**
    * Configures a freshly created server socket with the resolved SSL options.<br>
    * Applies the enabled protocols and cipher suites and the client-certificate policy.
    *
@@ -291,8 +309,8 @@ public class SslParameters {
 
   /**
    * Configures a freshly created client socket with the resolved SSL options.<br>
-   * Applies the enabled protocols and cipher suites and, if requested, the endpoint
-   * identification algorithm used to verify the server's certificate against the host name.
+   * Applies the enabled protocols and cipher suites and, unless {@code hostcheck} is turned off, the
+   * endpoint identification algorithm used to verify the server's certificate against the host name.
    *
    * @param socket the SSL socket to configure
    */
@@ -303,7 +321,7 @@ public class SslParameters {
     if (enabledCipherSuites != null) {
       socket.setEnabledCipherSuites(enabledCipherSuites);
     }
-    if (endpointIdentification != null) {
+    if (hostCheck) {
       SSLParameters params = socket.getSSLParameters();
       params.setEndpointIdentificationAlgorithm(endpointIdentification);
       socket.setSSLParameters(params);

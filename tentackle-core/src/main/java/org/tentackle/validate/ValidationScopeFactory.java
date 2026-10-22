@@ -39,13 +39,16 @@ interface ValidationScopeFactoryHolder {
  * <p>
  * The factory provides methods for the predefined scopes necessary for the framework
  * but creates singletons for any other application-specific scopes as well.
+ * Scope implementations are annotated with &#64;{@link ValidationScopeService}.
+ * <p>
+ * Replaceable via &#64;{@link org.tentackle.common.Service}.
  *
  * @author harald
  */
 public interface ValidationScopeFactory {
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */
@@ -56,35 +59,35 @@ public interface ValidationScopeFactory {
 
 
   /**
-   * Gets the request AllScope singleton.
+   * Gets the AllScope singleton.
    *
    * @return the all scope
    */
   AllScope getAllScope();
 
   /**
-   * Gets the request ChangeableScope singleton.
+   * Gets the ChangeableScope singleton.
    *
    * @return the validation scope
    */
   ChangeableScope getChangeableScope();
 
   /**
-   * Gets the request InteractiveScope singleton.
+   * Gets the InteractiveScope singleton.
    *
    * @return the validation scope
    */
   InteractiveScope getInteractiveScope();
 
   /**
-   * Gets the request MandatoryScope singleton.
+   * Gets the MandatoryScope singleton.
    *
    * @return the validation scope
    */
   MandatoryScope getMandatoryScope();
 
    /**
-   * Gets the request PersistenceScope singleton.
+   * Gets the PersistenceScope singleton.
    *
    * @return the validation scope
    */
@@ -106,7 +109,7 @@ public interface ValidationScopeFactory {
   Class<? extends ValidationScope> getValidationScope(String name);
 
   /**
-   * Gets a request validation scope implementation singleton by its interface.
+   * Gets a validation scope implementation singleton by its interface.
    *
    * @param <T> the interface type
    * @param iFace the interface

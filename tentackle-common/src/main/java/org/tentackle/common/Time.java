@@ -39,10 +39,10 @@ import static java.util.Calendar.SECOND;
  * locations, the time should always remain the same for all timezones. In
  * {@code java.sql.Time}, however, the epochal time is serialized which may lead
  * to a different time when deserialized in another timezone. In {@link Time}
- * the effective date is serialized as {@code HHMMSSmmm} to provide the same semantics
+ * the effective time is serialized as {@code HHMMSSmmm} (milliseconds included) to provide the same semantics
  * as databases do.
  * <p>
- * Furthermore, tentackle times can be frozen, i.e., made immutable.
+ * Furthermore, tentackle times can be frozen, i.e., made immutable (see {@link Freezable}).
  *
  * @author harald
  */
@@ -51,7 +51,8 @@ public class Time extends java.sql.Time implements Freezable {
   @Serial
   private static final long serialVersionUID = 1L;
 
-  private boolean frozen;               // true if time cannot be modified anymore
+  /** true if time cannot be modified anymore. */
+  private boolean frozen;
 
   /**
    * Creates a frozen time.
@@ -66,10 +67,12 @@ public class Time extends java.sql.Time implements Freezable {
   }
 
   /**
-   * Converts a string into a time.
+   * Converts a string into a time.<br>
+   * Same as {@link java.sql.Time#valueOf(String)}, but returns a tentackle time (not frozen).
    *
-   * @param str the string
+   * @param str the string in JDBC time escape format {@code hh:mm:ss}
    * @return the time
+   * @throws IllegalArgumentException if the string is not in the expected format
    */
   public static Time valueOf(String str) {
     return new Time(java.sql.Time.valueOf(str).getTime());
@@ -90,7 +93,6 @@ public class Time extends java.sql.Time implements Freezable {
 
   /**
    * Creates the current time.
-   *
    */
   public Time() {
     this(System.currentTimeMillis());
@@ -123,7 +125,7 @@ public class Time extends java.sql.Time implements Freezable {
   /**
    * {@inheritDoc}
    * <p>
-   * Overridden to clear the lazy calendar and check for frozen.
+   * Overridden to check for frozen.
    */
   @Override
   public void setTime(long time) {
@@ -183,9 +185,9 @@ public class Time extends java.sql.Time implements Freezable {
   }
 
   /**
-   * Save the state of this object to a stream.
+   * Saves the state of this object to a stream.
    * <p>
-   * The value {@code HHMMSSsss} is emitted. This allows serializing
+   * The value {@code HHMMSSmmm} is emitted. This allows serializing
    * and deserializing in different timezones without changing the time.
    *
    * @param s the stream
@@ -204,7 +206,7 @@ public class Time extends java.sql.Time implements Freezable {
 
 
   /**
-   * Reconstitute this object from a stream.
+   * Reconstitutes this object from a stream.
    *
    * @param s the stream
    * @throws IOException if reading from stream failed

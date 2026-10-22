@@ -21,7 +21,8 @@ package org.tentackle.dbms;
 import java.io.Serial;
 
 /**
- * Runtime exception thrown when an {@link IdSource} becomes empty.
+ * Runtime exception thrown when an {@link IdSource} becomes empty.<br>
+ * Provided for application-specific id sources with a limited range of IDs.
  * 
  * @author harald
  */

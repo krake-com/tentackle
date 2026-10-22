@@ -58,7 +58,7 @@ public interface BindingFactory {
 
 
   /**
-   * Creates a bindable element
+   * Creates a bindable element.
    * <p>
    * Notice: this method must be implemented by the concrete factory.
    *
@@ -70,7 +70,9 @@ public interface BindingFactory {
 
 
   /**
-   * Defines the bindable element class for a model class.
+   * Defines the bindable element class for a model class.<br>
+   * The element class applies to subclasses of the model class as well.
+   * It must provide a public constructor with the camelcase name as its only argument.
    *
    * @param modelClass the model class
    * @param elementClass the element class

@@ -73,7 +73,6 @@ public class DbPool extends AbstractPool<Session> implements SessionPool {
 
   /**
    * Creates a pool useful for most servers.<br>
-   * Using the default connection manager.
    * Starts with 8 Db instances, increments by 2, minSize 4, maxSize from connection manager.
    * Idle timeout 1 hour, usage timeout 1 day.
    *
@@ -104,25 +103,31 @@ public class DbPool extends AbstractPool<Session> implements SessionPool {
     return sessionGroupId;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The session is cleaned up before it is returned, without holding the monitor of this pool,
+   * since that may involve I/O, such as rolling back a pending transaction or a remote round trip.
+   * Otherwise, a slow backend or network would block all users of the pool.
+   * Only the bookkeeping is done within the monitor.
+   */
   @Override
-  protected void unusePoolable(Session session) {
+  public void put(Session session) {    // not synchronized as in super.put()!
+    if (session.getPool() != this || !session.isOpen() || isShutdown()) {
+      super.put(session);   // fails if not managed by this pool, else removes or closes the session
+      return;
+    }
+
     Db db = (Db) session;
-    int poolId = db.getPoolId();    // 0 if already returned, -1 if removed, else the slot index + 1
-    boolean txRunning = db.isTxRunning();
+    boolean removed = false;
     String exMsg = null;
-    if (txRunning) {
+    if (db.isTxRunning()) {
       exMsg = "session " + db + " was still running a transaction ->";
       if (db.isRemote()) {
         // rollbackImmediately is not allowed for remote sessions.
         // just close it, the rollback will be performed at the remote side.
-        if (poolId > 0) {   // only if not returned to the pool yet, else the slot index is unknown
-          removePoolable(db, poolId - 1);
-          poolId = -1;
-          exMsg += " remote session closed and removed from pool";
-        }
-        else {
-          exMsg += " remote session already returned to the pool";
-        }
+        removed = removeLent(db);   // only if not returned to the pool yet, else the slot index is unknown
+        exMsg += removed ? " remote session closed and removed from pool" : " remote session already returned to the pool";
       }
       else {
         // rollback first and return to pool, log the exception later (see below)
@@ -136,7 +141,7 @@ public class DbPool extends AbstractPool<Session> implements SessionPool {
       }
     }
 
-    if (poolId > 0) { // if not returned to pool yet
+    if (!removed && db.getPoolId() > 0) { // if not returned to pool yet
       // check if there are no pending statements
       ManagedConnection con = db.getConnection();
       if (con != null) {    // still attached?
@@ -149,8 +154,7 @@ public class DbPool extends AbstractPool<Session> implements SessionPool {
             LOGGER.warning("cleaning up pending statements failed", rx);
           }
         }
-        removePoolable(db, poolId - 1);    // remove from the pool for sure
-        poolId = -1;
+        removed = removeLent(db);
         if (exMsg == null) {
           exMsg = "session " + db + " still attached";
         }
@@ -159,15 +163,30 @@ public class DbPool extends AbstractPool<Session> implements SessionPool {
     } // else: not an error to return a db more than once
 
     db.setOwnerThread(null);    // unlink any owner thread
-    db.clearProperties();
-
-    if (poolId > 0) {
-      super.unusePoolable(db);
+    if (!removed) {
+      db.clearProperties();     // a removed session is closed in background
+      super.put(db);            // returns it to the pool, if not returned yet
     }
 
     if (exMsg != null) {
       throw new PersistenceException(db, exMsg);
     }
+  }
+
+  /**
+   * Removes a lent session from the pool.<br>
+   * The session is closed in the background.
+   *
+   * @param db the session
+   * @return true if removed, false if not lent anymore or the pool is shut down
+   */
+  private synchronized boolean removeLent(Db db) {
+    int poolId = db.getPoolId();    // 0 if already returned, -1 if removed, else the slot index + 1
+    if (isShutdown() || poolId <= 0) {
+      return false;
+    }
+    removePoolable(db, poolId - 1);
+    return true;
   }
 
 

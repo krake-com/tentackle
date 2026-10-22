@@ -30,11 +30,7 @@ import java.util.List;
 
 /**
  * Delegate for the AbstractDbObject class.<br>
- * Notice: in this class we cut off generics!
- * The reason is AbstractDbObject.getRemoteDelegate() which can't
- * be made generic without making AbstractDbObject generic.
- * This would end up with such silly things like "new Customer&lt;Customer&gt;()",
- * because java provides no runtime type information of generic type parameters.
+ * Provides the remote counterparts of the generic persistence operations of {@link AbstractDbObject}.
  *
  * @param <P> the db object class
  * @author harald

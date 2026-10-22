@@ -36,12 +36,12 @@ import static java.util.Calendar.YEAR;
  * serialized/deserialized in different timezones. Databases don't provide a
  * time and therefore no timezone for a date, i.e., when sent over wire to different
  * locations, a date should always remain the same for all timezones. In
- * {@code java.sql.Data}, however, the epochal time is serialized which may lead
+ * {@code java.sql.Date}, however, the epochal time is serialized which may lead
  * to a different date when deserialized in another timezone. In {@link Date}
  * the effective date is serialized as {@code YYYYMMDD} to provide the same semantics
  * as databases do.
  * <p>
- * Furthermore, tentackle dates can be frozen, i.e., made immutable.
+ * Furthermore, tentackle dates can be frozen, i.e., made immutable (see {@link Freezable}).
  *
  * @author harald
  */
@@ -63,25 +63,25 @@ public class Date extends java.sql.Date implements Freezable {
   }
 
   /**
-   * Converts a string into a date.
+   * Converts a string into a date.<br>
+   * Same as {@link java.sql.Date#valueOf(String)}, but returns a tentackle date (not frozen).
    *
-   * @param str the string
+   * @param str the string in JDBC date escape format {@code yyyy-[m]m-[d]d}
    * @return the date
+   * @throws IllegalArgumentException if the string is not in the expected format
    */
   public static Date valueOf(String str) {
     return new Date(java.sql.Date.valueOf(str).getTime());
   }
 
 
-  private boolean frozen;               // true if date cannot be modified anymore
+  /** true if date cannot be modified anymore. */
+  private boolean frozen;
 
 
   /**
-   * Constructs a
-   * <code>Date</code> object using the given milliseconds time value. If the
-   * given milliseconds value contains time information, the driver will set the
-   * time components to the time in the default time zone (the time zone of the
-   * Java virtual machine running the application) that corresponds to zero GMT.
+   * Constructs a <code>Date</code> object using the given milliseconds time value.<br>
+   * The time components are kept as is, but get lost when the date is serialized.
    *
    * @param date epochal milliseconds since January 1, 1970, 00:00:00 GMT
    */
@@ -124,7 +124,7 @@ public class Date extends java.sql.Date implements Freezable {
   /**
    * {@inheritDoc}
    * <p>
-   * Overridden to clear the lazy calendar and to check for frozen.
+   * Overridden to check for frozen.
    */
   @Override
   public void setTime(long date) {
@@ -185,7 +185,7 @@ public class Date extends java.sql.Date implements Freezable {
 
 
   /**
-   * Save the state of this object to a stream.
+   * Saves the state of this object to a stream.
    * <p>
    * The value {@code YYYYMMDD} is emitted. This allows serializing
    * and deserializing in different timezones without changing the date.
@@ -204,7 +204,7 @@ public class Date extends java.sql.Date implements Freezable {
 
 
   /**
-   * Reconstitute this object from a stream.
+   * Reconstitutes this object from a stream.
    *
    * @param s the stream
    * @throws IOException if reading from stream failed

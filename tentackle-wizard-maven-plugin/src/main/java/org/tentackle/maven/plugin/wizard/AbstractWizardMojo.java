@@ -23,31 +23,58 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
 
+import org.tentackle.common.EncryptedProperties;
+import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.ThemeUtilities;
 import org.tentackle.maven.AbstractTentackleMojo;
+import org.tentackle.misc.PropertiesUtilities;
 import org.tentackle.model.EntityAliases;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.ModelManager;
+import org.tentackle.pdo.Pdo;
+import org.tentackle.session.SessionInfo;
 
 import javafx.application.ColorScheme;
 import javafx.application.Platform;
 import javafx.stage.Stage;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Base wizard mojo.
+ * Base class of all wizard mojos.<br>
+ * Loads the model, provides the profiles, installs the templates and runs the goal
+ * in an optional isolated module layer graph.
  *
  * @author harald
  */
 public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
+
+  /**
+   * Serializes the executions in parallel builds.<br>
+   * The model held by the {@code ModelManager}, the static settings of the {@code JavaCodeFactory}, the
+   * JavaFX platform and the default uncaught exception handler are shared by all projects of a build.
+   * Concurrent executions would corrupt each other.
+   */
+  private static final Lock EXECUTION_LOCK = new ReentrantLock();
+
+  @Override
+  protected Lock getExecutionLock() {
+    return EXECUTION_LOCK;
+  }
+
 
   /**
    * The model name.
@@ -58,60 +85,93 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
 
   /**
    * Directory holding the model files to be processed.<br>
-   * Ignored if fileset explicitly given.
+   * Ignored if {@link #filesets} are given, except as the default directory
+   * of a fileset without a directory.
    */
   @Parameter(defaultValue = "${project.build.directory}/wurbel/model", property = "tentackle.modelDir")
   protected File modelDir;
 
   /**
    * Directory holding the status info.<br>
-   * Used to store the next free classId per profile in case multiple PDOs are
-   * generated without an intermediate mvn clean package/install or wurbel run.<br>
-   * Must be a subdirectory of the target directory to be removed via mvn clean.
+   * Used to store the next free class ID per profile in case multiple PDOs are
+   * generated without an intermediate build that updates the model.<br>
+   * Should be a subdirectory of the target directory, so that {@code mvn clean} removes it.
    */
   @Parameter(defaultValue = "${project.build.directory}/wizard")
   private File statusDir;
 
   /**
-   * The model defaults.
+   * The model defaults, in the same syntax as in the model source.
    */
   @Parameter(property = "tentackle.modelDefaults")
   protected String modelDefaults;
 
   /**
-   * The entity aliases.
+   * The entity aliases, in the same syntax as in the model source.
    */
   @Parameter(property = "tentackle.entityAliases")
   protected String entityAliases;
 
   /**
    * The list of file sets containing the model.<br>
-   * If set, the modelDir is ignored.
+   * If set, the {@link #modelDir} is ignored.
+   * Each fileset is loaded as a whole directory, i.e. includes and excludes are not applied.
    */
   @Parameter
   protected List<FileSet> filesets;
 
   /**
-   * The profiles.
+   * The profiles.<br>
+   * Required by the {@code pdo} goal (at least one {@link PdoProfile})
+   * and the {@code operation} goal (at least one {@link OperationProfile}).
+   * Profile names must be unique.
    */
-  @Parameter(required = true)
+  @Parameter
   private List<Profile> profiles;
 
   /**
-   * The directory holding the templates.
+   * The directory holding the templates.<br>
+   * If it does not exist, it is created and the default templates are installed.
    */
   @Parameter(defaultValue = "${project.basedir}/templates")
   private File templateDir;
 
   /**
-   * Load the model from the plugin dependencies on the classpath.
+   * Load the model from the resources of the plugin dependencies on the classpath.
    */
   @Parameter(defaultValue = "true")
   private boolean loadModelFromDependencies;
 
   /**
+   * Named, isolated {@code ModuleLayer}s for dependencies that must run isolated from each other -
+   * typically because two of them need different, otherwise conflicting versions of the same module,
+   * or because the application itself is built with module layers.
+   * <p>
+   * If empty (the default), the goal runs exactly as without this feature at all: against the plain
+   * plugin classpath (populated the usual way, by declaring the application's dependencies as
+   * {@code <dependency>} elements of this plugin). If not empty, this plugin builds the configured
+   * {@code ModuleLayer} graph at goal-execution time and installs the {@link #leafLayer}'s classloader
+   * as the thread's context classloader for the duration of the goal - which is what every existing,
+   * layer-unaware {@code ServiceFactory.getServiceFinder()}/{@code Model.loadFromResources()} call
+   * (and, for {@code browse}/{@code script}, the application's own domain/PDO/persistence classes)
+   * transparently resolves from. See the {@code layers.md} documentation.
+   *
+   * @see #leafLayer
+   */
+  @Parameter
+  private List<Layer> layers;
+
+  /**
+   * The name of the layer holding the application's own PDO/domain/persistence classes, i.e. the
+   * layer whose classloader is installed as the thread's context classloader while the goal runs.
+   * Required if {@link #layers} is not empty and must match the {@code name} of one of them.
+   */
+  @Parameter
+  private String leafLayer;
+
+  /**
    * Enables dark mode.<br>
-   * If missing, the mode is determined from the desktop settings.
+   * If missing, the mode follows the desktop settings and changes along with them.
    */
   @Parameter
   private Boolean darkMode;
@@ -119,7 +179,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
   /**
    * Selects the theme.<br>
    * The AtlantaFX themes are: {@code Primer}, {@code Cupertino}, and {@code Nord}.<br>
-   * The default is {@code Primer}.
+   * The default is {@code Cupertino} on macOS and {@code Primer} on all other platforms.
    */
   @Parameter
   private String themeName;
@@ -128,6 +188,11 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
    * The model.
    */
   private Model model;
+
+  /**
+   * True if the templates were installed by this execution.
+   */
+  private boolean templatesInstalled;
 
 
   /**
@@ -153,7 +218,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
   @SuppressWarnings("unchecked")
   public <T extends Profile> List<T> getProfiles(Class<T> clazz) throws MojoExecutionException {
     List<T> list = new ArrayList<>();
-    for (Profile profile : profiles) {
+    for (Profile profile : profiles == null ? List.<Profile>of() : profiles) {
       if (clazz.isAssignableFrom(profile.getClass())) {
         if (list.contains(profile)) {
           throw new MojoExecutionException("profile " + profile + " configured more than once");
@@ -183,6 +248,83 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
     return statusDir;
   }
 
+  /**
+   * Gets the configured isolated module layers.
+   *
+   * @return the layers, never null
+   */
+  public List<Layer> getLayers() {
+    return layers == null ? Collections.emptyList() : layers;
+  }
+
+  /**
+   * Returns whether this goal runs against an isolated module layer graph.
+   *
+   * @return true if {@link #getLayers()} is not empty
+   */
+  public boolean isLayered() {
+    return !getLayers().isEmpty();
+  }
+
+  /**
+   * Gets the name of the layer holding the application's own PDO/domain/persistence classes.
+   *
+   * @return the leaf layer name, null if not {@link #isLayered()}
+   */
+  public String getLeafLayer() {
+    return leafLayer;
+  }
+
+  /**
+   * Opens a scope installing {@link #getLeafLayer()}'s classloader as the thread's context
+   * classloader for the duration of a goal, if {@link #isLayered()}.<br>
+   * A no-op if {@link #layers} is not configured, guaranteeing the goal behaves exactly as before
+   * this feature existed: no layer graph is built and the thread's context classloader is left alone.
+   *
+   * @return the scope, to be closed (e.g. via try-with-resources) once the goal has finished
+   * @throws MojoExecutionException if the layer graph could not be built
+   */
+  protected LayerScope openLayerScope() throws MojoExecutionException {
+    if (!isLayered()) {
+      return LayerScope.NOOP;
+    }
+    LayerGraphResolver resolver = new LayerGraphResolver(this);
+    Map<String, ModuleLayer> builtLayers = resolver.build();
+    ClassLoader leafLoader = resolver.getLeafClassLoader(builtLayers);
+    ClassLoader previous = Thread.currentThread().getContextClassLoader();
+    Thread.currentThread().setContextClassLoader(leafLoader);
+    getLogger().debug("installed leaf layer '{}' as the thread's context classloader", leafLayer);
+    return new LayerScope(previous);
+  }
+
+  /**
+   * Restores the thread's context classloader that was active before {@link #openLayerScope()}.<br>
+   * Closing the no-op scope does nothing.
+   */
+  protected static final class LayerScope implements AutoCloseable {
+
+    private static final LayerScope NOOP = new LayerScope(null);
+
+    private final ClassLoader previous;
+
+    private LayerScope(ClassLoader previous) {
+      this.previous = previous;
+    }
+
+    @Override
+    public void close() {
+      if (previous != null) {
+        Thread.currentThread().setContextClassLoader(previous);
+      }
+    }
+
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The default implementation loads the model.
+   */
   @Override
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
     loadModel();
@@ -227,15 +369,19 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
   }
 
   /**
-   * Loads the model.
-   * <p>
-   * Notice: the model is only needed by the {@link PdoMojo}, but we configure it for the whole plugin.
+   * Loads the model.<br>
+   * The model defaults and entity aliases are applied to all model sources: the resources of
+   * the plugin dependencies (if {@link #loadModelFromDependencies}), and the {@link #filesets}
+   * or the {@link #modelDir}.
    *
    * @throws MojoFailureException if the model is inconsistent
    * @throws MojoExecutionException if loading failed due to some other error
    */
   protected void loadModel() throws MojoFailureException, MojoExecutionException {
     int errors = 0;
+
+    getModel().setModelDefaults(getModelDefaults());
+    getModel().setEntityAliases(getEntityAliases());
 
     if (loadModelFromDependencies) {
       try {
@@ -261,7 +407,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
         errors += processFileSet(fs);
       }
       else {
-        getLog().warn((modelDir.exists() ? "empty modelDir " : "no modelDir ") + modelDir.getAbsolutePath());
+        getLogger().warn("{} {}", modelDir.exists() ? "empty modelDir" : "no modelDir", modelDir.getAbsolutePath());
       }
     }
 
@@ -270,7 +416,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
     }
 
     try {
-      getLog().info(getModel().getAllEntities().size() + " entities loaded");
+      getLogger().info("{} entities loaded", getModel().getAllEntities().size());
     }
     catch (ModelException e) {
       throw new MojoExecutionException("cannot determine entities", e);
@@ -281,11 +427,10 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
   /**
    * Processes a fileset to load the model.
    *
-   * @param fileSet the fileset containing the model
+   * @param fileSet the fileset containing the model, defaults to the {@link #modelDir} if it has no directory
    * @return the number of errors
-   * @throws MojoExecutionException if model defaults or entity aliases could not be determined
    */
-  protected int processFileSet(FileSet fileSet) throws MojoExecutionException {
+  protected int processFileSet(FileSet fileSet) {
     int errors = 0;
 
     if (fileSet.getDirectory() == null) {
@@ -297,12 +442,10 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
     String modelDirName = dir.getPath();
 
     try {
-      getModel().setModelDefaults(getModelDefaults());
-      getModel().setEntityAliases(getEntityAliases());
       getModel().loadFromDirectory(modelDirName, true);
     }
     catch (ModelException mex) {
-      getLog().error("parsing model failed in directory " + modelDirName + ":\n" + mex.getMessage());
+      getLogger().error("parsing model failed in directory {}:\n{}", modelDirName, mex.getMessage());
       errors++;
     }
 
@@ -320,14 +463,24 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
       }
       else {
         templateDir.mkdirs();
-        getLog().info("template directory created: " + templateDir.getPath());
+        getLogger().info("template directory created: {}", templateDir.getPath());
         installTemplates();
       }
+      new LayerGraphResolver(this).validateLayers();
       return true;
     }
     return false;
   }
 
+
+  /**
+   * Returns whether the templates were installed by this execution.
+   *
+   * @return true if installed
+   */
+  protected boolean isTemplatesInstalled() {
+    return templatesInstalled;
+  }
 
   /**
    * Copies the templates to the template directory.<br>
@@ -353,6 +506,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
     installTemplate(Constants.CATEGORY_OPERATION, "RemoteImplementation.ftl");
 
     installTemplate(Constants.CATEGORY_SCRIPT, "groovy-example.ftl");
+    templatesInstalled = true;
   }
 
   private void installTemplate(String category, String template) throws MojoExecutionException {
@@ -361,15 +515,100 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
     File file = new File(dir, template);
     String path = "/templates/" + category + "/" + template;
     String text = loadResourceFileIntoString(path);
-    try (PrintStream ps = new PrintStream(new FileOutputStream(file))) {
-      ps.print(text);
-      getLog().info("installed " + category + "-template " + template);
+    try {
+      Files.writeString(file.toPath(), text, StandardCharsets.UTF_8);
+      getLogger().info("installed {}-template {}", category, template);
     }
     catch (IOException e) {
       throw new MojoExecutionException("cannot install template " + path, e);
     }
   }
 
+
+  /**
+   * Resolves a path relative to the project's base directory.
+   *
+   * @param path the path, absolute or relative to the base directory
+   * @return the file
+   */
+  protected File resolveFile(String path) {
+    File file = new File(path);
+    return file.isAbsolute() ? file : new File(getBaseDir(), path);
+  }
+
+  /**
+   * Creates the session info to connect to a backend.
+   *
+   * @param url the backend URL
+   * @param user the username
+   * @param password the password, null if none
+   * @return the session info
+   */
+  protected static SessionInfo createSessionInfo(String url, String user, String password) {
+    EncryptedProperties props = PropertiesUtilities.getInstance().create();
+    props.setProperty(org.tentackle.common.Constants.BACKEND_URL, url);
+    props.setProperty(org.tentackle.common.Constants.BACKEND_USER, user);
+    if (password != null) {
+      props.setProperty(org.tentackle.common.Constants.BACKEND_PASSWORD, password);
+    }
+    return Pdo.createSessionInfo(props);
+  }
+
+  /**
+   * Creates the stage of an interactive goal.
+   */
+  @FunctionalInterface
+  protected interface StageFactory {
+
+    /**
+     * Creates the stage.<br>
+     * Invoked on the FX application thread.
+     *
+     * @return the stage, shown or not yet shown
+     * @throws Exception if creating the stage failed
+     */
+    Stage createStage() throws Exception;
+  }
+
+  /**
+   * Starts the FX platform, shows the stage and waits until it is closed.<br>
+   * The FX theme and the handler for uncaught exceptions are configured before the stage is created.
+   *
+   * @param stageFactory the factory creating the stage
+   * @throws MojoExecutionException if the UI could not be started
+   */
+  protected void runInteractive(StageFactory stageFactory) throws MojoExecutionException {
+    CountDownLatch latch = new CountDownLatch(1);
+    AtomicReference<Throwable> failure = new AtomicReference<>();
+
+    Platform.startup(() -> {
+      try {
+        configureFx();
+        registerUncaughtExceptionHandler();
+        Stage stage = stageFactory.createStage();
+        stage.setOnHidden(_ -> latch.countDown());
+        if (!stage.isShowing()) {
+          Fx.show(stage);
+        }
+      }
+      catch (Throwable t) {
+        failure.set(t);
+        latch.countDown();
+      }
+    });
+
+    try {
+      latch.await();
+    }
+    catch (InterruptedException e) {
+      throw new InterruptedRuntimeException(e);
+    }
+
+    Throwable t = failure.get();
+    if (t != null) {
+      throw new MojoExecutionException("cannot start the UI: " + t.getMessage(), t);
+    }
+  }
 
   /**
    * Registers a handler for uncaught exceptions.
@@ -392,7 +631,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
   }
 
   /**
-   * Gets the stage if this an interactive FX application.
+   * Gets the stage if this is an interactive FX application.
    *
    * @return the stage, null if console application
    */
@@ -401,7 +640,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
 
   private Thread.UncaughtExceptionHandler getUncaughtExceptionHandler() {
     return (_, e) -> {
-      getLog().error("unhandled exception detected", e);
+      getLogger().error("unhandled exception detected", e);
       Stage stage = getStage();
       if (stage != null) {
         Platform.runLater(() -> Fx.error(stage, e.getMessage(), e));

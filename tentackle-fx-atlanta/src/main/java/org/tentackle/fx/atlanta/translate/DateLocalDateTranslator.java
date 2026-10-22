@@ -29,12 +29,23 @@ import java.util.function.Function;
 /**
  * Date to LocalDate translator.<br>
  * Provided for the {@link atlantafx.base.controls.Calendar} control.
+ * <p>
+ * Applies to {@link java.util.Date} and all its subclasses. When translating back to the model,
+ * the returned object is of the same class as the component's model type:
+ * {@link java.util.Date}, {@link java.sql.Date}, {@link java.sql.Timestamp},
+ * {@link org.tentackle.common.Timestamp} or, for all other types, {@link org.tentackle.common.Date}.<br>
+ * Timestamps are set to the start of the picked day in the default time zone.
  *
  * @author harald
  */
 @ValueTranslatorService(modelClass = Date.class, viewClass = LocalDate.class)
 public class DateLocalDateTranslator extends AbstractValueTranslator<Date, LocalDate> {
 
+  /**
+   * Creates a date to local date translator.
+   *
+   * @param component the component
+   */
   public DateLocalDateTranslator(FxComponent component) {
     super(component);
   }
@@ -51,11 +62,18 @@ public class DateLocalDateTranslator extends AbstractValueTranslator<Date, Local
         return null;
       }
       java.util.Date sqlDate = java.sql.Date.valueOf(d);
-      if (java.sql.Date.class == getComponent().getType()) {
+      Class<?> type = getComponent().getType();
+      if (java.sql.Date.class == type) {
         return sqlDate;
       }
-      else if (java.util.Date.class == getComponent().getType()) {
+      if (java.util.Date.class == type) {
         return new java.util.Date(sqlDate.getTime());
+      }
+      if (org.tentackle.common.Timestamp.class == type) {
+        return new org.tentackle.common.Timestamp(sqlDate.getTime());
+      }
+      if (java.sql.Timestamp.class == type) {
+        return new java.sql.Timestamp(sqlDate.getTime());
       }
       return new org.tentackle.common.Date(sqlDate.getTime());
     };

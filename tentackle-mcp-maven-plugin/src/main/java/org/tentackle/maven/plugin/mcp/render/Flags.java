@@ -24,6 +24,7 @@ import org.tentackle.model.Entity;
 import org.tentackle.model.EntityOptions;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
+import org.tentackle.model.SelectionType;
 import org.tentackle.model.TrackType;
 
 import java.util.ArrayList;
@@ -226,6 +227,23 @@ public final class Flags {
    */
   public static String join(List<String> flags) {
     return String.join(",", flags);
+  }
+
+  /**
+   * Renders the selection strategy of a relation.
+   * <p>
+   * An eager relation that cascades beyond the default single level is rendered with its
+   * depth appended, e.g. {@code EAGER:2}, so the real fetch plan is visible.
+   *
+   * @param relation the relation
+   * @return the cell value
+   */
+  public static String selection(Relation relation) {
+    String selection = relation.getSelectionType().toString();
+    if (relation.getSelectionType() == SelectionType.EAGER && relation.getEagerDepth() > 1) {
+      selection += ":" + relation.getEagerDepth();
+    }
+    return selection;
   }
 
 }

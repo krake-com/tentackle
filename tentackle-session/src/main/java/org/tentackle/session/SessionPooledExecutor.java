@@ -44,7 +44,7 @@ public class SessionPooledExecutor {
   private final SessionPool sessionPool;
   private final ThreadGroup threadGroup;
   private final ExecutorService executorService;
-  private final AtomicInteger theadNumber = new AtomicInteger(1);
+  private final AtomicInteger threadNumber = new AtomicInteger(1);
 
   /**
    * Creates the executor service for a session pool.
@@ -110,7 +110,10 @@ public class SessionPooledExecutor {
   /**
    * Submits a task for execution in the background by a thread pool.
    * <p>
+   * The task runs with a session from the pool as its thread-local session. If the task is a
+   * {@link SessionDependable}, the session is applied to it as well.
    * Exactly one of the two handlers is invoked, and only after the session was returned to the pool.
+   * Both run in the pool's thread.
    *
    * @param task the task to execute
    * @param successHandler the handler to be invoked when the task finished successfully, null if none
@@ -181,16 +184,19 @@ public class SessionPooledExecutor {
   }
 
   /**
-   * Submits a collection of tasks for background execution in multiple threads of a thread pool and waits for their termination.<br>
-   * If there are failures, the fail handler (if any) will be invoked <em>before</em> the success handler.
+   * Submits a collection of tasks for background execution in multiple threads of a thread pool.<br>
+   * The method does not block: a dedicated waiter thread waits for the tasks to terminate and then
+   * invokes the handlers. If there are failures, the fail handler (if any) is invoked <em>before</em>
+   * the success handler. The success handler is always invoked, even after failures or a timeout,
+   * with the results collected so far. Tasks returning null do not show up in the results.
    * <p>
-   * The handlers are invoked from a dedicated waiter thread, not from the thread pool, so that all
+   * The handlers are invoked from the waiter thread, not from the thread pool, so that all
    * of the pool's threads remain available to the tasks themselves.
    *
    * @param tasks the tasks to execute
    * @param timeoutMillis the timeout in milliseconds, &le; 0 if wait infinitely
-   * @param successHandler updater invoked when all runners finished, null if none
-   * @param failHandler updater invoked only if execution of some runner failed, null if log only as error
+   * @param successHandler handler invoked when all tasks finished, timed out or the waiter was interrupted, null if none
+   * @param failHandler handler invoked only if some tasks failed or timed out, null if log only as error
    * @param <V> the type returned by the runners
    */
   public <V> void submit(Collection<Supplier<V>> tasks, long timeoutMillis, Consumer<Map<Supplier<V>, V>> successHandler, Consumer<Map<Supplier<V>, RuntimeException>> failHandler) {
@@ -211,7 +217,7 @@ public class SessionPooledExecutor {
         if (timeoutMillis <= 0) {
           latch.await();
         }
-        else if (!latch.await(timeoutMillis, TimeUnit.MILLISECONDS)) {   // 5 minutes should really be enough
+        else if (!latch.await(timeoutMillis, TimeUnit.MILLISECONDS)) {
           failures.put(() -> null, new PersistenceException("parallel execution timed out"));
         }
       }
@@ -220,9 +226,14 @@ public class SessionPooledExecutor {
         failures.put(() -> null, new InterruptedRuntimeException(ix));
       }
       // all finished, timed out or interrupted
-      if (failHandler != null && !failures.isEmpty()) {
-        // only invoked if there are failures
-        failHandler.accept(failures);
+      if (!failures.isEmpty()) {
+        if (failHandler != null) {
+          // only invoked if there are failures
+          failHandler.accept(failures);
+        }
+        else {
+          failures.values().forEach(failure -> LOGGER.severe("background task failed", failure));
+        }
       }
       if (successHandler != null) {
         // always invoked
@@ -298,7 +309,7 @@ public class SessionPooledExecutor {
    * @return the thread
    */
   protected Thread createThread(Runnable runnable) {
-    Thread thread = new Thread(threadGroup, runnable, sessionPool.getName() + "(" + theadNumber.getAndIncrement() + ")");
+    Thread thread = new Thread(threadGroup, runnable, sessionPool.getName() + "(" + threadNumber.getAndIncrement() + ")");
     thread.setDaemon(true);
     return thread;
   }

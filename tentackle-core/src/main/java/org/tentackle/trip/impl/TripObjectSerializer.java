@@ -39,7 +39,9 @@ import java.util.HexFormat;
 import java.util.UUID;
 
 /**
- * Object serializer using the TRIP serialization format.
+ * Object serializer using the TRIP serialization format.<br>
+ * The serialized data is self-contained, i.e. it includes the dictionary entries.
+ * Replaces the default Java serialization of {@link ObjectSerializer}.
  */
 @Service(ObjectSerializer.class)
 public class TripObjectSerializer implements ObjectSerializer {

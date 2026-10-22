@@ -49,7 +49,7 @@ import org.tentackle.session.TableName;
  * long           granteeId               granteeid         the id of the entity the permissions are granted to, 0 if all grantees
  * int            priority                secprio           the priority or evaluation order, 0 is highest or first
  * String(128)    permissions             permissions       the permissions as a comma-separated list
- * boolean        allowed                 allowed           the false if denied, true if allowed
+ * boolean        allowed                 allowed           false if denied, true if allowed
  * String         message                 message           the user message
  *
  * ## indexes
@@ -68,13 +68,13 @@ import org.tentackle.session.TableName;
  * This is the entity used by the default implementation {@link DefaultSecurityManager}.
  * Applications may use a completely different {@link org.tentackle.security.SecurityManager} not using {@link Security}-entities at all.
  * <p>
- * Any object, whether it is a ({@link PersistentDomainObject}) or any
- * other class (for example a dialog) can be secured by rules.<br>
+ * Any object, whether it is a {@link PersistentDomainObject} or any
+ * other class (for example a dialog), can be secured by rules.<br>
  * Security rules grant or deny a permission to a grantee object or a grantee class.
  * The grantee is an entity like a user or a user group.<br>
  * Optionally, rules can be restricted to some context entities or context class.
  * Grantees and contexts must be of type {@link PersistentDomainObject}.<br>
- * Permissions are stored in the database as a comma separated strings and convert
+ * Permissions are stored in the database as comma-separated strings and are converted
  * to instances of {@link org.tentackle.security.Permission} mapped by the {@link org.tentackle.security.SecurityFactory}.<br>
  * Security rules also have a priority, can explain the denial to the user
  * by means of a message text and can easily be extended by the application.

@@ -12,11 +12,12 @@ It is the implementation-side counterpart of
 Read that one first; almost everything here consumes it.
 
 Where the interface-side package parses a model and a query expression, this package **turns that parsed
-expression into executable code**. Six classes do the work:
+expression into executable code**. Seven classes do the work:
 
 - **`DbModelWurblet`** — the base class of every query wurblet, and by far the largest: it owns the parsed query,
   the tracking/context options, and roughly forty helper methods that emit SQL fragments, JDBC parameter binding,
   method signatures and relation-navigation code.
+- **`EagerJoin`** — a node of the entity's model-level eager join tree (`select = eager[:depth]`).
 - **`WhereClauseGenerator`** and **`JoinClauseGenerator`** — the two `CodeGenerator` implementations that walk the
   argument expression tree; the first emits *Java code that builds SQL at runtime*, the second emits *literal SQL*.
 - **`DslDeclarationFactory`** — generates the [query-DSL](../../../../tentackle-database/src/main/docs/query-dsl.md)
@@ -35,6 +36,7 @@ running application.
 | `DbModelWurblet`        | every template in this module except `QueryDSL`, via [`header.incl`](../wurblets/org/tentackle/persist/wurblet/header.incl)'s `@{extends DbModelWurblet}` |
 | `WhereClauseGenerator`  | [`genwhere.incl`](../wurblets/org/tentackle/persist/wurblet/genwhere.incl) — and thus every select/update/delete/reference wurblet                        |
 | `JoinClauseGenerator`   | `DbModelWurblet` itself, when a load join carries a filter                                                                                                |
+| `EagerJoin`             | `DbModelWurblet.getEagerJoinTree()`, rendered by `ClassVariables` and `PdoRelations`                                                                      |
 | `DslDeclarationFactory` | [`QueryDSL.wrbl`](../wurblets/org/tentackle/persist/wurblet/QueryDSL.wrbl)                                                                                |
 | `RemoteIncludes`        | `AssertRemote`, `RemoteMethod`, `MethodsImpl`, `PdoCache` and all ten `Db…`/`Pdo…` query wurblets                                                         |
 | `RemoteMethodHelper`    | [`RemoteMethod.wrbl`](../wurblets/org/tentackle/persist/wurblet/RemoteMethod.wrbl)                                                                        |
@@ -57,6 +59,8 @@ org.tentackle.wurblet.ModelWurblet            (tentackle-wurblets)
        └── delegates ──► JoinClauseGenerator    ─── implements CodeGenerator<Object>
                             emits LITERAL SQL for the filter of a load join
 
+       └── builds ──► EagerJoin tree           (select = eager[:depth], aliases e_1, e_1_1, …)
+
   independent helpers
   ───────────────────
   DslDeclarationFactory ── record Declaration(comment, code)  → Table/Field constants
@@ -69,6 +73,7 @@ org.tentackle.wurblet.ModelWurblet            (tentackle-wurblets)
 | [`DbModelWurblet`](../java/org/tentackle/persist/wurblet/DbModelWurblet.java)               | class | Base for all persistence wurblets: query model, tracking/context options, SQL/JDBC/method code builders.                                                 |
 | [`WhereClauseGenerator`](../java/org/tentackle/persist/wurblet/WhereClauseGenerator.java)   | class | Emits the Java that assembles the SQL `WHERE` clause, including `EXISTS` subqueries for relation paths.                                                  |
 | [`JoinClauseGenerator`](../java/org/tentackle/persist/wurblet/JoinClauseGenerator.java)     | class | Emits the literal SQL for a filtered load join.                                                                                                          |
+| [`EagerJoin`](../java/org/tentackle/persist/wurblet/EagerJoin.java)                         | class | One node of the model-level eager join tree: a relation, its table alias and the cascaded joins below it.                                                |
 | [`DslDeclarationFactory`](../java/org/tentackle/persist/wurblet/DslDeclarationFactory.java) | class | Builds the query-DSL `Table`/`Field` constant declarations from the model.                                                                               |
 | [`RemoteIncludes`](../java/org/tentackle/persist/wurblet/RemoteIncludes.java)               | class | Creates the TRIP remote interface/implementation files from FreeMarker templates and hands out the streams the wurblets write their remote methods into. |
 | [`RemoteMethodHelper`](../java/org/tentackle/persist/wurblet/RemoteMethodHelper.java)       | class | Wraps the analyze-time `RemoteMethodInfo` of an `@RemoteMethod` and builds its declaration/invocation parameter strings.                                 |
@@ -91,8 +96,8 @@ Two `@{config …}@` flags in the template control how the arguments are parsed:
 | `groupArgs`   | The `\|` character separates the `WHERE` expression from a second group of arguments (`getExtraArguments()`). Used by `DbUpdateBy`/`PdoUpdateBy` for the `SET` values. Without it, `\|` only ends the expression and improves readability. |
 | `pathAllowed` | Expression arguments may follow relation paths to other entities. Without it, any path argument is rejected outright.                                                                                                                      |
 
-> The two are read in an `if`/`else if` chain, so a template declaring **both** only gets `groupArgs`. No template
-> in the reactor currently needs both, but it is a trap if one ever does.
+A template may declare both. The third config flag in use, `missingModelOk` (declared by `RemoteMethod`), belongs
+to [`ModelWurblet`](../../../../tentackle-wurblets/src/main/docs/wurblet-api.md#error-handling).
 
 ### Lifecycle: what `run()` adds
 
@@ -101,10 +106,10 @@ run()
  ├─ 1. read the config flags (groupArgs / pathAllowed) — before super.run()
  ├─ 2. super.run()                       (ModelWurblet: load the model, resolve the entity)
  └─ 3. if the entity was resolved:
-        ├─ seed the tracking flags from the entity's TrackType and the context attribute
-        │     from getContextIdAttribute()
-        ├─ apply the option overrides: --tracked / --attracked / --fulltracked / --untracked /
-        │     --context=<key>
+        ├─ applyTrackingAndContextOptions(entity):
+        │     seed the tracking flags from the entity's TrackType and the context attribute
+        │     from getContextIdAttribute(), then apply the option overrides
+        │     --tracked / --attracked / --fulltracked / --untracked / --context=<key>
         ├─ build the WurbletArgumentParser over the positional arguments
         ├─ reject relation paths unless pathAllowed
         ├─ reject optional conditions (?boolean) inside join filters — they are supported
@@ -126,7 +131,10 @@ Everything is skipped when the entity is `null`, which happens only under `missi
 | `--untracked`     | —                       | Disable whatever the model declared.                                                                     |
 | `--context=<key>` | `getContextAttribute()` | The domain-context column. `--context=` with an empty value turns the default context predicate **off**. |
 
-The three predicates nest: `fullTracked` implies `attracked` implies `tracked`.
+The three predicates nest: `fullTracked` implies `attracked` implies `tracked`. The tracking options override each
+other, so the last one wins. `--context=<key>` looks the attribute up by its Java name, including inherited
+attributes. An unknown name fails the build, since silently dropping the context predicate would make the finder
+read across domain contexts.
 
 ### Guards
 
@@ -217,12 +225,12 @@ list, `aas(str)` prefixes a non-empty string with `", "`, and `as(str)` maps `nu
 
 ### DataType and convertible handling
 
-| Method                            | Purpose                                                                                                                                                                                                                                                            |
-|-----------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `createJdbcSetterName(DataType)`  | The `PreparedStatementWrapper` setter: `set` + the Java type, with `setLargeString` for the large `String` variant.                                                                                                                                                |
-| `createJdbcGetterName(Attribute)` | The `ResultSetWrapper` getter. Nullable wrapper types get an **`A` prefix** — `getABoolean`, `getAByte`, `getAShort`, `getALong`, `getAFloat`, `getADouble` — to distinguish them from the primitive getters; the large `String` variant becomes `getLargeString`. |
-| `getModelCode(attr, jdbcCode)`    | Wraps JDBC-side code in `<Type>.toInternal(…)` for a convertible attribute; returns it unchanged otherwise.                                                                                                                                                        |
-| `getJdbcCode(attr, modelCode)`    | The inverse: appends `.toExternal()`. An enum-style constant is converted directly; otherwise a null guard is generated — falling back to `getDefault().toExternal()` when the inner type is primitive, and to `null` when it is nullable.                         |
+| Method                            | Purpose                                                                                                                                                                                                                                                                                 |
+|-----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `createJdbcSetterName(DataType)`  | The `PreparedStatementWrapper` setter: `set` + the Java type, with `setLargeString`, `setSqlxml` and `setJson` for the large, XML and JSON `String` variants.                                                                                                                           |
+| `createJdbcGetterName(Attribute)` | The `ResultSetWrapper` getter. Nullable wrapper types get an **`A` prefix** — `getABoolean`, `getAByte`, `getAShort`, `getALong`, `getAFloat`, `getADouble` — to distinguish them from the primitive getters; the `String` variants become `getLargeString`, `getSqlxml` and `getJson`. |
+| `getModelCode(attr, jdbcCode)`    | Wraps JDBC-side code in `<Type>.toInternal(…)` for a convertible attribute; returns it unchanged otherwise.                                                                                                                                                                             |
+| `getJdbcCode(attr, modelCode)`    | The inverse: appends `.toExternal()`. A constant — by Java naming conventions `[<class>.]<VALUE_IN_UPPERCASE>`, see `isConstant(code)` — is assumed non-null and converted directly; otherwise a null guard is generated — falling back to `getDefault().toExternal()` when the inner type is primitive, and to `null` when it is nullable. |
 
 ### Relation navigation code
 
@@ -236,7 +244,29 @@ These build the code `PdoRelations` and `ClassVariables` weave into the persiste
 | `createRelationDeleteCode` / `createRelationLinkCode`             | The bulk-delete call and the back-reference setter (honoring an explicit link method and its optional index argument).                                                                                                                                                                                                 |
 | `createRelationUpdateReferenceCode(relation, pdo, blunt)`         | The code that writes the back-reference. The `blunt` request is **silently downgraded** unless the opposite relation is a serialized object relation with lazy or eager selection; a declared link method wins over the setter when not blunt. The one-argument overload fixes the PDO to `me()` and never uses blunt. |
 | `createRelationSetFirstArgMethodName` / `getFirstMethodAttribute` | The setter for a single-argument relation; both raise a `ModelException` on a relation whose method arguments do not fit.                                                                                                                                                                                              |
-| `getEagerRelations()`                                             | The relations eligible for the persistence layer's optimized single-join eager select.                                                                                                                                                                                                                                 |
+| `getEagerJoinTree()` / `getEagerJoinPaths()`                      | The eager join tree of the entity as [`EagerJoin`](#eagerjoin) nodes, cascaded to each relation's `select = eager:<depth>`, and the same kind of tree as `*a*b` load join terms for the generated relation finders. They differ in two ways: `getEagerJoinTree()` returns nothing when a subclass declares an eager relation, because a polymorphic select cannot vary its joins by row class, whereas `getEagerJoinPaths()` keeps them; and only `getEagerJoinPaths()` includes the inherited eager relations, because the runtime merges the superclass joins for the generic selects but not for a generated finder. |
+| `createEagerJoins()`                                              | The whole trailing `List.of(...)` argument of `PersistentObjectClassVariables.create(...)` — nested `addJoin(...)` chains with hierarchical table aliases (`e_1`, `e_1_1`). Deliberately separate from `createJoins()`: the class variables are a *static* initializer, so joined columns must be string literals.     |
+
+---
+
+## EagerJoin
+
+[`EagerJoin`](../java/org/tentackle/persist/wurblet/EagerJoin.java) is a plain node class: the eagerly selected
+`Relation`, the alias of the joined table, and the list of joins cascading from it. `getEagerJoinTree()` builds
+the tree from the entity's relations declared `select = eager`:
+
+- a top-level relation brings its own budget, `getEagerDepth()` (the `n` of `eager:n`, default 1);
+- a cascaded relation must be `eager` as well, but spends the budget of the top-level relation it hangs off, so
+  its own `n` is not consulted;
+- aliases are positional: `e_1`, `e_2`, … at the top, and a child extends its parent's alias (`e_1_1`). The
+  aliases thus stay unique even if a relation leads back to its own entity.
+
+`createEagerJoins()` renders the tree as the static `List.of(...)` argument of
+`PersistentObjectClassVariables.create(...)`. `getEagerJoinPaths()` builds a tree over the relations *including
+the inherited ones* and renders only its leaves as `*a*b` load-join terms (a term implies its parents) for the
+relation finders `PdoRelations` generates. The `e_` prefix keeps these aliases apart from the `j_` aliases of
+the load joins in the [join model](../../../../tentackle-wurblets/src/main/docs/wurblet-api.md#the-join-model).
+See [Eager Relations](eager-relations.md) for the user's view.
 
 ---
 
@@ -468,6 +498,7 @@ Specific to this package:
 | Condition                                                                        | Reaction                                                              |
 |----------------------------------------------------------------------------------|-----------------------------------------------------------------------|
 | A relation path where the template does not allow one                            | `WurbelException` — *"relation paths not allowed in wurblet …"*       |
+| A `--context=<key>` naming no attribute of the entity                            | `WurbelException` — *"no such context attribute …"*                   |
 | An optional condition inside a join filter, or in a statement-caching wurblet    | `WurbelException`                                                     |
 | A joined non-composite relation that is not serialized, under remoting           | `WurbelException` — it could not be transported                       |
 | An array operator no active backend supports                                     | `WurbelException` via `assertSupportedByBackends`                     |
@@ -484,7 +515,8 @@ Unlike the interface-side package, most of this one is covered by unit tests:
 [`DbModelWurbletTest`](../../test/java/org/tentackle/persist/wurblet/DbModelWurbletTest.java),
 [`WhereClauseGeneratorTest`](../../test/java/org/tentackle/persist/wurblet/WhereClauseGeneratorTest.java),
 [`JoinClauseGeneratorTest`](../../test/java/org/tentackle/persist/wurblet/JoinClauseGeneratorTest.java),
-[`DslDeclarationFactoryTest`](../../test/java/org/tentackle/persist/wurblet/DslDeclarationFactoryTest.java) and
+[`DslDeclarationFactoryTest`](../../test/java/org/tentackle/persist/wurblet/DslDeclarationFactoryTest.java),
+[`EagerJoinTest`](../../test/java/org/tentackle/persist/wurblet/EagerJoinTest.java) and
 [`RemoteMethodHelperTest`](../../test/java/org/tentackle/persist/wurblet/RemoteMethodHelperTest.java).
 
 They share [`WurbletTestSupport`](../../test/java/org/tentackle/persist/wurblet/WurbletTestSupport.java), which
@@ -502,7 +534,8 @@ actually emits.
 - [The Wurblet API](../../../../tentackle-wurblets/src/main/docs/wurblet-api.md) — the base classes, the argument
   mini-language and the join model this package consumes.
 - [PdoSelectList and PdoSelectUnique](pdo-select.md) — the query language from the user's point of view.
-- [Eager Relations](eager-relations.md) — what `createJoins()` produces, and why eager loading never cascades.
+- [Eager Relations](eager-relations.md) — what `createJoins()` and `createEagerJoins()` produce, and how far a
+  model-level eager relation cascades.
 - [Wurblets — Interface-Level Code Generation](../../../../tentackle-wurblets/src/main/docs/wurblets.md) — the
   interface-side counterpart.
 - [The Query DSL](../../../../tentackle-database/src/main/docs/query-dsl.md) — what `DslDeclarationFactory` feeds.

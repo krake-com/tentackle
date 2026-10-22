@@ -25,8 +25,10 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Replacement for {@code java.beans.PropertyChangeSupport} as this becomes part of the Swing desktop module
- * in Java 9.
+ * Replacement for {@code java.beans.PropertyChangeSupport}, which belongs to the {@code java.desktop} module
+ * since Java 9.
+ * <p>
+ * Not thread-safe.
  *
  * @author harald
  */
@@ -60,7 +62,7 @@ public class PropertySupport {
   /**
    * Adds a property listener that gets invoked if the given property changes.
    *
-   * @param propertyName the name of the property
+   * @param propertyName the name of the property, null or empty for all properties
    * @param l the listener
    */
   public void addPropertyListener(String propertyName, PropertyListener l) {
@@ -82,7 +84,7 @@ public class PropertySupport {
   /**
    * Removes a property listener that gets invoked if the given property changes.
    *
-   * @param propertyName the name of the property
+   * @param propertyName the name of the property, null or empty for all properties
    * @param l the listener
    */
   public void removePropertyListener(String propertyName, PropertyListener l) {
@@ -94,7 +96,9 @@ public class PropertySupport {
 
 
   /**
-   * Fires property listeners.
+   * Fires property listeners.<br>
+   * The listeners registered for the given property are invoked first, followed by the listeners
+   * for all properties.
    * <p>
    * The method must be invoked <em>before</em> the property is actually changed,
    * i.e. throwing a {@code RuntimeException} in {@link PropertyListener#changed}
@@ -103,6 +107,8 @@ public class PropertySupport {
    * @param propertyName the property name
    * @param oldValue the old value
    * @param newValue the new value
+   * @throws NullPointerException if the property name is null
+   * @throws IllegalArgumentException if the property name is empty
    */
   public void firePropertyChanged(String propertyName, Object oldValue, Object newValue) {
     if (Objects.requireNonNull(propertyName, "propertyName").isEmpty()) {

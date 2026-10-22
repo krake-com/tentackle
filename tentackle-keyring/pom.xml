@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.tentackle</groupId>
+    <artifactId>tentackle-parent</artifactId>
+    <version>25.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>tentackle-keyring</artifactId>
+  <packaging>jar</packaging>
+  <name>Tentackle Keyring</name>
+  <description>Platform-agnostic access to the credential store of the operating system</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.tentackle</groupId>
+      <artifactId>tentackle-core</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>   <!-- don't modify dependency chain! -->
+    </dependency>
+  </dependencies>
+
+  <properties>
+    <rootBasedir>${project.parent.basedir}</rootBasedir>
+    <!-- whether to test the OS credential store as well, see profile "keyring" -->
+    <keyring.native>false</keyring.native>
+  </properties>
+
+  <build>
+    <plugins>
+
+      <plugin>
+        <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <id>analyze</id>
+            <goals>
+              <goal>analyze</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>test-analyze</id>
+            <goals>
+              <goal>test-analyze</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <verbosity>info</verbosity>
+          <showCompileOutput>true</showCompileOutput>
+          <index>META-INF/RESOURCE-INDEX.LIST</index>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!-- Repeats the parent's argLine because it is replaced, not appended to.
+               Loading the OS libraries and calling into them are restricted operations. The tests are
+               patched into the module, so the calling module is org.tentackle.keyring - not ALL-UNNAMED. -->
+          <argLine>-Duser.language=en -Duser.region=US --enable-native-access=org.tentackle.keyring</argLine>
+          <systemPropertyVariables>
+            <keyring.native>${keyring.native}</keyring.native>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+
+    </plugins>
+
+  </build>
+
+  <profiles>
+    <!-- Runs the tests against the real credential store of the OS as well.
+         Needs an unlocked store, which CI machines usually don't have. -->
+    <profile>
+      <id>keyring</id>
+      <properties>
+        <keyring.native>true</keyring.native>
+      </properties>
+    </profile>
+  </profiles>
+
+</project>

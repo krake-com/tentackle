@@ -64,7 +64,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 /**
- * A controller to print a table.
+ * A controller to print a table.<br>
+ * The visible columns are copied to a printing table, which is scaled down to the page width if necessary.
+ * The rows are split into pages according to the actually rendered row heights, which is why the pages
+ * are prepared in a background task that hops to the FX thread for each page.
+ * A progress dialog shows the page being prepared or printed and allows canceling the job.
+ * The totals of a table, if any, are printed as well.
  *
  * @author harald
  */
@@ -73,7 +78,7 @@ public class TablePrinter extends AbstractFxController {
 
   /*
    * TableView and TreeTableView don't inherit from each other and thus
-   * each spawn their own related types such as TableColum, TreeTableColumn, etc...
+   * each spawn their own related types such as TableColumn, TreeTableColumn, etc...
    * As a result, since TablePrinter applies to both tables and tree tables,
    * a lot of semantically identical code is necessary.
    * However, it is not really duplicate code. There's not much we can do to reduce it.
@@ -83,7 +88,7 @@ public class TablePrinter extends AbstractFxController {
    * Prints a table.
    *
    * @param table the table to be printed
-   * @param title the job title
+   * @param title the job title, null to take the table's configured name
    * @param job the printer job
    */
   public static void print(FxTableView<?> table, String title, PrinterJob job) {
@@ -91,10 +96,10 @@ public class TablePrinter extends AbstractFxController {
   }
 
   /**
-   * Prints a treetable.
+   * Prints a tree table.
    *
-   * @param treeTable the table to be printed
-   * @param title the job title
+   * @param treeTable the tree table to be printed
+   * @param title the job title, null to take the tree table's configured name
    * @param job the printer job
    */
   public static void print(FxTreeTableView<?> treeTable, String title, PrinterJob job) {
@@ -243,13 +248,14 @@ public class TablePrinter extends AbstractFxController {
 
 
   /**
-   * Prints a table or a treetable.
+   * Prints a table or a tree table.
    *
    * @param table the table to be printed (treeTable == null)
-   * @param treeTable the treetable (table == null)
+   * @param treeTable the tree table (table == null)
    * @param title the job title
    * @param job the printer job
    * @param pageLayout the printing layout
+   * @param stage the progress dialog's stage
    */
   @SuppressWarnings({ "unchecked", "rawtypes" })
   private void print(FxTableView<?> table, FxTreeTableView<?> treeTable, String title, PrinterJob job, PageLayout pageLayout, Stage stage) {
@@ -349,7 +355,7 @@ public class TablePrinter extends AbstractFxController {
     //
     //      int printableRows = getVisibleRowCount(tableView);
     //      ... etc...
-    //    doesnt always work
+    //    doesn't always work
     //    hence -> Task running in background and invoking Fx.runAndWait from bg task.
 
     Rdc.bg(tableView, new PrinterTask(items, job, pageLayout, stage), null, null);

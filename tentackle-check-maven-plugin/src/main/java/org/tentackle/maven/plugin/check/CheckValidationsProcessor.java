@@ -19,6 +19,7 @@
 package org.tentackle.maven.plugin.check;
 
 import org.tentackle.buildsupport.AbstractTentackleProcessor;
+import org.tentackle.validate.RepeatableValidation;
 import org.tentackle.validate.Validation;
 import org.tentackle.validate.Validator;
 
@@ -28,20 +29,24 @@ import javax.annotation.processing.SupportedOptions;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
 import javax.tools.Diagnostic;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 
 /**
- * Validations checker processor.
+ * Validations checker processor.<br>
+ * Creates a validator for each occurrence of a validation annotation, including repeated ones.
+ * Validators that cannot be created are reported as errors via the {@code Messager}.
  *
  * @author harald
  */
@@ -51,10 +56,11 @@ public class CheckValidationsProcessor extends AbstractTentackleProcessor {
 
   /**
    * Validator entry.<br>
-   * Hold the validator and the class where the annotation was found.
+   * Holds the validator and the class where the annotation was found.
    *
    * @param validator the validator instance
-   * @param className the enclosing class of the annotation
+   * @param className the binary name of the enclosing class of the annotation, i.e. nested classes
+   *        are separated by a {@code '$'} so that the class can be loaded
    */
   public record ValidatorEntry(Validator validator, String className) {
 
@@ -67,9 +73,18 @@ public class CheckValidationsProcessor extends AbstractTentackleProcessor {
 
   private static final String VALIDATION_CLASSNAME = Validation.class.getName();
 
+  private static final String REPEATABLE_VALIDATION_CLASSNAME = RepeatableValidation.class.getName();
+
   private ClassLoader processingClassLoader;
   private int errors;
   private final List<ValidatorEntry> validators;
+
+  /**
+   * The elements already processed per validation annotation.<br>
+   * A repeated annotation is offered to the processor as its container, but the compiler may
+   * offer the repeated annotation itself as well, which would create the validators twice.
+   */
+  private final Map<String, Set<Element>> processedElements;
 
 
   /**
@@ -77,6 +92,7 @@ public class CheckValidationsProcessor extends AbstractTentackleProcessor {
    */
   public CheckValidationsProcessor() {
     validators = new ArrayList<>();
+    processedElements = new HashMap<>();
   }
 
 
@@ -117,6 +133,37 @@ public class CheckValidationsProcessor extends AbstractTentackleProcessor {
     this.processingClassLoader = processingClassLoader;
   }
 
+  /**
+   * Gets the annotation type a {@code Class}-valued annotation mirror refers to.
+   *
+   * @param mirror the annotation mirror
+   * @return the annotation type, null if the mirror has no such value
+   */
+  private TypeElement getAnnotationClassValue(AnnotationMirror mirror) {
+    for (AnnotationValue value : mirror.getElementValues().values()) {
+      if (value.getValue() instanceof DeclaredType declaredType &&
+          declaredType.asElement() instanceof TypeElement typeElement) {
+        return typeElement;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Gets the {@code @Validation} mirror of an annotation type.
+   *
+   * @param annotationType the annotation type
+   * @return the mirror, null if the type is not a validation annotation
+   */
+  private AnnotationMirror getValidationMirror(TypeElement annotationType) {
+    for (AnnotationMirror mirror : annotationType.getAnnotationMirrors()) {
+      if (mirror.getAnnotationType().toString().equals(VALIDATION_CLASSNAME)) {
+        return mirror;
+      }
+    }
+    return null;
+  }
+
   @Override
   public boolean process(Set<? extends TypeElement> annotationTypes, RoundEnvironment roundEnv) {
     boolean claimed = false;
@@ -124,14 +171,31 @@ public class CheckValidationsProcessor extends AbstractTentackleProcessor {
       for (TypeElement annotationType: annotationTypes) {
         if (!annotationType.toString().startsWith("java.lang.")) {
           for (AnnotationMirror mirror : annotationType.getAnnotationMirrors()) {
-            if (mirror.getAnnotationType().toString().equals(VALIDATION_CLASSNAME)) {
+            String mirrorType = mirror.getAnnotationType().toString();
+            if (mirrorType.equals(VALIDATION_CLASSNAME)) {
               // annotated with @Validation
               if (isDebugLogging()) {
                 processingEnv.getMessager().printMessage(
                         Diagnostic.Kind.NOTE, "processing annotation " + annotationType);
               }
-              processAnnotation(annotationType, mirror, roundEnv);
+              processAnnotation(annotationType, annotationType, mirror, roundEnv);
               claimed = true;
+            }
+            else if (mirrorType.equals(REPEATABLE_VALIDATION_CLASSNAME)) {
+              // annotated with @RepeatableValidation: a repeated validation annotation is replaced
+              // by its container, so the round offers the container only. The validators are those
+              // of the repeated annotation it holds.
+              TypeElement repeatedType = getAnnotationClassValue(mirror);
+              AnnotationMirror validationMirror = repeatedType == null ? null : getValidationMirror(repeatedType);
+              if (validationMirror != null) {
+                if (isDebugLogging()) {
+                  processingEnv.getMessager().printMessage(
+                          Diagnostic.Kind.NOTE, "processing repeated annotation " + repeatedType +
+                                                " contained in " + annotationType);
+                }
+                processAnnotation(annotationType, repeatedType, validationMirror, roundEnv);
+                claimed = true;
+              }
             }
           }
         }
@@ -143,16 +207,19 @@ public class CheckValidationsProcessor extends AbstractTentackleProcessor {
   /**
    * Processes the annotation.
    *
-   * @param annotationType the annotation type
-   * @param mirror the annotation mirror
-   * @param roundEnv the processing environment
+   * @param declaredType the annotation type as it appears in the sources, i.e. the container for
+   *        a repeated annotation
+   * @param annotationType the validation annotation type, i.e. the repeated annotation itself
+   * @param mirror the {@code @Validation} mirror of the validation annotation type
+   * @param roundEnv the round environment
    */
   @SuppressWarnings("unchecked")
-  public void processAnnotation(TypeElement annotationType, AnnotationMirror mirror, RoundEnvironment roundEnv) {
+  public void processAnnotation(TypeElement declaredType, TypeElement annotationType,
+                                AnnotationMirror mirror, RoundEnvironment roundEnv) {
 
     Class<Annotation> annotationClass;
     try {
-      annotationClass = (Class<Annotation>) processingClassLoader.loadClass(annotationType.toString());
+      annotationClass = (Class<Annotation>) getProcessingClassLoader().loadClass(annotationType.toString());
     }
     catch (ClassNotFoundException nfe) {
       getProcessingEnvironment().getMessager().printMessage(
@@ -160,7 +227,12 @@ public class CheckValidationsProcessor extends AbstractTentackleProcessor {
       return;
     }
 
-    for (Element element : roundEnv.getElementsAnnotatedWith(annotationType)) {
+    Set<Element> processed = processedElements.computeIfAbsent(annotationType.toString(), t -> new HashSet<>());
+
+    for (Element element : roundEnv.getElementsAnnotatedWith(declaredType)) {
+      if (!processed.add(element)) {
+        continue;   // already processed via the repeated annotation or its container
+      }
       if (isDebugLogging()) {
         getProcessingEnvironment().getMessager().printMessage(
                 Diagnostic.Kind.NOTE, "found " + element + " in " +
@@ -194,17 +266,13 @@ public class CheckValidationsProcessor extends AbstractTentackleProcessor {
             Validator validator = (Validator) validatorClass.getDeclaredConstructor().newInstance();
             validator.setAnnotation(annotation);
             Element enclosingClass = element;
-            while (enclosingClass != null &&
-                   enclosingClass.getKind() != ElementKind.INTERFACE &&
-                   enclosingClass.getKind() != ElementKind.CLASS) {
+            while (enclosingClass != null && !(enclosingClass instanceof TypeElement)) {
               enclosingClass = enclosingClass.getEnclosingElement();
             }
-            String enclosingName = enclosingClass == null ? "java.lang.Object" : enclosingClass.asType().toString();
-            // cut generics
-            int ndx = enclosingName.indexOf('<');
-            if (ndx > 0) {
-              enclosingName = enclosingName.substring(0, ndx);
-            }
+            // the binary name, not the canonical one: nested classes are separated by a '$',
+            // or the class could not be loaded by the mojo (see CheckValidationsMojo#checkMessage)
+            String enclosingName = enclosingClass == null ? "java.lang.Object"
+                : getProcessingEnvironment().getElementUtils().getBinaryName((TypeElement) enclosingClass).toString();
             validators.add(new ValidatorEntry(validator, enclosingName));
           }
           catch (ClassCastException cx) {

@@ -25,11 +25,15 @@ import org.tentackle.trip.TripTypeBuilderFactory;
 import org.tentackle.trip.builder.ObjectTypeBuilder;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * The default type builder factory.
+ * The default type builder factory.<br>
+ * Multidimensional arrays are built by the builder for {@code Object[]}, dynamic proxies by the one for
+ * {@link java.lang.reflect.Proxy}. If no builder is found, the {@link ObjectTypeBuilder} is used.
+ * The builders are cached per class.
  *
  * @author harald
  */
@@ -75,6 +79,13 @@ public class DefaultTripTypeBuilderFactory implements TripTypeBuilderFactory {
         if (dimensions > 1) {
           clz = Object[].class;   // use ArrayTripTypeBuilder for multi-dimensional arrays
         }
+      }
+      else if (Proxy.isProxyClass(clz)) {
+        // dynamic proxy classes are generated at runtime (or ahead-of-time under native-image)
+        // and their synthetic name is not necessarily resolvable via Class.forName, which the
+        // classmapper's lenient hierarchy walk requires. Map via the well-known Proxy.class
+        // instead, which is explicitly registered and needs no hierarchy walk.
+        clz = Proxy.class;
       }
       try {
         Class<?> builderClazz = builderClassMapper.mapLenient(clz);

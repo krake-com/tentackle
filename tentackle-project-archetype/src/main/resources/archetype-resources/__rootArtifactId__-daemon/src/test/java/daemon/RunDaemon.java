@@ -11,6 +11,11 @@ import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
 
+/**
+ * Launches the daemon from within the IDE or via {@code mvn -Dtest=RunDaemon test}.<br>
+ * Connects as configured in {@code backend.properties}.
+ * Not a regular test: the class name doesn't match surefire's default includes.
+ */
 public class RunDaemon {
 
   private int exitValue;

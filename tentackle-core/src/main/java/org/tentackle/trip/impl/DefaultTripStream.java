@@ -32,6 +32,7 @@ import org.tentackle.trip.Serializer;
 import org.tentackle.trip.TripComponent;
 import org.tentackle.trip.TripConstants;
 import org.tentackle.trip.TripFactory;
+import org.tentackle.trip.TripFilter;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
 import org.tentackle.trip.TripStreamClosedException;
@@ -42,6 +43,7 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * Default implementation of a {@link TripStream}.
@@ -76,9 +78,9 @@ public class DefaultTripStream implements TripStream {
   private final Dictionary dictionary;
   private final Serializer serializer;
   private final Deserializer deserializer;
-  private final Map<String, Class<?>> classMap = new HashMap<>();
-  private Map<Object, Reference<?>> identityMap = new IdentityHashMap<>();
-  private Map<Object, Reference<?>> deDupMap = new HashMap<>();
+  private final HashMap<String, Class<?>> classMap = new HashMap<>();
+  private IdentityHashMap<Object, Reference<?>> identityMap = new IdentityHashMap<>();
+  private HashMap<Object, Reference<?>> deDupMap = new HashMap<>();
   private Reference<?>[] references;
   private int nextReferenceId;
 
@@ -88,10 +90,20 @@ public class DefaultTripStream implements TripStream {
   // concurrent threads.
   private DictionaryEntry[] dictionaryEntries;
   private DictionaryEntry[] temporaryDictionaryEntries;
-  private final Map<String, DictionaryEntry> dictionaryEntriesByName;
-  private final Map<Class<?>, TripType<?>> tripTypes;
+  private final HashMap<String, DictionaryEntry> dictionaryEntriesByName;
+  private final IdentityHashMap<Class<?>, DictionaryEntry> dictionaryEntriesByClass;
+  private final HashMap<Class<?>, TripType<?>> tripTypes;
   private final TripFactory factory;
   private final TripType<DictionaryEntry> dictTripType;
+
+  /**
+   * The resolver passed to {@link #tripTypes}.<br>
+   * Held in a field because {@code factory::getType} captures the factory, so writing it inline
+   * would allocate a new function object on every {@link #getType} call.
+   */
+  private final Function<Class<?>, TripType<?>> typeResolver;
+
+  private TripFilter filter;
 
 
   /**
@@ -106,9 +118,11 @@ public class DefaultTripStream implements TripStream {
     this.serializer = Objects.requireNonNull(serializer, "serializer missing");
     this.deserializer = Objects.requireNonNull(deserializer, "deserializer missing");
     dictionaryEntriesByName = new HashMap<>();
+    dictionaryEntriesByClass = new IdentityHashMap<>();
     tripTypes = new HashMap<>();
     factory = TripFactory.getInstance();
     dictTripType = factory.getType(DictionaryEntry.class);
+    typeResolver = factory::getType;
     clear();
   }
 
@@ -169,14 +183,42 @@ public class DefaultTripStream implements TripStream {
 
   @Override
   public DictionaryEntry getDictionaryEntry(Class<?> clazz) {
+    // Keyed by the class first: this runs for every object, enum value and collection written,
+    // and again on the read side for every one read as a component. Going through
+    // getSerializableClassName() and a string-hashed lookup for each of them is pure overhead,
+    // since the class already identifies the entry.
+    DictionaryEntry dictionaryEntry = dictionaryEntriesByClass.get(clazz);
+    if (dictionaryEntry != null && (!dictionaryEntry.isClientOnly() || !dictionaryEntry.isSuperseded())) {
+      return dictionaryEntry;
+    }
+    // kept out of line, so that the cache hit above stays small enough to be inlined
+    return resolveDictionaryEntry(clazz, dictionaryEntry);
+  }
+
+  /**
+   * Resolves the dictionary entry for a class not cached by this stream.
+   *
+   * @param clazz the class
+   * @param supersededEntry the cached entry superseded by another one, null if none
+   * @return the entry, null if the dictionary has none
+   */
+  private DictionaryEntry resolveDictionaryEntry(Class<?> clazz, DictionaryEntry supersededEntry) {
+    if (supersededEntry != null) {
+      // a server entry replaced the client-only entry: drop it and look up the current one
+      dictionaryEntriesByClass.remove(clazz);
+      dictionaryEntriesByName.remove(supersededEntry.getClassName());
+    }
     String className = ReflectionHelper.getSerializableClassName(clazz);
     DictionaryEntry dictionaryEntry = dictionaryEntriesByName.get(className);
     if (dictionaryEntry == null) {
       dictionaryEntry = dictionary.getEntry(className);
-      if (dictionaryEntry != null && !dictionaryEntry.isClientOnly()) {
-        // since server entries replace client-only entries, we cannot cache client-only entries
-        dictionaryEntriesByName.put(className, dictionaryEntry);
-      }
+    }
+    if (dictionaryEntry != null && (!dictionaryEntry.isClientOnly() || !dictionaryEntry.isSuperseded())) {
+      // Client-only entries are cached as well, since a client keeps them for every class the
+      // server never sends back, i.e., for most of what it sends. Server entries replace them,
+      // which marks them as superseded and evicts them on the next lookup (see above).
+      dictionaryEntriesByName.put(className, dictionaryEntry);
+      dictionaryEntriesByClass.put(clazz, dictionaryEntry);
     }
     return dictionaryEntry;
   }
@@ -184,7 +226,7 @@ public class DefaultTripStream implements TripStream {
   @Override
   @SuppressWarnings("unchecked")
   public <T> TripType<T> getType(Class<? extends T> clazz) {
-    return (TripType<T>) tripTypes.computeIfAbsent(clazz, factory::getType);
+    return (TripType<T>) tripTypes.computeIfAbsent(clazz, typeResolver);
   }
 
   @Override
@@ -200,9 +242,23 @@ public class DefaultTripStream implements TripStream {
   @Override
   @SuppressWarnings("unchecked")
   public <T> Reference<T> getReference(T object, boolean deduplicate) {
-    return deduplicate ?
-      (Reference<T>) deDupMap.computeIfAbsent(object, this::createAndAddReference) :
-      (Reference<T>) identityMap.computeIfAbsent(object, this::createAndAddReference);
+    // Deliberately not computeIfAbsent: the mapping function would capture this and allocate on
+    // every call, and IdentityHashMap does not override it anyway, so its default already probes
+    // twice. This is the single hottest lookup on the write path.
+    if (deduplicate) {
+      Reference<?> reference = deDupMap.get(object);
+      if (reference == null) {
+        reference = createAndAddReference(object);
+        deDupMap.put(object, reference);
+      }
+      return (Reference<T>) reference;
+    }
+    Reference<?> reference = identityMap.get(object);
+    if (reference == null) {
+      reference = createAndAddReference(object);
+      identityMap.put(object, reference);
+    }
+    return (Reference<T>) reference;
   }
 
   @Override
@@ -245,10 +301,22 @@ public class DefaultTripStream implements TripStream {
 
   @Override
   public void clear() {
-    // creating new maps is faster than clear() for large maps
-    identityMap = new IdentityHashMap<>();
-    deDupMap = new HashMap<>();
-    initializeReferences();
+    if (references != null && references.length == INITIAL_REF_ARRAY_SIZE) {
+      // A small message: the array never grew, so neither map holds more than its length.
+      // Recycling them is cheaper than allocating anew, which would happen several times per remote call.
+      if (nextReferenceId > 0) {    // otherwise, nothing was referenced at all
+        identityMap.clear();
+        deDupMap.clear();
+        Arrays.fill(references, 0, nextReferenceId, null);
+        nextReferenceId = 0;
+      }
+    }
+    else {
+      // creating new maps is faster than clear() for large maps
+      identityMap = new IdentityHashMap<>();
+      deDupMap = new HashMap<>();
+      initializeReferences();
+    }
   }
 
   @Override
@@ -260,6 +328,16 @@ public class DefaultTripStream implements TripStream {
       references[reference.getReferenceId()] = reference;
       reference.markReceived();
     });
+  }
+
+  @Override
+  public void setFilter(TripFilter filter) {
+    this.filter = filter;
+  }
+
+  @Override
+  public TripFilter getFilter() {
+    return filter;
   }
 
   @Override
@@ -288,13 +366,20 @@ public class DefaultTripStream implements TripStream {
 
   @Override
   public int readComponentOrdinal(OpCode opCode) {
-    return switch (opCode) {
-      case DefaultOpCode.COMPONENT_ORDINAL -> deserializer.deserializeInt();
-      case DefaultOpCode.COMPONENT_ORDINAL3 -> deserializer.deserializeInt3();
-      case DefaultOpCode.COMPONENT_ORDINAL2 -> deserializer.deserializeShort();
-      case DefaultOpCode.COMPONENT_ORDINAL1 -> deserializer.deserializeByte();
-      default -> throw new TripRuntimeException("not a component ordinal opCode: " + opCode);
-    };
+    // Narrowed to DefaultOpCode before switching: with the OpCode interface as the selector
+    // type, javac compiles the switch to an invokedynamic typeSwitch, whose generated body is
+    // a linear chain of comparisons instead of a jump table. An opcode of another
+    // implementation is not one of ours and takes the same path as an unknown one.
+    if (opCode instanceof DefaultOpCode code) {
+      return switch (code) {
+        case COMPONENT_ORDINAL -> deserializer.deserializeInt();
+        case COMPONENT_ORDINAL3 -> deserializer.deserializeInt3();
+        case COMPONENT_ORDINAL2 -> deserializer.deserializeShort();
+        case COMPONENT_ORDINAL1 -> deserializer.deserializeByte();
+        default -> throw new TripRuntimeException("not a component ordinal opCode: " + opCode);
+      };
+    }
+    throw new TripRuntimeException("not a component ordinal opCode: " + opCode);
   }
 
   @Override
@@ -303,7 +388,7 @@ public class DefaultTripStream implements TripStream {
     int diff = ordinal - lastOrdinal;
     if (diff > 1) {
       if (diff < 17) {
-        getSerializer().serializeUnsignedAsByte(DefaultOpCode.COMPONENT_ORDINAL_SKIP1.toExternal() + diff - 2);
+        getSerializer().serializeUnsignedAsByte(DefaultOpCode.COMPONENT_ORDINAL_SKIP1.getCode() + diff - 2);
       }
       else {
         writeComponentOrdinal(ordinal);
@@ -357,13 +442,20 @@ public class DefaultTripStream implements TripStream {
 
   @Override
   public int readDictionaryOrdinal(OpCode opCode) {
-    return switch (opCode) {
-      case DefaultOpCode.DICTIONARY_ORDINAL -> deserializer.deserializeInt();
-      case DefaultOpCode.DICTIONARY_ORDINAL3 -> deserializer.deserializeInt3();
-      case DefaultOpCode.DICTIONARY_ORDINAL2 -> deserializer.deserializeShort();
-      case DefaultOpCode.DICTIONARY_ORDINAL1 -> deserializer.deserializeByte();
-      default -> throw new TripRuntimeException("not a dictionary ordinal opCode: " + opCode);
-    };
+    // Narrowed to DefaultOpCode before switching: with the OpCode interface as the selector
+    // type, javac compiles the switch to an invokedynamic typeSwitch, whose generated body is
+    // a linear chain of comparisons instead of a jump table. An opcode of another
+    // implementation is not one of ours and takes the same path as an unknown one.
+    if (opCode instanceof DefaultOpCode code) {
+      return switch (code) {
+        case DICTIONARY_ORDINAL -> deserializer.deserializeInt();
+        case DICTIONARY_ORDINAL3 -> deserializer.deserializeInt3();
+        case DICTIONARY_ORDINAL2 -> deserializer.deserializeShort();
+        case DICTIONARY_ORDINAL1 -> deserializer.deserializeByte();
+        default -> throw new TripRuntimeException("not a dictionary ordinal opCode: " + opCode);
+      };
+    }
+    throw new TripRuntimeException("not a dictionary ordinal opCode: " + opCode);
   }
 
   @Override

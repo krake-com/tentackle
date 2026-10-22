@@ -25,7 +25,8 @@ import org.tentackle.fx.rdc.table.RdcTableConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
 
 /**
- * PDO-aware {@link FxFactory}.
+ * PDO-aware {@link FxFactory}.<br>
+ * Creates {@link RdcTableConfiguration}s, which use the PDO cells for PDO-valued columns.
  */
 @Service(FxFactory.class)
 public class RdcFxFactory extends DefaultFxFactory {

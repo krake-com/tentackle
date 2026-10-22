@@ -71,12 +71,13 @@ public interface Task extends Runnable, Serializable, Comparable<Task> {
 
   /**
    * Gets the result of the task.
-   * @return the result
+   *
+   * @return the result, null if none
    */
   Serializable getResult();
 
   /**
-   * Sets the result of the task
+   * Sets the result of the task.
    *
    * @param result the result
    */
@@ -90,9 +91,10 @@ public interface Task extends Runnable, Serializable, Comparable<Task> {
   long getCompleted();
 
   /**
-   * Sets the completed timestamp.
+   * Sets the completed timestamp.<br>
+   * Invoked by the dispatcher.
    *
-   * @param completed true if completed
+   * @param completed the epochal time in milliseconds
    */
   void setCompleted(long completed);
 
@@ -104,9 +106,10 @@ public interface Task extends Runnable, Serializable, Comparable<Task> {
   long getStarted();
 
   /**
-   * Sets the stated timestamp.
+   * Sets the started timestamp.<br>
+   * Invoked by the dispatcher.
    *
-   * @param started true if started
+   * @param started the epochal time in milliseconds
    */
   void setStarted(long started);
 
@@ -125,12 +128,12 @@ public interface Task extends Runnable, Serializable, Comparable<Task> {
   void removeTaskListener(TaskListener listener);
 
   /**
-   * Invoke {@link TaskListener#started(org.tentackle.task.Task)} for all listeners.
+   * Invokes {@link TaskListener#started(org.tentackle.task.Task)} for all listeners of this task.
    */
   void fireStarted();
 
   /**
-   * Invoke {@link TaskListener#completed(org.tentackle.task.Task)} for all listeners.
+   * Invokes {@link TaskListener#completed(org.tentackle.task.Task)} for all listeners of this task.
    */
   void fireCompleted();
 
@@ -162,7 +165,7 @@ public interface Task extends Runnable, Serializable, Comparable<Task> {
    * Repeatable tasks are not removed from the queue but get a new
    * scheduled epochal time and are re-queued.
    *
-   * @param repeat the repeat interval in milliseconds, 0 if execute only once
+   * @param repeat the repeat interval in milliseconds
    */
   void setRepeatInterval(long repeat);
 

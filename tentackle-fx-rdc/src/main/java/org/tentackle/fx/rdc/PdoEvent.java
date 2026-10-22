@@ -28,7 +28,8 @@ import org.tentackle.pdo.PersistentDomainObject;
 import java.io.Serial;
 
 /**
- * Event related to persistence operations on a PDO.
+ * Event related to persistence operations on a PDO.<br>
+ * Fired by the {@link org.tentackle.fx.rdc.crud.PdoCrud} to the handlers and filters registered on it.
  *
  * @author harald
  */
@@ -45,27 +46,30 @@ public class PdoEvent extends Event {
 
 
   /**
-   * A new PDO has been inserted to the database.
+   * A new PDO has been inserted into the database.
    */
   public static final EventType<PdoEvent> CREATE = new EventType<>(PdoEvent.ANY, "CREATE");
 
   /**
-   * A new PDO has been read from the database.
+   * A PDO has been read from the database.
    */
   public static final EventType<PdoEvent> READ = new EventType<>(PdoEvent.ANY, "READ");
 
   /**
-   * An existing PDO has been updated to the database.
+   * An existing PDO has been updated in the database.
    */
   public static final EventType<PdoEvent> UPDATE = new EventType<>(PdoEvent.ANY, "UPDATE");
 
   /**
-   * PDO has been deleted from the database.
+   * A PDO has been deleted from the database.
    */
   public static final EventType<PdoEvent> DELETE = new EventType<>(PdoEvent.ANY, "DELETE");
 
 
 
+  /**
+   * The PDO the event refers to.
+   */
   private final PersistentDomainObject<?> pdo;
 
 
@@ -86,7 +90,7 @@ public class PdoEvent extends Event {
   /**
    * Gets the PDO.
    *
-   * @return the pdo
+   * @return the PDO
    */
   public PersistentDomainObject<?> getPdo() {
     return pdo;

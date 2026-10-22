@@ -38,6 +38,7 @@ import org.tentackle.session.SessionPoolProvider;
 import org.tentackle.session.auth.Authentication;
 import org.tentackle.session.auth.AuthenticationManager;
 import org.tentackle.session.auth.AuthenticationProvider;
+import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.Registry;
 import org.tentackle.trip.Remote;
 import org.tentackle.trip.RemoteRoot;
@@ -61,6 +62,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * User session within the application server.
@@ -94,7 +96,8 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    *
    * @param checkInterval is the interval in ms
    */
-  public static void startCleanupThread(long checkInterval) {
+  public static synchronized void startCleanupThread(long checkInterval) {
+    stopCleanupThread();    // don't leak a running thread if started twice
     cleanupThread = new RemoteDbSessionCleanupThread(checkInterval, SESSIONS, 3);
     cleanupThread.start();
   }
@@ -190,13 +193,13 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    */
   private static class Resources implements Runnable {
 
-    private final RemoteDbConnectionImpl con;       // the connection object
-    private final SessionInfo serverInfo;             // the server info (to restore after close)
-    private final MethodStatistics methodStats;       // method statistics (managed by invocation handler, null if no stats)
-    private RemoteDbSessionImpl me;                 // != null if programmatic close
-    private String name;                              // the session name
-    private Db db;                                    // the local session
-    private String mdcInfo;                           // the cached MDC info
+    private final RemoteDbConnectionImpl con;   // the connection object
+    private final SessionInfo serverInfo;       // the server info (to restore after close)
+    private final MethodStatistics methodStats; // method statistics (managed by invocation handler, null if no stats)
+    private RemoteDbSessionImpl me;             // != null if programmatic close
+    private String name;                        // the session name
+    private volatile Db db;                     // the local session (read by the cleanup thread)
+    private String mdcInfo;                     // the cached MDC info
 
     Resources(Db db, RemoteDbConnectionImpl con, SessionInfo serverInfo) {
       this.db = db;
@@ -293,16 +296,20 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   private final SessionInfo serverInfo;                       // the server info for creating a new session
   private final long sessionNumber;                           // unique session number
   private final String clientHost;                            // the client host string
+  private final Dictionary dictionary;                        // to prevent GC as long as this session is open
   private final Map<String, Logger> loggers;                  // logger-name :: logger
-  private int timeout;                                        // timeout in polling intervals of the RemoteDbSessionCleanupThread
+  private volatile int timeout;                               // timeout in polling intervals of the RemoteDbSessionCleanupThread (read by that thread)
   private int timeoutCount;                                   // consecutive timeouts
-  private long closedSince;                                   // session closed since, 0 if still open
+  private volatile long closedSince;                          // session closed since, 0 if still open
+  private final Object closeLock = new Object();              // serializes closing by the client and the cleanup thread
   private Registry registry;                                  // the registry where the delegate is registered
   private UUID remoteId;                                      // the remote delegate ID of this session
   private RemoteDbSessionInvocationFilter invocationFilter;   // optional invocation filter
   private Authentication authentication;                      // the proven identity, null if not authenticated yet
   private final AtomicBoolean modificationTrackerSession;     // true if this the remote ModificationTracker's session
   private final Queue<MasterSerialEvent> masterSerialEvents;  // master serial event queue
+  private final AtomicReference<Thread> invokingThread;       // the thread invoking a delegate method, null if none
+  private int invocationDepth;                                // nested invocations (accessed by the invoking thread only)
 
 
   /**
@@ -330,21 +337,44 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
     }
 
     sessionNumber = LAST_SESSION_NUMBER.incrementAndGet();
+    loggers = new ConcurrentHashMap<>();
+    modificationTrackerSession = new AtomicBoolean();
+    masterSerialEvents = new ConcurrentLinkedQueue<>();
+    invokingThread = new AtomicReference<>();
 
     Db db = null;
     try {
       TransportClientInfo transportInfo = TransportClientInfo.get();
-      // use only the host address since the port-number is the one at this moment
-      // and is not fixed for further invocations for this session
-      clientHost = transportInfo == null ? "?" : transportInfo.getHost();
+      if (transportInfo != null) {
+        // use only the host address since the port-number is the one at this moment
+        // and is not fixed for further invocations for this session
+        clientHost = transportInfo.getHost();
+        // Since the dictionary is shared among all TRIP connections of the same client,
+        // it must not be GC'd as long as a single session for this client is still open.
+        // TCP connections remain open until explicitly closed.
+        // QUIC streams, however, are only virtual connections, and they can be closed
+        // and opened by the protocol at any time. So it could well be that there
+        // is no stream at all temporarily.
+        dictionary = transportInfo.dictionary();
+      }
+      else {
+        clientHost = "?";
+        dictionary = null;
+      }
       db = openDb();
       resources = new Resources(db, con, this.serverInfo);
+      // before SESSIONS.add: from then on, the cleanup thread checks this session for timeouts
+      timeout = determineTimeout(db, clientInfo, serverInfo);
+      resources.name = toString();    // chicken egg...
       synchronized (SESSIONS) {   // prevents race condition between verifySessionInfo and SESSIONS.add
         this.clientInfo.setSince(System.currentTimeMillis());
         db.makeCurrent();   // authentication providers may need the persistence layer to look up the user
         verifySessionInfo(this.clientInfo);
         db.setSessionInfo(this.clientInfo);  // switch to client info for the lifetime of this remote session
         SESSIONS.add(new WeakReference<>(this));
+      }
+      if (dictionary == null) {
+        LOGGER.warning("no dictionary assigned to {0}", this);
       }
     }
     catch (RuntimeException ex) {
@@ -364,13 +394,6 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
       throw new PersistenceException("could not setup remote session", ex);
     }
 
-    timeout = determineTimeout(db, clientInfo, serverInfo);
-    loggers = new ConcurrentHashMap<>();
-
-    modificationTrackerSession = new AtomicBoolean();
-    masterSerialEvents = new ConcurrentLinkedQueue<>();
-
-    resources.name = toString();    // chicken egg...
     cleanable = CLEANER.register(this, resources);
   }
 
@@ -578,6 +601,41 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   }
 
   /**
+   * Enters the invocation of a delegate method by the current thread.<br>
+   * The local session is not thread-safe, hence only one thread at a time may invoke methods
+   * of this session's delegates. Nested invocations by the same thread are allowed.
+   *
+   * @return true if entered, false if another thread is invoking a delegate method of this session
+   * @see #exitInvocation()
+   */
+  boolean enterInvocation() {
+    Thread currentThread = Thread.currentThread();
+    if (invokingThread.get() != currentThread && !invokingThread.compareAndSet(null, currentThread)) {
+      return false;
+    }
+    invocationDepth++;
+    return true;
+  }
+
+  /**
+   * Exits the invocation of a delegate method entered by {@link #enterInvocation()}.
+   */
+  void exitInvocation() {
+    if (--invocationDepth == 0) {
+      invokingThread.set(null);
+    }
+  }
+
+  /**
+   * Gets the thread invoking a delegate method of this session.
+   *
+   * @return the thread, null if none
+   */
+  public Thread getInvokingThread() {
+    return invokingThread.get();
+  }
+
+  /**
    * Returns whether this is the remote session of the modification tracker.
    *
    * @return true if tracker's session
@@ -663,10 +721,28 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The local session is not thread-safe, hence the session is not closed while an invocation
+   * of one of its delegates is in progress. Otherwise, the pending transaction would be rolled back
+   * from another thread, and a pooled local session would be returned to the pool while still in use.
+   *
+   * @throws PersistenceException if another thread is invoking a delegate method of this session
+   */
   @Override
   public void close() {
-    cleanup(false);
-    closeDb(false);
+    if (!enterInvocation()) {
+      throw new PersistenceException(getSession(), "close rejected: " + this + " is in use by " +
+                                     getInvokingThread() + " -> client misbehaving?");
+    }
+    try {
+      cleanup(false);
+      closeDb(false);
+    }
+    finally {
+      exitInvocation();
+    }
   }
 
   @Override
@@ -929,10 +1005,12 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    * @param crashed true if the client crashed, else regular logout
    */
   protected void cleanup(boolean crashed) {
-    DbUtilities.getInstance().cleanupRemoteSession(this);
-    unregisterFromRegistry();
-    if (resources != null) {
-      resources.cleanup(crashed);
+    synchronized (closeLock) {
+      DbUtilities.getInstance().cleanupRemoteSession(this);
+      unregisterFromRegistry();
+      if (resources != null) {
+        resources.cleanup(crashed);
+      }
     }
   }
 
@@ -953,15 +1031,17 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    * @param cleanup true if db must be physically closed even if pooled, due to session cleanup
    */
   protected void closeDb(boolean cleanup) {
-    if (closedSince == 0) {
-      if (resources != null) {
-        resources.me = this;    // programmatic cleanup
-        resources.closeDb(cleanup);
+    synchronized (closeLock) {    // the client's logout may race with the cleanup thread
+      if (closedSince == 0) {
+        if (resources != null) {
+          resources.me = this;    // programmatic cleanup
+          resources.closeDb(cleanup);
+        }
+        closedSince = System.currentTimeMillis();
       }
-      closedSince = System.currentTimeMillis();
-    }
-    if (cleanable != null) {
-      cleanable.clean();
+      if (cleanable != null) {
+        cleanable.clean();
+      }
     }
   }
 
@@ -971,18 +1051,20 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    * Simply marks the session closed and moves all references to GC.
    */
   protected void forceCleanup() {
-    closedSince = System.currentTimeMillis();
-    Db zombieDb = resources.db;
-    if (zombieDb != null) {
-      resources.db = null;  // block any further TRIP requests (isOpen() == false)
-      try {
-        zombieDb.close();   // should work
-        if (zombieDb.isPooled()) {
-          zombieDb.getPool().put(zombieDb);
+    synchronized (closeLock) {
+      closedSince = System.currentTimeMillis();
+      Db zombieDb = resources.db;
+      if (zombieDb != null) {
+        resources.db = null;  // block any further TRIP requests (isOpen() == false)
+        try {
+          zombieDb.close();   // should work
+          if (zombieDb.isPooled()) {
+            zombieDb.getPool().put(zombieDb);
+          }
         }
-      }
-      catch (RuntimeException ex) {
-        LOGGER.warning("forced cleanup may be incomplete", ex);
+        catch (RuntimeException ex) {
+          LOGGER.warning("forced cleanup may be incomplete", ex);
+        }
       }
     }
   }
@@ -995,7 +1077,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    */
   protected boolean hasTimedOut() {
     Db ldb = resources.db;    // local copy in case of race cond avoids NPE
-    if (ldb == null || ldb.isAlive()) {
+    if (ldb == null || ldb.isAlive() || invokingThread.get() != null) {   // an invocation in progress is alive as well
       timeoutCount = 0;
     }
     else  {

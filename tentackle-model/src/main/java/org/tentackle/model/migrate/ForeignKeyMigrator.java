@@ -32,7 +32,7 @@ public class ForeignKeyMigrator {
 
   private final Backend backend;                          // the backend
   private final ForeignKey foreignKey;                    // the foreign key to migrate, null if no such fk in model
-  private final ForeignKeyMetaData foreignKeyMetaData;    // the foreign key metadata, null if key does not exist
+  private final ForeignKeyMetaData foreignKeyMetaData;    // the foreign key metadata, null if the key does not exist in the database
 
 
   /**
@@ -40,7 +40,7 @@ public class ForeignKeyMigrator {
    *
    * @param backend the backend
    * @param foreignKey the foreign key to migrate, null if no such fk in model
-   * @param foreignKeyMetaData the foreign key metadata, null if key does not exist
+   * @param foreignKeyMetaData the foreign key metadata, null if the key does not exist in the database
    */
   public ForeignKeyMigrator(Backend backend, ForeignKey foreignKey, ForeignKeyMetaData foreignKeyMetaData) {
     this.backend = backend;
@@ -69,7 +69,7 @@ public class ForeignKeyMigrator {
   /**
    * Gets the foreign key metadata.
    *
-   * @return the meta date, null if no such fk in database
+   * @return the metadata, null if no such fk in database
    */
   public ForeignKeyMetaData getForeignKeyMetaData() {
     return foreignKeyMetaData;
@@ -94,7 +94,7 @@ public class ForeignKeyMigrator {
       buf.append(foreignKey.sqlCreateForeignKey(backend));
     }
     else  {
-      // should not happen
+      // callers never pass both: a changed key is migrated as drop plus create
       throw new ModelException("cannot migrate existing foreign key");
     }
 

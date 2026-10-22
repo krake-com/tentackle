@@ -47,7 +47,7 @@ package org.tentackle.session;
  *   </pre>
  *   </li>
  *   <li>
- *   Create a {@link java.util.function.Consumer} for this event which will serve as its event handler.
+ *   create a {@link java.util.function.Consumer} for this event which will serve as its event handler.
  *   The handler must be annotated with {@link MasterSerialEventService}. This is a {@link org.tentackle.common.MappedService}
  *   and provides the mapping of the event to its handler, which allows providing different handlers for different
  *   clients connecting to the same server. Furthermore, the server does not need to know the handlers at all.<br>
@@ -64,7 +64,7 @@ package org.tentackle.session;
  *   </pre>
  *   </li>
  *   <li>
- *   To send an event from the server to the client, use the method
+ *   to send an event from the server to the client, use the method
  *   <code>org.tentackle.dbms.trip.RemoteDbSessionImpl#addMasterSerialEvent</code>, which is part of the
  *   module <code>tentackle-database</code>.
  *   </li>
@@ -93,7 +93,7 @@ public interface MasterSerialEvent extends MasterSerial {
   }
 
   /**
-   * Returns whether this event is overriding given an older event.<br>
+   * Returns whether this event overrides the given older event.<br>
    * The method is only invoked if {@link #isOverridingOlderEvents()} returns true.
    *
    * @param olderEvent the older event

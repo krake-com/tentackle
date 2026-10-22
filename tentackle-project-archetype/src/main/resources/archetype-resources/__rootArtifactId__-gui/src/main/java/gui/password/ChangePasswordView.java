@@ -31,18 +31,17 @@ import java.util.ResourceBundle;
 
 /**
  * Controller for changing the user's password.
- *
- * @author harald
  */
 @FxControllerService
 public class ChangePasswordView extends AbstractFxController implements DomainContextProvider {
 
   /**
-   * Shows the dialog and prompts the user to change his password.
+   * Shows the dialog to change the password of a user.<br>
+   * If changing is not allowed, the user is informed instead.
    *
    * @param owner the owner window or node
    * @param user the user
-   * @param admin invoked by admin user
+   * @param admin true if invoked by an administrator, which needs no old password
    */
   public static void showDialog(Object owner, User user, boolean admin) {
     if (admin || user.isEditAllowed() || user.isPasswordChangeable()) {

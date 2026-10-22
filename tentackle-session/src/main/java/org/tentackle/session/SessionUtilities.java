@@ -41,6 +41,16 @@ interface SessionUtilitiesHolder {
 
 /**
  * Utility methods for session-related stuff.
+ * <p>
+ * Provides:
+ * <ul>
+ *   <li>the mappings between class names, table names and class IDs, built from the
+ *   {@link TableName} and {@link ClassId} mapped services,</li>
+ *   <li>the {@link SessionKeepAliveDaemon}, started on demand and restarted if it died,</li>
+ *   <li>hooks for the {@link PersistenceException}s, overridden by the database layer to handle
+ *   JDBC-specific exceptions.</li>
+ * </ul>
+ * The singleton is replaceable via {@code @Service(SessionUtilities.class)}.
  *
  * @author harald
  */
@@ -121,7 +131,9 @@ public class SessionUtilities {
   }
 
   /**
-   * Gets the table name of a pdo class.
+   * Gets the table name of a pdo class.<br>
+   * The table name is taken from the mapped services, i.e. with the build-time options of
+   * &#64;{@link TableName} already applied.
    *
    * @param className the class name of the object
    * @return the tablename, null if no such class or not annotated with &#64;{@link TableName}
@@ -162,7 +174,7 @@ public class SessionUtilities {
   }
 
   /**
-   * Gets a list of all class names.<br>
+   * Gets a list of all class names annotated with &#64;{@link TableName} or &#64;{@link ClassId}.<br>
    * Sorted by name.
    *
    * @return the class names
@@ -172,10 +184,11 @@ public class SessionUtilities {
   }
 
   /**
-   * Determines the tablename from the &#64;{@link TableName} annotation.
+   * Determines the tablename from the &#64;{@link TableName} annotation.<br>
+   * Applies {@link TableName#mapSchema()} and {@link TableName#prefix()}.
    *
    * @param clazz the class
-   * @return the tablename, null if no such annotation
+   * @return the tablename, null if no such annotation or empty (e.g. SINGLE-table inheritance)
    */
   public String determineTablename(Class<?> clazz) {
     // determine from @TableName annotation
@@ -240,7 +253,8 @@ public class SessionUtilities {
   }
 
   /**
-   * Handles the change of a keep alive interval of a session.
+   * Handles the change of a keep alive interval of a session.<br>
+   * Starts the keep-alive daemon if not running.
    *
    * @param session the session
    */
@@ -250,8 +264,9 @@ public class SessionUtilities {
   }
 
   /**
-   * Replaces exception cause probably not in the jvm's classpath when the stacktrace gets deserialized
-   * in another (usually remote) jvm.
+   * Replaces an exception cause that is probably not in the classpath of another (usually remote) JVM
+   * when the exception gets deserialized there.<br>
+   * Invoked by the constructors of {@link PersistenceException} with a cause.
    *
    * @param t the throwable
    * @return the probably replaced throwable
@@ -262,7 +277,8 @@ public class SessionUtilities {
   }
 
   /**
-   * Sets the temporary flag according to the exception's root cause and the session.
+   * Sets the temporary flag according to the exception's cause and the session.<br>
+   * Invoked by the constructors of {@link PersistenceException} with a cause and a session or identifiable.
    *
    * @param exception the exception
    */

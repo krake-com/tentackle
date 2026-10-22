@@ -28,10 +28,10 @@ import java.util.Objects;
 
 /**
  * A script harness.<br>
- * A harness is a freemarker template that wraps a script fragment.
+ * A harness is a FreeMarker template that wraps a script fragment.
  * Its first line is a she-bang selecting the scripting language, for example
  * {@code #!groovy}. The she-bang line is stripped and does not land in the
- * generated script. The remaining lines are the freemarker template that the
+ * generated script. The remaining lines are the FreeMarker template that the
  * fragment is woven into (via the {@code content} variable).
  */
 public class ScriptHarness implements Comparable<ScriptHarness> {
@@ -66,7 +66,7 @@ public class ScriptHarness implements Comparable<ScriptHarness> {
   /**
    * Gets the harness content with the she-bang line stripped.
    *
-   * @return the freemarker template body
+   * @return the FreeMarker template body
    */
   public String getContent() {
     return content;

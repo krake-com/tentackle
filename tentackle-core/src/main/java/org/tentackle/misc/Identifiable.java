@@ -19,6 +19,8 @@
 
 package org.tentackle.misc;
 
+import org.tentackle.reflect.NotInterceptable;
+
 import java.io.Serializable;
 
 /**
@@ -29,7 +31,7 @@ import java.io.Serializable;
 public interface Identifiable extends Serializable {
 
   /**
-   * Gets the identification number.<br>
+   * Gets the identification number.
    *
    * @return the ID, 0 if invalid
    */
@@ -41,6 +43,7 @@ public interface Identifiable extends Serializable {
    *
    * @return the generic string value
    */
+  @NotInterceptable
   String toGenericString();
 
 }

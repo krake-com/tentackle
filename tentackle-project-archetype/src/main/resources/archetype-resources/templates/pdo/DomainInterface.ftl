@@ -4,6 +4,9 @@
 
 package ${domainPackage};
 
+<#if superDomainInterfacePackage != "" && superDomainInterfacePackage != domainPackage>
+import ${superDomainInterfacePackage}.${superDomainInterface};
+</#if>
 import ${pdoPackage}.${pdoInterface};
 import org.tentackle.pdo.DomainObject;
 

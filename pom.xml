@@ -49,6 +49,7 @@
     <module>tentackle-core</module>
     <module>tentackle-quic</module>
     <module>tentackle-quiche</module>
+    <module>tentackle-keyring</module>
     <module>tentackle-check-maven-plugin</module>
     <module>tentackle-session</module>
     <module>tentackle-pdo</module>
@@ -62,6 +63,7 @@
     <module>tentackle-domain</module>
     <module>tentackle-database</module>
     <module>tentackle-persistence</module>
+    <module>tentackle-jta</module>
     <module>tentackle-i18n</module>
     <module>tentackle-i18n-maven-plugin</module>
     <module>tentackle-fx</module>
@@ -80,6 +82,7 @@
 
   <properties>
     <rootBasedir>${project.basedir}</rootBasedir>
+    <project.build.outputTimestamp>2026-10-21T15:00:00Z</project.build.outputTimestamp>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -87,65 +90,76 @@
     <javac.lint>all,-processing,-this-escape,-module</javac.lint>
     <javac.version>25</javac.version>
 
-    <asm.version>9.10.1</asm.version>
-    <atlantafx.version>2.1.0</atlantafx.version>
-    <freemarker.version>2.3.34</freemarker.version>
-    <groovy.version>5.1.0</groovy.version>
-    <h2.version>2.4.240</h2.version>
+    <asm.version>9.11.1</asm.version>
+    <atlantafx.version>3.0.0</atlantafx.version>
+    <freemarker.version>2.3.35</freemarker.version>
+    <groovy.version>6.0.0</groovy.version>
+    <h2.version>2.5.252</h2.version>
     <helidon.mcp.version>1.2.0</helidon.mcp.version>
     <helidon.version>4.5.0</helidon.version>
     <ikonli.version>12.4.0</ikonli.version>
-    <javafx.version>26.0.2</javafx.version>
-    <jruby.version>10.1.1.0</jruby.version>
+    <jakarta.cdi.version>4.0.0</jakarta.cdi.version>
+    <jakarta.interceptor.version>2.1.0</jakarta.interceptor.version>
+    <jakarta.transaction.version>2.0.1</jakarta.transaction.version>
+    <javafx.version>27.0.1</javafx.version>
+    <jruby.version>10.1.2.0</jruby.version>
     <junit.version>6.1.3</junit.version>
-    <kwik.version>0.11</kwik.version>
+    <kwik.version>0.12.1</kwik.version>
     <log4j2.version>2.26.1</log4j2.version>
-    <plexus.archiver.version>4.12.0</plexus.archiver.version>
-    <plexus.java.version>1.5.2</plexus.java.version>
+    <logback.version>1.6.5</logback.version>
+    <narayana.version>7.2.2.Final</narayana.version>
+    <jboss.logging.version>3.6.1.Final</jboss.logging.version>
+    <plexus.archiver.version>4.14.0</plexus.archiver.version>
+    <plexus.java.version>1.6.0</plexus.java.version>
     <poi.version>5.5.1</poi.version>
-    <postgresql.version>42.7.13</postgresql.version>
+    <postgresql.version>42.7.14</postgresql.version>
     <quiche.native.version>0.29.3</quiche.native.version>
-    <slf4j.version>2.0.18</slf4j.version>
+    <slf4j.version>2.0.20</slf4j.version>
     <testng.version>7.12.0</testng.version>
     <wagon.ssh.version>3.5.3</wagon.ssh.version>
 
-    <maven.version>3.9.0</maven.version>
-    <maven.artifact.transfer.version>0.13.1</maven.artifact.transfer.version>
-    <maven.dependency.tree.version>3.3.0</maven.dependency.tree.version>
+    <maven.version>3.9.10</maven.version>
+    <!-- the Maven Resolver API the plugins are compiled against: the one shipped with maven.version -->
+    <maven.resolver.version>1.9.23</maven.resolver.version>
     <maven.file.management.version>3.2.0</maven.file.management.version>
     <maven.plugin.annotations.version>3.14.0</maven.plugin.annotations.version>
+    <javax.inject.version>1</javax.inject.version>
 
     <maven.archetype.plugin.version>3.4.1</maven.archetype.plugin.version>
     <maven.clean.plugin.version>3.5.0</maven.clean.plugin.version>
-    <maven.compiler.plugin.version>3.15.0</maven.compiler.plugin.version>
+    <maven.compiler.plugin.version>3.16.0</maven.compiler.plugin.version>
     <maven.dependency.plugin.version>3.11.0</maven.dependency.plugin.version>
-    <maven.deploy.plugin.version>3.1.4</maven.deploy.plugin.version>
+    <maven.deploy.plugin.version>3.2.0</maven.deploy.plugin.version>
     <maven.enforcer.plugin.version>3.6.3</maven.enforcer.plugin.version>
     <maven.gpg.plugin.version>3.2.8</maven.gpg.plugin.version>
     <maven.help.plugin.version>3.5.2</maven.help.plugin.version>
-    <maven.install.plugin.version>3.1.4</maven.install.plugin.version>
+    <maven.install.plugin.version>3.2.0</maven.install.plugin.version>
     <maven.jar.plugin.version>3.5.1</maven.jar.plugin.version>
     <maven.javadoc.plugin.version>3.12.0</maven.javadoc.plugin.version>
     <maven.jxr.plugin.version>3.6.0</maven.jxr.plugin.version>
     <maven.keytool.plugin.version>2.0.2</maven.keytool.plugin.version>
     <maven.owasp.plugin.version>13.0.0</maven.owasp.plugin.version>
-    <maven.plugin.plugin.version>3.15.2</maven.plugin.plugin.version>
-    <maven.plugin.report.plugin.version>3.15.2</maven.plugin.report.plugin.version>
+    <maven.plugin.plugin.version>3.16.0</maven.plugin.plugin.version>
+    <maven.plugin.report.plugin.version>3.16.0</maven.plugin.report.plugin.version>
     <maven.project.info.reports.plugin.version>3.9.0</maven.project.info.reports.plugin.version>
     <maven.resources.plugin.version>3.5.0</maven.resources.plugin.version>
     <maven.site.plugin.version>3.22.0</maven.site.plugin.version>
     <maven.fluido.skin.version>2.1.0</maven.fluido.skin.version>
     <maven.source.plugin.version>3.4.0</maven.source.plugin.version>
-    <maven.surefire.plugin.version>3.5.6</maven.surefire.plugin.version>
-    <maven.versions.plugin.version>2.21.0</maven.versions.plugin.version>
-    <maven.central-publishing.plugin.version>0.11.0</maven.central-publishing.plugin.version>
-
-    <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
+    <maven.surefire.plugin.version>3.6.0</maven.surefire.plugin.version>
+    <!-- Surefire 3.6.0's unified JUnit-Platform TestNG engine has a confirmed upstream regression
+         evaluating cross-class dependsOnGroups during its classpath scan (see
+         https://github.com/apache/maven-surefire/issues/3457), which breaks
+         RemoteTransactionTest's remote1-depends-on-local group dependency. tentackle-test-pdo and
+         tentackle-test-fx-rdc pin the plugin (and its surefire-testng provider) back to the last
+         working 3.5.x release until that's fixed upstream - see their poms. -->
+    <maven.surefire.plugin.pinned.version>3.5.6</maven.surefire.plugin.pinned.version>
+    <maven.versions.plugin.version>2.23.0</maven.versions.plugin.version>
+    <maven.central-publishing.plugin.version>0.12.0</maven.central-publishing.plugin.version>
 
     <tentackle.serviceDir>${project.build.directory}/generated-resources</tentackle.serviceDir>
     <tentackle.testServiceDir>${project.build.directory}/generated-test-resources</tentackle.testServiceDir>
     <tentackle.manifestDirectory>${project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
-    <netbeans.hint.license>tentackle</netbeans.hint.license>
 
     <wurbelizer.version>25.6.5.0</wurbelizer.version>
     <!-- override the default wurbelDir for multi-module project -->
@@ -164,14 +178,14 @@
   </properties>
 
   <scm>
-    <connection>scm:git:https://bitbucket.org/krake-oss/tentackle.git</connection>
-    <developerConnection>scm:git:ssh://git@bitbucket.org/krake-oss/tentackle.git</developerConnection>
-    <url>https://bitbucket.org/krake-oss/tentackle/</url>
+    <connection>scm:git:https://github.com/krake-com/tentackle.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/krake-com/tentackle.git</developerConnection>
+    <url>https://github.com/krake-com/tentackle</url>
   </scm>
 
   <issueManagement>
-    <system>Bitbucket</system>
-    <url>https://bitbucket.org/krake-oss/tentackle/</url>
+    <system>GitHub</system>
+    <url>https://github.com/krake-com/tentackle/issues</url>
   </issueManagement>
 
   <distributionManagement>
@@ -271,6 +285,12 @@
         <artifactId>slf4j-simple</artifactId>
         <version>${slf4j.version}</version>
       </dependency>
+      <dependency>
+        <!-- test-only capturing backend for tentackle-log-slf4j -->
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>${logback.version}</version>
+      </dependency>
 
       <dependency>
         <groupId>org.jruby</groupId>
@@ -328,6 +348,20 @@
         <artifactId>junit-jupiter-api</artifactId>
         <version>${junit.version}</version>
       </dependency>
+      <dependency>
+        <!-- runs the Junit5 tests of the test support modules -->
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <!-- aligns surefire's launcher with the engine, otherwise discovery fails -->
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-launcher</artifactId>
+        <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
 
       <!-- test dependencies -->
       <dependency>
@@ -348,6 +382,41 @@
         <groupId>com.h2database</groupId>
         <artifactId>h2</artifactId>
         <version>${h2.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <!-- the JTA API for tentackle-jta -->
+        <groupId>jakarta.transaction</groupId>
+        <artifactId>jakarta.transaction-api</artifactId>
+        <version>${jakarta.transaction.version}</version>
+      </dependency>
+      <dependency>
+        <!-- required by the module jakarta.transaction (for @Transactional) -->
+        <groupId>jakarta.enterprise</groupId>
+        <artifactId>jakarta.enterprise.cdi-api</artifactId>
+        <version>${jakarta.cdi.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <!-- required by the module jakarta.transaction (for @Transactional) -->
+        <groupId>jakarta.interceptor</groupId>
+        <artifactId>jakarta.interceptor-api</artifactId>
+        <version>${jakarta.interceptor.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <!-- standalone JTA transaction manager to test tentackle-jta -->
+        <groupId>org.jboss.narayana.jta</groupId>
+        <artifactId>narayana-jta</artifactId>
+        <version>${narayana.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <!-- Narayana's logging facade, not provided transitively -->
+        <groupId>org.jboss.logging</groupId>
+        <artifactId>jboss-logging</artifactId>
+        <version>${jboss.logging.version}</version>
         <scope>test</scope>
       </dependency>
 
@@ -383,9 +452,22 @@
         <scope>provided</scope>
       </dependency>
       <dependency>
-        <groupId>org.apache.maven.shared</groupId>
-        <artifactId>maven-artifact-transfer</artifactId>
-        <version>${maven.artifact.transfer.version}</version>
+        <groupId>org.apache.maven.resolver</groupId>
+        <artifactId>maven-resolver-api</artifactId>
+        <version>${maven.resolver.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.resolver</groupId>
+        <artifactId>maven-resolver-util</artifactId>
+        <version>${maven.resolver.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>javax.inject</groupId>
+        <artifactId>javax.inject</artifactId>
+        <version>${javax.inject.version}</version>
+        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.shared</groupId>
@@ -396,11 +478,6 @@
         <groupId>org.apache.maven.plugin-tools</groupId>
         <artifactId>maven-plugin-annotations</artifactId>
         <version>${maven.plugin.annotations.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.maven.shared</groupId>
-        <artifactId>maven-dependency-tree</artifactId>
-        <version>${maven.dependency.tree.version}</version>
       </dependency>
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
@@ -586,7 +663,7 @@
                 <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
               </manifest>
               <manifestEntries>
-                <Implementation-Build-Date>${maven.build.timestamp}</Implementation-Build-Date>
+                <Implementation-Build-Date>${project.build.outputTimestamp}</Implementation-Build-Date>
               </manifestEntries>
             </archive>
           </configuration>
@@ -819,7 +896,7 @@
                       <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                     </manifest>
                     <manifestEntries>
-                      <Implementation-Build-Date>${maven.build.timestamp}</Implementation-Build-Date>
+                      <Implementation-Build-Date>${project.build.outputTimestamp}</Implementation-Build-Date>
                     </manifestEntries>
                   </archive>
                 </configuration>
@@ -845,7 +922,7 @@
                       <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                     </manifest>
                     <manifestEntries>
-                      <Implementation-Build-Date>${maven.build.timestamp}</Implementation-Build-Date>
+                      <Implementation-Build-Date>${project.build.outputTimestamp}</Implementation-Build-Date>
                     </manifestEntries>
                   </archive>
                   <additionalOptions>
@@ -911,7 +988,7 @@
             <version>${maven.central-publishing.plugin.version}</version>
             <extensions>true</extensions>
             <configuration>
-              <publishingServerId>central</publishingServerId>
+              <publishingServerId>sonatype-central</publishingServerId>
               <deploymentName>tentackle</deploymentName>
               <checksums>required</checksums>
             </configuration>

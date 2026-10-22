@@ -2,7 +2,7 @@
 /*
  * Example ${language} harness (${harness}).
  *
- * A harness is a freemarker template. Its first line is a she-bang selecting the
+ * A harness is a FreeMarker template. Its first line is a she-bang selecting the
  * scripting language and is stripped before the script is generated. The script
  * fragment is woven into the run() method below via the ${r"${content}"} variable.
  * Every fragment line starting with a ^-sign, such as "^import org.tentackle.misc.*",

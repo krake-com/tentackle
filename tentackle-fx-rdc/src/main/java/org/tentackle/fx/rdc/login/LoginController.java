@@ -22,8 +22,8 @@ import org.tentackle.fx.FxController;
 import org.tentackle.session.SessionInfo;
 
 /**
- * Interface for login view controller.<br>
- * Allows applications to override the login view.
+ * Interface for the login view controller.<br>
+ * Allows applications to replace the login view, see {@code LoginApplication#loadLoginController()}.
  */
 public interface LoginController extends FxController {
 
@@ -40,7 +40,8 @@ public interface LoginController extends FxController {
   void setSessionInfo(SessionInfo sessionInfo);
 
   /**
-   * Logs in automatically.
+   * Logs in automatically.<br>
+   * The user cannot edit the username and password.
    */
   void autoLogin();
 

@@ -36,7 +36,11 @@ interface CodeFactoryHolder {
 
 
 /**
- * Factory for code snippets used by generators such as wurblets.
+ * Factory for Java code snippets and SQL DDL used by generators such as the wurblets and the SQL Maven plugin.
+ * <p>
+ * Replaceable via {@code @Service(CodeFactory.class)}.
+ *
+ * @author harald
  */
 @Service(CodeFactory.class)    // defaults to self
 public class CodeFactory {
@@ -79,8 +83,9 @@ public class CodeFactory {
    * Creates the source code for a method argument.
    *
    * @param attribute the attribute
-   * @param value the argument name
+   * @param value the value string (argument expression)
    * @return the Java code
+   * @throws ModelException if the data type is misconfigured
    */
   public String createMethodArgument(Attribute attribute, String value) throws ModelException {
     DataType<?> dataType = attribute.getEffectiveDataType();
@@ -142,12 +147,12 @@ public class CodeFactory {
   }
 
   /**
-   * Creates the declared type of relation.
+   * Creates the declared type of a relation.
    *
    * @param relation the relation
    * @param withinForeignEntity true if we need the type from within the foreign entity,
    *                            else from within the relation's entity
-   * @return the declared java type
+   * @return the declared Java type
    */
   public String createDeclaredJavaType(Relation relation, boolean withinForeignEntity) {
     String type = relation.getClassName();
@@ -168,10 +173,10 @@ public class CodeFactory {
   }
 
   /**
-   * Creates the java type of relation.
+   * Creates the Java type of a relation.
    *
    * @param relation the relation
-   * @return the java type
+   * @return the Java type
    */
   public String createJavaType(Relation relation) {
     if (relation.getRelationType() == RelationType.LIST && !relation.isReversed()) {
@@ -189,7 +194,7 @@ public class CodeFactory {
    * @param entity the entity
    * @param backend the backend to create SQL code for
    * @return the SQL code
-   * @throws ModelException if model inconsistent
+   * @throws ModelException if the model is inconsistent
    */
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public String createSqlTable(Entity entity, Backend backend) throws ModelException {
@@ -243,6 +248,7 @@ public class CodeFactory {
    * @param entity the entity
    * @param index the index
    * @return the SQL code
+   * @throws org.tentackle.sql.BackendException if the index is not optional and not supported by the backend
    */
   public String createSqlIndex(Backend backend, Entity entity, Index index) {
     StringBuilder buf = new StringBuilder();
@@ -301,6 +307,19 @@ public class CodeFactory {
         throw new BackendException("index " + index + " not supported by backend " + backend);
       }
     }
+    else if (index.isUnique() && index.getDeferrability() != Deferrability.NOT_DEFERRABLE &&
+             backend.isSetConstraintsDeferredSupported()) {
+      // deferrability applies to constraints, not plain indexes -> ALTER TABLE ADD CONSTRAINT
+      // instead of CREATE UNIQUE INDEX (validate() already rejects function-based/filtered
+      // combinations, so a plain column list is all that's needed here)
+      String[] plainColumnNames = new String[columnNames.length];
+      for (int i = 0; i < columnNames.length; i++) {
+        String columnName = columnNames[i];
+        plainColumnNames[i] = columnName.startsWith("-") ? columnName.substring(1) : columnName;
+      }
+      buf.append(backend.sqlCreateUniqueConstraint(entity.getTableName(), index.createDatabaseIndexName(entity),
+                                                   toSqlDeferrability(index.getDeferrability()), plainColumnNames));
+    }
     else {
       buf.append(backend.sqlCreateIndex(entity.getTableName(), index.createDatabaseIndexName(entity),
                                         index.isUnique(), index.getFilterCondition(), columnNames));
@@ -319,6 +338,7 @@ public class CodeFactory {
    * @param foreignKey the foreign key
    * @param backend the backend to create SQL code for
    * @return the SQL code
+   * @throws org.tentackle.sql.BackendException if the foreign key name is invalid for the backend
    */
   public String createSqlForeignKey(ForeignKey foreignKey, Backend backend) {
     String fkName = foreignKey.getReferencingEntity().getTableAlias() + "_" +
@@ -330,7 +350,22 @@ public class CodeFactory {
         foreignKey.getReferencedTableProvidingEntity().getTableName(),
         foreignKey.getReferencedAttribute().getColumnName(),
         fkName,
-        foreignKey.isComposite() && foreignKey.getReferencingEntity().getIntegrity().isCompositesCheckedByDatabase());
+        foreignKey.isComposite() && foreignKey.getReferencingEntity().getIntegrity().isCompositesCheckedByDatabase(),
+        toSqlDeferrability(foreignKey.getDeferrability()));
+  }
+
+  /**
+   * Maps the model-level deferrability to the SQL layer's equivalent, used by {@link Backend}.
+   *
+   * @param deferrability the model deferrability
+   * @return the sql-layer deferrability
+   */
+  private static org.tentackle.sql.metadata.Deferrability toSqlDeferrability(Deferrability deferrability) {
+    return switch (deferrability) {
+      case NOT_DEFERRABLE -> org.tentackle.sql.metadata.Deferrability.NOT_DEFERRABLE;
+      case DEFERRABLE_IMMEDIATE -> org.tentackle.sql.metadata.Deferrability.DEFERRABLE_IMMEDIATE;
+      case DEFERRABLE_DEFERRED -> org.tentackle.sql.metadata.Deferrability.DEFERRABLE_DEFERRED;
+    };
   }
 
 }

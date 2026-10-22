@@ -30,10 +30,10 @@ import java.util.Map;
 
 /**
  * Event listener proxy for event handlers and filters.<br>
- * Provides access to all registered listeners and delegates them to a Node.
+ * Registers the listeners at a node and keeps track of them.
  * Because all listeners are kept in internal lists, they can be removed
  * all at once explicitly, which works even for lambdas.
- * FX Nodes don't provide such a feature.
+ * FX nodes don't provide such a feature.
  *
  * @param <T> the event type
  * @author harald
@@ -42,7 +42,7 @@ public class EventListenerProxy<T extends Event> {
 
   private final Node node;                                    // the node to register listeners for
   private Map<EventType<T>, List<EventHandler<T>>> filters;   // event filters
-  private Map<EventType<T>, List<EventHandler<T>>> handlers;  // event filters
+  private Map<EventType<T>, List<EventHandler<T>>> handlers;  // event handlers
 
   /**
    * Creates a registration proxy.
@@ -55,7 +55,7 @@ public class EventListenerProxy<T extends Event> {
 
 
   /**
-   * Fires an event.
+   * Fires an event at the node.
    *
    * @param event the event
    */
@@ -125,9 +125,9 @@ public class EventListenerProxy<T extends Event> {
   public void removeAllEventFilters() {
     if (filters != null) {
       for (Map.Entry<EventType<T>, List<EventHandler<T>>> entry: filters.entrySet()) {
-        EventType<T> evenType = entry.getKey();
+        EventType<T> eventType = entry.getKey();
         for (EventHandler<T> listener: entry.getValue()) {
-          node.removeEventFilter(evenType, listener);
+          node.removeEventFilter(eventType, listener);
         }
       }
       filters.clear();
@@ -140,9 +140,9 @@ public class EventListenerProxy<T extends Event> {
   public void removeAllEventHandlers() {
     if (handlers != null) {
       for (Map.Entry<EventType<T>, List<EventHandler<T>>> entry: handlers.entrySet()) {
-        EventType<T> evenType = entry.getKey();
+        EventType<T> eventType = entry.getKey();
         for (EventHandler<T> listener: entry.getValue()) {
-          node.removeEventHandler(evenType, listener);
+          node.removeEventHandler(eventType, listener);
         }
       }
       handlers.clear();

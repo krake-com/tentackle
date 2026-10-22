@@ -6,12 +6,15 @@ set script_dir=%CD%
 popd
 cd %script_dir%
 cd ..
-  <#if mainModule != "">
+  <#if (layered!"false") == "true">
+<#-- layered application: the bootstrap builds the ModuleLayer graph, then hands off to the real main class -->
+bin\java -Dtentackle.layers=${layersConfigPath}${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(" -cp " + classPath, "")} -m ${bootstrapModule}/${bootstrapClass} %*
+  <#elseif mainModule != "">
 <#-- modular application -->
-bin\java${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(" -cp " + classPath, "")} -m ${mainModule}/${mainClass}
+bin\java${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(" -cp " + classPath, "")} -m ${mainModule}/${mainClass} %*
   <#else>
 <#-- classpath application -->
-bin\java -cp ${classPath} ${mainClass}
+bin\java -cp ${classPath} ${mainClass} %*
   </#if>
 <#else>
 #!/bin/sh
@@ -23,11 +26,14 @@ cd "$(dirname "$(dirname "$(abs_path "$0")")")"
   <#else>
 cd "$(dirname "$(dirname "$(readlink -f "$0")")")"
   </#if>
-  <#if mainModule != "">
+  <#if (layered!"false") == "true">
+<#-- layered application: the bootstrap builds the ModuleLayer graph, then hands off to the real main class -->
+exec bin/java -Dtentackle.layers=${layersConfigPath}${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(" -cp " + classPath, "")} -m ${bootstrapModule}/${bootstrapClass} "$@"
+  <#elseif mainModule != "">
 <#-- modular application -->
-bin/java${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(" -cp " + classPath, "")} -m ${mainModule}/${mainClass}
+exec bin/java${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(" -cp " + classPath, "")} -m ${mainModule}/${mainClass} "$@"
   <#else>
 <#-- classpath application -->
-bin/java -cp ${classPath} ${mainClass}
+exec bin/java -cp ${classPath} ${mainClass} "$@"
   </#if>
 </#if>

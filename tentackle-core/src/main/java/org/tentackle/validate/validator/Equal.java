@@ -88,14 +88,16 @@ public @interface Equal {
   String condition() default "";
 
   /**
-   * @return value the value
+   * The <code>String</code> representation of the value.
+   *
+   * @return the value
    */
   String value();
 
   /**
    * If either the object or the value to compare with is null, the result is valid.
    *
-   * @return true if ignore nulls (default), false to treat nulls as "logically zero"
+   * @return true if ignore nulls (default), false to compare nulls as well (null equals only null)
    */
   boolean ignoreNulls() default true;
 

@@ -76,7 +76,7 @@ public class AnalyzeAnnotationProcessingMojoTest {
     servicesDir = new File(basedir, "target" + File.separator + "services");
     log = new RecordingLog();
     mojo = new AnalyzeAnnotationProcessingMojo();
-    mojo.setLog(log);
+    mojo.setLogger(log);
     setField(mojo, "mavenProject", createProject(basedir));
     setParameters(sourceDir, analyzeDir, servicesDir);
   }
@@ -113,7 +113,7 @@ public class AnalyzeAnnotationProcessingMojoTest {
 
     MojoExecutionException ex = expectThrows(MojoExecutionException.class, mojo::validate);
 
-    assertEquals(ex.getMessage(), "missing tentackle.analyzeDir");
+    assertEquals(ex.getMessage(), "missing analyzeDir");
   }
 
   @Test
@@ -122,7 +122,7 @@ public class AnalyzeAnnotationProcessingMojoTest {
 
     MojoExecutionException ex = expectThrows(MojoExecutionException.class, mojo::validate);
 
-    assertEquals(ex.getMessage(), "missing tentackle.serviceDir");
+    assertEquals(ex.getMessage(), "missing servicesDir");
   }
 
   /**

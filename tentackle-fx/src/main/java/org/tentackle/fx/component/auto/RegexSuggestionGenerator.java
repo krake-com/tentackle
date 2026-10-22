@@ -27,7 +27,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Suggestion generator function based on a regular expression.
+ * Suggestion generator function based on a regular expression.<br>
+ * The segments are the matches of the pattern in the input and the items.
  *
  * @param <T> the type of the available choices
  */
@@ -37,7 +38,7 @@ public class RegexSuggestionGenerator<T> extends AbstractSegmentedSuggestionGene
   private Matcher matcher;
 
   /**
-   * Creates an suggestion generator for a given regular expression.
+   * Creates a suggestion generator for a given regular expression.
    *
    * @param pattern the regex pattern
    */

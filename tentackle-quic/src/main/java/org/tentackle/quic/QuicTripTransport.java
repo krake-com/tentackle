@@ -45,7 +45,12 @@ import java.security.cert.CertificateException;
 import java.util.Map;
 
 /**
- * Transport implementation for QUIC.
+ * Transport implementation for QUIC, scheme {@value #PROTOCOL}, on the pure-Java KWIK stack.
+ * <p>
+ * On the server, {@link #accept()} starts a KWIK {@link ServerConnector} that dispatches every stream a
+ * client opens to a TRIP connection handler (see {@link QuicProtocolConnection}). On the client,
+ * {@link QuicTripConnectionPool} multiplexes all pooled TRIP connections as streams over a single QUIC
+ * connection. The URI parameters are described in the module's documentation ({@code quic.md}).
  */
 @TransportService(QuicTripTransport.PROTOCOL)
 public class QuicTripTransport extends AbstractTransport {
@@ -104,6 +109,7 @@ public class QuicTripTransport extends AbstractTransport {
 
   private ServerConnector serverConnector;      // the running KWIK server connector, null if not accepting
   private volatile boolean accepting;           // volatile: isAccepting() is not synchronized
+  private boolean closing;                      // true once close() was invoked
 
   /**
    * Creates a new QUIC transport.
@@ -117,6 +123,10 @@ public class QuicTripTransport extends AbstractTransport {
 
   @Override
   public synchronized void accept() {
+    if (closing) {
+      // close() released the monitor to shut down the connector, but did not mark the transport closed yet
+      throw new TripRuntimeException("transport " + this + " is closed");
+    }
     super.accept();
 
     Logger log = new QuicLogger();
@@ -168,7 +178,7 @@ public class QuicTripTransport extends AbstractTransport {
       if (port < 0 || port > 0xffff) {
         throw new TripRuntimeException("invalid port number " + port + " in URI " + uri);
       }
-      if ("0".equals(host)) { // use 0.0.0.0 to bind on all IPV4 interfaces, 0 binds also IPV6
+      if ("0".equals(host)) { // use 0.0.0.0 to bind on all IPv4 interfaces, 0 binds IPv6 as well
         builder.withPort(port);
       }
       else if (host != null) {
@@ -229,6 +239,7 @@ public class QuicTripTransport extends AbstractTransport {
    * (see {@link QuicTripConnectionPool}).
    *
    * @return the maximum number of streams, always &ge; 1
+   * @throws TripRuntimeException if the configured value is &lt; 1
    */
   public int getMaxStreams() {
     int maxStreams = getUriPars().getOrDefault("maxstreams", DEFAULT_MAX_STREAMS);
@@ -242,11 +253,13 @@ public class QuicTripTransport extends AbstractTransport {
   /**
    * Gets the flow control window per stream in bytes.<br>
    * A peer may send at most that many bytes on a stream before the receiving side has to grant further credits
-   * (see RFC-9000, 4). The window applies to the data a <em>client</em> sends to this server, i.e., to the
-   * size of the remote calls, and should be at least as large as the largest call to be transferred without
-   * intermediate credit updates. The connection window is a multiple of it, see {@link #CONNECTION_WINDOW_FACTOR}.
+   * (see RFC-9000, 4). It is configured on both ends: on the server it applies to the data a client sends,
+   * i.e., to the size of the remote calls, and on the client to the size of the responses. It should be at
+   * least as large as the largest call to be transferred without intermediate credit updates. The connection
+   * window is a multiple of it, see {@link #CONNECTION_WINDOW_FACTOR}.
    *
    * @return the window in bytes
+   * @throws TripRuntimeException if the configured window is smaller than {@link #MIN_STREAM_WINDOW}
    */
   public int getStreamWindow() {
     int streamWindow = getUriPars().getOrDefault("streamwindow", DEFAULT_STREAM_WINDOW);
@@ -271,16 +284,28 @@ public class QuicTripTransport extends AbstractTransport {
    */
   @Override
   public void close() {
-    ServerConnector connector;
-    synchronized (this) {
-      connector = serverConnector;
-      serverConnector = null;
-      accepting = false;
-    }
+    ServerConnector connector = stopAccepting();
     if (connector != null) {
       connector.close();
     }
     super.close();
+  }
+
+  /**
+   * Detaches the KWIK server connector from this transport, the first step of {@link #close()}.
+   * <p>
+   * From then on {@link #accept()} fails. Since the connector is closed outside the transport's monitor and
+   * the transport is marked closed only afterward, an {@code accept()} getting in between would otherwise
+   * start a connector that nobody closes anymore.
+   *
+   * @return the connector to close, null if the transport was not accepting
+   */
+  protected synchronized ServerConnector stopAccepting() {
+    closing = true;
+    ServerConnector connector = serverConnector;
+    serverConnector = null;
+    accepting = false;
+    return connector;
   }
 
   /**
@@ -318,11 +343,11 @@ public class QuicTripTransport extends AbstractTransport {
   }
 
   /**
-   * Creates a trip stream for the given QUIC stream.
+   * Creates a TRIP stream for the given QUIC stream.
    *
    * @param dictionary the dictionary to use for serialization/deserialization
    * @param quicStream the QUIC stream
-   * @return the trip stream
+   * @return the TRIP stream
    */
   public TripStream createStream(Dictionary dictionary, QuicStream quicStream) {
     TripFactory factory = TripFactory.getInstance();
@@ -348,7 +373,7 @@ public class QuicTripTransport extends AbstractTransport {
    * Gets the stream to write a QUIC stream's data to.
    * <p>
    * Wrapped so that the interrupt status of the writing thread does not reach KWIK, which would otherwise
-   * fail a write that has to wait for flow control credits &mdash; see {@link InterruptAgnosticStreams}.
+   * fail a write that has to wait for room in the send buffer &mdash; see {@link InterruptAgnosticStreams}.
    *
    * @param quicStream the QUIC stream
    * @return the output stream

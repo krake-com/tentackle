@@ -22,8 +22,11 @@ import java.io.File;
 import java.util.StringTokenizer;
 
 /**
- * Default semantic version filter.
- * Implements major/minor/hotfix-version.
+ * Default semantic version filter.<br>
+ * Interprets the name of the directory holding a hint file as a {@code major.minor.hotfix} version
+ * (dots or underscores, with an optional suffix like {@code -SNAPSHOT} that is ignored).
+ * A hint file applies if its version is greater than the database version.
+ * Directories whose name does not start with a digit are permanent, i.e. their hints always apply.
  *
  * @author harald
  */
@@ -37,9 +40,12 @@ public class SemanticVersionFileFilter implements VersionFileFilter {
 
   @Override
   public boolean isValid(String version, File hintFile) {
+    if (version == null) {
+      return true;    // no filtering
+    }
     // directory holds the version
     File dir = hintFile.getParentFile();
-    if (dir != null && version != null) {
+    if (dir != null) {
       String dirName = dir.getName();
       if (!Character.isDigit(dirName.charAt(0))) {    // permanent if not starting with a digit
         return true;

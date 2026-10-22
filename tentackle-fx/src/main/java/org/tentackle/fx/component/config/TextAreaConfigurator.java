@@ -42,6 +42,13 @@ public class TextAreaConfigurator<T extends TextArea> extends TextInputControlCo
     // see -Xlint:missing-explicit-ctor since Java 16
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Unless disabled via {@link FxTextArea#setNavigateViaEnterEnabled(boolean)}, {@code ENTER} and {@code Shift-ENTER}
+   * move the focus to the next or previous component, while {@code Ctrl-ENTER} and {@code Ctrl-TAB}
+   * insert a newline or a tab. Plain {@code TAB} is consumed.
+   */
   @Override
   protected void remapKeys(T control) {
     control.addEventFilter(KeyEvent.ANY, event -> {

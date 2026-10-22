@@ -27,7 +27,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * The default GUI provider factory.
+ * The default table cell type factory.
  *
  * @author harald
  */
@@ -35,12 +35,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultTableCellTypeFactory implements TableCellTypeFactory {
 
   /**
-   * maps item-classes to the constructors of the table cell type instances.
+   * Maps item classes to the table cell type instances.
    */
   private final ConcurrentHashMap<Class<?>, TableCellType<?>> cellTypeMap = new ConcurrentHashMap<>();
 
   /**
-   * maps item-classes to cell type classes.
+   * Maps item classes to cell type classes.
    */
   private final ClassMapper cellTypeMapper;
 
@@ -62,9 +62,9 @@ public class DefaultTableCellTypeFactory implements TableCellTypeFactory {
       try {
         Class<TableCellType<T>> cellTypeClass = (Class<TableCellType<T>>) cellTypeMapper.mapLenient(clazz);
         cellType = cellTypeClass.getDeclaredConstructor().newInstance();
-        cellTypeMap.put(itemClass, cellType);
+        cellTypeMap.put(clazz, cellType);
       }
-      catch (ClassNotFoundException | SecurityException | InstantiationException |
+      catch (ClassNotFoundException | InstantiationException |
              IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException ex) {
         throw new FxRuntimeException("cannot load table cell type for " + itemClass, ex);
       }

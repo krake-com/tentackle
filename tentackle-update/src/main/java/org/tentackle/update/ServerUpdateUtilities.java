@@ -35,7 +35,10 @@ interface ServerUpdateUtilitiesHolder {
 }
 
 /**
- * Utility methods to implement the application update.
+ * Server side utility methods to implement the application update.<br>
+ * Registers the {@link UpdateService} on a TRIP transport.
+ * <p>
+ * Replaceable via {@link Service}.
  */
 @Service(ServerUpdateUtilities.class)
 public class ServerUpdateUtilities {
@@ -60,15 +63,20 @@ public class ServerUpdateUtilities {
   }
 
   /**
-   * Starts the update service.
+   * Starts the update service.<br>
+   * Requests the transport for the service URL, starts accepting connections if not already done,
+   * creates the service implementation and registers it under the URL's path.
    *
-   * @param serviceUrlName the update service url, ex. {@code "trip://localhost/Update:33001"}
+   * @param serviceUrlName the update service URL, ex. {@code "trip://localhost:33001/Update"}
    * @param updateUrlName the URL base holding the downloads, ex. {@code "http://localhost/myapp/downloads"}
    * @param updateServiceImplClass the class implementing the remote {@link UpdateService}
+   * @throws TripRuntimeException if the transport failed or the service could not be registered
+   * @throws TentackleRuntimeException if the service implementation could not be created
+   * @see #createUpdateServiceImpl(Class, String)
    */
   public void startUpdateService(String serviceUrlName, String updateUrlName, Class<? extends UpdateService> updateServiceImplClass) {
     URI uri = URI.create(serviceUrlName);
-    LOGGER.info("starting update service " + uri);
+    LOGGER.info("starting update service {0}", uri);
     try {
       Transport transport = TransportManager.getInstance().requestTransport(uri);
       if (!transport.isAccepting()) {
@@ -86,10 +94,13 @@ public class ServerUpdateUtilities {
 
   /**
    * Creates the update service implementation.<br>
+   * The class must provide a public constructor with a single {@code String} argument,
+   * which receives the download base URL (see {@link AbstractUpdateServiceImpl}).
    *
    * @param updateServiceImplClass the class implementing the remote {@link UpdateService}
    * @param updateUrlName the download base URL
    * @return the service implementation
+   * @throws TentackleRuntimeException if there is no such constructor or the instantiation failed
    */
   protected UpdateService createUpdateServiceImpl(Class<? extends UpdateService> updateServiceImplClass, String updateUrlName) {
     try {

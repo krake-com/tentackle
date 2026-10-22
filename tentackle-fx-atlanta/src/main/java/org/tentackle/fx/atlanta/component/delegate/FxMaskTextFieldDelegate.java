@@ -25,7 +25,7 @@ import org.tentackle.fx.component.delegate.AbstractTextFieldDelegate;
 import javafx.geometry.Pos;
 
 /**
- * Delegate for FxMaskTextField.
+ * Delegate for {@link FxMaskTextField}.
  *
  * @author harald
  */

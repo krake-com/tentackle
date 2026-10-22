@@ -24,7 +24,8 @@ import java.io.File;
 import java.util.List;
 
 /**
- * Contains info about a java package.
+ * Contains info about a java package.<br>
+ * Created by {@link AbstractTentackleMojo#createPackageMap(boolean)}.
  */
 public class PackageInfo {
 
@@ -109,8 +110,8 @@ public class PackageInfo {
 
   /**
    * Gets the empty duplicates for this package info.<br>
-   * If an empty package is found more than once in different modules, it cannot be used in profiles
-   * because the generator cannot decide which one to use.
+   * If an empty package is found more than once in different modules, it cannot be used in the
+   * wizard's profiles, because the generator cannot decide which one to use.
    *
    * @return the duplicates, null if none
    */
@@ -119,9 +120,9 @@ public class PackageInfo {
   }
 
   /**
-   * Sets the duplicates.
+   * Sets the empty duplicates.
    *
-   * @param emptyDuplicates the duplicates
+   * @param emptyDuplicates the duplicates, null if none
    */
   public void setEmptyDuplicates(List<PackageInfo> emptyDuplicates) {
     this.emptyDuplicates = emptyDuplicates;

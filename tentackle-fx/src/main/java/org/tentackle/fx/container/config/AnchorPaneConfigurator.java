@@ -33,7 +33,7 @@ import org.tentackle.fx.ConfiguratorService;
 public class AnchorPaneConfigurator<T extends AnchorPane> extends PaneConfigurator<T> {
 
   /**
-   * Creates the configurator for a {@link AnchorPane}.
+   * Creates the configurator for an {@link AnchorPane}.
    */
   public AnchorPaneConfigurator() {
     // see -Xlint:missing-explicit-ctor since Java 16

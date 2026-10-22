@@ -40,15 +40,19 @@ import org.tentackle.reflect.CanonicalField;
 import org.tentackle.trip.impl.CanonicalDto;
 import org.tentackle.trip.impl.CanonicalList;
 import org.tentackle.trip.impl.ControlledDeduplicatableRecord;
+import org.tentackle.trip.impl.DefaultOpCode;
 import org.tentackle.trip.impl.DtoWithCanonicalBuilder;
 import org.tentackle.trip.impl.EchoTransceiver;
 import org.tentackle.trip.impl.Employees;
 import org.tentackle.trip.impl.EmployeesArray;
 import org.tentackle.trip.impl.TestBodyEnum;
 import org.tentackle.trip.impl.NoNoArgsInstantiatable;
+import org.tentackle.trip.impl.NotReferencableCanonicalDto;
 import org.tentackle.trip.impl.NotReferencableClass;
+import org.tentackle.trip.impl.NotReferencableRecord;
 import org.tentackle.trip.impl.PartialCanonicalTripType;
 import org.tentackle.trip.impl.PreparedSerializableClass;
+import org.tentackle.trip.impl.TripError;
 import org.tentackle.trip.impl.TestClass;
 import org.tentackle.trip.impl.TestClassWithArray;
 import org.tentackle.trip.impl.TestEnum;
@@ -469,6 +473,16 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
   }
 
   @Test
+  @SuppressWarnings("rawtypes")
+  void testEmptyBinary() {
+    // empty binaries travel as they are and don't become null
+    TripType<Binary> binaryType = TripFactory.getInstance().getType(Binary.class);
+    assertNotNull(tunnel(new Binary<>(), binaryType));
+    TripType<TBinary> tbinaryType = TripFactory.getInstance().getType(TBinary.class);
+    assertNotNull(tunnel(new TBinary<>(), tbinaryType));
+  }
+
+  @Test
   void testI18NText() {
     TripType<I18NText> tripType = TripFactory.getInstance().getType(I18NText.class);
     I18NText i18NText = new I18NText(Locale.ENGLISH, "Hello, World!");
@@ -529,6 +543,34 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
     assertNotNull(empty);
     assertNull(empty.getName());
     assertEquals(empty.getAge(), 0);
+  }
+
+  /**
+   * A null first component of a non-referencable object must not be taken for a null object:
+   * without a reference, its null code would directly follow the object's header.
+   * This applies to all components without a default value, such as those of a canonical
+   * constructor or a record, and to those whose default value is not null.
+   */
+  @Test
+  void testNullFirstComponentOfNotReferencable() {
+    TripType<NotReferencableCanonicalDto> canonicalType =
+        TripFactory.getInstance().getType(NotReferencableCanonicalDto.class);
+    tunnel(new NotReferencableCanonicalDto(null, 42), canonicalType);
+    tunnel(new NotReferencableCanonicalDto(null, 0), canonicalType);
+
+    TripType<NotReferencableRecord> recordType = TripFactory.getInstance().getType(NotReferencableRecord.class);
+    tunnel(new NotReferencableRecord(null, 42), recordType);
+    tunnel(new NotReferencableRecord(null, 0), recordType);
+
+    TripType<NotReferencableClass> classType = TripFactory.getInstance().getType(NotReferencableClass.class);
+    NotReferencableClass obj = new NotReferencableClass();
+    obj.name = null;    // not the default value
+    tunnel(obj, classType);
+
+    // as a component of another object, too
+    TestRecord parent = new TestRecord("kathrin", 59, false, null, null,
+                                       new NotReferencableCanonicalDto(null, 7));
+    tunnel(parent, TripFactory.getInstance().getType(TestRecord.class));
   }
 
   @Test
@@ -1606,6 +1648,48 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
     ValidateSerializableClass obj = new ValidateSerializableClass();
     ValidateSerializableClass tunnelled = tunnel(obj, tripType);
     assertEquals(tunnelled.getResult(), "validated");
+  }
+
+  @Test
+  void testTripInstantiationException() {
+    TripInstantiationException exception =
+      new TripInstantiationException(TestClass.class, "cannot instantiate", new IllegalStateException("inner"));
+    TripType<TripInstantiationException> tripType = TripFactory.getInstance().getType(TripInstantiationException.class);
+    TripInstantiationException tunnelled = tunnelPhenotypic(exception, tripType);
+    assertEquals(tunnelled.getClazz(), TestClass.class);
+    assertEquals(tunnelled.getMessage(), "cannot instantiate");
+    assertNotNull(tunnelled.getCause());
+    assertEquals(tunnelled.getCause().getMessage(), "inner");
+  }
+
+  @Test
+  void testTripNoSuchDelegateException() {
+    UUID delegateId = UUID.randomUUID();
+    TripNoSuchDelegateException exception = new TripNoSuchDelegateException(delegateId);
+    TripType<TripNoSuchDelegateException> tripType = TripFactory.getInstance().getType(TripNoSuchDelegateException.class);
+    TripNoSuchDelegateException tunnelled = tunnelPhenotypic(exception, tripType);
+    assertEquals(tunnelled.getDelegateId(), delegateId);
+    assertEquals(tunnelled.getMessage(), exception.getMessage());
+  }
+
+  @Test
+  void testTripStreamClosedException() {
+    TripStreamClosedException exception = new TripStreamClosedException("stream closed", new IOException("io"));
+    TripType<TripStreamClosedException> tripType = TripFactory.getInstance().getType(TripStreamClosedException.class);
+    TripStreamClosedException tunnelled = tunnelPhenotypic(exception, tripType);
+    assertEquals(tunnelled.getMessage(), "stream closed");
+    assertNotNull(tunnelled.getCause());
+    assertEquals(tunnelled.getCause().getMessage(), "io");
+  }
+
+  @Test
+  void testTripError() {
+    TripError error = new TripError(DefaultOpCode.NO_SUCH_DELEGATE, "no delegate");
+    TripType<TripError> tripType = TripFactory.getInstance().getType(TripError.class);
+    TripError tunnelled = tunnelPhenotypic(error, tripType);
+    assertEquals(tunnelled.getOpCode(), DefaultOpCode.NO_SUCH_DELEGATE);
+    assertTrue(tunnelled.isNoSuchDelegate());
+    assertEquals(tunnelled.getMessage(), error.getMessage());
   }
 
 

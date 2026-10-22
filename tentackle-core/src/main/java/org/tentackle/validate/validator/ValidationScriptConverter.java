@@ -27,7 +27,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for a script converter for validation and condition scripts.
+ * Annotation for a script converter for value and condition scripts of validators.
+ *
+ * @see org.tentackle.validate.ValidatorCompoundValueFactory
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

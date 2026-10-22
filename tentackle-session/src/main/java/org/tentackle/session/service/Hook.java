@@ -23,7 +23,10 @@ import java.util.ResourceBundle;
 import org.tentackle.common.ModuleHook;
 
 /**
- * Hook for the session module.
+ * Hook for the session module.<br>
+ * Makes the module part of the module hierarchy and provides access to its resource bundles.
+ *
+ * @see org.tentackle.common.ModuleHook
  *
  * @author harald
  */

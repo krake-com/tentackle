@@ -30,6 +30,7 @@ public enum MessageType implements Convertible<String>{
 
 
   @Override
+  @SuppressWarnings("bundle")
   public String toString() {
     return PdoBundle.getString(name());
   }
@@ -41,10 +42,10 @@ public enum MessageType implements Convertible<String>{
 
 
   /**
-   * Creates an event source from an external value.
+   * Converts an external value to a message type.
    *
    * @param external the external value
-   * @return the type
+   * @return the message type, null if external value is null
    */
   public static MessageType toInternal(String external) {
     if (external != null) {

@@ -29,20 +29,23 @@ import java.util.function.UnaryOperator;
  * A copy-on-write wrapper for lists.<br>
  * The first modifying operation creates a clone to leave the original list untouched.
  * <p>
- * With iteratorModifying=false, all operations are supported except {@link java.util.Iterator#remove()},
+ * With {@code iteratorModifying=false}, all operations are supported except {@link java.util.Iterator#remove()},
  * which will throw an {@link UnsupportedOperationException}.<br>
- * With iteratorModifying=true, iterator() will create a copy of the collection
+ * With {@code iteratorModifying=true}, {@code iterator()} will create a copy of the list
  * to allow modifications by the iterator.
  * <p>
- * With listIteratorModifying=false, all operations are supported except {@link java.util.ListIterator#remove()},
- * {@link ListIterator#add(java.lang.Object)} and {@link ListIterator#set(java.lang.Object)} which will
+ * With {@code listIteratorModifying=false}, all operations are supported except {@link java.util.ListIterator#remove()},
+ * {@link ListIterator#add(java.lang.Object)} and {@link ListIterator#set(java.lang.Object)}, which will
  * throw an {@link UnsupportedOperationException}.<br>
- * With listIteratorModifying=true, listIterator() will create a copy of the list
- * to allow modifications by the listIterator.
+ * With {@code listIteratorModifying=true}, {@code listIterator()} will create a copy of the list
+ * to allow modifications by the list iterator.
  * <p>
- * Not to be mixed up with {@link java.util.concurrent.CopyOnWriteArrayList} which
- * is threadsafe and creates a copy for each modification. {@link CopyOnWriteList}
- * is not threadsafe and creates a copy only once before the first modification
+ * The views returned by {@link #subList(int, int)} and {@link #reversed()} are backed by the copy,
+ * hence they create the copy as well.
+ * <p>
+ * Not to be mixed up with {@link java.util.concurrent.CopyOnWriteArrayList}, which
+ * is thread-safe and creates a copy for each modification. {@link CopyOnWriteList}
+ * is not thread-safe and creates a copy only once before the first modification
  * is performed.
  *
  * @author harald
@@ -65,6 +68,7 @@ public class CopyOnWriteList<E> extends CopyOnWriteCollection<E> implements List
    * @param list the list
    * @param iteratorModifying true if iterators will be modifying, else readonly (avoids copy)
    * @param listIteratorModifying true if list-iterators will be modifying, else readonly (avoids copy)
+   * @throws IllegalArgumentException if the list is not cloneable
    */
   public CopyOnWriteList(List<E> list, boolean iteratorModifying, boolean listIteratorModifying) {
     super(list, iteratorModifying);
@@ -75,6 +79,7 @@ public class CopyOnWriteList<E> extends CopyOnWriteCollection<E> implements List
    * Creates a wrapper for a list with read-only iterators and modifying list-iterators.
    *
    * @param list the list
+   * @throws IllegalArgumentException if the list is not cloneable
    */
   public CopyOnWriteList(List<E> list) {
     this(list, false, true);
@@ -99,7 +104,8 @@ public class CopyOnWriteList<E> extends CopyOnWriteCollection<E> implements List
   }
 
   /**
-   * Gets the cloned list.
+   * Gets the cloned list.<br>
+   * Clones the list, if not done yet.
    *
    * @return the cloned list
    */
@@ -175,7 +181,8 @@ public class CopyOnWriteList<E> extends CopyOnWriteCollection<E> implements List
 
   @Override
   public List<E> reversed() {
-    return list().reversed();
+    // the view may be modified: must not refer to the original list
+    return clonedList().reversed();
   }
 
   @Override
@@ -206,15 +213,16 @@ public class CopyOnWriteList<E> extends CopyOnWriteCollection<E> implements List
 
   @Override
   public List<E> subList(int fromIndex, int toIndex) {
-    return new CopyOnWriteList<>(list().subList(fromIndex, toIndex));
+    // the view may be modified: must not refer to the original list
+    return clonedList().subList(fromIndex, toIndex);
   }
 
 
   /**
-   * Creates a read-only iterator for the collection.
+   * Creates a read-only list iterator for the list.
    *
-   * @param iterator the original iterator
-   * @return the iterator
+   * @param iterator the original list iterator
+   * @return the read-only list iterator
    */
   protected ListIterator<E> createReadOnlyListIterator(ListIterator<E> iterator) {
     return new ReadOnlyListIterator<>(iterator);

@@ -38,7 +38,7 @@ public class OptionLine extends MultiLine {
 
 
   /**
-   * Creates an attribute option line.<br>
+   * Creates an attribute or relation option line.<br>
    * May span multiple lines.
    *
    * @param document the whole document
@@ -80,7 +80,7 @@ public class OptionLine extends MultiLine {
   /**
    * Gets the attribute or relation name.
    *
-   * @return the attribute name, never null or empty
+   * @return the attribute or relation name, never null or empty
    * @throws ModelException if not parsed
    */
   public String getName() throws ModelException {

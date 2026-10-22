@@ -46,6 +46,7 @@ public interface Registry extends Remote, RemoteLookup {
   /**
    * Registers a remote object with a symbolic name.
    *
+   * @param <T> the remote type
    * @param remoteObject the remote object to register
    * @param name the symbolic name of the remote delegate
    * @return the remote delegate
@@ -55,6 +56,7 @@ public interface Registry extends Remote, RemoteLookup {
   /**
    * Registers a remote object w/o a symbolic name.
    *
+   * @param <T> the remote type
    * @param remoteObject the remote object to register
    * @return the remote delegate
    */

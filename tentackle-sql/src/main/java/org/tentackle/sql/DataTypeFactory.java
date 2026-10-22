@@ -19,7 +19,6 @@
 package org.tentackle.sql;
 
 import org.tentackle.common.ServiceFactory;
-import org.tentackle.common.StringHelper;
 import org.tentackle.sql.datatypes.ConvertibleType;
 
 interface DataTypeFactoryHolder {
@@ -32,18 +31,6 @@ interface DataTypeFactoryHolder {
 public interface DataTypeFactory {
 
   /**
-   * Large variant of a type.<br>
-   * For example, to distinguish standard VARCHAR Strings from CLOBs.
-   */
-  String LARGE_VARIANT = "Large";
-
-  /**
-   * Type name for the wrapper type implementing <code>org.tentackle.misc.Convertible</code>.
-   */
-  String CONVERTIBLE_TYPE = "implementing Convertible";
-
-
-  /**
    * The singleton.
    *
    * @return the singleton
@@ -54,9 +41,11 @@ public interface DataTypeFactory {
 
 
   /**
-   * Gets the datatype singleton.
+   * Gets the datatype singleton.<br>
+   * If there is no datatype for the given java type name and the variant is empty,
+   * the name is looked up as a model type (such as {@code JSON} or {@code XML}).
    *
-   * @param name the type name
+   * @param name the java or model type name
    * @param variant the type variant, empty string if none
    * @return the datatype, null if no such type
    */
@@ -64,7 +53,8 @@ public interface DataTypeFactory {
 
 
   /**
-   * Gets the datatype singleton.
+   * Gets the datatype singleton.<br>
+   * The type is looked up by the simple name of the class.
    *
    * @param <T> the java type
    * @param clazz the java class
@@ -73,14 +63,14 @@ public interface DataTypeFactory {
    */
   @SuppressWarnings("unchecked")
   default <T> DataType<T> get(Class<T> clazz, String variant) {
-    return (DataType<T>) get(StringHelper.lastAfter(clazz.getName(), '.'), variant);
+    return (DataType<T>) get(clazz.getSimpleName(), variant);
   }
 
 
   /**
    * Gets the datatype singleton.
    *
-   * @param javaType the java type
+   * @param javaType the java or model type name
    * @return the datatype, null if no such type
    */
   default DataType<?> get(String javaType) {

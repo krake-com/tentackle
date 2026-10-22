@@ -26,7 +26,7 @@ package org.tentackle.trip;
  * For enums the components are the enum names.
  * For dynamic proxies the classname is always <code>java.lang.reflect.Proxy</code> and the
  * components are the names of the interfaces implemented by the invocation handler.
- * Otherwise, the components correspond to the declared {@link java.lang.reflect.Field}s.
+ * Otherwise, the components correspond to the declared {@link java.lang.reflect.Field}s
  * or {@link java.lang.reflect.RecordComponent}s.<br>
  * Components are referenced in the stream via their index.
  */
@@ -49,6 +49,25 @@ public interface DictionaryEntry {
    * @return true if client-only
    */
   boolean isClientOnly();
+
+  /**
+   * Returns whether this entry has been replaced by another entry for the same class.
+   * <p>
+   * Streams cache the entries by class. A client-only entry, however, may be replaced by the
+   * server's entry later, so a stream may keep it only as long as it is not superseded.
+   *
+   * @return true if superseded or not tracked, false if still the dictionary's entry for its class
+   * @see #markSuperseded()
+   */
+  boolean isSuperseded();
+
+  /**
+   * Marks this entry as replaced by another entry for the same class.<br>
+   * Invoked by the dictionary after the new entry has been added.
+   *
+   * @see #isSuperseded()
+   */
+  void markSuperseded();
 
   /**
    * Returns whether the entry describes a dynamic proxy.
@@ -83,11 +102,10 @@ public interface DictionaryEntry {
 
   /**
    * Gets the entry's component for the given ordinal.
-   * <p>
-   * Throws a {@link TripRuntimeException} if the ordinal is invalid.
    *
    * @param ordinal the component ordinal
    * @return the component, never null
+   * @throws TripRuntimeException if the ordinal is invalid
    */
   DictionaryEntryComponent getComponent(int ordinal);
 

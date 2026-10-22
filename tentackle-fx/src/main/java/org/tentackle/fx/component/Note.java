@@ -39,13 +39,11 @@ import java.util.List;
 
 /**
  * A note control.<br>
- * Notes display information related to another linkedNode. Tentackle uses notes to display errors due to bad user input
- * in a linkedNode, e.g., after a ParseException.
+ * Notes display information related to another node. Tentackle uses notes to display errors due to bad user input
+ * in a node, e.g., after a ParseException.
  * <p>
- * A note is displayed "nearby" its linkedNode. The default position is to the right side of the linkedNode. However,
- * if there is not enough space left on the screen, the note may be displayed below, left, or on top of its
- * linkedNode.<p>
- * The link between the note and its linkedNode is visualized by a straight line and a circle above the linkedNode's
+ * A note is displayed "nearby" its node, according to its {@link Position}.<p>
+ * The link between the note and its node is visualized by a straight line and a circle above the node's
  * border.<p>
  * Notes come in 3 categories:
  * <ol>
@@ -64,17 +62,17 @@ public class Note extends PopupControl {
   public enum Type {
 
     /**
-     * error message.
+     * Error message.
      */
     ERROR("error"),
 
     /**
-     * info message.
+     * Info message.
      */
     INFO("info"),
 
     /**
-     * a sticky note.
+     * A sticky note.
      */
     STICKY("sticky");
 
@@ -114,31 +112,31 @@ public class Note extends PopupControl {
 
 
   /**
-   * display position relative to the linked node.
+   * Display position relative to the linked node.
    */
   public enum Position {
     /**
-     * to the right side of the node.
+     * To the right side of the node.
      */
     RIGHT("right"),
 
     /**
-     * to the left side of the node.
+     * To the left side of the node.
      */
     LEFT("left"),
 
     /**
-     * above the node.
+     * Above the node.
      */
     TOP("top"),
 
     /**
-     * below the node.
+     * Below the node.
      */
     BOTTOM("bottom"),
 
     /**
-     * in the middle of the node.
+     * In the middle of the node.
      */
     CENTER("center");
 
@@ -270,7 +268,7 @@ public class Note extends PopupControl {
 
 
   /**
-   * Sets the position related to the content node.
+   * Sets the position relative to the owner node.
    *
    * @param position the position
    */
@@ -323,9 +321,9 @@ public class Note extends PopupControl {
   }
 
   /**
-   * Returns the content shown by the pop-over.
-   * <p>
-   * @return the content linkedNode property
+   * Gets the property of the content shown by the note.
+   *
+   * @return the content node property
    */
   public ObjectProperty<Node> contentNodeProperty() {
     if (contentNodeProperty == null) {
@@ -337,7 +335,7 @@ public class Note extends PopupControl {
 
   /**
    * Gets the content node displayed by this note.
-   * <p>
+   *
    * @return the content node
    */
   public Node getContentNode() {
@@ -349,7 +347,7 @@ public class Note extends PopupControl {
 
   /**
    * Sets the content node displayed by this note.
-   * <p>
+   *
    * @param contentNode the content node
    */
   public void setContentNode(Node contentNode) {
@@ -362,7 +360,8 @@ public class Note extends PopupControl {
   }
 
   /**
-   * Shows the note popup.
+   * Shows the note popup.<br>
+   * Does nothing if the owner node is null or does not belong to a stage.
    *
    * @param ownerNode the owner node
    */
@@ -376,7 +375,8 @@ public class Note extends PopupControl {
   }
 
   /**
-   * Sets the text to be shown.
+   * Sets the text to be shown.<br>
+   * Replaces the content node with a label.
    *
    * @param text the text
    */
@@ -389,7 +389,7 @@ public class Note extends PopupControl {
   /**
    * Gets the text shown.
    *
-   * @return the text
+   * @return the text, null if the content node is not a label
    */
   public String getText() {
     Node contentNode = getContentNode();

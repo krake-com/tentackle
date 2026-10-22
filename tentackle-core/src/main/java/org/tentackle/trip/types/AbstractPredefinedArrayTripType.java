@@ -37,6 +37,22 @@ import java.lang.reflect.Array;
 public abstract class AbstractPredefinedArrayTripType<T> extends AbstractTripType<T>
        implements PredefinedArray<T> {
 
+  /**
+   * Returned by {@link #readSkip} for an opcode that is not a skip.<br>
+   * Skip counts are never negative, so this cannot collide with a real one.
+   */
+  protected static final int NO_SKIP = -1;
+
+  /** Maximum number of elements in a block, such as {@link DefaultOpCode#BYTEN}. */
+  protected static final int MAX_BLOCK_LENGTH = 255;
+
+  /**
+   * Maximum length of a run of default values kept within a block.<br>
+   * Inside a block, each default value costs one byte. Ending the block costs a skip and a new
+   * block header (or the opcode of a single value), 2 bytes each.
+   */
+  protected static final int MAX_INNER_ZEROS = 3;
+
   private final PredefinedArrayType subType;
 
   /**
@@ -116,12 +132,47 @@ public abstract class AbstractPredefinedArrayTripType<T> extends AbstractTripTyp
    * @return the array length
    */
   protected int readArrayLength(Deserializer deserializer, OpCode opCode) {
-    return switch (opCode) {
-      case DefaultOpCode.ARRAYN1 -> deserializer.deserializeByteAsUnsigned();
-      case DefaultOpCode.ARRAYN2 -> deserializer.deserializeShortAsUnsigned();
-      case DefaultOpCode.ARRAYN -> deserializer.deserializeInt();
-      default -> throw new TripRuntimeException("invalid array opcode: " + opCode);
-    };
+    if (opCode instanceof DefaultOpCode code) {
+      return switch (code) {
+        case ARRAYN1 -> deserializer.deserializeByteAsUnsigned();
+        case ARRAYN2 -> deserializer.deserializeShortAsUnsigned();
+        case ARRAYN -> deserializer.deserializeInt();
+        default -> throw new TripRuntimeException("invalid array opcode: " + opCode);
+      };
+    }
+    throw new TripRuntimeException("invalid array opcode: " + opCode);
+  }
+
+  /**
+   * Reads the array skip, if the opcode is one.
+   * <p>
+   * The counterpart of {@link #writeSkip}, shared by the read loop of every predefined array type.
+   * <p>
+   * The opcode is narrowed to {@link DefaultOpCode} before switching: with the {@link OpCode}
+   * interface as the selector type, javac compiles the switch to an {@code invokedynamic
+   * typeSwitch}, whose generated body is a linear chain of comparisons instead of a jump table.
+   * An opcode of another implementation is not a skip and takes the {@link #NO_SKIP} path.
+   *
+   * @param deserializer the deserializer
+   * @param opCode the opcode (already read from the stream)
+   * @return the number of elements to skip, {@link #NO_SKIP} if the opcode is not a skip
+   */
+  protected int readSkip(Deserializer deserializer, OpCode opCode) {
+    if (opCode instanceof DefaultOpCode code) {
+      int skip = switch (code) {
+        case SKIP -> deserializer.deserializeInt();
+        case SKIP2 -> deserializer.deserializeShortAsUnsigned();
+        case SKIP1 -> deserializer.deserializeByteAsUnsigned();
+        default -> NO_SKIP;
+      };
+      if (skip < NO_SKIP) {
+        // only the 4-byte form can be negative, and only from a corrupted stream.
+        // Left unchecked, it would move the write position backwards and loop forever.
+        throw new TripRuntimeException("negative skip count " + skip + " for " + this);
+      }
+      return skip;
+    }
+    return NO_SKIP;
   }
 
   /**

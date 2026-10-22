@@ -44,7 +44,7 @@ import static java.util.Calendar.YEAR;
  * timezone by convention, for example, UTC. This is what the UTC attribute
  * and the tentackle model's [UTC]-option are provided for.
  * <p>
- * Furthermore, tentackle timestamps can be frozen, i.e. made immutable.
+ * Furthermore, tentackle timestamps can be frozen, i.e., made immutable (see {@link Freezable}).
  *
  * @author harald
  */
@@ -55,7 +55,8 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
 
 
   /**
-   * Creates a frozen timestamp.
+   * Creates a frozen timestamp.<br>
+   * The UTC flag is false.
    *
    * @param epoch epochal milliseconds since January 1, 1970, 00:00:00 GMT
    * @param nanos the new fractional seconds component
@@ -82,18 +83,27 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
   }
 
   /**
-   * Converts a string into a timestamp.
+   * Converts a string into a timestamp.<br>
+   * Same as {@link java.sql.Timestamp#valueOf(String)}, but returns a tentackle timestamp
+   * (not frozen, UTC flag false).
    *
-   * @param str the string
+   * @param str the string in JDBC timestamp escape format {@code yyyy-[m]m-[d]d hh:mm:ss[.f...]}
    * @return the timestamp
+   * @throws IllegalArgumentException if the string is not in the expected format
    */
   public static Timestamp valueOf(String str) {
-    return new Timestamp(java.sql.Timestamp.valueOf(str).getTime());
+    java.sql.Timestamp sqlTimestamp = java.sql.Timestamp.valueOf(str);
+    Timestamp timestamp = new Timestamp(sqlTimestamp.getTime());
+    timestamp.setNanos(sqlTimestamp.getNanos());    // keep the fraction below milliseconds as well
+    return timestamp;
   }
 
 
-  private boolean utc;                  // true if the timestamp is always UTC
-  private boolean frozen;               // true if the timestamp cannot be modified anymore
+  /** true if the timestamp is always UTC. */
+  private boolean utc;
+
+  /** true if the timestamp cannot be modified anymore. */
+  private boolean frozen;
 
 
   /**
@@ -182,7 +192,7 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
   /**
    * {@inheritDoc}
    * <p>
-   * Overridden to clear the lazy calendar and to check for frozen.
+   * Overridden to check for frozen.
    */
   @Override
   public void setTime(long timestamp) {
@@ -190,6 +200,11 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
     super.setTime(timestamp);
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to check for frozen.
+   */
   @Override
   public void setNanos(int n) {
     assertNotFrozen();
@@ -249,7 +264,7 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
 
 
   /**
-   * Save the state of this object to a stream.
+   * Saves the state of this object to a stream.
    * <p>
    * If utc, the value {@code YYYYMMDDHHMMSS} is emitted. This allows serializing
    * and deserializing in different timezones without changing the timestamp.
@@ -279,7 +294,7 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
 
 
   /**
-   * Reconstitute this object from a stream.
+   * Reconstitutes this object from a stream.
    *
    * @param s the stream
    * @throws IOException if reading from stream failed

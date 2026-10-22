@@ -68,6 +68,7 @@ public interface BindingMember {
 
   /**
    * Gets the getter method.
+   *
    * @return the method, null if none
    */
   Method getGetter();
@@ -109,7 +110,7 @@ public interface BindingMember {
    *
    * @param parent the parent containing this member
    * @param value the object to set
-   * @return the new parent if value was updated via "from"- or "with"-method
+   * @return the new parent if value was updated via "from"- or "with"-method, else null
    */
   Object setObject(Object parent, Object value);
 

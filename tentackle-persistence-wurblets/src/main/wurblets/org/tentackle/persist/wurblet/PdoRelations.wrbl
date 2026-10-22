@@ -7,7 +7,7 @@ usage:<br>
     [--loadcomponents|--noloadcomponents]
     [--insertcomponents|--noinsertcomponents]
     [--deletecomponents|--nodeletecomponents]
-    [--nori] [--noselects] [--nodeletes] [--mock]
+    [--nori] [--noselects] [--nodeletes] [--novalidate] [--mock]
 <p>
 arguments:
 <ul>
@@ -1943,11 +1943,9 @@ For more options, see {\@link DbModelWurblet}.
                 joins = " *" + rel.getNmName();
               }
             }
-            // add eager joins, if any
-            for (Relation eRel: getEntity().getRelationsIncludingInherited()) {
-              if (eRel.getSelectionType() == SelectionType.EAGER) {
-                joins += " *" + eRel.getName();
-              }
+            // add eager joins, if any (cascaded according to the declared eager depth)
+            for (String eagerPath: getEagerJoinPaths()) {
+              joins += " " + eagerPath;
             }
 
             String extraWurbletOptions = rel.getSelectionWurbletArguments();

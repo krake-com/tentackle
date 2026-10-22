@@ -34,8 +34,19 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
- * Factory for stored bundles.<br>
- * Replaces the {@link DefaultBundleFactory}.
+ * Bundle factory that loads the bundles of named modules from the database.
+ * <p>
+ * Replaces the {@link DefaultBundleFactory}. For each bundle registered via {@link BundleSupport}, it loads
+ * the {@link StoredBundle}s of the requested locale and its parent locales, chains them as
+ * {@link StoredResourceBundle}s and appends the property-file bundle as the last resort, unless
+ * {@link StoredBundleControl#setFallbackToProperties(boolean) fallbackToProperties} is turned off.
+ * The resulting chains are cached until a {@link StoredBundle} is modified.<br>
+ * In non-modular applications, all bundles are loaded through the {@link StoredBundleControl} handed out by the
+ * {@link StoredBundleControlProvider} instead.
+ * <p>
+ * Without a current {@link Session}, or if {@link #setEnabled(boolean) disabled}, the factory behaves like
+ * the {@link DefaultBundleFactory}. Bundles loaded before the first session became available are discarded
+ * as soon as it does, so that the stored bundles take over.
  */
 @Service(BundleFactory.class)
 public class StoredBundleFactory extends DefaultBundleFactory {
@@ -59,6 +70,10 @@ public class StoredBundleFactory extends DefaultBundleFactory {
 
   /**
    * Sets whether loading bundles from the backend is enabled at all.
+   * <p>
+   * Applies to the bundles loaded by this factory as well as to those loaded by the {@link StoredBundleControl}.
+   * Bundles already cached are not affected: set the flag before the first lookup, or invoke
+   * {@link BundleFactory#clearCache()} afterward.
    *
    * @param enabled true if enabled (default)
    */

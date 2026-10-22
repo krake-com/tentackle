@@ -28,7 +28,7 @@ import org.tentackle.fx.atlanta.container.FxInputGroup;
 import javafx.beans.DefaultProperty;
 
 /**
- * Builder to create an InputGroup.
+ * Builder to create an {@link FxInputGroup} whenever the FXML references an {@link InputGroup}.
  *
  * @author harald
  */

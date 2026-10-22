@@ -69,7 +69,7 @@ public class BeanInfoMojoTest {
     manifestDir = new File(basedir, "target" + File.separator + "manifest");
     log = new RecordingLog();
     mojo = new BeanInfoMojo();
-    mojo.setLog(log);
+    mojo.setLogger(log);
     setField(mojo, "mavenProject", createProject(basedir));
     setField(mojo, "sourceDir", sourceDir);
     setField(mojo, "manifestDirectory", manifestDir.getPath());
@@ -127,6 +127,19 @@ public class BeanInfoMojoTest {
     assertEquals(log.getInfoMessages().size(), 1);
     assertTrue(RecordingLog.contains(log.getInfoMessages(), "2 files processed, 0 errors"),
                log.getInfoMessages().toString());
+  }
+
+  /**
+   * Only the simple class name decides whether a bean is abstract, not the package it lives in.
+   */
+  @Test
+  public void keepsBeansInAPackageNamedAbstract() throws Exception {
+    writeSource("com/example/Abstracts/Contact.java");
+    writeSource("com/example/Abstracts/ContactBeanInfo.java");
+
+    execute();
+
+    assertTrue(readLines(manifestFile()).contains("Name: " + className("com", "example", "Abstracts", "Contact")));
   }
 
   /**
@@ -272,10 +285,10 @@ public class BeanInfoMojoTest {
   }
 
   /**
-   * The section names are built from the scanner's relative paths, hence the platform's separator.
+   * Manifest names are slash-separated on every platform.
    */
   private String className(String... pathElements) {
-    return String.join(File.separator, pathElements) + ".class";
+    return String.join("/", pathElements) + ".class";
   }
 
 }

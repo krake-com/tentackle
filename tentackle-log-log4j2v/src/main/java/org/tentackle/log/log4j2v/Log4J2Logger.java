@@ -34,24 +34,30 @@ import java.util.HashMap;
 import java.util.function.Supplier;
 
 /**
- * Pluggable logger using <code>org.apache.log4j</code>.
+ * Tentackle {@link Logger} backed by Log4J 2 ({@code org.apache.logging.log4j}).
  * <p>
- * Logger wrapper for Log4J version 2.
+ * Registered as {@code @Service(Logger.class)}, so it is picked up by the {@code DefaultLoggerFactory}
+ * as soon as this module is on the class- or module path.<br>
+ * Messages are formatted with {@link MessageFormat} (not Log4J's {@code {}} placeholders) and logged
+ * on behalf of the caller, i.e. Log4J reports the caller's location, not this wrapper's.
  *
  * @author harald
  */
 @Service(Logger.class)
 public class Log4J2Logger implements Logger {
 
-  // classname to exclude from stacktrace
+  // the wrapper's classname: Log4J skips it when determining the caller's location
   private static final String FQCN = Log4J2Logger.class.getName();
 
-  // cached loggers
+  // cached loggers, one per name (never evicted)
   private static final HashMap<String, Log4J2Logger> LOGGERS = new HashMap<>();
 
   /**
-   * Gets the Log4J2Logger for given name.
-   * If a logger with that name already exists, it will be re-used.
+   * Gets the Log4J2Logger for the given name.<br>
+   * If a logger with that name already exists, it will be reused.
+   * <p>
+   * This is the method {@code DefaultLoggerFactory} prefers over the constructor.
+   * The cache is thread-safe and holds the loggers for the lifetime of the JVM.
    *
    * @param name the name of the logger
    * @return the logger
@@ -63,11 +69,12 @@ public class Log4J2Logger implements Logger {
   }
 
 
-  private final ExtendedLoggerWrapper logger;   // the Log4J logger
+  private final ExtendedLoggerWrapper logger;   // the wrapped Log4J logger
 
 
   /**
-   * Creates a logger.
+   * Creates a logger.<br>
+   * Applications should use {@link #getLogger(String)} instead, which reuses existing instances.
    *
    * @param name the name of the logger
    */
@@ -77,6 +84,12 @@ public class Log4J2Logger implements Logger {
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Returns the {@link ExtendedLoggerWrapper} around the Log4J logger, not the
+   * {@code org.apache.logging.log4j.Logger} obtained from the {@code LogManager}.
+   */
   @Override
   public Object getLoggerImpl() {
     return logger;
@@ -286,7 +299,8 @@ public class Log4J2Logger implements Logger {
   }
 
   /**
-   * Logs the stacktrace of a throwable.
+   * Logs the stacktrace of a throwable.<br>
+   * The stacktrace is logged line by line via a {@link LoggerOutputStream}.
    *
    * @param level   the logging level
    * @param cause   the Throwable to log the stacktrace for
@@ -315,25 +329,31 @@ public class Log4J2Logger implements Logger {
 
 
   /**
-   * Logging workhorse.
+   * Logs a message with optional parameters.
+   * <p>
+   * If there are parameters, the message is formatted with {@link MessageFormat}.
+   * Otherwise, it is logged verbatim, i.e. quotes are not unescaped and placeholders stay as they are.
    *
    * @param level the log level
    * @param message the message
-   * @param cause the cause
+   * @param cause the cause, null if none
    * @param params optional parameters
    */
   protected void doLog(Level level, String message, Throwable cause, Object... params) {
-    // LOG4J parameter strings are incompatible with {@link MessageFormat}
+    // Log4J's {} placeholders differ from MessageFormat: format here and hand Log4J the finished message
     doLog(level, cause, null, () -> params != null && params.length > 0 ? MessageFormat.format(message, params) : message);
   }
 
   /**
-   * Logging workhorse.
+   * Logs a message with lazily evaluated parameters.
+   * <p>
+   * The suppliers are evaluated only if the level is enabled. The message is always formatted
+   * with {@link MessageFormat}, even if there are no suppliers.
    *
    * @param level the log level
-   * @param cause the cause
+   * @param cause the cause, null if none
    * @param message the message
-   * @param paramSuppliers parameter suppliers
+   * @param paramSuppliers parameter suppliers, null elements yield null parameters
    */
   protected void doLog(Level level, Throwable cause, String message, Supplier<?>... paramSuppliers) {
     doLog(level, cause, null, () -> {
@@ -342,18 +362,22 @@ public class Log4J2Logger implements Logger {
         Supplier<?> supplier = paramSuppliers[i];
         params[i] = supplier == null ? null : supplier.get();
       }
-      // LOG4J parameter strings are incompatible with {@link MessageFormat}
+      // Log4J's {} placeholders differ from MessageFormat: format here and hand Log4J the finished message
       return MessageFormat.format(message, params);
     });
   }
 
   /**
-   * Logging workhorse.
+   * Logs a message or the result of a message supplier.<br>
+   * All other logging methods end up here.
+   * <p>
+   * The message is created only if the level is enabled. The caller's location is determined
+   * by Log4J relative to this class.
    *
    * @param level the log level
    * @param cause the cause, null if none
-   * @param message the message, null if messageSupplier
-   * @param messageSupplier the message supplier, null if message
+   * @param message the message, ignored if messageSupplier is not null
+   * @param messageSupplier the message supplier, null to log message
    */
   protected void doLog(Level level, Throwable cause, String message, Supplier<String> messageSupplier) {
     logger.logIfEnabled(FQCN, translateLevel(level), null,
@@ -363,10 +387,10 @@ public class Log4J2Logger implements Logger {
 
 
   /**
-   * Translates the tentackle logging level to a LOG4J level.
+   * Translates the Tentackle logging level to the Log4J level.
    *
-   * @param level the tt level
-   * @return the LOG4J level
+   * @param level the Tentackle level
+   * @return the Log4J level ({@code ERROR} for {@code SEVERE})
    */
   private org.apache.logging.log4j.Level translateLevel(Level level) {
     return switch (level) {

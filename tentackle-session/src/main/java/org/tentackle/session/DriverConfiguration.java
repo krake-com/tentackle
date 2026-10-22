@@ -60,7 +60,7 @@ public class DriverConfiguration extends AbstractSessionConfiguration {
           configuration.setPersisted(true);
           drivers.put(name, configuration);
         }
-        // else ignore silently (we don't have a logger available)
+        // else ignore incomplete configurations silently
       }
     }
     catch (BackingStoreException bx) {
@@ -72,7 +72,7 @@ public class DriverConfiguration extends AbstractSessionConfiguration {
   /**
    * Removes all driver configurations.
    *
-   * @param system true if load from system preferences, else user preferences
+   * @param system true if remove from system preferences, else user preferences
    */
   public static void removeDriverConfigurations(boolean system) {
     Preferences prefs = getPrefNode(system);
@@ -116,7 +116,7 @@ public class DriverConfiguration extends AbstractSessionConfiguration {
 
 
   /**
-   * Sets the driver's classname.
+   * Gets the driver's classname.
    *
    * @return the classname
    */
@@ -127,7 +127,7 @@ public class DriverConfiguration extends AbstractSessionConfiguration {
   }
 
   /**
-   * Gets the driver's classname.
+   * Sets the driver's classname.
    *
    * @param driver the classname
    */
@@ -179,7 +179,7 @@ public class DriverConfiguration extends AbstractSessionConfiguration {
   /**
    * Removes this configuration.
    *
-   * @param system true if store in system preferences (requires extra permission), else user preferences
+   * @param system true if remove from system preferences (requires extra permission), else user preferences
    */
   public void remove(boolean system) {
     Preferences prefs = getPrefNode(system);

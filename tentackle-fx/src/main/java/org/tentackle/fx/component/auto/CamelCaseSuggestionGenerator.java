@@ -24,12 +24,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Camel-case suggestion generator function.
+ * Camel-case suggestion generator function.<br>
+ * The segments start at the uppercase letters. Lowercase input is treated as uppercase until the first
+ * uppercase character is typed, i.e. {@code nfe} and {@code NFE} both match {@code NumberFormatException}.
  *
  * @param <T> the type of the available choices
  */
 public class CamelCaseSuggestionGenerator<T> extends AbstractSegmentedSuggestionGenerator<T> {
 
+  /**
+   * Creates the suggestion generator.
+   */
   public CamelCaseSuggestionGenerator() {
     // see -Xlint:missing-explicit-ctor since Java 16
   }

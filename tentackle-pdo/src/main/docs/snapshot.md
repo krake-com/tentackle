@@ -165,8 +165,10 @@ snapshot's delegate:
 `assertValidSnapshot()` enforces the two invariants: the argument must actually be
 a snapshot (`isSnapshot()`), and — unless we are building a copy — it must be one
 of *this* object's own registered snapshots. Reverting to a snapshot that was
-already invalidated (because a later state was persisted, or because it belonged to
-a different object) throws a `PersistenceException` with `"not my snapshot"`.
+already discarded (by reverting to it or to an earlier snapshot, or explicitly), or
+that belongs to a different object, throws a `PersistenceException` with
+`"not my snapshot"`. After a successful revert, the snapshot and all later ones are
+discarded.
 
 > `id`, `serial` and `tableSerial` are deliberately **not** reverted — they can
 > only change through an actual persistence operation, so rolling them back would
@@ -182,10 +184,11 @@ each level:
   [`NumberPoolPersistenceImpl`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/ns/NumberPoolPersistenceImpl.java)):
   every mapped attribute and its `…Persisted` shadow field.
 - **`AbstractPersistentObject`**: context immutability, cache bookkeeping,
-  expiry, the snapshot list itself, normtext, validation and persistable flags.
-- **`AbstractDbObject`**: `modified`, the `immutable` / `finallyImmutable` flags,
-  `overloadable`, property support and session — but **only when not a copy**,
-  because copies are always mutable and new.
+  expiry, normtext, validation and persistable flags. The snapshot list is not
+  reverted but truncated, as described above.
+- **`AbstractDbObject`**: the session (holder), and — **only when not a copy**, because
+  copies are always mutable and new — `modified`, the `immutable` / `finallyImmutable`
+  flags, `overloadable`, property support, and the session's immutability.
 
 ### How the snapshot hooks are wired (generated code)
 
@@ -308,9 +311,8 @@ assertEquals(numberPool.getNumberRangeList().size(), 2);   // component list res
 Note how reverting restores the **modification flag**, the **attribute**, *and*
 the **component list size** in one call — the entire aggregate moves together.
 
-If, after reverting, the object is changed again and **persisted**, the old
-snapshot is no longer valid (a newer serial now exists), and trying to revert to
-it throws:
+Reverting has discarded the snapshot, so trying to revert to it again — for example,
+after the object was changed and persisted once more — throws:
 
 ```java
 numberPool = numberPool.persist();          // serial advances
@@ -343,9 +345,8 @@ assertFalse(numberPool.copy().isImmutable());            // copies are always mu
   ones, become invalid.
 - **You normally don't discard snapshots** — weak references clean them up. Discard
   only when you want the slot freed deterministically.
-- **Identity is never reverted.** `id`/`serial`/`tableSerial` and the immutability
-  of the original survive a revert; persisting after a revert invalidates older
-  snapshots.
+- **Identity is never reverted.** `id`/`serial`/`tableSerial` survive a revert, since
+  only a persistence operation may change them.
 - **Snapshots/copies capture the object *as is*.** Call `loadComponents(false)`
   first if you need the full aggregate.
 - For a technically identical deep clone (same ids), reach for

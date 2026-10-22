@@ -18,5 +18,8 @@
 
 /**
  * Ruby scripting (JRuby).
+ * <p>
+ * Provides the {@link org.tentackle.script.ruby.RubyLanguage} for the Tentackle scripting API,
+ * based on the native JRuby embed API.
  */
 package org.tentackle.script.ruby;

@@ -25,6 +25,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.expectThrows;
 
 /**
  * Tests loading the native quiche library and the plain functions that need nothing else.
@@ -34,14 +35,30 @@ import static org.testng.Assert.assertTrue;
  */
 public class NativeLibraryTest {
 
-  @Test
+  @Test(timeOut = 30000)
   public void testPlatformIsSupported() {
     Reporter.log("platform is one of the directories in the quiche binary artifact", true);
     String platform = NativeLibrary.getPlatform();
     assertTrue(platform.matches("(darwin|linux|win32)-(x86-64|aarch64)"), "unexpected platform " + platform);
   }
 
-  @Test
+  @Test(timeOut = 30000)
+  public void testPlatformMapping() {
+    Reporter.log("os.name and os.arch map to the directories of the binary artifact, if there is one", true);
+    assertEquals(NativeLibrary.getPlatform("Linux", "amd64"), "linux-x86-64");
+    assertEquals(NativeLibrary.getPlatform("Linux", "aarch64"), "linux-aarch64");
+    assertEquals(NativeLibrary.getPlatform("Mac OS X", "aarch64"), "darwin-aarch64");
+    assertEquals(NativeLibrary.getPlatform("Mac OS X", "x86_64"), "darwin-x86-64");
+    assertEquals(NativeLibrary.getPlatform("Windows 11", "amd64"), "win32-x86-64");
+    // the artifact has no binary for Windows on ARM
+    UnsupportedOperationException e = expectThrows(UnsupportedOperationException.class,
+                                                   () -> NativeLibrary.getPlatform("Windows 11", "aarch64"));
+    assertTrue(e.getMessage().contains(NativeLibrary.LIBRARY_PROPERTY), e.getMessage());
+    expectThrows(UnsupportedOperationException.class, () -> NativeLibrary.getPlatform("FreeBSD", "amd64"));
+    expectThrows(UnsupportedOperationException.class, () -> NativeLibrary.getPlatform("Linux", "riscv64"));
+  }
+
+  @Test(timeOut = 30000)
   public void testLibraryNameMatchesThePlatform() {
     Reporter.log("the library file name follows the platform's convention", true);
     String name = NativeLibrary.getLibraryName();
@@ -57,13 +74,13 @@ public class NativeLibraryTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testLibraryIsLoaded() {
     Reporter.log("the native library is loaded and exports its symbols", true);
     assertNotNull(NativeLibrary.getLookup().find("quiche_version").orElse(null));
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testVersion() {
     Reporter.log("quiche_version returns a version string", true);
     String version = Quiche.version();
@@ -72,7 +89,7 @@ public class NativeLibraryTest {
     assertTrue(version.matches("\\d+\\.\\d+\\.\\d+.*"), "unexpected version string '" + version + "'");
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testVersionIsSupported() {
     Reporter.log("the library speaks QUIC version 1 (RFC-9000), and not the old drafts", true);
     assertTrue(Quiche.versionIsSupported(Quiche.PROTOCOL_VERSION));
@@ -80,7 +97,7 @@ public class NativeLibraryTest {
     assertFalse(Quiche.versionIsSupported(0xdead_beef));
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testErrorName() {
     Reporter.log("error codes are translated to their names", true);
     assertEquals(Quiche.errorName(Quiche.ERR_DONE), "DONE");
@@ -89,7 +106,7 @@ public class NativeLibraryTest {
     assertEquals(Quiche.errorName(-4711), "-4711");
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testUnknownSymbolIsReported() {
     Reporter.log("binding a symbol the library does not export fails with a clear message", true);
     try {

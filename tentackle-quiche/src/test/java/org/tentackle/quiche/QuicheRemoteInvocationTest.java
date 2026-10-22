@@ -73,7 +73,7 @@ public class QuicheRemoteInvocationTest {
   }
 
 
-  @Test(dataProvider = "schemes")
+  @Test(dataProvider = "schemes", timeOut = 90000)
   public void invokesRemoteMethodsOverQuic(String scheme) throws Exception {
     Reporter.log("invokesRemoteMethodsOverQuic", true);
     EchoServiceImpl service = new EchoServiceImpl("echo-" + scheme);
@@ -99,7 +99,7 @@ public class QuicheRemoteInvocationTest {
     }
   }
 
-  @Test(dataProvider = "schemes")
+  @Test(dataProvider = "schemes", timeOut = 60000)
   public void propagatesServerSideExceptions(String scheme) throws Exception {
     Reporter.log("propagatesServerSideExceptions", true);
     try (Endpoints endpoints = startEndpoints(scheme, new EchoServiceImpl("echo"), "")) {
@@ -115,7 +115,7 @@ public class QuicheRemoteInvocationTest {
   /**
    * Each pooled TRIP connection is a separate QUIC stream on one and the same QUIC connection.
    */
-  @Test
+  @Test(timeOut = 60000)
   public void multiplexesPooledConnectionsAsQuicStreams() throws Exception {
     Reporter.log("multiplexesPooledConnectionsAsQuicStreams", true);
     try (Endpoints endpoints = startEndpoints(QuicheTripTransport.PROTOCOL, new EchoServiceImpl("echo"),
@@ -142,7 +142,7 @@ public class QuicheRemoteInvocationTest {
   /**
    * Concurrent calls must be dispatched independently &mdash; each on its own QUIC stream.
    */
-  @Test
+  @Test(timeOut = 90000)
   public void handlesConcurrentInvocations() throws Exception {
     Reporter.log("handlesConcurrentInvocations", true);
     final int callCount = 8;
@@ -172,7 +172,7 @@ public class QuicheRemoteInvocationTest {
    * The client must keep it alive, otherwise the next invocation fails with
    * "connection closed by server".
    */
-  @Test
+  @Test(timeOut = 60000)
   public void survivesAnIdlePeriodLongerThanTheQuicIdleTimeout() throws Exception {
     Reporter.log("survivesAnIdlePeriodLongerThanTheQuicIdleTimeout", true);
     try (Endpoints endpoints = startEndpoints(QuicheTripTransport.PROTOCOL, new EchoServiceImpl("echo"),
@@ -193,7 +193,7 @@ public class QuicheRemoteInvocationTest {
    * ignores the interrupt status entirely, which is why the TCP transports never noticed; this transport
    * has to behave the same way and hand the interrupt back to the caller instead of failing the call.
    */
-  @Test
+  @Test(timeOut = 60000)
   public void survivesAnInterruptOfTheCallingThread() throws Exception {
     Reporter.log("survivesAnInterruptOfTheCallingThread", true);
     try (Endpoints endpoints = startEndpoints(QuicheTripTransport.PROTOCOL, new EchoServiceImpl("echo"), "")) {
@@ -219,11 +219,12 @@ public class QuicheRemoteInvocationTest {
   /**
    * Client and server must agree on the ALPN id, otherwise the QUIC handshake is refused.
    */
-  @Test
+  @Test(timeOut = 60000)
   public void rejectsClientWithMismatchingAlpnId() throws Exception {
     Reporter.log("rejectsClientWithMismatchingAlpnId", true);
     try (Endpoints endpoints = startEndpoints(QuicheTripTransport.PROTOCOL, new EchoServiceImpl("echo"), "")) {
-      URI uri = URI.create(QuicheTripTransport.PROTOCOL + "://localhost:" + endpoints.port() + "?alpnid=nosuchprotocol");
+      URI uri = URI.create(QuicheTripTransport.PROTOCOL + "://localhost:" + endpoints.port() +
+                           "?alpnid=nosuchprotocol&certcheck=false");
       Transport client = TripFactory.getInstance().createTransport(uri);
       try {
         expectThrows(RuntimeException.class, client::getConnection);
@@ -268,8 +269,9 @@ public class QuicheRemoteInvocationTest {
     assertTrue(server.isAccepting());
     server.getRegistry().register(service, "echo");
 
+    // these tests are not about certificate checking, and the server's certificate is self-signed
     Transport client = TripFactory.getInstance().createTransport(URI.create(
-      scheme + "://localhost:" + port + "?idle=1" + clientParameters));
+      scheme + "://localhost:" + port + "?idle=1&certcheck=false" + clientParameters));
     return new Endpoints(server, client, port);
   }
 

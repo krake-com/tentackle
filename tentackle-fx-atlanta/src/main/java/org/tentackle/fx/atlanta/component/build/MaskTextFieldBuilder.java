@@ -26,7 +26,7 @@ import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.atlanta.component.FxMaskTextField;
 
 /**
- * Builder to create a MaskTextField.
+ * Builder to create an {@link FxMaskTextField} whenever the FXML references a {@link MaskTextField}.
  *
  * @author harald
  */

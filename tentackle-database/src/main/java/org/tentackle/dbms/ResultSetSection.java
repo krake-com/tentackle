@@ -35,7 +35,7 @@ public class ResultSetSection {
   private final ResultSetWrapper rs;          // the result set
   private final Object key;                   // the key unique with all sections of the resultset
   private Set<String> configuredNames;        // the configured column names, null if nothing configured so far
-  private int[] configuredOffsets;            // offsets of configured columns order by retrieval via application
+  private int[] configuredOffsets;            // offsets of configured columns in the order of retrieval by the application
   private int columnIndex;                    // next column index during automatic retrieval
 
   /**
@@ -61,9 +61,11 @@ public class ResultSetSection {
 
 
   /**
-   * Configures a column for automatic retrieval.
+   * Configures a column for automatic retrieval.<br>
+   * The columns must be configured in the order of their retrieval.
    *
    * @param name the column name
+   * @throws PersistenceException if the column is configured twice or more columns are configured than the result set provides
    */
   public void configureColumn(String name) {
     if (configuredNames == null) {

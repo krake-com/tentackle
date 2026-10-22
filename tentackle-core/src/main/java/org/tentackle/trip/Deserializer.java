@@ -21,7 +21,7 @@ package org.tentackle.trip;
 import java.io.InputStream;
 
 /**
- * Low-level deserializer for primitive values and Strings.
+ * Low-level deserializer for primitive values and raw bytes.
  */
 public interface Deserializer {
 
@@ -161,5 +161,14 @@ public interface Deserializer {
    * @return the {@code double} value
    */
   double deserializeDouble();
+
+  /**
+   * Deserializes a UTF-8 encoded string.
+   *
+   * @param length the number of bytes, not the number of characters
+   * @return the string
+   * @throws TripRuntimeException if the length is negative
+   */
+  String deserializeUtf8(int length);
 
 }

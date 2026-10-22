@@ -35,6 +35,7 @@ import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -45,9 +46,18 @@ import java.util.stream.Collectors;
 public final class ModuleSorter {
 
   /**
-   * The singleton.
+   * The singleton for the module hierarchy visible from the context classloader.<br>
+   * It is created lazily on first use and finds the {@link ModuleHook}s via
+   * {@link ServiceLoader#load(Class)}, i.e., via the thread's context classloader at that time.
+   * Usually, this is the boot layer. If the application was started via {@link LayerBootstrap},
+   * this is the hierarchy of the leaf layer.
    */
   public static final ModuleSorter INSTANCE = new ModuleSorter();
+
+  /**
+   * Cache of per-layer sorters, see {@link #forLayer(ModuleLayer)}.
+   */
+  private static final Map<ModuleLayer, ModuleSorter> LAYER_SORTERS = new ConcurrentHashMap<>();
 
 
   private final Map<String, ModuleInfo> nameToModules;  // name:info
@@ -56,15 +66,35 @@ public final class ModuleSorter {
   private final Set<String> classpathFirstServices;     // services to override from classpath
 
   /**
-   * Creates a module sorter and loads the module hierarchy.
+   * Creates a module sorter and loads the module hierarchy visible from the context classloader.
    * <p>
    * Finds all named modules providing a {@link ModuleHook} via module-info and sorts them
    * according to their dependencies.
    */
   public ModuleSorter() {
+    this(null);
+  }
+
+  /**
+   * Creates a module sorter and loads the module hierarchy of a given layer.
+   * <p>
+   * Finds all named modules reachable from the given layer (i.e., its own modules plus all
+   * ancestor layers) providing a {@link ModuleHook} via module-info and sorts them according
+   * to their dependencies.
+   * <p>
+   * Notice that the {@link ClasspathFirst} services are always read via the classloader of
+   * tentackle-common, not via the layer. Hence, {@code @ClasspathFirst} declarations of modules
+   * that exist only within the given layer are not taken into account.
+   *
+   * @param layer the module layer, null for the hierarchy visible from the context classloader
+   * @throws TentackleRuntimeException if the module hierarchy is not sortable or the
+   *         {@code @ClasspathFirst} services cannot be determined
+   */
+  public ModuleSorter(ModuleLayer layer) {
     nameToModules = new HashMap<>();
     urlToModules = new HashMap<>();
-    ServiceLoader.load(ModuleHook.class).stream().map(ServiceLoader.Provider::get).forEach(hook -> {
+    (layer == null ? ServiceLoader.load(ModuleHook.class) : ServiceLoader.load(layer, ModuleHook.class))
+            .stream().map(ServiceLoader.Provider::get).forEach(hook -> {
       ModuleInfo info = new ModuleInfo(hook);
       nameToModules.put(info.getModule().getName(), info);
       urlToModules.put(info.getUrlPath(), info);
@@ -81,12 +111,12 @@ public final class ModuleSorter {
 
     classpathFirstServices = new HashSet<>();
     // we can't use ServiceLoader because we're in modular mode, and we can't use ServiceFinder yet
-    // because of chicken egg. Hence, we must do that really low level...
+    // because of the chicken-and-egg problem. Hence, we must do that really low level...
     try {
       Enumeration<URL> urls = getClass().getClassLoader().getResources(Constants.META_SERVICE_PATH + ClasspathFirst.class.getName());
       while (urls.hasMoreElements()) {
         URL url = urls.nextElement();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(FileHelper.openStreamUncached(url), StandardCharsets.UTF_8))) {
           String line;
           while ((line = reader.readLine()) != null) {
             classpathFirstServices.add(line);
@@ -109,7 +139,7 @@ public final class ModuleSorter {
   }
 
   /**
-   * Gets the modules-infos ordered by dependency.<br>
+   * Gets the module infos ordered by dependency.<br>
    * Modules at the top of the dependency hierarchy come last,
    * modules without further dependencies come first.
    *
@@ -120,7 +150,20 @@ public final class ModuleSorter {
   }
 
   /**
-   * Returns whether the application is running in modular mode.
+   * Gets (and caches) the module sorter for a given module layer.<br>
+   * The sorter is cached for the lifetime of the JVM and keeps the layer reachable.
+   *
+   * @param layer the module layer, never null
+   * @return the sorter for that layer
+   */
+  public static ModuleSorter forLayer(ModuleLayer layer) {
+    Objects.requireNonNull(layer, "layer");
+    return LAYER_SORTERS.computeIfAbsent(layer, ModuleSorter::new);
+  }
+
+  /**
+   * Returns whether the application is running in modular mode.<br>
+   * This is the case if at least one named module provides a {@link ModuleHook}.
    *
    * @return true if modular
    */
@@ -141,9 +184,10 @@ public final class ModuleSorter {
   /**
    * Gets the module info for a given URL.
    *
-   * @param url the resource url
+   * @param url the resource URL
    * @return the module info, null if application not modularized, not from a module or
    *         module does not provide a {@link ModuleHook}.
+   * @throws TentackleRuntimeException if a jar or file URL is malformed
    */
   public ModuleInfo getModuleInfo(URL url) {
     ModuleInfo info = null;
@@ -187,10 +231,12 @@ public final class ModuleSorter {
   }
 
   /**
-   * Sorts an enumeration of urls according to the module hierarchy.<br>
-   * The highest module ordinal comes first.
+   * Sorts an enumeration of URLs according to the module hierarchy.<br>
+   * The highest module ordinal comes first. URLs that don't belong to a named module with a
+   * {@link ModuleHook} (classpath, automatic modules) are appended, unless the service is
+   * annotated with {@link ClasspathFirst}, in which case they are prepended.
    *
-   * @param urls the urls, usually from ClassLoader.getResources
+   * @param urls the URLs, usually from ClassLoader.getResources
    * @param serviceName the service name
    * @return the sorted urls
    */
@@ -254,7 +300,7 @@ public final class ModuleSorter {
         info.setOrdinal(moduleOrdinal.value());
       }
       else {
-        info.setOrdinal((sortedList.size() + 1) * 100);   // give room for insertions viw @ModuleOrdinal
+        info.setOrdinal((sortedList.size() + 1) * 100);   // give room for insertions via @ModuleOrdinal
       }
       sortedList.add(info);
     }

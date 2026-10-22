@@ -63,9 +63,16 @@ the [Index](./index.md).
 - [Tentackle Database](../../../tentackle-database/src/main/docs/database.md) — the low-level persistence engine.
 - [The Query DSL](../../../tentackle-database/src/main/docs/query-dsl.md) — building projection queries from typed expressions instead of SQL strings.
 - [SQL Statement Batching](../../../tentackle-database/src/main/docs/batching.md) — collecting inserts, updates and deletes into JDBC batches.
+- [Global Transactions — JTA and XA](../../../tentackle-jta/src/main/docs/jta.md) — joining or coordinating distributed transactions across databases and other XA resources.
 - [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md) — the database backend abstraction layer.
+- [The PostgreSQL Backend](../../../tentackle-sql/src/main/docs/postgres.md) — the reference backend: type mapping, the `JSON`/`JSONB` choice, deferrable constraints.
 - [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md) — Oracle's peculiarities: emulated filtered indexes, virtual index columns, empty strings.
 - [The MySQL and MariaDB Backends](../../../tentackle-sql/src/main/docs/mysql.md) — type mapping, index key limits, migration by full column declaration, sequences.
+- [The SAP HANA Backend](../../../tentackle-sql/src/main/docs/hana.md) — `NVARCHAR` strings, unsigned `TINYINT`, migration by full column declaration.
+- [The Firebird Backend](../../../tentackle-sql/src/main/docs/firebird.md) — explicit row locks, sort order per index, tables that cannot be renamed.
+- [The CockroachDB Backend](../../../tentackle-sql/src/main/docs/cockroachdb.md) — selecting it by name, index names per table, serializable transactions.
+- [The H2 Backend](../../../tentackle-sql/src/main/docs/h2.md) — the test backend: standard paging order, decimals without a size, native JSON bound as bytes.
+- [The DB2 Backend](../../../tentackle-sql/src/main/docs/db2.md) — small integers for booleans, decimals without a size, line-oriented DDL scripts.
 
 ## Remoting
 
@@ -79,7 +86,11 @@ the [Index](./index.md).
 - [Tentackle Core](../../../tentackle-core/src/main/docs/core.md) — the runtime foundation.
 - [Tentackle Common](../../../tentackle-common/src/main/docs/common.md) — the shared build- and runtime foundation.
 - [Service and Configuration API — Locating Implementations Without Scanning](../../../tentackle-common/src/main/docs/services.md) — the `@Service`/`@MappedService` annotations, the ServiceFinder SPI, build-time registration, module ordering and the ModuleHook.
+- [Isolated Module Layers](../../../tentackle-common/src/main/docs/layers.md) — running two versions of the same dependency in parallel, via `ModuleLayer` and `LayerBootstrap`.
+- [OSGi Bundles](../../../tentackle-osgi/src/main/docs/osgi.md) — the separate build wrapping the runtime modules into OSGi bundles, and the activators registering their services.
 - [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md) — application-specific secret handling: encrypted passwords in configuration, memory, and on the wire.
+- [Keyring — Secrets on the Client](../../../tentackle-core/src/main/docs/keyring.md) — keeping client-side secrets such as SSO tokens; the API and the default keyrings.
+- [OS Credential Stores](../../../tentackle-keyring/src/main/docs/platform-keyring.md) — the opt-in tentackle-keyring module: the macOS keychain, the Windows Credential Manager and the Secret Service.
 - [Naming Rules](../../../tentackle-common/src/main/docs/naming-rules.md) — how the domain, persistence and remote-delegate class names are derived, and how to replace the conventions application-wide.
 - [Annotation Processors](../../../tentackle-core/src/main/docs/annotation-processors.md) — compile-time validation of the framework's annotations.
 - [Binding — Connecting Models to Views](../../../tentackle-core/src/main/docs/binding.md) — the binding API.
@@ -97,8 +108,7 @@ the [Index](./index.md).
 
 ## Internationalization
 
-- [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md) — the i18n overview: bundles, `I18NText` and locale handling.
-- [Internationalization (i18n)](../../../tentackle-common/src/main/docs/internationalization.md) — companion overview of the i18n story.
+- [Resource Bundles and Internationalization (i18n)](../../../tentackle-common/src/main/docs/bundle.md) — the i18n overview: bundles, the `BundleFactory`, `I18NText` and locale handling.
 - [Tentackle I18N — Database-backed Resource Bundles](../../../tentackle-i18n/src/main/docs/i18n.md) — managing translations in the database.
 - [BundleMonkey](../../../tentackle-i18n/src/main/docs/bundlemonkey.md) — the standalone GUI tool for editing database-backed bundles at runtime.
 
@@ -157,6 +167,10 @@ the [Index](./index.md).
 
 ## Legacy
 - [Migrate from RMI to TRIP](./migrate_rmi_trip.md) — upgrading an existing RMI-based application to the TRIP protocol.
+
+## About
+
+- [The History of Tentackle](./history.md) — where Tentackle comes from, why it looks the way it does, and the milestones from 2001 to the move to GitHub.
 
 
 ---

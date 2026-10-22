@@ -28,11 +28,13 @@ import java.util.regex.Pattern;
  * Filter for timezones.
  * <p>
  * Translates incomplete zone names, for example {@code "berlin"} to {@code Europe/Berlin}.
+ *
+ * @see DateTimeUtilities#parseZoneId(String)
  */
 public class ZoneFilter implements SmartDateTimeParser.TextFilter {
 
   /**
-   * A word, optionally prepended with = and following at least one other non-whitespace string.
+   * A word at the end of the text, preceded by at least one other non-whitespace string.
    */
   private static final Pattern pattern = Pattern.compile("\\S+\\s+([\\w]+$)");
 

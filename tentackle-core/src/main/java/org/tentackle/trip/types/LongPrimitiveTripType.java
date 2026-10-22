@@ -21,7 +21,7 @@ package org.tentackle.trip.types;
 import org.tentackle.trip.TripTypeService;
 
 /**
- * Trip type for long primitive.
+ * Trip type for the {@code long} primitive.
  */
 @TripTypeService(long.class)
 public final class LongPrimitiveTripType extends LongTripType {

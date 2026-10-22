@@ -29,6 +29,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.channels.FileChannel;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -43,11 +44,11 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 /**
- * Helper methods for file handling.
+ * Helper methods for file and resource handling.
  *
  * @author harald
  */
-public class FileHelper {
+public final class FileHelper {
 
   /**
    * Default buffer size for unzipping/downloading.<br>
@@ -59,12 +60,20 @@ public class FileHelper {
 
   /**
    * Creates an input stream from a resource.
+   * <p>
+   * The resource is looked up in the following order:
+   * <ol>
+   * <li>via {@link Class#getResourceAsStream(String)} of the caller, i.e., relative names are resolved
+   * against the caller's package</li>
+   * <li>via the context classloader (the name is taken as an absolute name without a leading slash)</li>
+   * <li>via the unnamed module of the caller's classloader</li>
+   * </ol>
    *
    * @param caller the caller class, null to determine via {@link StackWalker}
    * @param name the resource name
-   * @return the input stream
-   * @throws IOException if reading the resources failed
-   * @throws FileNotFoundException if no such resources found
+   * @return the buffered input stream
+   * @throws IOException if reading the resource failed
+   * @throws FileNotFoundException if no such resource found
    */
   public static InputStream createInputStream(Class<?> caller, String name) throws IOException {
     if (caller == null) {
@@ -89,7 +98,9 @@ public class FileHelper {
   }
 
   /**
-   * Loads properties from a resource.
+   * Loads properties from a file or resource.<br>
+   * If the name contains no dot, the extension {@code .properties} is appended.
+   * Resource names are always taken as absolute.
    *
    * @param name the {@code Properties} name
    * @param asResource true to load from the classpath, false if from filesystem
@@ -111,7 +122,9 @@ public class FileHelper {
 
   /**
    * Loads properties.<br>
-   * Tries to load from filesystem first, then from the class path.
+   * Tries to load from filesystem first, then from the class path
+   * (see {@link #loadProperties(String, boolean, Properties)}).
+   * The name of the returned properties is set to the given name (see {@link EncryptedProperties#setName(String)}).
    *
    * @param name the {@code Properties} name, null if return empty properties
    * @return the properties, empty if the file name is null
@@ -138,7 +151,7 @@ public class FileHelper {
    *
    * @param source the source file
    * @param dest the destination file
-   * @throws IOException if some I/O error
+   * @throws IOException if an I/O error occurred
    */
   public static void copy(File source, File dest) throws IOException {
     try (FileInputStream is = new FileInputStream(source)) {
@@ -153,12 +166,13 @@ public class FileHelper {
   }
 
   /**
-   * Copies all files from one directory to another.
+   * Copies all files from one directory to another.<br>
+   * The destination directory is created if necessary.
    *
    * @param srcDir the source directory
    * @param dstDir the destination directory
-   * @param recursive true if copy also subdirectories
-   * @param filter optional file filter, null if none
+   * @param recursive true to copy subdirectories as well
+   * @param filter optional file filter, null if none. Applies to files and directories.
    *
    * @return number of files copied
    * @throws IOException if copy failed
@@ -221,6 +235,23 @@ public class FileHelper {
   }
 
   /**
+   * Opens an input stream for a URL without using the JVM-wide URL cache.<br>
+   * For {@code jar:} URLs, the JDK shares a cached {@link java.util.jar.JarFile} among all classloaders.
+   * If one of them is closed, for example, a Maven class realm disposed by a concurrent build thread,
+   * the cached file is closed as well, and streams opened via {@link URL#openStream()} by others fail.
+   * This is the same approach as in {@link java.util.ServiceLoader}.
+   *
+   * @param url the URL
+   * @return the input stream
+   * @throws IOException if failed
+   */
+  public static InputStream openStreamUncached(URL url) throws IOException {
+    URLConnection connection = url.openConnection();
+    connection.setUseCaches(false);
+    return connection.getInputStream();
+  }
+
+  /**
    * Removes a directory and all its contents recursively.
    *
    * @param name the directory name
@@ -258,41 +289,45 @@ public class FileHelper {
 
   /**
    * Unzips a zip file.
+   * <p>
+   * Each entry is verified to resolve to a location inside the destination directory
+   * before anything is written ("zip slip" protection). The consumer, if given, is invoked
+   * for every verified entry, directories included, before the entry is extracted.
    *
    * @param zipFile the zip file
    * @param destDir the destination directory
    * @param fileConsumer optional consumer to receive the file being unzipped
    * @param bufferSize the buffer size
-   * @throws IOException if failed
+   * @throws IOException if failed or an entry would be extracted outside the destination directory
    */
   public static void unzip(File zipFile, File destDir, Consumer<File> fileConsumer, int bufferSize) throws IOException {
     byte[] buffer = new byte[bufferSize];
     Set<File> createdDirs = new HashSet<>();
+    String destPath = destDir.getCanonicalPath();
+    String destPrefix = destPath.endsWith(File.separator) ? destPath : destPath + File.separator;
 
     try (ZipInputStream zipStream = new ZipInputStream(new FileInputStream(zipFile))) {
       ZipEntry zipEntry;
       while ((zipEntry = zipStream.getNextEntry()) != null) {
         File destFile = new File(destDir, zipEntry.getName());
+        String path = destFile.getCanonicalPath();
+        if (!path.equals(destPath) && !path.startsWith(destPrefix)) {   // prevent zip slip!
+          throw new IOException("zip slip detected for " + zipEntry.getName());
+        }
         if (fileConsumer != null) {
           fileConsumer.accept(destFile);
         }
-        if (destFile.getCanonicalPath().startsWith(destDir.getCanonicalPath())) {   // prevent zip slip!
-          if (!zipEntry.isDirectory()) {
-            File dir = destFile.getParentFile();
-            if (!createdDirs.contains(dir)) {
-              dir.mkdirs();
-              createdDirs.add(dir);
-            }
-            try (FileOutputStream outputStream = new FileOutputStream(destFile)) {
-              int len;
-              while ((len = zipStream.read(buffer)) > 0) {
-                outputStream.write(buffer, 0, len);
-              }
+        File dir = zipEntry.isDirectory() ? destFile : destFile.getParentFile();
+        if (createdDirs.add(dir)) {
+          dir.mkdirs();
+        }
+        if (!zipEntry.isDirectory()) {
+          try (FileOutputStream outputStream = new FileOutputStream(destFile)) {
+            int len;
+            while ((len = zipStream.read(buffer)) > 0) {
+              outputStream.write(buffer, 0, len);
             }
           }
-        }
-        else {
-          throw new IOException("zip slip detected for " + zipEntry.getName());
         }
       }
     }

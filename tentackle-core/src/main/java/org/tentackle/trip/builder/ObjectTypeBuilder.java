@@ -26,7 +26,9 @@ import org.tentackle.trip.types.LambdaTripType;
 import org.tentackle.trip.types.ObjectTripType;
 
 /**
- * Fallback Builder for all other object types.
+ * Fallback builder for all other object types.<br>
+ * Creates a {@link JOSTripType} for classes annotated with &#64;{@link TripViaJOS}, a {@link LambdaTripType}
+ * for lambdas, and an {@link ObjectTripType} otherwise.
  *
  * @param <T> the object type
  */
@@ -64,6 +66,12 @@ public class ObjectTypeBuilder<T> implements TripTypeBuilder<T> {
     return clazz.isAnnotationPresent(TripViaJOS.class);
   }
 
+  /**
+   * Returns whether the given class is the class of a lambda.
+   *
+   * @param clazz the class to check
+   * @return true if lambda
+   */
   protected boolean isLambda(Class<?> clazz) {
     return clazz.isSynthetic() && clazz.getName().indexOf('/') >= 0;
   }

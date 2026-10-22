@@ -41,9 +41,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Generates code and meta-information prior to wurbeling and compiling the sources.
+ * Base class of mojos running annotation processors over the sources, prior to wurbeling and compiling them.
  * <p>
- * Picks up all annotations annotated with {@code org.tentackle.common.Analyze}.
+ * The sources are passed to the in-process Java compiler with {@code -proc:only}, i.e. nothing is compiled,
+ * and the registered {@link AbstractTentackleProcessor}s generate code and meta-information, such as the
+ * analyze info and service descriptors. Errors reported by the processors fail the build, whereas
+ * compilation errors in the sources are only logged as a warning, because the sources have not been
+ * wurbeled yet.
+ * <p>
+ * Subclasses register the processors via {@link #addProcessor(AbstractTentackleProcessor)} and must
+ * invoke {@link #setMojoParameters(File, List)} before the execution is validated.
  *
  * @author harald
  */
@@ -57,13 +64,15 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
   private static final String PROCESSOR_DIAGNOSTIC_CODE = "compiler.err.proc.messager";
 
   /**
-   * Show compile output.
+   * Shows the compiler diagnostics in the build log.<br>
+   * Errors reported by the annotation processors are always shown.
    */
   @Parameter(defaultValue = "${tentackle.showCompileOutput}")
   protected boolean showCompileOutput;
 
   /**
-   * Source file encode.
+   * The source file encoding.<br>
+   * If not set, the compiler's default is used.
    */
   @Parameter(defaultValue = "${project.build.sourceEncoding}")
   protected String encoding;
@@ -71,12 +80,14 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
   /**
    * Arguments to be passed to the compiler.<br>
    * (see maven-compiler-plugin)
+   * <p>
+   * Unless one of them is a {@code -proc:} option, {@code -proc:only} is added.
    */
   @Parameter
   protected List<String> compilerArgs;
 
   /**
-   * Sets the unformatted single argument string to be passed to the compiler.<br>
+   * A single argument to be passed to the compiler as is.<br>
    * (see maven-compiler-plugin)
    */
   @Parameter
@@ -84,7 +95,8 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
 
   /**
    * The list of file sets.<br>
-   * If set the source directory is ignored.
+   * If set, they are processed instead of the whole source directory.
+   * A file set without a directory defaults to the source directory.
    */
   @Parameter
   protected List<FileSet> filesets;
@@ -100,7 +112,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
   private List<String> classpathElements;
 
   /**
-   * Total number of errors.
+   * Total number of analyze errors.
    */
   private int totalErrors;
 
@@ -120,17 +132,18 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
   private int totalCompileErrors;
 
   /**
-   * THe compiler log (if showCompileOutput set).
+   * The logged compiler diagnostics.
    */
   private StringBuilder compileErrorLog;
 
 
   /**
-   * Sets the mojo parameters.
+   * Sets the mojo parameters.<br>
+   * Must be invoked before the execution is validated, usually in {@link #prepareExecute()}.
    *
    * @param sourceDir the directory holding the sources to be processed
-   * @param classpathElements the mavenProject classpath
-   * @throws MojoFailureException if classloader could not be created
+   * @param classpathElements the project's classpath
+   * @throws MojoFailureException if the classloader could not be created
    */
   public void setMojoParameters(File sourceDir, List<String> classpathElements) throws MojoFailureException {
     this.sourceDir = sourceDir;
@@ -144,9 +157,9 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
   }
 
   /**
-   * Gets a classloader that searches also in the classpath elements of the project.
+   * Gets a classloader that also searches the classpath elements of the project.
    *
-   * @return the classloader
+   * @return the classloader, null if {@link #setMojoParameters(File, List)} has not been invoked yet
    */
   public ClassLoader getProcessingClassloader() {
     return processingClassloader;
@@ -166,31 +179,35 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
 
 
   /**
-   * Creates any missing directories.
+   * Creates any missing directories.<br>
+   * Invoked at the start of {@link #executeImpl()}.
    */
   protected void createMissingDirs() {
     // nothing by default
   }
 
   /**
-   * Gets the number of compile errors.
-   * @return 0 if analyze phase completed, &gt; 0 if analyze info may be incomplete due to errors
+   * Gets the number of compilation errors in the sources.
+   *
+   * @return 0 if the analyze phase completed, &gt; 0 if the analyze info may be incomplete due to errors
    */
   public int getTotalCompileErrors() {
     return totalCompileErrors;
   }
 
   /**
-   * Gets the compiler error log.
+   * Gets the logged compiler diagnostics.<br>
+   * Holds the analyze errors and, if {@link #showCompileOutput} is set, all other diagnostics as well.
    *
-   * @return the log, empty if no errors
+   * @return the log, empty if nothing logged
    */
   public String getCompileErrorLog() {
     return compileErrorLog == null ? "" : compileErrorLog.toString();
   }
 
   /**
-   * Gets the number of analyze errors.
+   * Gets the number of analyze errors.<br>
+   * Includes the errors reported by the annotation processors and the failed processor cleanups.
    *
    * @return the error count
    */
@@ -209,7 +226,6 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
     totalCompileErrors = 0;
     compileErrorLog = new StringBuilder();
 
-    // wurbel
     if (filesets != null && !filesets.isEmpty()) {
       // explicit filesets given instead of source dir
       for (FileSet fileSet : filesets) {
@@ -217,21 +233,17 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       }
     }
     else {
-      // all from source dir with default java-extension
-      if (sourceDir == null) {
-        getLog().warn("no sourceDir configured");
+      // all java files of the source dir (not null, see validate())
+      String[] files = sourceDir.isDirectory() ? sourceDir.list() : null;
+      if (files != null && files.length > 0) {
+        final FileSet fs = new FileSet();
+        fs.setDirectory(sourceDir.getPath());
+        fs.addInclude("**/*" + Constants.JAVA_SOURCE_EXTENSION);
+        processFileSet(fs);
       }
       else {
-        String[] files = sourceDir.isDirectory() ? sourceDir.list() : null;
-        if (files != null && files.length > 0) {
-          final FileSet fs = new FileSet();
-          fs.setDirectory(sourceDir.getPath());
-          fs.addInclude("**/*" + Constants.JAVA_SOURCE_EXTENSION);
-          processFileSet(fs);
-        }
-        else {
-          getLog().info((sourceDir.exists() ? "empty" : "missing") + " source directory " + sourceDir.getAbsolutePath());
-        }
+        getLogger().info("{} source directory {}",
+                         sourceDir.exists() ? "empty" : "missing", sourceDir.getAbsolutePath());
       }
     }
 
@@ -241,7 +253,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
           processor.cleanup();
         }
         catch (IOException ex) {
-          getLog().error("annotation processor cleanup failed", ex);
+          getLogger().error("annotation processor cleanup failed", ex);
           totalErrors++;
         }
       }
@@ -267,10 +279,12 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
 
 
   /**
-   * Initializes a processor.
+   * Initializes a processor.<br>
+   * Invoked for each file set before the sources are processed.
+   * The default sets the processor's source directory.
    *
    * @param processor the annotation processor
-   * @param srcDir the source dir
+   * @param srcDir the current file set directory
    * @throws MojoFailureException if initialization failed
    */
   protected void initializeProcessor(AbstractTentackleProcessor processor, File srcDir) throws MojoFailureException {
@@ -294,7 +308,10 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
 
 
   /**
-   * Cleans up the processors.
+   * Cleans up the processors.<br>
+   * Invoked for each file set after the sources are processed.<br>
+   * Not to be confused with {@link AbstractTentackleProcessor#cleanup()}, which is invoked once
+   * at the end of {@link #executeImpl()}.
    *
    * @param srcDir the current file set directory
    * @throws MojoFailureException if cleanup failed
@@ -306,7 +323,8 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
 
   /**
    * Filters the files to be processed.<br>
-   * If overridden, allows to skip the annotation processing.
+   * Subclasses may override it to exclude files.
+   * If no files are left, the compiler is not invoked at all.
    *
    * @param dirName the base directory
    * @param fileNames the file names relative to the directory
@@ -314,6 +332,30 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
    */
   protected String[] filterFileNames(String dirName, String[] fileNames) {
     return fileNames;
+  }
+
+
+  /**
+   * Gets the {@code -proc:} option added to the compiler arguments if none is configured.<br>
+   * The default is {@code -proc:only}, i.e. the processors run, but nothing is compiled.
+   * Subclasses scanning attributed syntax trees instead of running processors return {@code -proc:none}
+   * and override {@link #runCompilationTask(CompilationTask)}.
+   *
+   * @return the default {@code -proc:} option, never null
+   */
+  protected String getDefaultProcOption() {
+    return "-proc:only";
+  }
+
+
+  /**
+   * Runs the compilation task.<br>
+   * The default invokes {@link CompilationTask#call()}.
+   *
+   * @param task the task with the processors set, if any
+   */
+  protected void runCompilationTask(CompilationTask task) {
+    task.call();
   }
 
 
@@ -356,10 +398,22 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
 
 
   /**
-   * Process all files in a fileset.
+   * Returns whether a compiler argument is one of the {@code -proc:} options.
+   *
+   * @param arg the compiler argument
+   * @return true if {@code -proc:none}, {@code -proc:only}, {@code -proc:full}, etc.
+   */
+  private static boolean isProcOption(String arg) {
+    return arg.startsWith("-proc:");
+  }
+
+
+  /**
+   * Processes all files in a fileset.
    *
    * @param fileSet the set of files
-   * @throws MojoExecutionException if failed
+   * @throws MojoFailureException if initializing or cleaning up the processors failed
+   * @throws MojoExecutionException if no Java compiler is available or the directory is invalid
    */
   private void processFileSet(FileSet fileSet) throws MojoFailureException, MojoExecutionException {
 
@@ -377,7 +431,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
     String dirName = getCanonicalPath(dir);
 
     if (verbosityLevel.isDebug()) {
-      getLog().info("analyzing files in " + dirName);
+      getLogger().info("analyzing files in {}", dirName);
     }
 
     int errorCount = 0;           // analyze errors, i.e., reported by the annotation processors
@@ -391,7 +445,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       for (int i=0; i < fileNames.length; i++) {
         fileNames[i] = dirName + "/" + fileNames[i];
         if (verbosityLevel.isDebug()) {
-          getLog().info("analyzing " + fileNames[i]);
+          getLogger().info("analyzing {}", fileNames[i]);
         }
       }
 
@@ -403,8 +457,10 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnosticCollector, null, null);
 
       List<String> options = new ArrayList<>();
-      options.add("-encoding");
-      options.add(encoding);
+      if (encoding != null && !encoding.isEmpty()) {
+        options.add("-encoding");
+        options.add(encoding);
+      }
 
       if (classpathElements != null && !classpathElements.isEmpty()) {
         options.add("-classpath");
@@ -417,29 +473,30 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
         }
         options.add(buf.toString());
 
-        // and add to the module path as well (since Java 9, we're at least on java 11)
+        // and to the module path as well, since the sources may be modular
         options.add("--module-path");
         options.add(buf.toString());
       }
       // options started with -A are passed to the annotation processors (without leading -A)
       options.add("-Averbosity=" + verbosityLevel);
 
+      boolean procFound = false;
       if (compilerArgument != null && !compilerArgument.isEmpty()) {
         options.add(compilerArgument);
+        procFound = isProcOption(compilerArgument);
       }
 
-      boolean procFound = false;
       if (compilerArgs != null) {
         for (String arg: compilerArgs) {
           options.add(arg);
-          if (arg.startsWith("proc:")) {
+          if (isProcOption(arg)) {
             procFound = true;
           }
         }
       }
 
       if (!procFound) {
-        options.add("-proc:only");    // run only the annotation processing
+        options.add(getDefaultProcOption());    // usually run only the annotation processing
       }
 
       CompilationTask task = compiler.getTask(null, fileManager, diagnosticCollector, options, null,
@@ -448,11 +505,11 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       if (processors != null) {
         task.setProcessors(processors);
       }
-      else  {
-        getLog().warn("no annotation processors defined");
+      else if (!options.contains("-proc:none")) {
+        getLogger().warn("no annotation processors defined");
       }
 
-      task.call();
+      runCompilationTask(task);
 
       // extract errors
       for (Diagnostic<? extends JavaFileObject> diag: diagnosticCollector.getDiagnostics()) {
@@ -461,10 +518,10 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
           String msg = formatDiagnostic(diag);
           if (analyzeError) {
             // always report it: the build is going to fail because of it
-            getLog().error(msg);
+            getLogger().error(msg);
           }
           else {
-            getLog().info(msg);
+            getLogger().info(msg);
           }
           compileErrorLog.append(msg).append('\n');
         }
@@ -481,13 +538,13 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
 
     cleanupProcessors(dir);
 
-    getLog().info(getPathRelativeToBasedir(dirName) + ": " +
-                  fileNames.length + " files analyzed, " +
-                  errorCount + " errors");
+    getLogger().info("{}: {} files analyzed, {} errors",
+                     getPathRelativeToBasedir(dirName), fileNames.length, errorCount);
 
     if (compileErrorCount > 0) {
-      getLog().warn(compileErrorCount +
-                    " Java compilation errors! Some annotations may have been processed improperly or not processed at all");
+      getLogger().warn("{} Java compilation errors! " +
+                       "Some annotations may have been processed improperly or not processed at all",
+                       compileErrorCount);
     }
 
     totalCompileErrors += compileErrorCount;

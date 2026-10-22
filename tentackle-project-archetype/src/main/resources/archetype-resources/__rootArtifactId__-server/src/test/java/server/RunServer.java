@@ -11,6 +11,11 @@ import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
 
+/**
+ * Launches the middle-tier server from within the IDE or via {@code mvn -Dtest=RunServer test}.<br>
+ * Connects to the database configured in {@code server.properties} ({@code --backend=server}).
+ * Not a regular test: the class name doesn't match surefire's default includes.
+ */
 public class RunServer {
 
   @Test

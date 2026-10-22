@@ -17,6 +17,7 @@
  */
 
 /**
- * Annotation processors for FX.
+ * Annotation processors for FX.<br>
+ * Verify the contracts of controllers, value translators, and table cell types at compile time.
  */
 package org.tentackle.fx.apt;

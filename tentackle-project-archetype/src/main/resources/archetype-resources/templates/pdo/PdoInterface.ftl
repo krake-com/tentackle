@@ -4,6 +4,9 @@
 
 package ${pdoPackage};
 
+<#if superPdoInterfacePackage != "" && superPdoInterfacePackage != pdoPackage>
+import ${superPdoInterfacePackage}.${superPdoInterface};
+</#if>
 import ${domainPackage}.${domainInterface};
 import ${persistencePackage}.${persistenceInterface};
 import org.tentackle.pdo.PersistentDomainObject;

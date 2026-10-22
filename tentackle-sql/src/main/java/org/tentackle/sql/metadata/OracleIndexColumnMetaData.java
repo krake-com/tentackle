@@ -51,8 +51,8 @@ public class OracleIndexColumnMetaData extends IndexColumnMetaData {
 
   /**
    * Parses an index column expression as stored in {@code ALL_IND_EXPRESSIONS}.<br>
-   * Understands the {@code CASE WHEN &lt;condition&gt; THEN &lt;expression&gt; END} form
-   * created for filtered indexes, the {@code FUNC(&lt;column&gt;)} form of function-based
+   * Understands the {@code CASE WHEN <condition> THEN <expression> END} form
+   * created for filtered indexes, the {@code FUNC(<column>)} form of function-based
    * indexes and the plain {@code "COLUMN"} form of descending indexes.
    * Oracle's double quotes are removed from all identifiers.
    *
@@ -107,7 +107,7 @@ public class OracleIndexColumnMetaData extends IndexColumnMetaData {
   /**
    * Creates an index column.
    *
-   * @param indexMetaData the index column belongs to
+   * @param indexMetaData the index this column belongs to
    */
   public OracleIndexColumnMetaData(IndexMetaData indexMetaData) {
     super(indexMetaData);

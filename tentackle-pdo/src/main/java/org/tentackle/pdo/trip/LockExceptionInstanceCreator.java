@@ -26,9 +26,22 @@ import org.tentackle.trip.TripInstanceCreatorService;
 
 import java.util.Map;
 
+/**
+ * Creates {@link LockException}s when deserialized by TRIP.
+ * <p>
+ * A {@link LockException} has no no-arg constructor, and its final fields and message are derived
+ * from either the {@link TokenLockInfo} or the name of the already locked context.
+ * Hence, it is created from the transferred component values.
+ * The session is not transferred and remains null.
+ *
+ * @author harald
+ */
 @TripInstanceCreatorService(LockException.class)
 public class LockExceptionInstanceCreator implements TripInstanceCreator<LockException> {
 
+  /**
+   * Creates the instance creator.
+   */
   public LockExceptionInstanceCreator() {
     // see -Xlint:missing-explicit-ctor since Java 16
   }

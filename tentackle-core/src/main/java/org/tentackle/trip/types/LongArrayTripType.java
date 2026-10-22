@@ -35,7 +35,7 @@ interface LongTypeHolder {
 
 
 /**
- * Trip type for {@link Long[]} array.
+ * Trip type for {@code Long[]} array.
  */
 @TripTypeService(Long[].class)
 public final class LongArrayTripType extends AbstractPredefinedArrayTripType<Long[]> {
@@ -99,11 +99,12 @@ public final class LongArrayTripType extends AbstractPredefinedArrayTripType<Lon
       int count = 0;
       while (count < length) {
         opCode = stream.receiveOpCode();
-        switch (opCode) {
-          case DefaultOpCode.SKIP -> count += deserializer.deserializeInt();
-          case DefaultOpCode.SKIP2 -> count += deserializer.deserializeShortAsUnsigned();
-          case DefaultOpCode.SKIP1 -> count += deserializer.deserializeByteAsUnsigned();
-          case null, default -> result[count++] = longTripType.read(stream, opCode);
+        int skip = readSkip(deserializer, opCode);
+        if (skip != NO_SKIP) {
+          count += skip;
+        }
+        else {
+          result[count++] = longTripType.read(stream, opCode);
         }
       }
       stream.addReference(reference, result, false);

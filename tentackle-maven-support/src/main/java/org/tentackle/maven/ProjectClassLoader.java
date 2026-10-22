@@ -25,17 +25,18 @@ import java.net.URLClassLoader;
 import java.util.List;
 
 /**
- * Classloader with added project-relevant dependencies.
+ * Classloader that adds the project's classpath elements to the plugin's classloader.<br>
+ * Delegates to the parent first, i.e. classes of the plugin take precedence over the project's ones.
  *
  * @author harald
  */
 public class ProjectClassLoader extends URLClassLoader {
 
   /**
-   * Create from another classloader.
+   * Creates a project classloader.
    *
-   * @param classLoader the task's classloader
-   * @param classpathElements the class path elements from maven
+   * @param classLoader the parent classloader, usually the plugin's classloader
+   * @param classpathElements the classpath elements from maven, null if none
    * @throws MalformedURLException if malformed classpath element
    */
   public ProjectClassLoader(URLClassLoader classLoader, List<String> classpathElements) throws MalformedURLException {
@@ -49,6 +50,12 @@ public class ProjectClassLoader extends URLClassLoader {
     }
   }
 
+  /**
+   * Adds a URL to the search path.<br>
+   * Overridden to make it public.
+   *
+   * @param url the URL of a directory or jar file
+   */
   @Override
   public void addURL(URL url) {
     super.addURL(url);

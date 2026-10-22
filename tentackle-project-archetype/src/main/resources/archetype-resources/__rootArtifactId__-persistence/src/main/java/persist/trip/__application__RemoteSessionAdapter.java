@@ -13,10 +13,16 @@ import org.tentackle.dbms.trip.RemoteDbSession;
 import org.tentackle.persist.PdoRemoteSessionAdapter;
 
 /**
- * Application-specific remote session adapter.
+ * Application-specific remote session adapter.<br>
+ * Wraps the remote database session on the client side.
  */
 public class ${application}RemoteSessionAdapter extends PdoRemoteSessionAdapter implements ${application}RemoteSession {
 
+  /**
+   * Creates the adapter.
+   *
+   * @param rs the remote database session
+   */
   public ${application}RemoteSessionAdapter(RemoteDbSession rs) {
     super(rs);
   }

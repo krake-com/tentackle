@@ -142,18 +142,20 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
     }
     else {
       DbPreferencesFactory factory = DbPreferencesFactory.getInstance();
-      long repoSerial = factory.getSerial(node.getUser());
       if (serial <= 0) {
         // load all nodes and keys for this root (ordered by id, i.e. creation)
+        long repoSerial = factory.getSerial(node.getUser());
         long rootId = node.getPersistentNode().getId();
         return new RefreshInfo(repoSerial,
                                new DbPreferencesNode(db).selectByRootNodeId(rootId),
                                new DbPreferencesKey(db).selectByRootNodeId(rootId));
       }
-      else if (serial != repoSerial) {
-        // request from remote client: load from repo (persisted only!)
-        synchronized(factory) {
-          node = factory.getRootTree(db, node.getUser());
+      // request from remote client: load from repo (persisted only!)
+      synchronized(factory) {
+        // the serial must be the one of the tree returned, i.e., read after the tree is loaded, if not yet done
+        node = factory.getRootTree(db, node.getUser());
+        long repoSerial = factory.getSerial(node.getUser());
+        if (serial != repoSerial) {
           List<DbPreferencesNode> prefNodes = new ArrayList<>();
           List<DbPreferencesKey> prefKeys = new ArrayList<>();
           addNodeToLists(node, prefNodes, prefKeys);
@@ -210,6 +212,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
    * Loads a root node and all its sub-nodes from database.<br>
    * If the node is new, a new instance will be created, but not persisted yet.
    *
+   * @param db the session
    * @param user the username, null if system root
    * @return the root preferences
    */

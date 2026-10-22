@@ -64,8 +64,9 @@ Follow this order. It is the whole reason the server exists.
 - **Most of what you need is derived.** Referencing relations, composite paths, root entities, resolved types
   and backend column names exist only in the loaded model. Grepping the sources will not find them.
 - **The server is read-only.** It never edits a file. You do that yourself, after `model_validate` agrees.
-- **After a build that deleted or renamed an entity, call `model_reload` with `full: true`.** Changed and added
-  files are picked up automatically; a removed one is not.
+- **You do not need to reload after a build.** Changed, added and removed model files are picked up
+  automatically before the next call. Call `model_reload` to see which entities a build changed, or with
+  `full: true` if a result still looks stale.
 - **Warnings in the overview matter.** If it reports that no model defaults are configured, the model differs
   from what the build sees and integrity errors it reports may be spurious. Tell the user to set `modelDefaults`
   in the plugin configuration rather than working around the errors.

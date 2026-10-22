@@ -36,7 +36,7 @@ public interface SerialNumbered extends Identifiable {
   long getSerial();
 
   /**
-   * Returns whether the serial is valid.
+   * Returns whether this object is virgin, i.e. has no valid serial yet.
    *
    * @return true if virgin object without a valid serial
    */

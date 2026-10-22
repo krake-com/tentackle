@@ -27,14 +27,17 @@ interface ClassMapperFactoryHolder {
 
 
 /**
- * Classmapper factory.
+ * Factory for {@link ClassMapper}s.
+ * <p>
+ * Replaceable via &#64;{@link org.tentackle.common.Service}.
+ * The default implementation is {@link DefaultClassMapperFactory}.
  *
  * @author harald
  */
 public interface ClassMapperFactory {
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */

@@ -26,12 +26,19 @@ interface NamingRulesHolder {
 
 /**
  * Naming rules for classnames.<br>
- * Used at runtime to determine the remote delegates, at build-time by some wurblets,
- * and by the wizard to generate PDO- and operation sources.<br>
- * Can be replaced via {@code @Service} for application-specific rules.
+ * Used at runtime to determine the remote delegates, at build time by some wurblets,
+ * and by the wizard to generate PDO and operation sources.<br>
+ * Can be replaced via {@code @Service(NamingRules.class)} for application-specific rules.
+ * <p>
+ * By default, the operation rules delegate to the corresponding PDO rules.
+ * Hence, overriding a PDO rule also changes the operation rule, unless the operation rule is overridden as well.
+ * The methods deriving the PDO or operation name from a class name return {@code null} if the
+ * class name does not match the rule.
+ *
+ * @author harald
  */
-// @Service does not work in tentackle-common, since there is no analyze maven plugin available at this build step yet.
-// Needs explicit config in resources/services/META-INF.
+// @Service does not work in tentackle-common, since the analyze goal of the tentackle-maven-plugin is not available at this build step yet.
+// Needs explicit config in src/main/resources/META-INF/services.
 @Service(NamingRules.class)    // defaults to self
 public class NamingRules {
 
@@ -68,6 +75,9 @@ public class NamingRules {
   private static final String REMOTE_SUB_PACKAGE = ".trip";
 
 
+  /**
+   * Creates the naming rules.
+   */
   public NamingRules() {
     // see -Xlint:missing-explicit-ctor since Java 16
   }

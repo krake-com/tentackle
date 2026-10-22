@@ -28,6 +28,11 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation to express that the annotated class is a service implementation.
+ * <p>
+ * Processed at build time by the {@code ServiceAnalyzeHandler} of the tentackle-maven-plugin's analyze goal,
+ * which appends the annotated class to {@code META-INF/services/<serviced class>}.
+ * The annotation can also be used as a meta-annotation, i.e., to annotate another annotation
+ * (see {@link AnnotationProcessor} for an example).
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -36,17 +41,19 @@ import java.lang.annotation.Target;
 public @interface Service {
 
   /**
-   * Gets the serviced class.<br>
+   * Gets the serviced class.
    *
    * @return the serviced class
    */
   Class<?> value();
 
   /**
-   * The method name of the mapped service that provides the value.<br>
+   * The name of the element that provides the value, if this annotation is used as a meta-annotation.<br>
+   * If {@link #meta()} is false, the element of the annotated annotation provides the serviced class
+   * (only if {@link #value()} is not given explicitly). If {@link #meta()} is true, it provides the servicing class.
    * The default is "value".
    *
-   * @return the method name
+   * @return the element name
    */
   String method() default "value";
 
@@ -57,7 +64,7 @@ public @interface Service {
    * Meta services go to META-INF/meta-services instead of META-INF/services because the
    * provider usually resides in another module.
    *
-   * @return true if this a meta annotation and the servicing class is provided by the annotated annotation
+   * @return true if this is a meta annotation and the servicing class is provided by the annotated annotation
    */
   boolean meta() default false;
 

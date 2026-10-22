@@ -22,7 +22,7 @@ import java.io.Serial;
 import java.util.Collection;
 
 /**
- * Model parsing exception.
+ * Exception thrown if the model is invalid or inconsistent.
  *
  * @author harald
  */
@@ -36,6 +36,14 @@ public class ModelException extends Exception {
   /** string prepended to the source location. */
   public static final String AT_ELEMENT = " @ ";
 
+
+  /**
+   * Creates a model exception with <code>null</code> as its detail message and no related element.
+   */
+  public ModelException() {
+    super();
+    this.element = null;
+  }
 
   /**
    * Creates a model exception.

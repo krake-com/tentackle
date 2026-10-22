@@ -60,7 +60,9 @@ public class DefaultArtifactCreator implements ArtifactCreator {
       String fileName = name.toLowerCase(Locale.ROOT);
       for (String extension : INSTALLER_EXTENSIONS) {
         if (fileName.endsWith(extension)) {
-          File file = new File(targetDir, fileName);
+          // notice: the real name, not the lowercased one, which does not exist on a
+          // case-sensitive filesystem
+          File file = new File(targetDir, name);
           if (file.isFile() && file.lastModified() > minTime) {
             return true;
           }
@@ -74,7 +76,9 @@ public class DefaultArtifactCreator implements ArtifactCreator {
         int ndx = name.lastIndexOf('.');   // locate extension
         if (ndx >= 0) {
           mojo.getProjectHelper().attachArtifact(mojo.getMavenProject(),
-                                                 name.substring(ndx + 1),
+                                                 // the artifact handlers are registered for the
+                                                 // lowercase extensions (see components.xml)
+                                                 name.substring(ndx + 1).toLowerCase(Locale.ROOT),
                                                  mojo.getClassifier(),
                                                  new File(targetDir, name));
         }

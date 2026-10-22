@@ -31,7 +31,9 @@ import java.util.Objects;
  * <p>
  * Uses the given {@link org.tentackle.common.Cryptor} to encrypt the data.
  * For the packet size we use the first two bytes in the packet (unsigned short).
- * Because of this, the maximum buffer size is limited to 64K - 1.
+ * Because of this, the size of an <em>encrypted</em> packet is limited to 64K - 1.
+ * Since encryption adds some overhead (padding, for example), the buffer size must leave room for it.
+ * The default buffer size of 32K - 1 is safe for all common ciphers.
  */
 public class EncryptingOutputStream extends PacketSizedOutputStream {
 
@@ -52,20 +54,23 @@ public class EncryptingOutputStream extends PacketSizedOutputStream {
 
   private final int bufSize;                  // buffer size
   private final byte[] byteBuf = new byte[1]; // single byte buffer for write(b)
-  private final byte[] orgBuf;                // original uncompressed data buffer
+  private final byte[] orgBuf;                // original unencrypted data buffer
   private int orgOff;                         // number of bytes / offset in orgBuf
   private final Cryptor cryptor;              // the cryptor
+  private byte[] packetBuf;                   // header followed by the encrypted data (size is dynamically adapted)
 
   // for statistic only (Level.FINE)
   private long totalWritten;                  // total number of bytes written by the application
-  private long totalEncrypted;                // number of compressed bytes written to stream
+  private long totalEncrypted;                // number of encrypted bytes written to stream
 
   /**
    * Creates an encrypted output stream.
    *
    * @param out the underlying output stream (e.g., from a socket)
-   * @param bufSize the buffer size for compression (larger packets are split)
+   * @param bufSize the buffer size for encryption (larger packets are split), must leave room for the encryption overhead
    * @param cryptor the cryptor to use for encryption
+   * @throws IllegalArgumentException if the buffer size is not in the range 65 to 64K - 1
+   * @throws NullPointerException if cryptor is null
    */
   public EncryptingOutputStream(OutputStream out, int bufSize, Cryptor cryptor) {
     super(out);
@@ -92,6 +97,7 @@ public class EncryptingOutputStream extends PacketSizedOutputStream {
    * Creates an encrypted output stream using the default {@link Cryptor}.
    *
    * @param out the underlying output stream (e.g., from a socket)
+   * @throws NullPointerException if there is no default cryptor
    */
   public EncryptingOutputStream(OutputStream out) {
     this(out, DEFAULT_BUFFER_SIZE, Cryptor.getInstance());
@@ -151,7 +157,7 @@ public class EncryptingOutputStream extends PacketSizedOutputStream {
   }
 
   /**
-   * Overridden to print stats only
+   * Overridden to log the statistics.
    */
   @Override
   public void close() throws IOException {
@@ -166,13 +172,24 @@ public class EncryptingOutputStream extends PacketSizedOutputStream {
 
 
   /**
-   * Flushes the buffer and encrypts.<br>
+   * Encrypts the buffer and writes it as a packet.
+   *
+   * @throws IOException if writing failed or the encrypted packet is too large
    */
   private void flushBuffer() throws IOException {
     if (orgOff > 0) {
       byte[] encBuf = cryptor.encrypt(orgBuf, 0, orgOff);
-      writeHeader(encBuf.length);
-      out.write(encBuf, 0, encBuf.length);
+      if (encBuf.length > MAX_BUFFER_SIZE) {
+        // the header cannot hold the size: fail instead of corrupting the stream
+        throw new IOException("encrypted packet too large (" + encBuf.length + " bytes): reduce the buffer size of " + bufSize);
+      }
+      // the cryptor returns a new array: copy it behind the header to write the packet in one piece
+      int packetSize = HEADER_SIZE + encBuf.length;
+      if (packetBuf == null || packetBuf.length < packetSize) {
+        packetBuf = new byte[packetSize];
+      }
+      System.arraycopy(encBuf, 0, packetBuf, HEADER_SIZE, encBuf.length);
+      writePacket(packetBuf, encBuf.length, encBuf.length);
       LOGGER.fine("encrypted packet written: {0}/{1}", encBuf.length, orgOff);
       totalEncrypted += encBuf.length;
       orgOff = 0;

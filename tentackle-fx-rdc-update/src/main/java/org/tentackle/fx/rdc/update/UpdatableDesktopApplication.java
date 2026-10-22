@@ -43,6 +43,11 @@ import java.util.Locale;
 
 /**
  * Desktop application with auto update facility.
+ * <p>
+ * Installs the {@link LoginFailedWithUpdateHandler}, which updates the client if the login fails
+ * because the client is outdated. Furthermore, when started from an updatable jlink or jpackage installation,
+ * only one instance of the application may run within that installation, since the update replaces the image in place.
+ * For non-updatable launches (plain classpath or module path), the application behaves like a {@link DesktopApplication}.
  *
  * @param <C> the main controller type
  */
@@ -54,7 +59,7 @@ public abstract class UpdatableDesktopApplication<C extends FxController> extend
 
 
   /**
-   * Creates an FX desktop application.
+   * Creates an updatable FX desktop application.
    *
    * @param name the application name, null for default name
    * @param version the application version, null for default version
@@ -78,6 +83,11 @@ public abstract class UpdatableDesktopApplication<C extends FxController> extend
   /**
    * Checks whether another updatable application is already running within the same installation.<br>
    * Throws {@link TentackleRuntimeException} if so.
+   * <p>
+   * The check is based on an exclusive lock on a lockfile, which receives the PID of the running instance.
+   * The lockfile is kept open until the application terminates and is never deleted:
+   * only the lock counts, so a lockfile left behind by a crashed instance does no harm.
+   * Does nothing if the application does not run from an updatable installation.
    *
    * @see #createLockFilePath(InstallationType)
    */
@@ -151,12 +161,13 @@ public abstract class UpdatableDesktopApplication<C extends FxController> extend
       File rootDir = ClientUpdateUtilities.getInstance().determineJPackageRoot();   // cannot be null since installationType is already known
       return new File(rootDir, getLockFileName()).toPath();
     }
-    // else JLink: execution dir is always the jlink images' root
+    // else JLink: execution dir is always the jlink image's root
     return Paths.get(getLockFileName());
   }
 
   /**
-   * Gets the name of the lockfile.
+   * Gets the name of the lockfile.<br>
+   * The default is the application name reduced to ASCII letters and digits, in lower case, plus {@code .lck}.
    *
    * @return the lockfile name
    */

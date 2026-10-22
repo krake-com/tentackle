@@ -17,6 +17,6 @@
  */
 
 /**
- * Delegates implementing tentackle features for AtlantaFX components.
+ * Delegates implementing Tentackle features for AtlantaFX components.
  */
 package org.tentackle.fx.atlanta.component.delegate;

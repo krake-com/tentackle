@@ -26,9 +26,11 @@ package org.tentackle.misc;
 public interface Pool<T extends Poolable<T>> {
 
   /**
-   * Gets a resource from the pool.
+   * Gets a resource from the pool.<br>
+   * The pool is enlarged if all resources are in use.
    *
    * @return the resource, never null
+   * @throws org.tentackle.common.TentackleRuntimeException if the pool is shut down or exhausted
    */
   T get();
 
@@ -37,8 +39,10 @@ public interface Pool<T extends Poolable<T>> {
    * <p>
    * Notice: returning a resource more than once is allowed.<br>
    * Returning a closed resource removes it from the pool.
+   * Returning a resource to a pool that is shut down closes the resource.
    *
    * @param poolable the resource
+   * @throws org.tentackle.common.TentackleRuntimeException if the resource is not managed by this pool
    */
   void put(T poolable);
 
@@ -85,16 +89,18 @@ public interface Pool<T extends Poolable<T>> {
   int getSize();
 
   /**
-   * Gets the idle timeout in minutes.
+   * Gets the idle timeout in minutes.<br>
+   * Resources unused for that long are closed, as long as the pool is larger than its minimum size.
    *
-   * @return the idle timeout
+   * @return the idle timeout, 0 = unlimited
    */
   long getIdleMinutes();
 
   /**
-   * Gets the usage timeout in minutes.
+   * Gets the usage timeout in minutes.<br>
+   * Resources are closed when the given time has elapsed since their first use.
    *
-   * @return the usage timeout
+   * @return the usage timeout, 0 = unlimited
    */
   long getUsageMinutes();
 
@@ -107,12 +113,15 @@ public interface Pool<T extends Poolable<T>> {
   long getShutdownTimeout();
 
   /**
-   * Shuts down the pool.
+   * Shuts down the pool.<br>
+   * Closes all resources.
+   *
+   * @throws org.tentackle.common.TentackleRuntimeException if the pool is already shut down
    */
   void shutdown();
 
   /**
-   * Returns true if the pool was shut down.
+   * Returns whether the pool was shut down.
    *
    * @return true, if shut down
    */

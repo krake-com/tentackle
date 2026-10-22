@@ -29,6 +29,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.pdo.AdminExtension.SessionData;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.persist.AdminExtensionAdapter;
+import org.tentackle.security.SecurityException;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.SecurityResult;
 import org.tentackle.session.SessionInfo;
@@ -38,7 +39,9 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Admin extension implementation.
+ * Remote delegate implementation for the {@link AdminExtensionAdapter}.<br>
+ * Runs on the server and provides the session administration services
+ * to the clients (listing, logging out and killing client sessions).
  *
  * @author harald
  */
@@ -48,9 +51,10 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDbDelegateImp
   private static final Logger LOGGER = Logger.get(AdminExtensionAdapterRemoteDelegateImpl.class);
 
   /**
-   * Creates the admin extension implementation.
+   * Creates the remote delegate for the admin extension.
    *
-   * @param session the server session
+   * @param session the TRIP session
+   * @param clazz the serviced class
    */
   public AdminExtensionAdapterRemoteDelegateImpl(RemoteDbSessionImpl session, Class<AdminExtensionAdapter> clazz) {
     super(session, clazz);
@@ -83,10 +87,23 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDbDelegateImp
   @Override
   public boolean logout(DomainContext context, long userId, long sessionGroupId,
                         String applicationName, long applicationId) {
-    return kill(context, userId, sessionGroupId, applicationName, applicationId, false) == 1;
+    return kill(context, userId, sessionGroupId, applicationName, applicationId, false) > 0;
   }
 
-
+  /**
+   * Kills or logs out the matching sessions.<br>
+   * Logout requests are only sent to the modification tracker sessions, which
+   * forward a {@link LogoutEvent} to the client application.
+   *
+   * @param context the invoking user's domain context
+   * @param userId the user id
+   * @param sessionGroupId the optional session group, 0 = all
+   * @param applicationName the optional application name, null = all
+   * @param applicationId the optional application ID, 0 = all
+   * @param kill true to kill the sessions, false to submit a logout request
+   * @return the number of sessions killed or logout requests submitted
+   * @throws SecurityException if the invoking user has no execute permission
+   */
   protected int kill(DomainContext context, long userId, long sessionGroupId,
                      String applicationName, long applicationId, boolean kill) {
 
@@ -175,7 +192,9 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDbDelegateImp
       hostInfo = info.getHostInfo();
       if (info.getTimeZone() != null) {
         int offMin = info.getTimeZone().getOffset(System.currentTimeMillis()) / (int) Constants.MINUTE_MS;
-        timeZone = info.getTimeZone().getID() + " (" + String.format("%+d:%02d", offMin / 60, offMin % 60) + ")";
+        int absMin = Math.abs(offMin);
+        timeZone = info.getTimeZone().getID() + " (" +
+                   String.format("%s%d:%02d", offMin < 0 ? "-" : "+", absMin / 60, absMin % 60) + ")";
       }
       else {
         timeZone = null;

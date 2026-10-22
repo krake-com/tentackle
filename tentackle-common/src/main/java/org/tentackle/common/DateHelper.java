@@ -36,14 +36,16 @@ import static java.util.Calendar.YEAR;
 public final class DateHelper {
 
   /**
-   * epochal date zero: 1.1.1970 00:00:00 GMT
+   * Epochal date zero: 1.1.1970 00:00:00 GMT.<br>
+   * The instance is frozen, i.e., it cannot be modified.
    */
-  public static final Date MIN_DATE = new Date(0);
+  public static final Date MIN_DATE = Date.createFrozen(0);
 
   /**
-   * epochal timestamp zero: 1.1.1970 00:00:00.000 GMT
+   * Epochal timestamp zero: 1.1.1970 00:00:00.000 GMT.<br>
+   * The instance is frozen, i.e., it cannot be modified.
    */
-  public static final Timestamp MIN_TIMESTAMP = new Timestamp(0);
+  public static final Timestamp MIN_TIMESTAMP = Timestamp.createFrozen(0, 0);
 
 
   /**
@@ -57,17 +59,17 @@ public final class DateHelper {
   }
 
   /**
-   * Converts a <code>java.util.Date</code> into an <code>org.tentackle.misc.Date</code>.
+   * Converts a <code>java.util.Date</code> into a {@link Date}.
    *
    * @param date the util date
-   * @return the sql date, null if date was null
+   * @return the date, null if date was null
    */
   public static Date toDate(java.util.Date date)  {
     return date == null ? null : new Date(date.getTime());
   }
 
   /**
-   * Converts a Calendar into a org.tentackle.misc.Date.
+   * Converts a Calendar into {@link Date}.
    *
    * @param cal the calendar
    * @return the date, null if cal was null
@@ -78,7 +80,7 @@ public final class DateHelper {
 
 
   /**
-   * Converts a java.util.Date into a org.tentackle.misc.Time.
+   * Converts a java.util.Date into {@link Time}.
    *
    * @param date the date
    * @return the time of the day in date, null if date was null
@@ -89,7 +91,7 @@ public final class DateHelper {
 
 
   /**
-   * Converts a Calendar into a org.tentackle.misc.Time.
+   * Converts a Calendar into {@link Time}.
    *
    * @param cal the calendar
    * @return the time of day, null if cal was null
@@ -100,7 +102,7 @@ public final class DateHelper {
 
 
   /**
-   * Converts a java.util.Date into a org.tentackle.misc.Timestamp.
+   * Converts a java.util.Date into {@link Timestamp}.
    *
    * @param date the date
    * @return the timestamp, null if date was null
@@ -111,7 +113,7 @@ public final class DateHelper {
 
 
   /**
-   * Converts a Calendar into a org.tentackle.misc.Timestamp.
+   * Converts a Calendar into {@link Timestamp}.
    *
    * @param cal the calendar
    * @return the timestamp, null if cal was null
@@ -179,7 +181,8 @@ public final class DateHelper {
 
 
   /**
-   * Gets {@link #today} with an offset.
+   * Gets the current date with an offset.<br>
+   * Same as {@link #today()} with the offsets added. Notice that the time of day is kept, i.e., not set to midnight.
    *
    * @param dayOffset the offset in days
    * @param monthOffset the offset in months
@@ -208,9 +211,9 @@ public final class DateHelper {
   /**
    * Gets the current time with an offset.
    *
-   * @param hourOffset the offset in hours
-   * @param minuteOffset the offset in minutes
    * @param secondOffset the offset in seconds
+   * @param minuteOffset the offset in minutes
+   * @param hourOffset the offset in hours
    * @return the time
    */
   public static Time daytime(int secondOffset, int minuteOffset, int hourOffset)  {
@@ -283,14 +286,14 @@ public final class DateHelper {
   }
 
   /**
-   * Derives a 4-digit from a 2-digit year.
+   * Derives a 4-digit year from a 2-digit year.
    * <p>
    * Finds the closest distance to the current, past or next century according
    * to a given current year.
    *
    * @param year the year, will be cut to 2 digits via modulo 100
-   * @param currentYear the current 4 digit year
-   * @param yearWindow the year window in number of years in the future (0-100, any other value always returns the year in the current century)
+   * @param currentYear the current 4-digit year
+   * @param yearWindow the year window in number of years in the future (0-99, any other value always returns the year in the current century)
    * @return the closest 4-digit year
    */
   public static int derive4DigitYearFrom2DigitYear(int year, int currentYear, int yearWindow) {
@@ -316,7 +319,7 @@ public final class DateHelper {
   }
 
   /**
-   * Derives a 4-digit from a 2-digit year referring to the current year and using a year window of 50.
+   * Derives a 4-digit year from a 2-digit year referring to the current year and using a year window of 50.
    * <p>
    * Finds the closest distance to the current, past or next century according
    * to the current year.
@@ -330,7 +333,8 @@ public final class DateHelper {
 
 
   /**
-   * Derives the year from a month.
+   * Derives the year from a month.<br>
+   * Works like {@link #deriveMonthFromDay(int, int, int, int)}, but for months and years.
    *
    * @param month the month (0-11)
    * @param currentMonth the current month (0-11)
@@ -370,15 +374,19 @@ public final class DateHelper {
   /**
    * Derives the month from a day.
    *
+   * The current month is kept as long as the day is at most {@code dayWindow} days ahead of
+   * and at most {@code 31 - dayWindow} days behind the current day. A day further ahead
+   * refers to the previous month, a day further behind to the next month.
+   * If {@code day} or {@code dayWindow} is out of range, the current month is returned.
+   *
    * @param day the day (1-31)
    * @param currentDay the current day of the month (1-31)
    * @param currentMonth the current month (0-11)
    * @param dayWindow the day window (0-30)
-   * @return the closest month (0-11 for current year, -1 for december of last year, 12 for january of next year)
+   * @return the closest month (0-11 for current year, -1 for December of last year, 12 for January of next year)
    */
   public static int deriveMonthFromDay(int day, int currentDay, int currentMonth, int dayWindow) {
-    if (dayWindow >= 0 && dayWindow < 31) {
-      day %= 31;
+    if (dayWindow >= 0 && dayWindow < 31 && day >= 1 && day <= 31) {
       int diff = day - currentDay;
       if (diff > 0) {
         if (diff > dayWindow) {
@@ -395,10 +403,10 @@ public final class DateHelper {
   }
 
   /**
-   * Derives the month from a day referring to the current date and a dayWindow of 15.
+   * Derives the month from a day referring to the current date and a day window of 15.
    *
    * @param day the day (1-31)
-   * @return the closest month (0-11 for current year, -1 for december of last year, 12 for january of next year)
+   * @return the closest month (0-11 for current year, -1 for December of last year, 12 for January of next year)
    */
   public static int deriveMonthFromDay(int day) {
     Calendar calendar = today();
@@ -407,7 +415,7 @@ public final class DateHelper {
 
 
   /**
-   * prevent instantiation.
+   * Prevents instantiation.
    */
   private DateHelper() { }
 

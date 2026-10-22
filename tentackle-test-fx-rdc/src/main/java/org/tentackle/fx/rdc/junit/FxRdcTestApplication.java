@@ -19,32 +19,62 @@
 package org.tentackle.fx.rdc.junit;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.platform.commons.logging.Logger;
-import org.junit.platform.commons.logging.LoggerFactory;
-import org.opentest4j.AssertionFailedError;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.opentest4j.TestAbortedException;
 
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.junit.TestApplication;
 import org.tentackle.session.Session;
 
 import javafx.application.Platform;
+import javafx.scene.control.Label;
 import java.awt.GraphicsEnvironment;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * FX Junit5 test application.
+ * Base class for JUnit 5 tests of the FX rich desktop client.<br>
+ * Extends {@link TestApplication} by the JavaFX toolkit and a session for the FX thread.
+ * <p>
+ * The FX toolkit is started once by the {@link FxExtension}, before any {@code @BeforeAll} method
+ * of the first test class runs (TestNG's {@code @BeforeSuite}).
+ * The tests are aborted (i.e. skipped) if the JVM is headless or FX is not supported.
  *
  * @author harald
  */
+@ExtendWith(FxRdcTestApplication.FxExtension.class)
 public abstract class FxRdcTestApplication extends TestApplication {
 
+  /**
+   * Starts the FX toolkit before the application is set up.
+   * <p>
+   * A {@code @BeforeAll} method cannot be used, since JUnit runs the {@code @BeforeAll} methods of the
+   * superclass first, i.e. the session would already be open and the database populated when the tests are aborted.
+   */
+  public static class FxExtension implements BeforeAllCallback {
+
+    /**
+     * Creates the extension.
+     */
+    public FxExtension() {
+      // see -Xlint:missing-explicit-ctor
+    }
+
+    @Override
+    public void beforeAll(ExtensionContext context) {
+      startFx();
+    }
+  }
+
+
   private static final String HEADLESS_MSG = "JVM is headless -> no FX tests";
-  private static final int DEFAULT_FX_TIMEOUT = 30;       // timeout in seconds to wait for failing test
-  private static final Logger LOGGER = LoggerFactory.getLogger(FxRdcTestApplication.class);
-  private static boolean fxStarted;
+  private static final int DEFAULT_FX_TIMEOUT = 30;       // timeout in seconds for the FX thread to catch up
+
+  private static boolean fxStarted;                       // true if FX toolkit is running
+  private static TestAbortedException fxFailure;          // != null if FX could not be started
 
   private final AtomicReference<Throwable> unhandledException = new AtomicReference<>();
   private Session fxSession;
@@ -61,7 +91,7 @@ public abstract class FxRdcTestApplication extends TestApplication {
   }
 
   /**
-   * Sets the FX timeout for a subtest to complete.<br>
+   * Sets the timeout for the FX thread to complete the processing of a subtest.<br>
    * Default is 30 s.
    *
    * @param fxTimeout the timeout in seconds
@@ -73,70 +103,126 @@ public abstract class FxRdcTestApplication extends TestApplication {
   /**
    * Gets the FX timeout.
    *
-   * @return the timeout
+   * @return the timeout in seconds
    */
   public int getFxTimeout() {
     return fxTimeout;
   }
 
-  @BeforeAll
-  public static void startFx() {
-    synchronized (FxRdcTestApplication.class) {
-      if (!fxStarted) {
+  /**
+   * Starts the FX toolkit, if not already started.
+   *
+   * @throws TestAbortedException if the JVM is headless or FX is not supported
+   */
+  public static synchronized void startFx() {
+    if (!fxStarted) {
+      if (fxFailure == null) {
         if (GraphicsEnvironment.isHeadless()) {
-          System.out.println(HEADLESS_MSG);   // Reporter.log ignored with SkipException
-          throw new AssertionFailedError(HEADLESS_MSG);
+          System.out.println(HEADLESS_MSG);
+          fxFailure = new TestAbortedException(HEADLESS_MSG);
         }
         else {
           try {
-            Platform.startup(() -> LOGGER.info(() -> "FX started"));
+            Platform.startup(() -> System.out.println("FX started"));
+          }
+          catch (IllegalStateException ix) {
+            // toolkit already initialized by someone else
           }
           catch (RuntimeException rex) {
-            throw new AssertionFailedError("FX not supported -> no FX tests");
+            fxFailure = new TestAbortedException("FX not supported -> no FX tests", rex);
+          }
+          if (fxFailure == null) {
+            initCssOnFxThread();
+            fxStarted = true;
           }
         }
-        fxStarted = true;
+      }
+      if (fxFailure != null) {
+        throw fxFailure;
       }
     }
   }
 
+  /**
+   * Initializes the CSS and control classes on the FX thread.<br>
+   * {@link Platform#startup(Runnable)}, unlike {@code Application.launch}, does not load the default user agent
+   * stylesheet. The first control created by the test thread would load it via {@link Platform#runLater(Runnable)},
+   * and the FX thread would then initialize the {@code Styleable...Property} classes concurrently to the test thread.
+   * Since these classes and {@code com.sun.javafx.css.StyleablePropertyHelper} initialize each other in their
+   * static initializers, this may deadlock both threads. Creating a control on the FX thread first avoids that.
+   */
+  private static void initCssOnFxThread() {
+    CountDownLatch latch = new CountDownLatch(1);
+    Platform.runLater(() -> {
+      try {
+        new Label();    // loads the default stylesheet synchronously and initializes the styleable properties
+      }
+      finally {
+        latch.countDown();
+      }
+    });
+    try {
+      if (!latch.await(DEFAULT_FX_TIMEOUT, TimeUnit.SECONDS)) {
+        Assertions.fail("initializing FX timed out");
+      }
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      Assertions.fail("initializing FX interrupted", e);
+    }
+  }
+
+  /**
+   * Sets the domain context and prepares the FX thread.<br>
+   * Clones the session for the FX thread, makes the clone the FX thread's current session and
+   * installs an uncaught exception handler that records exceptions thrown on the FX thread.
+   * Such an exception fails the next {@link #runFx(String, Runnable)}.
+   *
+   * @param context the domain context
+   */
   @Override
   protected void setDomainContext(DomainContext context) {
     super.setDomainContext(context);
-    if (fxStarted) {
-      fxSession = context.getSession().clone("FX");
-      CountDownLatch latch = new CountDownLatch(1);
-      Platform.runLater(() -> {
-        Session.setCurrentSession(fxSession);
-        unhandledException.set(null);
-        Thread.currentThread().setUncaughtExceptionHandler((_, e) -> unhandledException.set(e));
-        latch.countDown();
-      });
-      try {
-        if (!latch.await(getFxTimeout(), TimeUnit.SECONDS)) {
-          Assertions.fail("waiting for FX failed");
-        }
-      }
-      catch (InterruptedException e) {
-        Assertions.fail("FX setup interrupted", e);
+    fxSession = context.getSession().clone("FX");
+    CountDownLatch latch = new CountDownLatch(1);
+    Platform.runLater(() -> {
+      Session.setCurrentSession(fxSession);
+      unhandledException.set(null);
+      Thread.currentThread().setUncaughtExceptionHandler((_, e) -> unhandledException.set(e));
+      latch.countDown();
+    });
+    try {
+      if (!latch.await(getFxTimeout(), TimeUnit.SECONDS)) {
+        Assertions.fail("waiting for FX failed");
       }
     }
-    else {
-      throw new AssertionFailedError(HEADLESS_MSG);
+    catch (InterruptedException e) {
+      Assertions.fail("FX setup interrupted", e);
     }
   }
 
+  /**
+   * Unregisters the application and closes the FX thread's session.<br>
+   * Does nothing if the FX thread was never prepared, since then the application was not registered either.
+   */
   @Override
   public void unregister() {
-    if (fxStarted) {
+    if (fxSession != null) {
       super.unregister();
       fxSession.close();
     }
   }
 
   /**
-   * Runs an FX related test and waits until the FX-thread has completed all
+   * Runs an FX related test and waits until the FX thread has completed all
    * test-related processing.
+   * <p>
+   * The test runs on the calling thread. Afterward, a marker is posted to the FX thread via
+   * {@link Platform#runLater(Runnable)}, and the method waits until it has been processed
+   * (see {@link #getFxTimeout()}), i.e. until all FX events queued by the test so far have been handled.
+   * The test fails if it throws a runtime exception, times out, or if an exception was thrown on the FX thread.
+   * <p>
+   * Notice that an exception recorded on the FX thread is not cleared, i.e. it fails all subsequent tests as well.
    *
    * @param name the name of the test
    * @param runnable the test

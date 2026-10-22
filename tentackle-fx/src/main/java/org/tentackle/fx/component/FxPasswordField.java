@@ -54,9 +54,9 @@ import java.util.function.Function;
  * Falls back to a less secure mode and logs a warning, if {@code javafx.controls} is not open.
  * <p>
  * Important: if you use the password character array methods, you must not use standard FX bindings,
- * listeners, etc... as they all work with regular strings. Furthermore, all text processing like
- * maxColumns, filtering, etc... will be disabled, and the internal character buffer is accessed
- * directly bypassing the string-based operations.<br>
+ * listeners, etc., as they all work with regular strings. Furthermore, all text processing like
+ * maxColumns, filtering, etc. will be disabled, and the internal character buffer is accessed
+ * directly bypassing the string-based operations.
  *
  * @author harald
  */
@@ -70,7 +70,7 @@ public class FxPasswordField extends PasswordField implements FxTextComponent {
   /**
    * Gets the password as a character array and clears the contents in memory.
    *
-   * @return the character array wrapper (never empty), null if empty
+   * @return the password characters, null if empty
    */
   public char[] getPassword() {
     StringBuilder buf = getCharacterBuffer();

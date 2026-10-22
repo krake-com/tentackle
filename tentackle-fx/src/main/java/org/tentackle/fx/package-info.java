@@ -17,6 +17,10 @@
  */
 
 /**
- * Extended FX layer.
+ * The extended JavaFX layer.<br>
+ * Core contracts ({@link org.tentackle.fx.FxControl}, {@link org.tentackle.fx.FxComponent},
+ * {@link org.tentackle.fx.FxContainer}, {@link org.tentackle.fx.FxController}), the {@link org.tentackle.fx.Fx} facade,
+ * the {@link org.tentackle.fx.FxFactory}, value translators, configurators, controller base classes,
+ * and the support for graphics, notifications, input alerts, themes, and interactive errors.
  */
 package org.tentackle.fx;

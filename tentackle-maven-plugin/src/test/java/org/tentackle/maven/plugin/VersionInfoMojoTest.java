@@ -18,7 +18,7 @@
 
 package org.tentackle.maven.plugin;
 
-import org.apache.maven.artifact.Artifact;
+import org.eclipse.aether.artifact.Artifact;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -68,7 +68,7 @@ public class VersionInfoMojoTest {
     basedir = createTempDir("version-info-mojo");
     log = new RecordingLog();
     mojo = new TestVersionInfoMojo();
-    mojo.setLog(log);
+    mojo.setLogger(log);
     setField(mojo, "mavenProject", createProject(basedir));
   }
 
@@ -306,7 +306,7 @@ public class VersionInfoMojoTest {
   @Test
   public void validateNormalizesTheScope() throws Exception {
     VersionInfoMojo versionInfoMojo = new VersionInfoMojo();
-    versionInfoMojo.setLog(log);
+    versionInfoMojo.setLogger(log);
     setField(versionInfoMojo, "mavenProject", createProject(basedir));
     setField(versionInfoMojo, "scope", "Compile");
 
@@ -320,7 +320,7 @@ public class VersionInfoMojoTest {
   @Test
   public void validateTreatsABlankScopeAsNoScope() throws Exception {
     VersionInfoMojo versionInfoMojo = new VersionInfoMojo();
-    versionInfoMojo.setLog(log);
+    versionInfoMojo.setLogger(log);
     setField(versionInfoMojo, "mavenProject", createProject(basedir));
     setField(versionInfoMojo, "scope", "  ");
 

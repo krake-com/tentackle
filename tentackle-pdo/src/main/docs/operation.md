@@ -72,7 +72,7 @@ missing side, and throws `ClassNotFoundException` only when *both* are absent:
 
 ```java
 if (persistenceMixin == null && domainMixin == null) {
-  throw new ClassNotFoundException("neither domain- nor persistence mapping found for '" + clazz.getName());
+  throw new ClassNotFoundException("neither domain- nor persistence mapping found for '" + clazz.getName() + "'");
 }
 else if (persistenceMixin == null) {
   persistenceMixin = new Mixin<>(clazz, PersistentOperation.class);   // dummy
@@ -173,9 +173,14 @@ public class MoveOperationDomainImpl
 }
 ```
 
-There is **no** `MoveOperationPersistence` and no persistence impl. At runtime the
-handler creates a dummy persistence mixin; every call lands on
-`MoveOperationDomainImpl`.
+There is **no** `MoveOperationPersistence` and no persistence impl. With the default
+[`DefaultOperationFactory`](../java/org/tentackle/pdo/DefaultOperationFactory.java), the
+persistence side is then a
+[`DummyPersistentOperation`](../java/org/tentackle/pdo/DummyPersistentOperation.java):
+the factory registers it as the default persistence implementation, so the handler finds
+it like any other. It holds the operation's domain context and session, and nothing more.
+The handler's own dummy mixin is only a fallback for factories without such a default.
+Every operation method lands on `MoveOperationDomainImpl`.
 
 ### A persistence-only operation (with remoting)
 
@@ -270,7 +275,7 @@ the implementations are `@TripReferencable(NEVER)`.
 ```
 
 [`OperationInvocationHandler.invoke(...)`](../java/org/tentackle/pdo/OperationInvocationHandler.java)
-handles `Object`/`Comparable`/`Operation`/`OperationProvider` methods directly,
+handles `Object`/`Comparable`/`Operation`/`OperationProvider`/`EffectiveClassProvider` methods directly,
 then consults the
 [`OperationMethodCache`](../java/org/tentackle/pdo/OperationMethodCache.java) to
 dispatch each interface method to whichever delegate declares it
@@ -306,14 +311,25 @@ delegate, and ones that create within a named sub-context — see
 From inside an operation implementation,
 [`OperationProvider.op()`](../java/org/tentackle/pdo/OperationProvider.java) creates
 a new instance of the same operation type in the same context (optionally a named
-sub-context), the operation-world counterpart of a PDO's `on(...)`:
+sub-context), the operation-world counterpart of a PDO's `on()`:
 
 ```java
 T op();                                   // same type, same context
 T op(String contextName);                 // same type, in a named sub-context
-T op(Class<T> clazz);                     // another type, same context
-T op(Class<T> clazz, String contextName); // another type, in a named sub-context
 ```
+
+Operations of *another* type are created via
+[`DomainContextProvider`](../java/org/tentackle/pdo/DomainContextProvider.java), which every
+operation and PDO is:
+
+```java
+<O extends Operation<O>> O op(Class<O> clazz);                     // same context
+<O extends Operation<O>> O op(Class<O> clazz, String contextName); // in a named sub-context
+```
+
+`op(String)` creates the named sub-context only if the current context is not already within
+that name, whereas `op(Class, String)` always creates it and throws a `DomainException` if the
+context is already within that name.
 
 ### Reaching PDOs from an operation
 

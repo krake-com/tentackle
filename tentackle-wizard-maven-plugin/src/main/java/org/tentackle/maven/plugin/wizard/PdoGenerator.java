@@ -25,10 +25,13 @@ import org.tentackle.bind.Bindable;
 import org.tentackle.buildsupport.codegen.GeneratedFile;
 import org.tentackle.common.NamingRules;
 import org.tentackle.common.Settings;
+import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
 import org.tentackle.model.InheritanceType;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
+import org.tentackle.model.Relation;
+import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScopeFactory;
 import org.tentackle.validate.scope.InteractiveScope;
@@ -42,11 +45,16 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
- * Generator for the PDO files.
+ * Generator for the PDO files.<br>
+ * Used by the interactive PDO wizard and the batch mode of the {@code pdo} goal.
  */
 public class PdoGenerator extends AbstractValidateableGenerator {
+
+  private static final String VALIDATOR_PACKAGE = "org.tentackle.validate.validator";
 
   private File statusDir;
   private PdoProfile profile;
@@ -64,6 +72,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   private boolean remoteEnabled;
   private boolean cacheEnabled;
   private String modelSource;
+  private String validationImports;
 
 
   /**
@@ -86,7 +95,9 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   }
 
   /**
-   * Creates the PDO files.
+   * Creates the PDO files.<br>
+   * The generator is validated first, and the files are only created if there are no validation errors.
+   * If a class ID was used, the next free class ID is stored in the status file of the profile.
    *
    * @return the validation results, empty if okay, never null
    * @throws IOException if file creation failed
@@ -130,6 +141,10 @@ public class PdoGenerator extends AbstractValidateableGenerator {
         try (FileWriter statusWriter = new FileWriter(new File(statusDir, profile.getName() + Constants.CLASSID_EXT), Settings.getEncodingCharset())) {
           statusWriter.append(Integer.toString(classId + 1));
         }
+        if (classId >= profile.getMinClassId()) {
+          // next entity generated in the same run (batch mode) must not get the same class ID
+          profile.setMinClassId(classId + 1);
+        }
       }
     }
     return results;
@@ -164,7 +179,8 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   }
 
   /**
-   * Checks whether the entity needs a class ID.
+   * Checks whether the entity needs a class ID.<br>
+   * Clears the class ID if not.
    *
    * @return true if class ID necessary
    */
@@ -177,7 +193,8 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   }
 
   /**
-   * Returns whether extending a super entity is allowed.
+   * Returns whether extending a super entity is allowed.<br>
+   * Clears the super entity if not.
    *
    * @return true if allowed, else no inheritance
    */
@@ -190,7 +207,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   }
 
   /**
-   * Checks whether the tablename is not already used in the model.
+   * Checks whether the table name is not already used in the model.
    *
    * @return true if ok
    * @throws ModelException if failed
@@ -207,9 +224,10 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   }
 
   /**
-   * Checks whether the entity needs a tablename.
+   * Checks whether the entity needs a table name.<br>
+   * Clears the table name if not.
    *
-   * @return true if tablename necessary
+   * @return true if table name necessary
    */
   public boolean isTableNameNecessary() {
     boolean necessary = false;
@@ -237,9 +255,10 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   }
 
   /**
-   * Checks whether tablename set properly by the user.
+   * Checks whether the table name is set properly by the user.<br>
+   * A table name consisting of the profile's table prefix only is not valid.
    *
-   * @return true if set, false if missing
+   * @return {@link Boolean#TRUE} if valid, null if missing (so that {@code @NotNull} triggers)
    */
   public Boolean isTableNameValid() {
     return tableName != null && (profile == null || profile.getTablePrefix() == null || !tableName.equals(profile.getTablePrefix())) ?
@@ -270,12 +289,22 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   // ------------------------------------- model -------------------------------------------------
 
 
+  /**
+   * Gets the profile.
+   *
+   * @return the profile
+   */
   @Bindable
   @NotNull
   public PdoProfile getProfile() {
     return profile;
   }
 
+  /**
+   * Sets the profile.
+   *
+   * @param profile the profile
+   */
   @Bindable
   public void setProfile(PdoProfile profile) {
     if (isTableNameNecessary()) {
@@ -301,6 +330,11 @@ public class PdoGenerator extends AbstractValidateableGenerator {
     this.profile = profile;
   }
 
+  /**
+   * Gets the entity name, i.e. the name of the PDO interface.
+   *
+   * @return the entity name
+   */
   @Bindable
   @NotNull(message = "missing entity name")
   @True(value = "$isNewEntity", scope = InteractiveScope.class, message = "entity already exists")
@@ -308,6 +342,12 @@ public class PdoGenerator extends AbstractValidateableGenerator {
     return entityName;
   }
 
+  /**
+   * Sets the entity name, i.e. the name of the PDO interface.<br>
+   * Also sets the derived names of the interfaces and implementations.
+   *
+   * @param entityName the entity name
+   */
   @Bindable
   public void setEntityName(String entityName) {
     this.entityName = entityName;
@@ -326,6 +366,12 @@ public class PdoGenerator extends AbstractValidateableGenerator {
     }
   }
 
+  /**
+   * Gets the class ID.<br>
+   * If a class ID is necessary but missing or outside the profile's range, the next free class ID of the profile is set.
+   *
+   * @return the class ID, null if none
+   */
   @Bindable
   @True(value = "$isNewClassId", scope = InteractiveScope.class, message = "class ID already in use")
   @Changeable(condition = "$isClassIdNecessary")
@@ -340,11 +386,22 @@ public class PdoGenerator extends AbstractValidateableGenerator {
     return classId;
   }
 
+  /**
+   * Sets the class ID.
+   *
+   * @param classId the class ID, null if none
+   */
   @Bindable
   public void setClassId(Integer classId) {
     this.classId = classId;
   }
 
+  /**
+   * Gets the table name.<br>
+   * If a table name is necessary but missing, it is initialized with the profile's table prefix.
+   *
+   * @return the table name, null if none
+   */
   @Bindable(options = "lc")
   @True(value = "$isNewTableName", scope = InteractiveScope.class, message = "table name already in use")
   @Changeable(condition = "$isTableNameNecessary")
@@ -356,22 +413,42 @@ public class PdoGenerator extends AbstractValidateableGenerator {
     return tableName;
   }
 
+  /**
+   * Sets the table name.
+   *
+   * @param tableName the table name, null if none
+   */
   @Bindable
   public void setTableName(String tableName) {
     this.tableName = tableName;
   }
 
+  /**
+   * Gets the super entity.
+   *
+   * @return the super entity, null if none
+   */
   @Bindable
   @Changeable(condition = "$isSuperEntityAllowed")
   public Entity getSuperEntity() {
     return superEntity;
   }
 
+  /**
+   * Sets the super entity.
+   *
+   * @param superEntity the super entity, null if none
+   */
   @Bindable
   public void setSuperEntity(Entity superEntity) {
     this.superEntity = superEntity;
   }
 
+  /**
+   * Gets the inheritance type.
+   *
+   * @return the inheritance type
+   */
   @Bindable
   @NotNull
   @True(value = "$isInheritanceTypeValid", scope = InteractiveScope.class, message = "inheritance type does not match super entity")
@@ -379,6 +456,12 @@ public class PdoGenerator extends AbstractValidateableGenerator {
     return inheritanceType;
   }
 
+  /**
+   * Sets the inheritance type.<br>
+   * An embedded entity is never cached.
+   *
+   * @param inheritanceType the inheritance type
+   */
   @Bindable
   public void setInheritanceType(InheritanceType inheritanceType) {
     this.inheritanceType = inheritanceType;
@@ -387,85 +470,165 @@ public class PdoGenerator extends AbstractValidateableGenerator {
     }
   }
 
+  /**
+   * Gets the short description.
+   *
+   * @return the short description
+   */
   @Bindable
   @NotNull(message = "missing short description")
   public String getShortDescription() {
     return shortDescription;
   }
 
+  /**
+   * Sets the short description.
+   *
+   * @param shortDescription the short description
+   */
   @Bindable
   public void setShortDescription(String shortDescription) {
     this.shortDescription = shortDescription;
   }
 
+  /**
+   * Gets the long description.
+   *
+   * @return the long description, null if none
+   */
   @Bindable
   public String getLongDescription() {
     return longDescription;
   }
 
+  /**
+   * Sets the long description.
+   *
+   * @param longDescription the long description, null if none
+   */
   @Bindable
   public void setLongDescription(String longDescription) {
     this.longDescription = longDescription;
   }
 
+  /**
+   * Gets the name of the domain interface.
+   *
+   * @return the name, null if none
+   */
   @Bindable
   @NotNull(message = "missing domain interface")
   public String getDomainInterface() {
     return domainInterface;
   }
 
+  /**
+   * Sets the name of the domain interface.
+   *
+   * @param domainInterface the name, null if none
+   */
   @Bindable
   public void setDomainInterface(String domainInterface) {
     this.domainInterface = domainInterface;
   }
 
+  /**
+   * Gets the name of the persistence interface.
+   *
+   * @return the name, null if none
+   */
   @Bindable
   @NotNull(message = "missing persistence interface")
   public String getPersistenceInterface() {
     return persistenceInterface;
   }
 
+  /**
+   * Sets the name of the persistence interface.
+   *
+   * @param persistenceInterface the name, null if none
+   */
   @Bindable
   public void setPersistenceInterface(String persistenceInterface) {
     this.persistenceInterface = persistenceInterface;
   }
 
+  /**
+   * Gets the name of the domain implementation.
+   *
+   * @return the name, null if none
+   */
   @Bindable
   public String getDomainImplementation() {
     return domainImplementation;
   }
 
+  /**
+   * Sets the name of the domain implementation.
+   *
+   * @param domainImplementation the name, null if none
+   */
   @Bindable
   public void setDomainImplementation(String domainImplementation) {
     this.domainImplementation = domainImplementation;
   }
 
+  /**
+   * Gets the name of the persistence implementation.
+   *
+   * @return the name, null if none
+   */
   @Bindable
   public String getPersistenceImplementation() {
     return persistenceImplementation;
   }
 
+  /**
+   * Sets the name of the persistence implementation.
+   *
+   * @param persistenceImplementation the name, null if none
+   */
   @Bindable
   public void setPersistenceImplementation(String persistenceImplementation) {
     this.persistenceImplementation = persistenceImplementation;
   }
 
+  /**
+   * Returns whether remoting is enabled.
+   *
+   * @return true if remoting is enabled
+   */
   @Bindable
   public boolean isRemoteEnabled() {
     return remoteEnabled;
   }
 
+  /**
+   * Sets whether remoting is enabled.
+   *
+   * @param remoteEnabled true if remoting is enabled
+   */
   @Bindable
   public void setRemoteEnabled(boolean remoteEnabled) {
     this.remoteEnabled = remoteEnabled;
   }
 
+  /**
+   * Returns whether caching is enabled.
+   *
+   * @return true if caching is enabled
+   */
   @Bindable
   @Changeable(condition = "$isCachingAllowed")
   public boolean isCacheEnabled() {
     return cacheEnabled;
   }
 
+  /**
+   * Sets whether caching is enabled.
+   *
+   * @param cacheEnabled true if caching is enabled
+   */
   @Bindable
   public void setCacheEnabled(boolean cacheEnabled) {
     this.cacheEnabled = cacheEnabled;
@@ -489,9 +652,81 @@ public class PdoGenerator extends AbstractValidateableGenerator {
     return modelSource;
   }
 
+  /**
+   * Sets the import statements of the validation annotations in batch mode.
+   *
+   * @param validationImports the import statements, one per line, null if none
+   * @see #determineValidationImports(Entity)
+   */
+  public void setValidationImports(String validationImports) {
+    this.validationImports = validationImports;
+  }
 
   /**
-   * Gets the name of the parent pdo interface.
+   * Gets the import statements of the validation annotations in batch mode.
+   *
+   * @return the import statements, one per line, null if none
+   */
+  public String getValidationImports() {
+    return validationImports;
+  }
+
+  /**
+   * Determines the import statements for the validation annotations of an entity.<br>
+   * The wurblets generate the annotations of the entity's own attributes and relations into
+   * the persistence interface, but cannot add the imports. Only annotations given by their simple
+   * name and provided by Tentackle's built-in validators in {@code org.tentackle.validate.validator}
+   * are imported. Fully qualified annotations need no import, and application-specific ones are left
+   * to the developer.
+   *
+   * @param entity the entity
+   * @return the import statements, one per line, null if none
+   */
+  public static String determineValidationImports(Entity entity) {
+    Set<String> names = new TreeSet<>();
+    for (Attribute attribute : entity.getAttributes()) {
+      addAnnotationNames(names, attribute.getOptions().getAnnotations());
+    }
+    for (Relation relation : entity.getRelations()) {
+      addAnnotationNames(names, relation.getAnnotations());
+    }
+    StringBuilder buf = new StringBuilder();
+    for (String name : names) {
+      String className = VALIDATOR_PACKAGE + "." + name;
+      try {
+        if (Class.forName(className, false, PdoGenerator.class.getClassLoader()).isAnnotation()) {
+          buf.append("import ").append(className).append(";\n");
+        }
+      }
+      catch (ClassNotFoundException e) {
+        // not a built-in validator
+      }
+    }
+    return buf.isEmpty() ? null : buf.toString();
+  }
+
+  private static void addAnnotationNames(Set<String> names, List<String> annotations) {
+    if (annotations != null) {
+      for (String annotation : annotations) {
+        String name = annotation.trim();
+        if (name.startsWith("@")) {
+          name = name.substring(1);
+        }
+        int ndx = name.indexOf('(');
+        if (ndx >= 0) {
+          name = name.substring(0, ndx);
+        }
+        name = name.trim();
+        if (!name.isEmpty() && name.indexOf('.') < 0) {
+          names.add(name);
+        }
+      }
+    }
+  }
+
+
+  /**
+   * Gets the name of the parent PDO interface.
    *
    * @return the super interface
    */
@@ -501,7 +736,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
       superPdoInterface = superEntity.getName();
     }
     else if (profile.getPdoInterface() != null) {
-      superPdoInterface = profile.getPdoInterface();
+      superPdoInterface = ReflectionHelper.getClassBaseName(profile.getPdoInterface());
     }
     else {
       superPdoInterface = "PersistentDomainObject";
@@ -520,7 +755,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
       superDomainInterface = NamingRules.getInstance().getPdoDomainInterface(superEntity.getName());
     }
     else if (profile.getDomainInterface() != null) {
-      superDomainInterface = profile.getDomainInterface();
+      superDomainInterface = ReflectionHelper.getClassBaseName(profile.getDomainInterface());
     }
     else {
       superDomainInterface = "DomainObject";
@@ -539,7 +774,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
       superPersistenceInterface = NamingRules.getInstance().getPdoPersistenceInterface(superEntity.getName());
     }
     else if (profile.getPersistenceInterface() != null) {
-      superPersistenceInterface = profile.getPersistenceInterface();
+      superPersistenceInterface = ReflectionHelper.getClassBaseName(profile.getPersistenceInterface());
     }
     else {
       superPersistenceInterface = "PersistentObject";
@@ -558,7 +793,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
       superDomainImplementation = NamingRules.getInstance().getPdoDomainImplementation(superEntity.getName());
     }
     else if (profile.getDomainImplementation() != null) {
-      superDomainImplementation = profile.getDomainImplementation();
+      superDomainImplementation = ReflectionHelper.getClassBaseName(profile.getDomainImplementation());
     }
     else {
       superDomainImplementation = "AbstractDomainObject";
@@ -577,12 +812,62 @@ public class PdoGenerator extends AbstractValidateableGenerator {
       superPersistenceImplementation = NamingRules.getInstance().getPdoPersistenceImplementation(superEntity.getName());
     }
     else if (profile.getPersistenceImplementation() != null) {
-      superPersistenceImplementation = profile.getPersistenceImplementation();
+      superPersistenceImplementation = ReflectionHelper.getClassBaseName(profile.getPersistenceImplementation());
     }
     else {
       superPersistenceImplementation = "AbstractPersistentObject";
     }
     return superPersistenceImplementation;
+  }
+
+  /**
+   * Gets the package of the parent PDO interface.<br>
+   * Only known if the profile configures it by its fully qualified name.
+   *
+   * @return the package name, the empty string if unknown or no import is necessary
+   */
+  public String getSuperPdoInterfacePackage() {
+    return superEntity == null ? ReflectionHelper.getPackageName(profile.getPdoInterface()) : "";
+  }
+
+  /**
+   * Gets the package of the parent domain interface.<br>
+   * Only known if the profile configures it by its fully qualified name.
+   *
+   * @return the package name, the empty string if unknown or no import is necessary
+   */
+  public String getSuperDomainInterfacePackage() {
+    return superEntity == null ? ReflectionHelper.getPackageName(profile.getDomainInterface()) : "";
+  }
+
+  /**
+   * Gets the package of the parent persistence interface.<br>
+   * Only known if the profile configures it by its fully qualified name.
+   *
+   * @return the package name, the empty string if unknown or no import is necessary
+   */
+  public String getSuperPersistenceInterfacePackage() {
+    return superEntity == null ? ReflectionHelper.getPackageName(profile.getPersistenceInterface()) : "";
+  }
+
+  /**
+   * Gets the package of the parent domain class.<br>
+   * Only known if the profile configures it by its fully qualified name.
+   *
+   * @return the package name, the empty string if unknown or no import is necessary
+   */
+  public String getSuperDomainImplementationPackage() {
+    return superEntity == null ? ReflectionHelper.getPackageName(profile.getDomainImplementation()) : "";
+  }
+
+  /**
+   * Gets the package of the parent persistence class.<br>
+   * Only known if the profile configures it by its fully qualified name.
+   *
+   * @return the package name, the empty string if unknown or no import is necessary
+   */
+  public String getSuperPersistenceImplementationPackage() {
+    return superEntity == null ? ReflectionHelper.getPackageName(profile.getPersistenceImplementation()) : "";
   }
 
 }

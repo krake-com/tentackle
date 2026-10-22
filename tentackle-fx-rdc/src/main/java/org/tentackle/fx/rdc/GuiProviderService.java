@@ -30,7 +30,11 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation to express that the annotated class
- * is a {@link GuiProvider} for PDO.
+ * is the {@link GuiProvider} for a PDO type.
+ * <p>
+ * The annotated class must provide a public constructor with the PDO as its only argument.
+ * The mapping from the PDO class to the provider class is recorded under {@code META-INF}
+ * at build time, and the provider's resource bundle under {@code META-INF/bundles}.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -41,7 +45,7 @@ public @interface GuiProviderService {
 
   /**
    * Determines the serviced PDO class.<br>
-   * The PDO-class usually is an interface extending the persistent
+   * The PDO class usually is an interface extending the persistent
    * and the domain interfaces.
    *
    * @return the PDO class
@@ -50,15 +54,16 @@ public @interface GuiProviderService {
   Class<? extends PersistentDomainObject> value();
 
   /**
-   * Flag to disable entry in META-INF/bundles.<br>
-   * Avoids warnings in I18N maven goals.
+   * Flag to disable the entry in {@code META-INF/bundles}.<br>
+   * Set it if the provider has no resource bundle, to avoid warnings in the I18N maven goals.
    *
    * @return true if GuiProvider does not provide a bundle
    */
   boolean noBundle() default false;
 
   /**
-   * Returns whether provider should be unit tested.
+   * Returns whether the provider should be unit tested.<br>
+   * Used by the generic {@code GuiProviderTest} of the {@code tentackle-test-fx-rdc} module.
    *
    * @return true if test (default), false if no test
    */

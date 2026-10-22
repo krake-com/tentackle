@@ -78,9 +78,12 @@ more than the last few percent of ratio.
 [`EncryptingOutputStream`](../java/org/tentackle/io/EncryptingOutputStream.java) and
 [`DecryptingInputStream`](../java/org/tentackle/io/DecryptingInputStream.java) are the same idea
 with a [`Cryptor`](../../../../tentackle-common/src/main/docs/common.md) instead of a `Deflater`.
-Packets are encrypted whole, prefixed with the two-byte size header (unsigned, so 64K - 1 is the
-maximum buffer; the default is half that). The decrypting side adapts its buffer to the incoming
-packet size dynamically. Both default to `Cryptor.getInstance()` when no cryptor is passed.
+Packets are encrypted whole, prefixed with the two-byte size header (unsigned, so an *encrypted*
+packet holds at most 64K - 1 bytes). Since encryption adds some overhead (the default AES cipher pads
+to the next 16-byte block), the buffer must leave room for it; the default of half the maximum does.
+A packet that would not fit fails with an `IOException` instead of corrupting the stream. The
+decrypting side adapts its buffer to the incoming packet size dynamically. Both default to
+`Cryptor.getInstance()` when no cryptor is passed.
 
 These are what the [`EncryptedTransport`](../java/org/tentackle/trip/transport/EncryptedTransport.java)
 and `CompressedEncryptedTransport` stack onto their sockets — see [trip.md](trip.md) for the
@@ -93,7 +96,7 @@ transport variants (TCP, SSL, compressed, encrypted, loopback) and when each app
 SSL-aware replacements for the JDK's default socket factories. The default
 `SSLServerSocketFactory` always presents the *first* suitable certificate in the keystore and gives
 no way to change that; these factories let you **select the certificate by its alias** and tune the
-SSL options (enabled protocols, cipher suites, client-certificate policy, endpoint identification).
+SSL options (enabled protocols, cipher suites, client-certificate policy, host name verification).
 Constructed without arguments they behave as plain TCP factories; constructed with an
 [`SslParameters`](../java/org/tentackle/io/SslParameters.java) they build an `SSLContext` and produce
 configured `SSLSocket`/`SSLServerSocket`s. Client certificates are supported by simply providing a
@@ -116,8 +119,8 @@ Three pieces cooperate:
 - [`ReconnectionPolicy<T>`](../java/org/tentackle/io/ReconnectionPolicy.java) — the application's
   decision, for a resource type `T`. `isBlocking()` decides whether the thread that hit the dead
   resource waits for the resource to come back or moves on; `timeToReconnect()` returns the delay
-  before the next attempt (0 aborts reconnection altogether); `reconnect(resource)` performs the
-  actual reconnect.
+  before the next attempt (a value ≤ 0 aborts reconnection altogether, with an exception);
+  `reconnect(resource)` performs the actual reconnect, throwing to signal a failed attempt.
 - [`Reconnector`](../java/org/tentackle/io/Reconnector.java) — a `@Service` singleton
   (`Reconnector.getInstance()`, replaceable via the
   [service API](../../../../tentackle-common/src/main/docs/services.md)). `submit(policy, resource)`
@@ -140,8 +143,9 @@ running client without the client noticing more than a pause.
 
 ### Server-side dispatching
 
-[`SocketChannelDispatcher`](../java/org/tentackle/io/SocketChannelDispatcher.java) is a compact
-accept loop: give it a name, a `SocketAddress` and a handler factory, and it binds a
+[`SocketChannelDispatcher`](../java/org/tentackle/io/SocketChannelDispatcher.java) is a compact,
+general-purpose accept loop for applications (the TRIP transports use their own
+`SocketAcceptLoop`): give it a name, a `SocketAddress` and a handler factory, and it binds a
 `ServerSocketChannel`, accepts connections in a daemon thread pool, and passes each `SocketChannel`
 to a fresh handler. It derives the protocol family from the address type, so it serves IPv4, IPv6
 and **Unix domain sockets** without further configuration. Resources are released through a
@@ -158,7 +162,7 @@ The remaining classes are small utilities that fill gaps in the JDK:
 | [`BlockingByteArrayInputStream`](../java/org/tentackle/io/BlockingByteArrayInputStream.java)     | Reads from the above, blocking until data becomes available — an in-memory pipe                      |
 | [`MutableByteArrayInputStream`](../java/org/tentackle/io/MutableByteArrayInputStream.java)       | A `ByteArrayInputStream` whose buffer can be replaced (`setBuffer`), avoiding a new stream per packet |
 | [`AppendableWriter`](../java/org/tentackle/io/AppendableWriter.java)                             | A `Writer` to any `Appendable` — a `StringWriter` replacement that lets you supply the `StringBuilder`/`StringBuffer` (not thread-safe with a `StringBuilder`) |
-| [`UriHelper`](../java/org/tentackle/io/UriHelper.java)                                           | Parses a URI query string into a typed map, skipping malformed pairs                                  |
+| [`UriHelper`](../java/org/tentackle/io/UriHelper.java)                                           | Parses a URI query string into a typed map, skipping malformed pairs; expands `$host`, `${port+1}` and the like against a base URI |
 
 The byte-array streams are what make TRIP's **loopback transport** and `EchoTransceiver` work:
 the same serialization path that talks to a socket can talk to memory, which is how a
@@ -173,13 +177,15 @@ client-server deployment. `UriHelper` parses the query parameters of transport U
 A TRIP client connecting over a compressed, encrypted TCP link stacks the package like this:
 
 ```
-TRIP serializer  →  EncryptingOutputStream  →  FastCompressedOutputStream  →  socket
-                    (Cryptor, 2-byte header)   (Deflater BEST_SPEED,
-                                                skips small/incompressible packets)
+TRIP serializer  →  FastCompressedOutputStream  →  EncryptingOutputStream  →  socket
+                    (Deflater BEST_SPEED,          (Cryptor, 2-byte header)
+                     skips small/incompressible
+                     packets)
 ```
 
-and the server's `SocketChannelDispatcher` accepts the connection, handing the channel to a
-handler that mirrors the stack on the way in. Should the link die, the session's
+Compression comes first, since encrypted data no longer compresses. The server's
+`SocketAcceptLoop` (in `org.tentackle.trip.transport`) accepts the connection, handing the socket
+to a connection handler that mirrors the stack on the way in. Should the link die, the session's
 `ReconnectionPolicy` decides whether the caller waits; the `Reconnector` keeps trying; and when it
 succeeds, a `ReconnectedException` tells the waiting code to retry its operation. None of this is
 visible to application code — it is the plumbing under

@@ -37,7 +37,9 @@ import java.util.UUID;
 public record DelegateDescriptor(UUID remoteId, Class<?>[] remoteInterfaces) {
 
   /**
-   * Creates a descriptor from the remote object.
+   * Creates a descriptor from the remote object.<br>
+   * The remote interfaces are the interfaces extending {@link Remote} implemented by the object's class
+   * and its superclasses.
    *
    * @param remoteId the ID of the remote object
    * @param remoteObject the remote object

@@ -17,6 +17,8 @@
  */
 
 /**
- * Tentackle localization tools maven plugin.
+ * Tentackle localization tools maven plugin.<br>
+ * Synchronizes the resource bundles of an application between its property files and the
+ * {@code StoredBundle}s of a database backend.
  */
 package org.tentackle.maven.plugin.i18n;

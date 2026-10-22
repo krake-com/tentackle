@@ -24,6 +24,9 @@ import org.testng.annotations.Test;
 
 import java.util.Collection;
 
+/**
+ * Loads the framework's model from the classpath.
+ */
 public class ModelTest {
 
   @Test(groups = "local")

@@ -29,16 +29,16 @@ import org.tentackle.session.Session;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
- * Removes obsolete bundles and keys.<br>
- * Does nothing if there are errors or warnings to make sure that there are no pending refactorings to be resolved
- * by the <code>BundleMonkey</code> tool.
+ * Removes obsolete bundles and keys from the backend.<br>
+ * Does nothing if there are errors or warnings other than the obsolete bundles and keys themselves
+ * (missing stored bundles, property files or translations) to make sure that there are no pending refactorings
+ * to be resolved by the <code>BundleMonkey</code> tool. Differing translations don't prevent the cleanup.
  * Consider running <code>verify</code> first to check for such warnings.
  */
-@Mojo(name = "cleanup", aggregator = true,
+@Mojo(name = "cleanup", aggregator = true, threadSafe = true,
       requiresDependencyResolution = ResolutionScope.COMPILE)
 public class CleanupMojo extends AbstractVerifyMojo {
 
@@ -46,15 +46,17 @@ public class CleanupMojo extends AbstractVerifyMojo {
   protected void processBundles(Session session, List<MavenProject> projects) throws MojoExecutionException {
     super.processBundles(session, projects);
 
-    warnings += resourceBundleMap.entrySet().stream().filter(entry -> entry.getValue().isNew()).map(Map.Entry::getKey).toList().size();
+    warnings += getMissingStoredBundles().size();
     warnings += missingTranslations.stream().filter(translation -> translation.bundle.getLocale() != null).toList().size();
     errors += missingTranslations.stream().filter(translation -> translation.bundle.getLocale() == null).toList().size();
 
     if (errors > 0) {
-      getLog().error(errors + " error" + (errors > 1 ? "s" : "") + " found -> please run tentackle-i18n:verify and fix the errors");
+      getLogger().error("{} error{} found -> please run tentackle-i18n:verify and fix the errors",
+                        errors, errors > 1 ? "s" : "");
     }
     else if (warnings > 0) {
-      getLog().warn(warnings + " warning" + (warnings > 1 ? "s" : "") + " found -> please run tentackle-i18n:verify and fix the warnings");
+      getLogger().warn("{} warning{} found -> please run tentackle-i18n:verify and fix the warnings",
+                       warnings, warnings > 1 ? "s" : "");
     }
     else {
       updates += session.transaction(() -> {
@@ -64,7 +66,7 @@ public class CleanupMojo extends AbstractVerifyMojo {
         Set<StoredBundle> bundles = new HashSet<>();    // bundles to update
         for (StoredBundleKey bundleKey : sortBundleKeys(obsoleteKeys)) {
           StoredBundle bundle = bundleKey.getBundle();
-          buf.append("\ntranslation ").append(bundle).append(" '").append(bundleKey.getKey());
+          buf.append("\ntranslation ").append(bundle).append(" '").append(bundleKey.getKey()).append("'");
           bundle.setTranslation(bundleKey.getKey(), null);
           bundles.add(bundle);
         }
@@ -82,7 +84,7 @@ public class CleanupMojo extends AbstractVerifyMojo {
         count += obsoleteBundles.size();
 
         if (count > 0) {
-          getLog().warn(count + " objects removed from " + url + ":" + buf);
+          getLogger().warn("{} objects removed from {}:{}", count, url, buf);
         }
         return count;
       });

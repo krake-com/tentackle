@@ -18,14 +18,17 @@
 
 package org.tentackle.maven.plugin;
 
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.DefaultArtifact;
-import org.apache.maven.artifact.handler.DefaultArtifactHandler;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.slf4j.Marker;
+import org.slf4j.event.Level;
+import org.slf4j.helpers.LegacyAbstractLogger;
+import org.slf4j.helpers.MessageFormatter;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serial;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -46,8 +49,8 @@ import java.util.List;
  * <p>
  * The mojos are invoked through {@code validate()} and {@code executeImpl()} rather than
  * {@code execute()}, because the latter also installs a global {@code java.util.logging} handler
- * (see {@code AbstractTentackleMojo#installJavaLoggingHandler}) which would reset the log
- * configuration of the whole test JVM.
+ * (see {@code AbstractTentackleMojo#installJavaLoggingHandler}) which would remove the root
+ * log handlers of the whole test JVM.
  */
 public final class MojoTestSupport {
 
@@ -171,8 +174,7 @@ public final class MojoTestSupport {
    * @return the artifact
    */
   public static Artifact createArtifact(String groupId, String artifactId, String version) {
-    return new DefaultArtifact(groupId, artifactId, version, "compile", "jar", null,
-                               new DefaultArtifactHandler("jar"));
+    return new DefaultArtifact(groupId, artifactId, "jar", version);
   }
 
   /**
@@ -284,11 +286,18 @@ public final class MojoTestSupport {
    * A maven log recording everything written to it.<br>
    * Some mojos report their result via the log only, so this is the only way to assert it.
    */
-  public static class RecordingLog implements Log {
+  public static class RecordingLog extends LegacyAbstractLogger {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    @SuppressWarnings("serial")
     private final List<String> debugMessages = new ArrayList<>();
+    @SuppressWarnings("serial")
     private final List<String> infoMessages = new ArrayList<>();
+    @SuppressWarnings("serial")
     private final List<String> warnMessages = new ArrayList<>();
+    @SuppressWarnings("serial")
     private final List<String> errorMessages = new ArrayList<>();
 
     private boolean debugEnabled;
@@ -352,23 +361,13 @@ public final class MojoTestSupport {
     }
 
     @Override
+    public boolean isTraceEnabled() {
+      return false;
+    }
+
+    @Override
     public boolean isDebugEnabled() {
       return debugEnabled;
-    }
-
-    @Override
-    public void debug(CharSequence content) {
-      debugMessages.add(String.valueOf(content));
-    }
-
-    @Override
-    public void debug(CharSequence content, Throwable error) {
-      debug(content);
-    }
-
-    @Override
-    public void debug(Throwable error) {
-      debug(error.getMessage());
     }
 
     @Override
@@ -377,38 +376,8 @@ public final class MojoTestSupport {
     }
 
     @Override
-    public void info(CharSequence content) {
-      infoMessages.add(String.valueOf(content));
-    }
-
-    @Override
-    public void info(CharSequence content, Throwable error) {
-      info(content);
-    }
-
-    @Override
-    public void info(Throwable error) {
-      info(error.getMessage());
-    }
-
-    @Override
     public boolean isWarnEnabled() {
       return true;
-    }
-
-    @Override
-    public void warn(CharSequence content) {
-      warnMessages.add(String.valueOf(content));
-    }
-
-    @Override
-    public void warn(CharSequence content, Throwable error) {
-      warn(content);
-    }
-
-    @Override
-    public void warn(Throwable error) {
-      warn(error.getMessage());
     }
 
     @Override
@@ -417,18 +386,54 @@ public final class MojoTestSupport {
     }
 
     @Override
-    public void error(CharSequence content) {
-      errorMessages.add(String.valueOf(content));
+    public String getName() {
+      return "recording";
+    }
+
+    /**
+     * Records debug messages regardless of {@link #isDebugEnabled()}, which only reflects maven's global debug flag.
+     */
+    @Override
+    public void debug(String msg) {
+      debugMessages.add(msg);
     }
 
     @Override
-    public void error(CharSequence content, Throwable error) {
-      error(content);
+    public void debug(String msg, Throwable t) {
+      debugMessages.add(msg);
     }
 
     @Override
-    public void error(Throwable error) {
-      error(error.getMessage());
+    public void debug(String format, Object arg) {
+      debugMessages.add(MessageFormatter.format(format, arg).getMessage());
+    }
+
+    @Override
+    public void debug(String format, Object arg1, Object arg2) {
+      debugMessages.add(MessageFormatter.format(format, arg1, arg2).getMessage());
+    }
+
+    @Override
+    public void debug(String format, Object... arguments) {
+      debugMessages.add(MessageFormatter.arrayFormat(format, arguments).getMessage());
+    }
+
+    @Override
+    protected String getFullyQualifiedCallerName() {
+      return null;
+    }
+
+    @Override
+    protected void handleNormalizedLoggingCall(Level level, Marker marker, String messagePattern,
+                                               Object[] arguments, Throwable throwable) {
+      String message = MessageFormatter.arrayFormat(messagePattern, arguments, throwable).getMessage();
+      switch (level) {
+        case DEBUG -> debugMessages.add(message);
+        case INFO -> infoMessages.add(message);
+        case WARN -> warnMessages.add(message);
+        case ERROR -> errorMessages.add(message);
+        default -> { }
+      }
     }
   }
 

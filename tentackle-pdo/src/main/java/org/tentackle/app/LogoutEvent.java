@@ -29,6 +29,9 @@ public class LogoutEvent implements MasterSerialEvent {
 
   private long serial;
 
+  /**
+   * Creates a logout event.
+   */
   public LogoutEvent() {
     // see -Xlint:missing-explicit-ctor since Java 16
   }

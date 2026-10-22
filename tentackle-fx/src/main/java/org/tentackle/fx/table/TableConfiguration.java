@@ -19,22 +19,22 @@
 
 package org.tentackle.fx.table;
 
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeTableColumn;
-
 import org.tentackle.fx.bind.FxTableBinder;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTreeTableView;
+import org.tentackle.fx.table.edit.TableEditHandler;
 import org.tentackle.fx.table.filter.TableFilterSupport;
 
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeTableColumn;
 import java.util.Collection;
 
 /**
  * Configuration for table and treetable views.<br>
  * The main purpose is to provide a single object to configure the component.
  *
- * @param <S> the type of the objects contained within the table's or tree-table's items list
+ * @param <S> the type of the objects contained within the table's or tree-table's item list
  * @author harald
  */
 public interface TableConfiguration<S> {
@@ -50,27 +50,9 @@ public interface TableConfiguration<S> {
     /** standard binding. */
     YES,
 
-    /** bindable inherited. */
+    /** binding including inherited bindables. */
     INHERITED
 
-  }
-
-
-  /**
-   * Edit mode.
-   */
-  enum EDITMODE {
-    /** not editable. */
-    NO,
-
-    /** edit current cell only. */
-    SIMPLE,
-
-    /** edit next/previous cell after commit. */
-    ROW,
-
-    /** edit cell above/below after commit. */
-    COLUMN
   }
 
 
@@ -92,7 +74,7 @@ public interface TableConfiguration<S> {
    * Gets a column configuration by its name.
    *
    * @param name the name
-   * @return the config, null if no such name and displayed name
+   * @return the config, null if no such column
    */
   TableColumnConfiguration<S,?> getColumnConfiguration(String name);
 
@@ -121,7 +103,7 @@ public interface TableConfiguration<S> {
   String getName();
 
   /**
-   * Adds a column via binding path.
+   * Adds a column via the binding path.
    *
    * @param name the column's binding path
    * @param displayedName the displayed column name
@@ -130,7 +112,7 @@ public interface TableConfiguration<S> {
   TableColumnConfiguration<S, ?> addColumn(String name, String displayedName);
 
   /**
-   * Removes a column via binding path.
+   * Removes a column via the binding path.
    *
    * @param name the column's binding path
    * @return the old column configuration, null if no such column
@@ -145,7 +127,10 @@ public interface TableConfiguration<S> {
   void addColumnConfiguration(TableColumnConfiguration<S, ?> columnConfiguration);
 
   /**
-   * Saves the column sizes, visibility, view size and sorting to the preferences.
+   * Saves the column sizes, visibility, view size, and sorting to the preferences.<br>
+   * Sorting, view size and filters are included according to {@link #isSortingIncluded()},
+   * {@link #isViewSizeIncluded()} and {@link #isFilterIncluded()}.
+   * The preference node is the table's name, the optional suffix, and the current locale.
    *
    * @param table the table
    * @param suffix the configuration suffix, null if none
@@ -154,7 +139,7 @@ public interface TableConfiguration<S> {
   void savePreferences(FxTableView<S> table, String suffix, boolean system);
 
   /**
-   * Loads the column sizes, visibility, view size and sorting from the preferences.
+   * Loads the column sizes, visibility, view size, and sorting from the preferences.
    *
    * @param table the table
    * @param suffix the configuration suffix, null if none
@@ -163,7 +148,10 @@ public interface TableConfiguration<S> {
   void loadPreferences(FxTableView<S> table, String suffix, boolean system);
 
   /**
-   * Saves the column sizes, visibility, view size and sorting to the preferences.
+   * Saves the column sizes, visibility, view size, and sorting to the preferences.<br>
+   * Sorting, view size and filters are included according to {@link #isSortingIncluded()},
+   * {@link #isViewSizeIncluded()} and {@link #isFilterIncluded()}.
+   * The preference node is the table's name, the optional suffix, and the current locale.
    *
    * @param treeTable the treetable
    * @param suffix the configuration suffix, null if none
@@ -172,9 +160,9 @@ public interface TableConfiguration<S> {
   void savePreferences(FxTreeTableView<S> treeTable, String suffix, boolean system);
 
   /**
-   * Loads the column sizes, visibility, view size and sorting from the preferences.
+   * Loads the column sizes, visibility, view size, and sorting from the preferences.
    *
-   * @param treeTable the table
+   * @param treeTable the treetable
    * @param suffix the configuration suffix, null if none
    * @param system true if load from system prefs only, else user prefs first
    */
@@ -289,7 +277,7 @@ public interface TableConfiguration<S> {
   /**
    * Gets the table binder.<br>
    * Don't mix up the table's binder with the FxController's binder!
-   * The table binder is responsible to bind the cells to the model, whereas the
+   * The table binder is responsible for binding the cells to the model, whereas the
    * controller binder binds the data list to the table.<br>
    * As a consequence, binding properties such as the DomainContext, if necessary for cell editors,
    * must be applied to the table binder!
@@ -299,18 +287,29 @@ public interface TableConfiguration<S> {
   FxTableBinder<S> getBinder();
 
   /**
-   * Returns the edit mode.
+   * Gets the edit handler.
    *
-   * @return the edit mode, never null, default is NO
+   * @return the handler, null if none (default)
    */
-  EDITMODE getEditMode();
+  TableEditHandler<S> getEditHandler();
 
   /**
-   * Sets the edit mode.
+   * Sets the edit handler.<br>
+   * The handler controls what happens when a value is entered in a cell: which cells are editable, whether
+   * the value is accepted, how the rows are modified, and which cell is edited next.
+   * See {@link org.tentackle.fx.FxFactory} for the handlers covering the common use cases:
+   * {@link org.tentackle.fx.FxFactory#simpleTableEditHandler()} ends editing after a commit,
+   * {@link org.tentackle.fx.FxFactory#rowWiseTableEditHandler()} continues with the next cell in the row and
+   * {@link org.tentackle.fx.FxFactory#columnWiseTableEditHandler()} with the cell below.
+   * <p>
+   * With a handler, all columns become editable, except those explicitly configured as not editable.
+   * Without a handler, only the columns explicitly configured as editable can be edited.
+   * <p>
+   * Must be set before the view is configured.
    *
-   * @param editMode the edit mode, null is equivalent to NO
+   * @param editHandler the handler, null if none
    */
-  void setEditMode(EDITMODE editMode);
+  void setEditHandler(TableEditHandler<S> editHandler);
 
   /**
    * Configures the table.

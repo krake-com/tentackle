@@ -21,7 +21,7 @@ package org.tentackle.bind;
 import java.util.EventListener;
 
 /**
- * A listener that gets invoked on binding events.
+ * A listener that gets invoked after a binding has been validated.
  *
  * @author harald
  */

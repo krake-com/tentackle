@@ -16,12 +16,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-
 package org.tentackle.pdo;
 
 import org.tentackle.reflect.EffectiveClassProvider;
-
+import org.tentackle.reflect.NotInterceptable;
 
 /**
  * An operation.
@@ -30,10 +28,10 @@ import org.tentackle.reflect.EffectiveClassProvider;
  * Such operations usually cover complex transactions or services.
  * Operations differ from PDOs in two ways:
  * <ol>
- * <li>there is no model, i.e. they are not related to database tables</li>
+ * <li>there is no model, i.e., they are not related to database tables</li>
  * <li>either the persistence- or the domain-part is optional (but not both)</li>
  * </ol>
- * As with PDOs the persistence part may operate on a remote session, i.e. physically
+ * As with PDOs, the persistence part may operate on a remote session, i.e., physically
  * runs in another JVM connected to a database backend. The domain-part always runs in
  * the local JVM.
  *
@@ -46,21 +44,25 @@ public interface Operation<T extends Operation<T>>
   /**
    * Gets the delegate implementing the domain logic.
    * <p>
-   * Note: the method is intercepted and executed by the {@link PdoInvocationHandler}.
+   * Note: the method is invoked directly by the {@link OperationInvocationHandler}, bypassing
+   * the interceptor chain entirely (see {@link NotInterceptable}).
    *
    * @return the domain object
    */
   @Override
+  @NotInterceptable
   DomainOperation<T> getDomainDelegate();
 
   /**
    * Gets the delegate implementing the persistence layer.
    * <p>
-   * Note: the method is intercepted and executed by the {@link PdoInvocationHandler}.
+   * Note: the method is invoked directly by the {@link OperationInvocationHandler}, bypassing
+   * the interceptor chain entirely (see {@link NotInterceptable}).
    *
    * @return the persistent object
    */
   @Override
+  @NotInterceptable
   PersistentOperation<T> getPersistenceDelegate();
 
 }

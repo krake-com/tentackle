@@ -26,7 +26,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
 /**
- * Implementation for the {@link Log} interception.
+ * Implementation for the {@link Log} interception.<br>
+ * Logs the execution time of the intercepted method.
  *
  * @author harald
  */

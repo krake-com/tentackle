@@ -134,6 +134,16 @@ The generated `Customer` then has `getBillingAddress()` / `getShippingAddress()`
 each sharing the customer's domain context, and the `customer` table carries `billing_street`, `billing_zip`, …,
 `shipping_street`, … as ordinary columns the owner can index, filter, and sort by.
 
+The generated getters of an embedding relation are annotated with
+[`@Persistent(embedded = true)`](../../../tentackle-session/src/main/java/org/tentackle/session/Persistent.java),
+so code that examines the model by reflection can tell an embedded entity from a relation to an entity with a
+table of its own: [`PdoUtilities.getMembers(...)`](../../../tentackle-pdo/src/main/java/org/tentackle/pdo/PdoUtilities.java)
+reports it via [`PdoMember.isEmbedded()`](../../../tentackle-pdo/src/main/java/org/tentackle/pdo/PdoMember.java).
+The framework relies on it where the difference matters — for example, the
+[`PdoComponentTripFilter`](../../../tentackle-core/src/main/docs/trip.md#filtering-components-with-tripfilter)
+skips all relations of a PDO sent via TRIP except the embedded ones, because an embedded entity has no row of its
+own to be loaded from later.
+
 ### What you get
 
 - **Context-awareness (the headline).** It is a PDO bound to the owner's `DomainContext`: it knows its session,

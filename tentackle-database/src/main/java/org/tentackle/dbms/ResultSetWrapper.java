@@ -43,6 +43,7 @@ import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.SQLXML;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -172,6 +173,7 @@ public class ResultSetWrapper implements AutoCloseable {
             }
           }
           finally {
+            final Db session = db;
             db = null;
             rs = null;
             backend = null;
@@ -179,7 +181,7 @@ public class ResultSetWrapper implements AutoCloseable {
             skipBlocks = null;
             final StatementWrapper st = stmt;
             if (st != null) {
-              st.detachSession();
+              st.detachSession(session);
               if (closeStatementOnClose) {
                 st.close();
               }
@@ -284,7 +286,7 @@ public class ResultSetWrapper implements AutoCloseable {
 
 
   /**
-   * Set whether to commit() before close() or not.<br>
+   * Sets whether to commit() before close() or not.<br>
    * Some dbms (e.g., Postgres) cannot use cursors outside a transaction.
    * In this case a transaction must be started before executeQuery()
    * (see PreparedStatementWrapper and Query)
@@ -324,8 +326,9 @@ public class ResultSetWrapper implements AutoCloseable {
 
 
   /**
-   * Set the statement to be closed when the result set is closed.<br>
-   * By default, the statement remains open.
+   * Sets the statement to be closed when the result set is closed.<br>
+   * By default, non-prepared statements and one-shot prepared statements are closed,
+   * whereas prepared statements with a statement key remain open for reuse.
    *
    * @param closeStatementOnClose true to close the statement on close
    */
@@ -347,7 +350,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * Sets the column offset.
    * Useful for eager loading or joining in general.
    *
-   * @param columnOffset (default is 0)
+   * @param columnOffset the offset added to the column index (default is 0)
    */
   public void setColumnOffset(int columnOffset) {
     this.columnOffset = columnOffset;
@@ -397,9 +400,9 @@ public class ResultSetWrapper implements AutoCloseable {
 
 
   /**
-   * Returns whether the result set is in skipmode.
+   * Returns whether the result set is in skip mode.
    *
-   * @return true if in skipmode
+   * @return true if in skip mode
    */
   public boolean isInSkipMode() {
     return resources.skipBlocks != null;
@@ -544,6 +547,7 @@ public class ResultSetWrapper implements AutoCloseable {
 
   /**
    * Skips to the next logical entity.
+   *
    * @see #startSkip()
    * @throws PersistenceException if not in skipmode
    */
@@ -594,7 +598,7 @@ public class ResultSetWrapper implements AutoCloseable {
    *
    * Example:
    * <pre>
-   *  if (rs.activateSection(CLASSVARIABLES)) {
+   *  if (rs.configureSection(CLASSVARIABLES)) {
    *    rs.configureColumn(CN_OBJECTCLASS);
    *    rs.configureColumn(CN_OBJECTID);
    *    ...
@@ -1113,7 +1117,14 @@ public class ResultSetWrapper implements AutoCloseable {
     try {
       if (resources.stmt.getConnection().getBackend().isClobSupported()) {
         Clob clob = resources.rs.getClob(name);
-        String str = clob == null ? null : clob.getSubString(1, (int) clob.length());
+        String str;
+        if (clob != null) {
+          str = clob.getSubString(1, (int) clob.length());
+          clob.free();
+        }
+        else {
+          str = null;
+        }
         if (mapNull && str != null && str.equals(resources.db.getBackend().getEmptyString())) {
           return null;
         }
@@ -1136,10 +1147,89 @@ public class ResultSetWrapper implements AutoCloseable {
    * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
-   * @see #getString(java.lang.String, boolean)
+   * @see #getLargeString(java.lang.String, boolean)
    */
   public String getLargeString (String name) {
     return getLargeString(name, false);
+  }
+
+  /**
+   * Gets a string bridged through the JDBC {@code SQLXML} interface.<br>
+   * The backend usually stores such strings in a native XML column, or emulates it as CLOB/VARCHAR.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @param mapNull if empty strings should be treated as null values, ignored for a native XML column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public String getSqlxml (String name, boolean mapNull)  {
+    try {
+      if (resources.stmt.getConnection().getBackend().isSqlxmlSupported()) {
+        SQLXML sqlxml = resources.rs.getSQLXML(name);
+        String str = null;
+        if (sqlxml != null) {
+          str = sqlxml.getString();
+          sqlxml.free();
+        }
+        return str;
+      }
+      else {
+        return getString(name, mapNull);
+      }
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>String</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   * @see #getSqlxml(java.lang.String, boolean)
+   */
+  public String getSqlxml (String name) {
+    return getSqlxml(name, false);
+  }
+
+  /**
+   * Gets a string holding a JSON document.<br>
+   * The backend usually stores such strings in a native JSON column, or emulates it as CLOB/VARCHAR.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @param mapNull if empty strings should be treated as null values, ignored for a native JSON column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public String getJson (String name, boolean mapNull)  {
+    try {
+      Backend backend = resources.stmt.getConnection().getBackend();
+      if (backend.isJsonSupported()) {
+        return backend.getJson(resources.rs, resources.rs.findColumn(name));   // the hook is position-based
+      }
+      else {
+        return getString(name, mapNull);
+      }
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+  /**
+   * Gets a string holding a JSON document.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   * @see #getJson(java.lang.String, boolean)
+   */
+  public String getJson (String name) {
+    return getJson(name, false);
   }
 
 
@@ -1284,7 +1374,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * <code>BMoney</code> with full precision.<br>
    * Notice that BMoney fields use two fields:
    * one for the value and
-   * one for the scale (= name + "_2")
+   * one for the scale (= name + "_2").
    *
    * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
    * @return the column value (full precision);
@@ -1302,7 +1392,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * <code>DMoney</code> with full precision.<br>
    * Notice that DMoney fields use two fields:
    * one for the value and
-   * one for the scale (= name + "_2")
+   * one for the scale (= name + "_2").
    *
    * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
    * @return the column value (full precision);
@@ -1919,6 +2009,23 @@ public class ResultSetWrapper implements AutoCloseable {
 
   /**
    * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as a {@code byte[]}.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   *        If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the bytes read from db, null if the value is SQL <code>NULL</code>
+   */
+  public byte[] getBytes(String name)  {
+    try {
+      return resources.rs.getBytes(name);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
    * of this <code>ResultSet</code> object as
    * an <code>int</code> in the Java programming language.
    *
@@ -2080,10 +2187,89 @@ public class ResultSetWrapper implements AutoCloseable {
    * @param pos the parameter index in the result set
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
-   * @see #getString(java.lang.String, boolean)
+   * @see #getLargeString(int, boolean)
    */
   public String getLargeString (int pos) {
     return getLargeString(pos, false);
+  }
+
+
+  /**
+   * Gets a string bridged through the JDBC {@code SQLXML} interface.
+   *
+   * @param pos the parameter index in the result set
+   * @param mapNull if empty strings should be treated as null values, ignored for a native XML column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public String getSqlxml (int pos, boolean mapNull)  {
+    try {
+      if (resources.stmt.getConnection().getBackend().isSqlxmlSupported()) {
+        SQLXML sqlxml = resources.rs.getSQLXML(pos + columnOffset);
+        String str = null;
+        if (sqlxml != null) {
+          str = sqlxml.getString();
+          sqlxml.free();
+        }
+        return str;
+      }
+      else {
+        return getString(pos, mapNull);
+      }
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+
+  /**
+   * Gets a string bridged through the JDBC {@code SQLXML} interface.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   * @see #getSqlxml(java.lang.String, boolean)
+   */
+  public String getSqlxml (int pos) {
+    return getSqlxml(pos, false);
+  }
+
+
+  /**
+   * Gets a string holding a JSON document.
+   *
+   * @param pos the parameter index in the result set
+   * @param mapNull if empty strings should be treated as null values, ignored for a native JSON column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public String getJson (int pos, boolean mapNull)  {
+    try {
+      Backend backend = resources.stmt.getConnection().getBackend();
+      if (backend.isJsonSupported()) {
+        return backend.getJson(resources.rs, pos + columnOffset);
+      }
+      else {
+        return getString(pos, mapNull);
+      }
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+
+  /**
+   * Gets a string holding a JSON document.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   * @see #getJson(java.lang.String, boolean)
+   */
+  public String getJson (int pos) {
+    return getJson(pos, false);
   }
 
 
@@ -2229,7 +2415,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * <code>BMoney</code> with full precision.<br>
    * Notice that BMoney fields use two fields:
    * one for the value and
-   * one for the scale (= name + "P")
+   * one for the scale (at {@code ppos})
    *
    * @param pos the parameter index for the amount in the result set
    * @param ppos the parameter index for the scale in the result set
@@ -2249,7 +2435,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * <code>DMoney</code> with full precision.<br>
    * Notice that DMoney fields use two fields:
    * one for the value and
-   * one for the scale (= name + "P")
+   * one for the scale (at {@code ppos})
    *
    * @param pos the parameter index for the amount in the result set
    * @param ppos the parameter index for the scale in the result set
@@ -2848,6 +3034,22 @@ public class ResultSetWrapper implements AutoCloseable {
 
   /**
    * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as a {@code byte[]}.
+   *
+   * @param pos the parameter index in the result set
+   * @return the bytes read from db, null if the value is SQL <code>NULL</code>
+   */
+  public byte[] getBytes(int pos)  {
+    try {
+      return resources.rs.getBytes(pos + columnOffset);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
    * of this <code>ResultSet</code> object as
    * an <code>Object</code> of given type <code>T</code>.
    *
@@ -2974,10 +3176,85 @@ public class ResultSetWrapper implements AutoCloseable {
    *
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
-   * @see #getString(java.lang.String, boolean)
+   * @see #getLargeString(boolean)
    */
   public String getLargeString () {
     return getLargeString(nextConfiguredIndex(), false);
+  }
+
+
+  /**
+   * Gets a string bridged through the JDBC {@code SQLXML} interface.
+   *
+   * @param mapNull if empty strings should be treated as null values, ignored for a native XML column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public String getSqlxml (boolean mapNull)  {
+    try {
+      if (resources.stmt.getConnection().getBackend().isSqlxmlSupported()) {
+        SQLXML sqlxml = resources.rs.getSQLXML(nextConfiguredIndex() + columnOffset);
+        String str = null;
+        if (sqlxml != null) {
+          str = sqlxml.getString();
+          sqlxml.free();
+        }
+        return str;
+      }
+      else {
+        return getString(mapNull);
+      }
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+
+  /**
+   * Gets a string bridged through the JDBC {@code SQLXML} interface.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   * @see #getSqlxml(java.lang.String, boolean)
+   */
+  public String getSqlxml () {
+    return getSqlxml(nextConfiguredIndex(), false);
+  }
+
+
+  /**
+   * Gets a string holding a JSON document.
+   *
+   * @param mapNull if empty strings should be treated as null values, ignored for a native JSON column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public String getJson (boolean mapNull)  {
+    try {
+      Backend backend = resources.stmt.getConnection().getBackend();
+      if (backend.isJsonSupported()) {
+        return backend.getJson(resources.rs, nextConfiguredIndex() + columnOffset);
+      }
+      else {
+        return getString(mapNull);
+      }
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+
+  /**
+   * Gets a string holding a JSON document.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   * @see #getJson(java.lang.String, boolean)
+   */
+  public String getJson () {
+    return getJson(nextConfiguredIndex(), false);
   }
 
 
@@ -3658,6 +3935,21 @@ public class ResultSetWrapper implements AutoCloseable {
       return TBinary.create(resources.rs.getBinaryStream(nextConfiguredIndex() + columnOffset), bufSize, true);
     }
     catch (SQLException | IOException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as a {@code byte[]}.
+   *
+   * @return the bytes read from db, null if the value is SQL <code>NULL</code>
+   */
+  public byte[] getBytes()  {
+    try {
+      return resources.rs.getBytes(nextConfiguredIndex() + columnOffset);
+    }
+    catch (SQLException e)  {
       throw new PersistenceException(resources.db, e);
     }
   }

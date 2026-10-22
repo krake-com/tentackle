@@ -132,6 +132,26 @@ public class SelectRenderTest {
 
 
   @Test
+  public void testUntypedField() {
+    // the datatype of a value compared to an untyped field is determined by the value's class
+    Field<Object> untyped = POOL.field("legacy");
+    assertRendered(DSL.select(untyped).from(POOL).where(untyped.eq(4711L)),
+                   "SELECT np.legacy FROM numberpool np WHERE np.legacy=?", 4711L);
+  }
+
+
+  @Test
+  public void testUnsortableDataType() {
+    Field<java.util.UUID> uuid = POOL.field("uuid", java.util.UUID.class);
+    expectThrows(PersistenceException.class,
+                 () -> new RenderContext(BACKEND).render(DSL.select(ID).from(POOL).orderBy(uuid.asc())));
+    // the result of a function can be sorted, even if the datatype of its argument cannot
+    assertRendered(DSL.select(DSL.count(uuid)).from(POOL).orderBy(DSL.count(uuid).desc()),
+                   "SELECT COUNT(np.uuid) FROM numberpool np ORDER BY COUNT(np.uuid) DESC");
+  }
+
+
+  @Test
   public void testMultiColumnDataType() {
     // all columns must be equal, and the value is applied to as many question marks as columns
     assertRendered(DSL.select(ID).from(POOL).where(AMOUNT.eq(MONEY)),

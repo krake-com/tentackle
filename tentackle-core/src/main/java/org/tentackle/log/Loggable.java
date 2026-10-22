@@ -24,7 +24,7 @@ import org.tentackle.log.Logger.Level;
 /**
  * An interface telling whether an object is loggable or not.
  * <p>
- * Used by the RemoteDelegateInvocationHandler, for example.<br>
+ * Used by the {@code RemoteDbDelegateInvocationHandler} of tentackle-database, for example.<br>
  * If used with exceptions, it usually tells whether the stacktrace should be logged or not.
  *
  * @author harald

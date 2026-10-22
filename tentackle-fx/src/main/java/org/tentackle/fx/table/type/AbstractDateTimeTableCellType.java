@@ -27,8 +27,10 @@ import javafx.geometry.Pos;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Base cell type for all date- and time-related types.
+ * Base cell type for all date- and time-related types.<br>
+ * Formats the items with the column's formatter or, if none, the default formatter for the type.
  *
+ * @param <T> the date or time type
  * @author harald
  */
 public abstract class AbstractDateTimeTableCellType<T> extends AbstractTableCellType<T> {

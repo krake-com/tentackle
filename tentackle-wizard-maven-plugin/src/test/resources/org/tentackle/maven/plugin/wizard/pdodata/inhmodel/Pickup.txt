@@ -1,0 +1,8 @@
+## a pickup truck
+name := Pickup
+id := 23
+extends := Truck
+
+## attributes
+
+Boolean         covered         covered         true if the bed is covered

@@ -23,17 +23,22 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * An output stream that writes packets with a header holding the packet size.
- * The header is written as 2 bytes. Thus, the maximum packet size is 64K - 1.
+ * An output stream that writes packets with a header holding the packet size.<br>
+ * The header is written as 2 bytes, low byte first. Thus, the maximum packet size is 64K - 1.
  *
  * @see PacketSizedInputStream
  */
 public abstract class PacketSizedOutputStream extends FilterOutputStream {
 
+  /**
+   * The number of bytes of the header preceding each packet.
+   */
+  protected static final int HEADER_SIZE = 2;
+
   private boolean closed;                     // true if closed
 
   /**
-   * Creates a compressed output stream.
+   * Creates a packet-sized output stream.
    *
    * @param out the underlying output stream (e.g., from a socket)
    */
@@ -50,6 +55,8 @@ public abstract class PacketSizedOutputStream extends FilterOutputStream {
   }
 
   /**
+   * Returns the closed state.
+   *
    * @return true if closed
    */
   public boolean isClosed() {
@@ -58,15 +65,20 @@ public abstract class PacketSizedOutputStream extends FilterOutputStream {
 
 
   /**
-   * Writes the header.
+   * Writes a packet, i.e., the header followed by the packet data.
+   * <p>
+   * The data must start at {@link #HEADER_SIZE} within the buffer. The header is stored in front of
+   * it, so that both reach the underlying stream in a single write operation.
    *
-   * @param size the logical packet size
+   * @param buf the buffer holding the data at offset {@link #HEADER_SIZE}
+   * @param header the header value, i.e., the logical packet size plus optional flags
+   * @param length the number of data bytes
+   * @throws IOException if writing failed
    */
-  protected void writeHeader(int size) throws IOException {
-    byte[] header = new byte[2];
-    header[0] = (byte) size;
-    header[1] = (byte) (size >>> 8);
-    out.write(header);
+  protected void writePacket(byte[] buf, int header, int length) throws IOException {
+    buf[0] = (byte) header;
+    buf[1] = (byte) (header >>> 8);
+    out.write(buf, 0, HEADER_SIZE + length);
   }
 
 }

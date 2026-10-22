@@ -36,8 +36,10 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * {@link I18NText} translator.
- * 
+ * {@link I18NText} translator.<br>
+ * The component shows the text for the current locale.
+ * {@code F2} or the context menu opens the {@link I18NEditor} to edit all translations.
+ *
  * @author harald
  */
 @ValueTranslatorService(modelClass = I18NText.class, viewClass = String.class)
@@ -48,6 +50,12 @@ public class I18NTextStringTranslator extends ValueStringTranslator<I18NText> {
 
   private I18NText savedModelValue;      // saved model value to detect changes in translations that are not displayed
 
+  /**
+   * Creates a translator.<br>
+   * Adds the CSS style class {@code tt-i18n}, the {@code F2} key handler and the context menu item.
+   *
+   * @param component the text component
+   */
   public I18NTextStringTranslator(FxTextComponent component) {
     super(component);
     Control control = (Control) component;
@@ -73,7 +81,7 @@ public class I18NTextStringTranslator extends ValueStringTranslator<I18NText> {
       if (control.getContextMenu() == null) {
         menu = Fx.create(ContextMenu.class);
         // this replaces the default context menu in TextFields, but that's ok.
-        // otherwise we would have to quirk TextFieldBehaviour which is still private API
+        // otherwise we would have to tweak TextFieldBehavior which is still private API
         control.setContextMenu(menu);
       }
       else {
@@ -143,6 +151,9 @@ public class I18NTextStringTranslator extends ValueStringTranslator<I18NText> {
     getComponent().getBinding().setModelValue(i18NText.isVacant() ? null : i18NText);
   }
 
+  /**
+   * Opens the editor for all translations.
+   */
   protected void edit() {
     I18NEditor.showDialog(getComponent().getBinding().getModelValue() instanceof I18NText i18NText ?
                           i18NText : new I18NText(),

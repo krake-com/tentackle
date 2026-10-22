@@ -34,6 +34,13 @@ import java.util.Map;
 
 /**
  * Handler for the annotations that denote interceptors.
+ * <p>
+ * Handles annotations annotated with {@code org.tentackle.reflect.Interception}.
+ * Depending on the interception {@code type} ({@code ALL} (default), {@code PUBLIC} or {@code HIDDEN}),
+ * the interceptor annotation is appended to
+ * {@code META-INF/services/org.tentackle.apt.<Type>InterceptorAnnotationProcessor} in the service directory,
+ * which registers it with the corresponding annotation processor of tentackle-core.
+ * The processor name is logged to {@code <annotation>/service.log} in the analyze directory.
  *
  * @author harald
  */

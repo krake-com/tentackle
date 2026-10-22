@@ -56,7 +56,8 @@ public final class ExceptionHelper {
   }
 
   /**
-   * Extracts any of the given exception types from an exception chain.
+   * Extracts any of the given exception types from an exception chain.<br>
+   * The chain is followed via {@link Throwable#getCause()}.
    *
    * @param first true to find the first, else the last in chain
    * @param headOfChain the head of chained exceptions, may be null
@@ -104,7 +105,7 @@ public final class ExceptionHelper {
   }
 
   /**
-   * Determines the first exception in the chain with a valid message.
+   * Determines the message of the first exception in the chain with a non-blank message.
    *
    * @param ex the head of chained exceptions, may be null
    * @return the message, null if none
@@ -163,9 +164,12 @@ public final class ExceptionHelper {
   }
 
   /**
-   * Extracts any of the given exception types from an exception chain.
+   * Handles an exception from an exception chain.<br>
+   * Finds the first or last exception in the chain that any of the handlers applies to
+   * and invokes that handler. If more than one handler applies to the same exception,
+   * the first handler in the list is invoked.
    *
-   * @param first true if handle the first, else the last in chain
+   * @param first true to handle the first, else the last matching exception in chain
    * @param headOfChain the head of chained exceptions, may be null
    * @param handlers the exception handlers
    * @return true if handled, false if no matching exception found in chain
@@ -196,10 +200,12 @@ public final class ExceptionHelper {
 
 
   /**
-   * Concatenates the messages of an exception chain.
+   * Concatenates the messages of an exception chain.<br>
+   * The messages are separated by newlines. A message of a cause that is already contained
+   * in the messages collected so far is skipped.
    *
    * @param headOfChain the head of chained exceptions, may be null
-   * @return the message string
+   * @return the message string, empty if no messages
    */
   public static String concatenateMessages(Throwable headOfChain) {
     StringBuilder buf = new StringBuilder();
@@ -240,7 +246,8 @@ public final class ExceptionHelper {
 
 
   /**
-   * Checks if the class provides valuable information within a stacktrace.
+   * Checks if the class provides valuable information within a stacktrace.<br>
+   * Classes of the JDK and Tentackle's invocation handlers and interceptors are considered noise.
    *
    * @param className the classname
    * @return true if valuable, else noise
@@ -254,10 +261,13 @@ public final class ExceptionHelper {
 
 
   /**
-   * Filters a given stacktrace skipping all noisy elements without relevant information for the developer.
+   * Filters a given stacktrace skipping noisy elements without relevant information for the developer.<br>
+   * The leading elements up to and including the first valuable element are always kept, so that the
+   * origin of the exception remains visible. All further noisy elements are skipped
+   * (see {@link #isClassValuableForStackTrace(String)}).
    *
-   * @param trace the stacktrace
-   * @return the reduced stacktrace
+   * @param trace the stacktrace, may be null
+   * @return the reduced stacktrace, never null
    */
   public static StackTraceElement[] filterStackTrace(StackTraceElement[] trace) {
     List<StackTraceElement> stackList = new ArrayList<>();
@@ -280,7 +290,7 @@ public final class ExceptionHelper {
 
 
   /**
-   * prevent instantiation.
+   * Prevents instantiation.
    */
   private ExceptionHelper() { }
 

@@ -79,6 +79,9 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
   private CloseButtonMode closeButtonMode = CloseButtonMode.AUTO;
 
 
+  /**
+   * Creates a notification builder.
+   */
   public DefaultNotificationBuilder() {
     // see -Xlint:missing-explicit-ctor since Java 16
   }
@@ -113,6 +116,7 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
     return this;
   }
 
+  @Override
   public NotificationBuilder content(Node content) {
     this.content = content;
     return this;
@@ -298,6 +302,11 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
     return parent;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * If neither a title nor a text is set, the title defaults to the localized name of the type.
+   */
   @Override
   public String getTitle() {
     return title != null || text != null ? title :

@@ -31,26 +31,42 @@ import java.util.Map;
 public class OperationProfile extends Profile {
 
   /**
-   * The super operation interface, default is Operation.
+   * The super operation interface, null for the default {@code Operation}.<br>
+   * The fully qualified name lets the templates import it.
    */
   @Parameter
   private String operationInterface;
 
   /**
-   * The operation interface package.
+   * The package of the operation interface.
    */
   @Parameter(required = true)
   private String operationPackage;
   private PackageInfo operationPackageInfo;
 
+  /**
+   * Gets the super operation interface.
+   *
+   * @return the interface name, null for the default
+   */
   public String getOperationInterface() {
     return operationInterface;
   }
 
+  /**
+   * Gets the package of the operation interface.
+   *
+   * @return the package name
+   */
   public String getOperationPackage() {
     return operationPackage;
   }
 
+  /**
+   * Gets the package info of the operation interface package.
+   *
+   * @return the package info, null if not validated yet
+   */
   public PackageInfo getOperationPackageInfo() {
     return operationPackageInfo;
   }

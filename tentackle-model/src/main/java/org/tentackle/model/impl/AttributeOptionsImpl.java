@@ -118,7 +118,7 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
 
   /**
    * Clones the attribute options.<br>
-   * The method is protected, since {@link #clone(AttributeImpl)}  should be used instead,
+   * The method is protected, since {@link #clone(AttributeImpl)} should be used instead,
    * which invokes {@code clone()}.
    *
    * @return the cloned options
@@ -169,10 +169,12 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
   }
 
   /**
-   * Sets the default from entity options.
+   * Applies the entity options as defaults for this attribute.<br>
+   * MAPNULL is only applied if the data type supports it, AUTOSELECT only for numeric and date/time types
+   * (otherwise it is removed from the bind options).
    *
    * @param options the entity options
-   * @param dataType the datatype of the attribute
+   * @param dataType the data type of the attribute
    */
   public void applyEntityOptions(EntityOptions options, DataType<?> dataType) {
     setNoDeclare(options.isNoDeclare());

@@ -17,6 +17,8 @@
  */
 
 /**
- * The low-level core of sessions, persistent objects and operations.
+ * The session abstraction: sessions, session infos, pools, modification tracking,
+ * the model annotations, and the persistence exceptions.<br>
+ * The low-level core of persistent objects and operations, independent of any database or SQL.
  */
 package org.tentackle.session;

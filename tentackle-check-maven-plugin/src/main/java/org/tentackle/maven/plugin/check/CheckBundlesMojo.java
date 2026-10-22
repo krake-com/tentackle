@@ -19,6 +19,9 @@
 
 package org.tentackle.maven.plugin.check;
 
+import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.util.JavacTask;
+
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -27,6 +30,9 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.tentackle.common.BundleSupport;
 import org.tentackle.reflect.ReflectionHelper;
 
+import javax.tools.JavaCompiler.CompilationTask;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
@@ -35,34 +41,51 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.Set;
 
-
 /**
  * Verifies all bundle getString() invocations.
  * <p>
- * Finds all invocations of <code>&lt;reference&gt;.getString(&lt;string-literal&gt;)</code>.<br>
- * Where <code>&lt;reference&gt;</code> is:
+ * Finds all invocations of <code>&lt;reference&gt;.getString(&lt;key&gt;)</code>,
+ * where <code>&lt;key&gt;</code> is a compile-time constant, i.e. a string literal, a constant variable
+ * such as {@code static final String KEY = "foo"}, or a concatenation of those,
+ * and <code>&lt;reference&gt;</code> is:
  * <ul>
- * <li>a bundle classname, e.g. BlahBundle.getString("foo") checked against BlahBundle properties.</li>
+ * <li>a bundle classname, e.g. BlahBundle.getString("foo") checked against BlahBundle properties.
+ * The class is resolved via a single-type import or the package of the invoking class.</li>
  * <li>a method that refers to a bundle with the same name as the class containing the method invocation,
  * e.g. getBundle().getString("foo") in class Blah corresponds to the key "foo" in Blah.properties.</li>
  * <li>a variable or constant: same as method, i.e. the bundle name is that of the containing class,
  * e.g. resources.getString("foo").</li>
  * </ul>
- *
- * If a class must not be checked for bundle keys, it needs to be excluded from the fileset.
+ * Nested classes refer to the bundle of their outermost class.
+ * Each referenced bundle must be registered via an annotation such as &#64;Bundle or
+ * &#64;FxControllerService (see {@link BundleSupport}), and is loaded for each configured locale.
+ * Furthermore, the key sets of each referenced bundle are compared across all locales.
+ * <p>
+ * The sources are attributed by the compiler, so only invocations that really refer to a bundle count:
+ * a static {@code getString(String)} of a bundle class, i.e. annotated with &#64;Bundle or another annotation
+ * that registers bundles, or one invoked on a {@link ResourceBundle}.
+ * Other invocations, such as {@code ResultSet.getString("column")}, are ignored.
+ * So are invocations that refer to the bundle of a class annotated with {@link org.tentackle.common.NoBundle},
+ * i.e. a class that looks like a bundle but is not registered as one.
+ * If the invoked method or the type of the reference cannot be determined, for example, due to compile
+ * errors, the invocation is checked nevertheless and logged as a warning.
  * <p>
  * The following cases are not covered by this mojo:
  * <ul>
- * <li>all non-literals, e.g. getBundle().getString(text) as often found in enums. Needs explicit tests.</li>
- * <li>PdoBundles, i.e. translations for &#64;Singular, &#64;Plural. See PdoUtilitiesTest.</li>
- * <li>ValidationBundles, i.e. translations in validators, are covered by the mojo tentackle-check:validations.</li>
+ * <li>All non-constant keys, e.g., getBundle().getString(text) as often found in enums.
+ * They are logged as warnings and need explicit tests.
+ * The warnings can be suppressed by annotating the invoking code or any enclosing declaration
+ * with {@code @SuppressWarnings("bundle")}.</li>
+ * <li>PdoBundles, i.e., translations for &#64;Singular, &#64;Plural. See PdoUtilitiesTest.</li>
+ * <li>ValidationBundles, i.e., translations in validators, are covered by the mojo tentackle-check:validations.</li>
  * </ul>
  *
  * @author harald
  */
 @Mojo(name = "bundles",
       defaultPhase = LifecyclePhase.PROCESS_CLASSES,
-      requiresDependencyResolution = ResolutionScope.COMPILE)
+      requiresDependencyResolution = ResolutionScope.COMPILE,
+      threadSafe = true)
 public class CheckBundlesMojo extends AbstractCheckMojo {
 
   private final CheckBundlesScanner bundleScanner;
@@ -73,23 +96,66 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
    */
   public CheckBundlesMojo() {
     bundleScanner = new CheckBundlesScanner();
-    addProcessor(new CheckBundlesProcessor(bundleScanner));
+  }
+
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * No annotation processors are needed, since the sources are attributed and scanned
+   * by {@link #runCompilationTask(CompilationTask)}.
+   */
+  @Override
+  protected String getDefaultProcOption() {
+    return "-proc:none";
+  }
+
+  /**
+   * Attributes the sources and scans them for {@code getString} invocations.
+   *
+   * @param task the compilation task
+   */
+  @Override
+  protected void runCompilationTask(CompilationTask task) {
+    JavacTask javacTask = (JavacTask) task;
+    try {
+      Iterable<? extends CompilationUnitTree> units = javacTask.parse();
+      javacTask.analyze();    // errors are reported as diagnostics
+      bundleScanner.scan(javacTask, units);
+    }
+    catch (IOException iox) {
+      throw new UncheckedIOException(iox);
+    }
   }
 
 
   @Override
+  @SuppressWarnings("bundle")
   public void finishExecute() throws MojoExecutionException {
+
+    for (BundleKey key: bundleScanner.getUnresolvedKeys()) {
+      getLogger().warn("{}: cannot determine whether getString() refers to a bundle, checked anyway: {}",
+                       key.getLocation(), key);
+    }
+    for (BundleKey key: bundleScanner.getUnverifiedKeys()) {
+      getLogger().warn("{}: cannot verify getString() argument, not a constant: {}", key.getLocation(), key);
+    }
+    if (verbosityLevel.isDebug()) {
+      for (BundleKey key: bundleScanner.getSkippedKeys()) {
+        getLogger().info("ignored getString() invocation, not a bundle: {}", key);
+      }
+    }
 
     // find referenced bundle names (avoids unnecessary loading of all bundles in the classpath)
     Set<String> usedBundleNames = new HashSet<>();   // bundles used by the application
     for (BundleKey key: bundleScanner.getBundleKeys()) {
       String bundleName = ReflectionHelper.getOutermostClassName(key.getBundleName());
       if (usedBundleNames.add(bundleName) && verbosityLevel.isDebug()) {
-        getLog().info("bundle " + bundleName + " is referenced");
+        getLogger().info("bundle {} is referenced", bundleName);
       }
     }
 
-    // Key locale:bundlename
+    // key locale:bundlename
     record NameKey(Locale locale, String name) {
       @Override
       public String toString() {
@@ -98,7 +164,7 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
     }
 
     // load referenced bundles in given locales
-    Map<NameKey, ResourceBundle> bundleMap = new HashMap<>();    // <class containing the bundle reference> : <bundle>
+    Map<NameKey, ResourceBundle> bundleMap = new HashMap<>();    // <locale:bundlename> : <bundle>
 
     // for all annotations like @Bundle or @FxControllerService (need a META-INF/bundles file!)
     for (BundleSupport bundleSupport: BundleSupport.getBundles(getProcessingClassloader())) {
@@ -108,13 +174,13 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
           try {
             ResourceBundle bundle = ResourceBundle.getBundle(bundleName, bundleLocale, getProcessingClassloader());
             if (verbosityLevel.isDebug()) {
-              getLog().info("loaded bundle " + bundleName + ", locale " + bundleLocale +
-                            ", annotated in class " + bundleSupport.getClassName());
+              getLogger().info("loaded bundle {}, locale {}, annotated in class {}",
+                      bundleName, bundleLocale, bundleSupport.getClassName());
             }
             bundleMap.putIfAbsent(new NameKey(bundleLocale, bundleName), bundle);
           }
           catch (RuntimeException rex) {
-            getLog().error("could not load bundle " + bundleName + ": " + rex.getMessage());
+            getLogger().error("could not load bundle {}: {}", bundleName, rex.getMessage());
           }
         }
       }
@@ -130,7 +196,7 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
       for (Locale bundleLocale: bundleLocales) {
         ResourceBundle bundle = bundleMap.get(new NameKey(bundleLocale, bundleName));
         if (bundle == null) {
-          getLog().error("bundle " + bundleName + " not registered by annotation");
+          getLogger().error("bundle {} not registered by annotation", bundleName);
           errors++;
         }
         else {
@@ -138,14 +204,14 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
             bundle.getString(key.getKey());
           }
           catch (MissingResourceException mx) {
-            getLog().error("missing resource " + key + " for " + bundleLocale);
+            getLogger().error("missing resource {} for {}", key, bundleLocale);
             errors++;
           }
         }
       }
     }
 
-    // find diffs in bundles.
+    // find diffs in bundles: the keys of the first locale are compared against those of all others.
     // Notice: due to the nature of bundles, missing keys are not detected if provided
     // by a parent bundle (for ex. bundle_de.properties misses a key provided by the fallback bundle.properties).
     // However, this check will detect missing keys that would cause a MissingResourceException at runtime.
@@ -155,7 +221,7 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
         NameKey nameKey = new NameKey(bundleLocale, bundleName);
         ResourceBundle bundle = bundleMap.get(nameKey);
         if (bundle == null) {
-          getLog().error("no bundle " + bundleName + " for " + bundleLocale);
+          getLogger().error("no bundle {} for {}", bundleName, bundleLocale);
           errors++;
         }
         else {
@@ -166,13 +232,13 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
             Set<String> bundleKeys = bundle.keySet();
             for (String key: keys) {
               if (!bundleKeys.contains(key)) {
-                getLog().error("key '" + key + "' missing in " + nameKey);
+                getLogger().error("key '{}' missing in {}", key, nameKey);
                 errors++;
               }
             }
             for (String key: bundle.keySet()) {
               if (!keys.contains(key)) {
-                getLog().error("key '" + key + "' for " + bundleLocale + " not defined in all locales of " + bundleName);
+                getLogger().error("key '{}' for {} not defined in all locales of {}", key, bundleLocale, bundleName);
                 errors++;
               }
             }
@@ -180,7 +246,6 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
         }
       }
     }
-
 
     // show results
     StringBuilder localestr = new StringBuilder();
@@ -195,11 +260,11 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
 
     if (errors > 0) {
       msg += errors + " errors";
-      getLog().error(msg);
+      getLogger().error(msg);
       throw new MojoExecutionException(msg);
     }
     else {
-      getLog().info(msg + "no errors");
+      getLogger().info(msg + "no errors");
     }
   }
 

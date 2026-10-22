@@ -41,6 +41,8 @@ import java.lang.annotation.Target;
  *   Notice that the generated validate()-method of the aggregate PDO will not validate the component again,
  *   if annotated with {@code @Validate}.</li>
  * </ol>
+ * The component is validated by its {@link org.tentackle.validate.Validateable#validate(String, org.tentackle.validate.ValidationScope)}
+ * method. Collections are validated element by element. A {@code null} component is valid.
  *
  * @author harald
  */

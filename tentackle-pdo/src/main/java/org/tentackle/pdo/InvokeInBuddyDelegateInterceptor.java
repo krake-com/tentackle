@@ -24,6 +24,7 @@ import org.tentackle.session.PersistenceException;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 
 /**
  * Implementation for the {@link InvokeInBuddyDelegate} interception.
@@ -68,7 +69,7 @@ public final class InvokeInBuddyDelegateInterceptor extends AbstractInterceptor 
     }
 
     String effectiveMethodName = methodName.equals(Constants.NAME_UNKNOWN) ? method.getName() : methodName;
-    Method buddyMethod = buddyDelegate.getClass().getDeclaredMethod(effectiveMethodName, method.getParameterTypes());
+    Method buddyMethod = findMethod(buddyDelegate.getClass(), effectiveMethodName, method.getParameterTypes());
     try {
       return buddyMethod.invoke(buddyDelegate, args);
     }
@@ -76,6 +77,28 @@ public final class InvokeInBuddyDelegateInterceptor extends AbstractInterceptor 
       buddyMethod.setAccessible(true);
       return buddyMethod.invoke(buddyDelegate, args);
     }
+  }
+
+  /**
+   * Finds a method declared by the given class or one of its superclasses.<br>
+   * Non-public methods are found as well.
+   *
+   * @param clazz the class
+   * @param name the method name
+   * @param parameterTypes the parameter types
+   * @return the method
+   * @throws NoSuchMethodException if no such method
+   */
+  private static Method findMethod(Class<?> clazz, String name, Class<?>[] parameterTypes) throws NoSuchMethodException {
+    for (Class<?> cls = clazz; cls != null; cls = cls.getSuperclass()) {
+      try {
+        return cls.getDeclaredMethod(name, parameterTypes);
+      }
+      catch (NoSuchMethodException nx) {
+        // try superclass
+      }
+    }
+    throw new NoSuchMethodException(clazz.getName() + "." + name + Arrays.toString(parameterTypes));
   }
 
 }

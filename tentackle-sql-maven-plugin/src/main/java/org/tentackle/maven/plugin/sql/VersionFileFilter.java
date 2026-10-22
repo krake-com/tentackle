@@ -30,7 +30,9 @@ interface VersionFileFilterHolder {
 
 
 /**
- * Filters files according to their version.
+ * Filters migration hint files according to their version.<br>
+ * The default implementation is {@link SemanticVersionFileFilter}. It can be replaced by
+ * an application-specific {@code @Service(VersionFileFilter.class)} on the plugin's classpath.
  */
 public interface VersionFileFilter {
 
@@ -52,11 +54,12 @@ public interface VersionFileFilter {
   String getName();
 
   /**
-   * Checks whether given migration hint file's version is logically greater or equal the given version.
+   * Checks whether the given migration hint file applies to the given database version.<br>
+   * Usually, a hint file applies if its version is greater than the database version.
    *
-   * @param version the application's version
+   * @param version the current database version, null if unknown (no filtering)
    * @param hintFile the migration hint file
-   * @return true if hint applies to given version, false if too old
+   * @return true if the hint applies, false if too old
    */
   boolean isValid(String version, File hintFile);
 

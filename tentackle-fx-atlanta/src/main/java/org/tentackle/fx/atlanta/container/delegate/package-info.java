@@ -17,6 +17,6 @@
  */
 
 /**
- * Delegates implementing tentackle features for AtlantaFX containers.
+ * Delegates implementing Tentackle features for AtlantaFX containers.
  */
 package org.tentackle.fx.atlanta.container.delegate;

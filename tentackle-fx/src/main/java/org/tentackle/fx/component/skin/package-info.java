@@ -17,6 +17,6 @@
  */
 
 /**
- * Skins for FX components.
+ * Skins for FX components and popups.
  */
 package org.tentackle.fx.component.skin;

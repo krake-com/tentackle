@@ -23,8 +23,9 @@ otherwise sit in the clear:
   encrypts passwords into filtered resources, so the packaged image contains no clear-text secrets;
 - **in configuration** — [`EncryptedProperties`](../java/org/tentackle/common/EncryptedProperties.java)
   transparently decrypts any value marked with a `~`;
-- **in memory** — `DefaultSessionInfo` holds the user's password encrypted rather than as a bare
-  `char[]`;
+- **in memory** — [`Secret`](../../../../tentackle-core/src/main/java/org/tentackle/misc/Secret.java)
+  holds passwords and tokens (such as the user's password in the session info's
+  `PasswordCredentials`) encrypted rather than as a bare `char[]`;
 - **on the wire** — the [TRIP](../../../../tentackle-core/src/main/docs/trip.md) `tripe`/`tripce`
   transports encrypt with the same `Cryptor` (see [io.md](../../../../tentackle-core/src/main/docs/io.md)).
 
@@ -57,10 +58,14 @@ public class MyAppCryptor extends Cryptor {
 
 Two lookups exist, and the difference matters:
 
-| Method                | Behavior                                                                 |
-|-----------------------|--------------------------------------------------------------------------|
-| `Cryptor.getInstance()`     | The singleton, or **`null`** if the application configured none. Callers must handle null — this is the "encryption is optional" path. |
+| Method                        | Behavior                                                                                                                                          |
+|-------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Cryptor.getInstance()`       | The singleton, or **`null`** if the application configured none. Callers must handle null — this is the "encryption is optional" path.            |
 | `Cryptor.getInstanceSafely()` | The singleton, throwing `TentackleRuntimeException` if absent. Used where a value is already known to be encrypted and there is no sane fallback. |
+
+> **Watch the constructor.** If the application's cryptor is configured but its constructor throws a
+> `TentackleRuntimeException` (a typo in the salt, say), `getInstance()` silently returns `null`, as
+> if no cryptor were configured at all — and secrets are stored unencrypted from then on.
 
 ### What it does
 
@@ -71,13 +76,21 @@ key is derived, so they do not linger in the heap for a dump to find. The same c
 API: `encrypt(char[])` clears the array it was given, and `decrypt64ToChars` returns a `char[]`
 precisely so the caller can erase it after use rather than being handed an immortal `String`.
 
-The three algorithm choices are `protected` methods, so a subclass can override them:
+Alternatively, the `(SecretKey, Cipher)` constructor takes a ready-made key and a template cipher,
+whose algorithm and provider are used to create the ciphers.
 
-| Method                   | Default                                  |
-|--------------------------|-------------------------------------------|
-| `getSecretKeyFactory()`  | `SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")` |
-| `createSecretKeySpec(...)` | `new SecretKeySpec(key, "AES")`         |
-| `getCipher()`            | `Cipher.getInstance("AES")`               |
+`Cryptor` is thread-safe: since a `Cipher` is stateful, each thread gets its own, created lazily
+(via `getCipher()`, or from the template cipher). This matters because the singleton is shared by
+all threads, for example by the encrypting transports of a server.
+
+The three algorithm choices are `protected` methods, so a subclass can override them
+(`getCipher()` is not used with the `(SecretKey, Cipher)` constructor):
+
+| Method                     | Default                                              |
+|----------------------------|------------------------------------------------------|
+| `getSecretKeyFactory()`    | `SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")` |
+| `createSecretKeySpec(...)` | `new SecretKeySpec(key, "AES")`                      |
+| `getCipher()`              | `Cipher.getInstance("AES")`                          |
 
 > **Note on the defaults.** `Cipher.getInstance("AES")` resolves, per the JCE provider defaults, to
 > AES in **ECB** mode — which encrypts identical plaintext blocks to identical ciphertext blocks and
@@ -97,7 +110,16 @@ caller:
 - `encrypt(byte[])` / `decrypt(byte[])`, with offset+length variants;
 - `encrypt(char[])` — encodes, encrypts, and wipes both the char array and the intermediate bytes;
 - `encrypt64(...)` / `decrypt64(...)` — base64 strings, the form used in properties files;
+- `decrypt64ToBytes(...)` — a base64 string decrypted to bytes;
 - `decrypt64ToChars(...)` / `decryptToChars(...)` — the erasable-result variants.
+
+Texts, salts and passphrases are converted to bytes with
+[`Settings.getEncodingCharset()`](../java/org/tentackle/common/Settings.java), which defaults to UTF-8
+and is set by the Maven plugins from `project.build.sourceEncoding`. Build-time encryption and
+runtime decryption must therefore use the same charset, unless the secrets are plain ASCII.
+
+The `String`-based `(salt, passphrase)` convenience constructor cannot scratch its inputs, since
+strings are immutable. Prefer the `(byte[], char[])` variant.
 
 `Cryptor` also implements `Function<String,String>` (`apply` = `encrypt64`). That is not an
 idle convenience: it is exactly what lets the Maven plugin use an application's own cryptor as a
@@ -107,7 +129,7 @@ property converter, described [below](#build-time-encrypting-secrets-into-filter
 
 [`deriveURL(url, protocols...)`](../java/org/tentackle/common/Cryptor.java) decrypts a URL that has
 been disguised behind a protocol the application doesn't actually use. If the URL starts with one of
-the given fake protocols, the first token after `=~` is decrypted and returned:
+the given fake protocols, the text after `=~` up to the next `&` is decrypted and returned:
 
 ```
 https://somehost.somedomain.org/login?id=~GK+AG1QIjpBaD51HP/kw9Hzpd...&user=100
@@ -130,7 +152,17 @@ password=~GK+AG1QIjpBaD51HP/kw9HzpdKZLt2FrInFxd1jtPWvGzaw5lcLcHy5RB
 ```
 
 `getProperty("password")` hands back the clear-text password; the file never contains it. If a
-genuine value happens to start with a tilde, escape it with a backslash (`\~notEncrypted`).
+genuine value happens to start with a tilde, escape it with a backslash. Mind that
+`Properties.load` itself drops a single backslash in front of a character that is not an escape
+sequence, so in a *file* the escape must be doubled:
+
+```properties
+greeting=\\~notEncrypted
+```
+
+In Java code, `setProperty("greeting", "\\~notEncrypted")` stores the escaped value (one backslash
+in the string). `setEncryptedProperty` applies the escape automatically when it has to store a
+value unencrypted.
 
 ### Reading values
 
@@ -138,6 +170,7 @@ genuine value happens to start with a tilde, escape it with a backslash (`\~notE
 |------------------------------|-----------------------------------------------------------------------------------|
 | `getProperty(key)`           | Decrypted value (via `Cryptor.getInstanceSafely()` when the value is marked `~`)  |
 | `getPropertyAsChars(key)`    | Same, as a `char[]` the caller **can erase after use** — prefer this for secrets  |
+| `getPropertyAsChars(key, defaults)` | Same, but returns `defaults` if there is no such key                        |
 | `getPropertyBlunt(key)`      | The **raw** stored value, still encrypted. For copying/inspecting without decrypting |
 | `getPropertyIgnoreCase(key)` | Case-insensitive lookup                                                          |
 
@@ -148,23 +181,30 @@ an encrypted string to code expecting a password would fail later, and less clea
 ### Writing values
 
 `setEncryptedProperty(key, value)` accepts a `String` or a `char[]` and stores it encrypted with the
-`~` marker — *if* a `Cryptor` is configured. If none is, it stores the value as-is. This is the
-"encryption is optional" principle again: the same code path works in both cases, and the file
-format tells you which happened.
+`~` marker — *if* a `Cryptor` is configured. If none is, it stores the value as-is (escaping a
+leading `~`). This is the "encryption is optional" principle again: the same code path works in both
+cases, and the file format tells you which happened. With a `Cryptor`, the `char[]` variant erases
+the given array after encryption.
+
+`setProperty(key, value)` stores the value as given, i.e., never encrypts it.
 
 ### Key prefixes and case-insensitivity
 
 Two features exist for integration rather than security:
 
-- **`setKeyPrefix(...)`** — a prefix prepended to keys on `getProperty` and friends, so Tentackle's
-  settings can be merged into a shared file (a Spring `application.properties`, say) without
-  colliding. `stringPropertyNames()` then reports only the prefixed key space, with the prefix
-  stripped. Caveat from the javadoc: the low-level `Hashtable` methods that deal in `Object`s bypass
-  the prefix entirely.
-- **`getPropertyIgnoreCase` / `getKeyIgnoreCase`** — a lazily built case map. It throws
-  `TentackleRuntimeException` if two keys collide case-insensitively, rather than silently picking one.
+- **`setKeyPrefix(...)`** / `getKeyPrefix()` — a prefix prepended to keys on `getProperty`,
+  `setProperty` and friends, so Tentackle's settings can be merged into a shared file (a Spring
+  `application.properties`, say) without colliding. `stringPropertyNames()` then reports only the
+  prefixed key space, with the prefix stripped. Caveat from the javadoc: the low-level `Hashtable`
+  methods that deal in `Object`s bypass the prefix entirely.
+- **`getPropertyIgnoreCase` / `getKeyIgnoreCase`** — a case map, built on first use. Building it
+  throws `TentackleRuntimeException` if two existing keys collide case-insensitively, rather than
+  silently picking one. Keys added later via `setProperty` update the map.
+  `getKeyIgnoreCase` returns the given key unchanged if there is no match.
 
-`setName(...)` labels the source (typically the file name) for diagnostics.
+`setName(...)` / `getName()` label the source (typically the file name) for diagnostics;
+[`FileHelper.loadProperties(name)`](../java/org/tentackle/common/FileHelper.java) sets it
+automatically. `clone()` returns an independent copy, including the case map.
 
 
 ## How It Fits Together
@@ -209,9 +249,10 @@ contains only ciphertext. At runtime the session layer loads this file as `Encry
 ### Runtime: the rest of the chain
 
 - **`BackendConfiguration`** stores backend passwords encrypted when a `Cryptor` is configured.
-- **`DefaultSessionInfo`** keeps the user's password as `encryptedPassword` bytes rather than a
-  clear `char[]`, so a heap dump of a running client doesn't surrender it.
-- **Login and auto-update** pass the already-encrypted credentials along on restart, which is how
+- **`Secret`** keeps the user's password (in the session info's `PasswordCredentials`) as
+  encrypted bytes rather than a clear `char[]`, so a heap dump of a running client doesn't
+  surrender it. The same applies on the wire, since the encrypted bytes are what gets serialized.
+- **Login and auto-update** pass the credentials, encrypted, along on restart, which is how
   [fx-rdc-update](../../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md) restarts a
   client seamlessly without re-prompting.
 - **TRIP transports** `tripe` and `tripce` encrypt the connection with the same `Cryptor` as a

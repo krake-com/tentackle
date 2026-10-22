@@ -63,17 +63,21 @@ public interface Permission extends Comparable<Permission> {
   boolean appliesTo(Class<?> clazz);
 
   /**
-   * Checks if this requested permission implements at least one of the given permissions.
+   * Checks whether this requested permission is granted by at least one of the given permissions.<br>
+   * This is the case if a given permission is the same as or extends this permission, or is ALL.
+   * For example, a requested READ is allowed by a configured EDIT, since EDIT implies READ.
    *
-   * @param permissions the configured permissions
+   * @param permissions the configured permission interfaces
    * @return true if matches
    */
   boolean isAllowedBy(Class<?>... permissions);
 
   /**
-   * Checks at least one of the given permissions implements this requested permission.
+   * Checks whether this requested permission is denied by at least one of the given permissions.<br>
+   * This is the case if this permission is the same as or extends a given permission, or a given one is ALL.
+   * For example, a requested EDIT is denied by a configured READ, since EDIT cannot be granted without READ.
    *
-   * @param permissions the configured permissions
+   * @param permissions the configured permission interfaces
    * @return true if matches
    */
   boolean isDeniedBy(Class<?>... permissions);

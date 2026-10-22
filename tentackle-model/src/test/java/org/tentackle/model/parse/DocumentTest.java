@@ -21,6 +21,7 @@ package org.tentackle.model.parse;
 import org.testng.annotations.Test;
 
 import org.tentackle.model.ModelException;
+import org.tentackle.model.TrackType;
 
 import java.util.Iterator;
 import java.util.List;
@@ -397,5 +398,30 @@ public class DocumentTest {
     catch (ModelException me) {
       assertTrue(me.getMessage().contains("Invoice.java[2]"), me.getMessage());
     }
+  }
+
+  /**
+   * Whitespace following a continuation backslash, including tabs and the CR of CRLF line endings, is ignored.
+   */
+  @Test
+  public void continuationWithTrailingWhitespace() throws ModelException {
+    Document document = new Document("name := In\\ \t\r\nvoice\n");
+    assertEquals(document.getText(), "name := Invoice\n");
+  }
+
+  /**
+   * The model defaults line of a dumped model source is not part of the model text,
+   * but the line numbers are preserved.
+   */
+  @Test
+  public void modelDefaultsLineIsRemoved() throws ModelException {
+    Document document = new Document("#[tracked, cascade]\nname := Invoice\n");
+    assertEquals(document.getModelDefaults().getTrackType(), TrackType.TRACKED);
+    assertEquals(document.getModelDefaults().getDeletionCascaded(), Boolean.TRUE);
+    assertEquals(document.getText(), "\nname := Invoice\n");
+    List<Line> lines = document.getLines();
+    assertEquals(lines.getFirst().getLineType(), LineType.EMPTY);
+    assertEquals(lines.get(1).getLineType(), LineType.CONFIGURATION);
+    assertEquals(lines.get(1).getLineNumber(), 2);
   }
 }

@@ -248,16 +248,16 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   /**
    * Gets the attribute 'allowed'.
    *
-   * @return the false if denied, true if allowed
+   * @return false if denied, true if allowed
    */
-  @Persistent(ordinal=9, comment="the false if denied, true if allowed")
+  @Persistent(ordinal=9, comment="false if denied, true if allowed")
   @Bindable(ordinal=9)
   boolean isAllowed();
 
   /**
    * Sets the attribute 'allowed'.
    *
-   * @param allowed the false if denied, true if allowed
+   * @param allowed false if denied, true if allowed
    */
   @Bindable(ordinal=9)
   void setAllowed(boolean allowed);

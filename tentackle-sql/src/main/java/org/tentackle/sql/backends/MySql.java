@@ -22,6 +22,7 @@ import org.tentackle.common.Service;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
+import org.tentackle.sql.BackendVersionInfo;
 import org.tentackle.sql.BackendPreparedStatement;
 import org.tentackle.sql.MigrationStrategy;
 import org.tentackle.sql.SqlNameType;
@@ -48,6 +49,7 @@ import java.util.Set;
  * <p>
  * Requires at least MySQL 8.0.13, which is the first version providing functional indexes
  * and default values for {@code TEXT}- and {@code BLOB}-columns.
+ * Notice that {@link #validateVersion} can only check the major and minor version.
  *
  * @author harald
  */
@@ -151,10 +153,15 @@ public class MySql extends AbstractSql92Backend {
   }
 
   @Override
-  public void validateVersion(int databaseMajorVersion, int databaseMinorVersion) {
-    if (databaseMajorVersion < MIN_MAJOR_VERSION) {
+  public String getXADataSourceClassName() {
+    return "com.mysql.cj.jdbc.MysqlXADataSource";
+  }
+
+  @Override
+  public void validateVersion(BackendVersionInfo versionInfo) {
+    if (versionInfo.majorVersion() < MIN_MAJOR_VERSION) {
       throw new BackendException(this + " needs at least MySQL " + MIN_MAJOR_VERSION + ".0.13" +
-                                 ", but is connected to " + databaseMajorVersion + "." + databaseMinorVersion);
+                                 ", but is connected to " + versionInfo);
     }
   }
 
@@ -307,17 +314,26 @@ public class MySql extends AbstractSql92Backend {
       // BLOB and TEXT are limited to 64k
       case BLOB -> TYPE_LONGBLOB;
       case CLOB -> TYPE_LONGTEXT;
+      case XML -> TYPE_LONGTEXT;   // no native XML type
+      case JSON -> TYPE_JSON;         // native since 5.7.8, and we require 8.0.13 anyway
       default -> super.sqlTypeToString(sqlType, size);
     };
+  }
+
+  @Override
+  public boolean isJsonSupported() {
+    // a native JSON column, but it takes a plain string like any text column -> no setJson override
+    return true;
   }
 
   @Override
   public SqlType[] jdbcTypeToSqlType(int jdbcType, int size, int scale) {
     return switch (jdbcType) {
       case Types.BIT, Types.BOOLEAN, Types.TINYINT -> new SqlType[]{SqlType.BIT, SqlType.TINYINT};
-      // VARCHAR and LONGTEXT are both used for strings, sized or not
+      // VARCHAR and LONGTEXT are both used for strings, sized or not, and the driver reports
+      // a JSON column as one of the character types as well. XML is stored as LONGTEXT.
       case Types.VARCHAR, Types.LONGVARCHAR, Types.NVARCHAR, Types.LONGNVARCHAR, Types.CLOB, Types.NCLOB
-              -> new SqlType[]{SqlType.VARCHAR, SqlType.CLOB};
+              -> new SqlType[]{SqlType.VARCHAR, SqlType.CLOB, SqlType.JSON, SqlType.XML};
       default -> super.jdbcTypeToSqlType(jdbcType, size, scale);
     };
   }
@@ -341,16 +357,17 @@ public class MySql extends AbstractSql92Backend {
   }
 
   /**
-   * Returns whether the given type is declared as a TEXT- or BLOB-type.<br>
-   * Such columns cannot be indexed without a key length and their default must be an expression.
+   * Returns whether the given type is declared as a TEXT-, BLOB- or JSON-type.<br>
+   * The default of such columns must be an expression. Furthermore, TEXT- and BLOB-columns
+   * cannot be indexed without a key length.
    *
    * @param sqlType the SQL type
    * @param size the size from the model, 0 if none
-   * @return true if TEXT or BLOB
+   * @return true if TEXT, BLOB or JSON
    */
   protected boolean isLobDeclaration(SqlType sqlType, int size) {
     return switch (sqlType) {
-      case CLOB, BLOB -> true;
+      case CLOB, BLOB, JSON -> true;   // mysql rejects a literal default on a JSON column too
       case VARCHAR -> (size == 0 ? getDefaultSize(sqlType) : size) == 0;
       default -> false;
     };
@@ -369,6 +386,12 @@ public class MySql extends AbstractSql92Backend {
     return buf.toString();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * MySQL interprets schemas as databases. Hence, if schemas are given, one connection is opened
+   * per schema and the metadata of each is returned.
+   */
   @Override
   public DatabaseMetaData[] getMetaData(BackendInfo backendInfo) throws SQLException {
     if (backendInfo.getSchemas() != null) {
@@ -606,6 +629,12 @@ public class MySql extends AbstractSql92Backend {
     return buf.toString();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * MySQL cannot change a single property of a column: the whole declaration must be repeated.
+   * Hence, any change yields the single {@link MigrationStrategy#NAME_AND_TYPE}.
+   */
   @Override
   public MigrationStrategy[] getMigrationStrategy(ColumnMetaData column, String columnName, String comment,
                                                   SqlType sqlType, int size, int scale, boolean nullable, Object defaultValue) {
@@ -635,20 +664,6 @@ public class MySql extends AbstractSql92Backend {
     }
 
     return strategies.toArray(new MigrationStrategy[0]);
-  }
-
-  @Override
-  protected String extractWhereClause(String sql, int whereOffset) {
-    sql = super.extractWhereClause(sql, whereOffset);
-    int ndx = sql.lastIndexOf(SQL_LIMIT);
-    if (ndx >= 0) {
-      sql = sql.substring(0, ndx);
-    }
-    ndx = sql.lastIndexOf(SQL_OFFSET);
-    if (ndx >= 0) {
-      sql = sql.substring(0, ndx);
-    }
-    return sql;
   }
 
 }

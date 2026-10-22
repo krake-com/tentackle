@@ -28,12 +28,16 @@ import java.nio.charset.StandardCharsets;
  */
 public class Settings {
 
-  private static Charset encodingCharset = StandardCharsets.UTF_8;
+  private static volatile Charset encodingCharset = StandardCharsets.UTF_8;
 
 
   /**
    * Gets the encoding used to read and write files.<br>
-   * Usually set by the maven plugins from "project.build.sourceEncoding".
+   * Usually set by the Maven plugins from "project.build.sourceEncoding".
+   * <p>
+   * The charset is also used by the {@link Cryptor} to convert texts, salts and passphrases to bytes.
+   * Hence, texts encrypted at build time can only be decrypted at runtime with the same charset,
+   * unless they consist of ASCII characters only.
    *
    * @return the charset, default is {@link StandardCharsets#UTF_8}
    */
@@ -44,7 +48,7 @@ public class Settings {
   /**
    * Sets the encoding used to read and write files.
    *
-   * @param encodingCharset the charset, default is {@link StandardCharsets#UTF_8}
+   * @param encodingCharset the charset, default is {@link StandardCharsets#UTF_8}, must not be null
    */
   public static void setEncodingCharset(Charset encodingCharset) {
     Settings.encodingCharset = encodingCharset;

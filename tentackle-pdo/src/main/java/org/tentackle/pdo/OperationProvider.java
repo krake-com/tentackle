@@ -18,6 +18,8 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.reflect.NotInterceptable;
+
 /**
  * Provider for an {@link Operation}.
  *
@@ -27,10 +29,11 @@ package org.tentackle.pdo;
 public interface OperationProvider<T extends Operation<T>> {
 
   /**
-   * Gets the operation.<br>
+   * Gets the operation.
    *
    * @return the operation
    */
+  @NotInterceptable
   T getOperation();
 
   /**
@@ -43,7 +46,9 @@ public interface OperationProvider<T extends Operation<T>> {
   }
 
   /**
-   * Creates a new instance of the same type as the operation within a new sub context.
+   * Creates a new instance of the same type as the operation within a sub context.<br>
+   * The sub context is created only if the operation's context is not already within the given name.
+   * The root entity of the context, if any, is kept.
    *
    * @param contextName the context name
    * @return the new instance

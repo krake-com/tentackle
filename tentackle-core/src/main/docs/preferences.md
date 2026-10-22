@@ -36,12 +36,13 @@ co-exist independently and Tentackle stores its nodes **in the database**. Becau
 `PersistedPreferences` can also act as a drop-in `PreferencesFactory`, even third-party code that
 talks to the standard preferences API can be redirected onto the database store.
 
-Two implementations ship in the box:
+Tentackle core itself registers no factory: the implementation must come from the database module
+or from the application. Two implementations ship in the box:
 
 | Implementation | Backing store | Use when |
 |----------------|---------------|----------|
 | [`DbPreferences`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/prefs/DbPreferences.java) + [`DbPreferencesFactory`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/prefs/DbPreferencesFactory.java) (in [`tentackle-database`](../../../../tentackle-database/src/main/docs/database.md)) | the application database (tables `prefnode` / `prefkey`) | the default — settings roam with the user across clients ([see below](#the-database-implementation-dbpreferences)) |
-| [`DefaultPreferences`](../java/org/tentackle/prefs/DefaultPreferences.java) + [`DefaultPreferencesFactory`](../java/org/tentackle/prefs/DefaultPreferencesFactory.java) | the JDK's `java.util.prefs` | you want the plain local store (registry / files) and *no* database persistence |
+| [`DefaultPreferences`](../java/org/tentackle/prefs/DefaultPreferences.java) + [`DefaultPreferencesFactory`](../java/org/tentackle/prefs/DefaultPreferencesFactory.java) | the JDK's `java.util.prefs` | you want the plain local store (registry / files) and *no* database persistence; auto-sync and read-only are just stored, not supported |
 
 To force the local JDK store, extend `DefaultPreferencesFactory` and register it as a service:
 
@@ -58,8 +59,9 @@ public class JavaUtilPreferencesFactory extends DefaultPreferencesFactory {
 
 [`CompositePreferences`](../java/org/tentackle/prefs/CompositePreferences.java) combines the system
 and user trees so that **user settings override system defaults** — the behavior most applications
-want. It also adds convenience for exporting and importing via file dialogs. It is `abstract`: an
-application extends it to obtain its own namespace (derived from the class name).
+want. It adds typed getters and setters (`getInteger`/`getInt`, `getALong`/`getLong`, …, byte arrays).
+It is `abstract`: an application extends it to obtain its own namespace — the nodes of the subclass's
+package (`userNodeForPackage`/`systemNodeForPackage`).
 
 The shadowing works in both directions:
 
@@ -145,10 +147,13 @@ because the user name is taken from its `SessionInfo`.
 
 ## A concrete consumer
 
-The [POI spreadsheet exporter](../../../../tentackle-fx-rdc-poi/src/main/docs/poi.md) uses preferences
-to remember the last export directory per table (key prefix `lastXlsNames/`). The same mechanism
-backs RDC window geometry and table column layouts — settings that, thanks to the database backing
-store, are restored on whatever client the user signs in to next.
+RDC table column layouts are kept in the persisted preferences — settings that, thanks to the
+database backing store, are restored on whatever client the user signs in to next.
+
+Settings that only make sense on one machine deliberately bypass the database. The RDC's file
+selection, used for instance by the
+[POI spreadsheet exporter](../../../../tentackle-fx-rdc-poi/src/main/docs/poi.md) to remember the last
+exported file per table, writes to the JDK's `java.util.prefs.Preferences.userRoot()` instead.
 
 ## Preferenzr — Browsing and Editing the Store
 
@@ -170,7 +175,7 @@ run with limited database privileges. It deliberately stores its *own* settings 
 
 Like [BundleMonkey](../../../../tentackle-i18n/src/main/docs/bundlemonkey.md), it is developed as a
 separate open-source project at
-[bitbucket.org/krake-oss/preferenzr](https://bitbucket.org/krake-oss/preferenzr) and distributed as
+[github.com/krake-com/preferenzr](https://github.com/krake-com/preferenzr) and distributed as
 a self-contained [jlink](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md)
 image; to build it yourself, clone the repository and run `mvn -Pjlink clean install`.
 

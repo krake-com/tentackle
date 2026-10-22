@@ -21,7 +21,15 @@ package org.tentackle.misc;
 import org.testng.annotations.Test;
 
 import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.log.Logger;
 
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.testng.Assert.assertEquals;
@@ -108,6 +116,80 @@ public class AbstractPoolTest {
     assertTrue(exception.getMessage().contains("no usable resource"), exception.getMessage());
   }
 
+
+  /**
+   * A pool with a negative minimum size shuts down when empty. Once {@code monitor()} has decided so,
+   * no resource must be lent anymore, since {@code shutdown()} would close it under the borrower's hands.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void monitorShutdownDoesNotRaceWithGet() throws Exception {
+    CountDownLatch inShutdown = new CountDownLatch(1);
+    CountDownLatch proceed = new CountDownLatch(1);
+    TestPool pool = new TestPool("auto shutdown pool", 0, -1) {
+      @Override
+      public void shutdown() {
+        inShutdown.countDown();
+        try {
+          proceed.await();
+        }
+        catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+        }
+        super.shutdown();
+      }
+    };
+
+    Thread monitorThread = new Thread(pool::monitor);
+    monitorThread.start();
+    inShutdown.await();     // the empty pool is about to be shut down
+
+    assertTrue(pool.isShutdown());
+    expectThrows(TentackleRuntimeException.class, pool::get);
+    assertEquals(pool.getCreatedCount(), 0, "no resource must be created for a pool being shut down");
+
+    proceed.countDown();
+    monitorThread.join(AWAIT_TIMEOUT);
+    assertTrue(pool.isShutdown());
+  }
+
+
+  /**
+   * {@code monitor()} replaces the resources that died while unused, up to the minimum size.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void monitorRestoresTheMinimumSize() {
+    TestPool pool = new TestPool();
+    TestResource resource = pool.get();
+    pool.put(resource);
+    resource.open = false;   // died silently while sitting in the pool
+
+    pool.monitor();
+
+    assertEquals(pool.getSize(), 1);
+    assertEquals(pool.getCreatedCount(), 2);
+  }
+
+  /**
+   * {@link AbstractPool#restoreMinimumSize} may be overridden by pools that cannot create a resource
+   * without blocking the shared {@link PoolTimeoutThread} for long. The pool then stays below its
+   * minimum size until a resource is requested.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void monitorLeavesRestoringTheMinimumSizeToThePool() {
+    TestPool pool = new TestPool();
+    TestResource resource = pool.get();
+    pool.put(resource);
+    resource.open = false;
+    pool.restoringMinimumSize = false;
+
+    pool.monitor();
+
+    assertEquals(pool.getSize(), 0, "the dead resource was not removed");
+    assertEquals(pool.getCreatedCount(), 1, "the minimum size was restored nevertheless");
+
+    assertTrue(pool.get().isOpen());    // created on demand
+    assertEquals(pool.getCreatedCount(), 2);
+  }
 
   /**
    * {@link AbstractPool#isSlotRemovable} may be overridden to veto the removal of a slot.
@@ -204,6 +286,106 @@ public class AbstractPoolTest {
 
 
   /**
+   * {@link AbstractPool#getSlotCountPerThread()} groups lent slots by the lending thread.
+   */
+  @Test
+  public void getSlotCountPerThreadCountsLentSlotsByThread() {
+    TestPool pool = new TestPool();
+    pool.get();
+    pool.get();   // second lease enlarges the pool by incrementSize=1
+
+    List<Map.Entry<String, Integer>> slotCounts = pool.getSlotCountPerThread();
+
+    assertEquals(slotCounts.size(), 1, "both slots were lent by the same (current) thread");
+    Map.Entry<String, Integer> entry = slotCounts.get(0);
+    assertTrue(entry.getKey().contains(Thread.currentThread().getName()), entry.getKey());
+    assertEquals(entry.getValue().intValue(), 2);
+  }
+
+  /**
+   * {@link AbstractPool#getSlotCountPerThread()} sorts by slot count, highest first.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void getSlotCountPerThreadSortsHighestCountFirst() throws InterruptedException {
+    TestPool pool = new TestPool();
+    pool.get();   // 1 slot lent by the current (main test) thread
+
+    CountDownLatch leased = new CountDownLatch(1);
+    CountDownLatch releaseLease = new CountDownLatch(1);
+    Thread background = new Thread(() -> {
+      pool.get();
+      pool.get();   // 2 slots lent by the background thread
+      leased.countDown();
+      try {
+        releaseLease.await();
+      }
+      catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
+      }
+    }, "background-lease-thread");
+    background.start();
+    leased.await();
+
+    try {
+      List<Map.Entry<String, Integer>> slotCounts = pool.getSlotCountPerThread();
+
+      assertEquals(slotCounts.size(), 2, "one entry per lending thread");
+      assertEquals(slotCounts.get(0).getValue().intValue(), 2, "background thread leased the most slots");
+      assertTrue(slotCounts.get(0).getKey().contains("background-lease-thread"), slotCounts.get(0).getKey());
+      assertEquals(slotCounts.get(1).getValue().intValue(), 1);
+      assertTrue(slotCounts.get(1).getKey().contains(Thread.currentThread().getName()), slotCounts.get(1).getKey());
+    }
+    finally {
+      releaseLease.countDown();
+      background.join(AWAIT_TIMEOUT);
+    }
+  }
+
+  /**
+   * {@link AbstractPool#getSlotCountPerThread()} counts lent slots only, not the ones sitting in the pool.
+   */
+  @Test
+  public void getSlotCountPerThreadIgnoresReturnedSlots() {
+    TestPool pool = new TestPool();
+    TestResource first = pool.get();
+    pool.get();
+    pool.put(first);
+
+    List<Map.Entry<String, Integer>> slotCounts = pool.getSlotCountPerThread();
+
+    assertEquals(slotCounts.size(), 1, "returned slots must not be counted");
+    assertNotNull(slotCounts.get(0).getKey());
+    assertEquals(slotCounts.get(0).getValue().intValue(), 1);
+  }
+
+  /**
+   * {@link AbstractPool#getSlotCountPerThread()} must not fail on a pool that is shut down.
+   */
+  @Test
+  public void getSlotCountPerThreadIsEmptyAfterShutdown() {
+    TestPool pool = new TestPool();
+    pool.get();
+    pool.shutdown();
+
+    assertTrue(pool.getSlotCountPerThread().isEmpty());
+  }
+
+  /**
+   * Pool exhaustion is a resource leak candidate, so it must log which threads hold the slots.
+   */
+  @Test
+  public void exhaustingThePoolLogsSlotCountPerThread() {
+    TestPool pool = new TestPool("exhausted pool", 1);   // maximum size 1
+    pool.get();   // the only slot the pool is allowed to create
+
+    TentackleRuntimeException exception = expectThrows(TentackleRuntimeException.class, pool::get);
+
+    assertTrue(exception.getMessage().contains("max. pool size"), exception.getMessage());
+    assertEquals(pool.logSlotCountPerThreadInvocations.get(), 1);
+  }
+
+
+  /**
    * Finds the shared pool timeout thread.
    *
    * @return the thread, null if not running
@@ -215,6 +397,126 @@ public class AbstractPoolTest {
       }
     }
     return null;
+  }
+
+
+  // -------------------------- concurrent slot creation -----------------------
+
+  /**
+   * While a new resource is opened, other threads must still be able to return and get resources.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void concurrentCreationDoesNotBlockGetAndPut() throws Exception {
+    ConcurrentTestPool pool = new ConcurrentTestPool("concurrent pool", 0);
+    TestResource first = pool.get();      // initial slot, created with the monitor held
+    pool.armed = true;
+
+    CompletableFuture<TestResource> creator = CompletableFuture.supplyAsync(pool::get);
+    assertTrue(pool.creating.await(AWAIT_TIMEOUT, TimeUnit.MILLISECONDS));
+
+    // the creator waits in createSlot: the pool must still be usable
+    pool.put(first);
+    assertSame(pool.get(), first);
+    assertEquals(pool.getSize(), 2);       // the reserved slot counts
+
+    pool.release.countDown();
+    TestResource second = creator.get(AWAIT_TIMEOUT, TimeUnit.MILLISECONDS);
+    assertNotSame(second, first);
+    assertTrue(second.isOpen());
+    assertEquals(second.getPoolId(), 2);
+    assertEquals(pool.getSize(), 2);
+    assertEquals(pool.created.size(), 2);
+
+    pool.put(second);
+    pool.put(first);
+    assertEquals(pool.getSize(), 2);
+    pool.shutdown();
+  }
+
+  /**
+   * The slot reserved for a resource whose creation failed must be released.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void failedConcurrentCreationReleasesTheSlot() {
+    ConcurrentTestPool pool = new ConcurrentTestPool("failing pool", 2);
+    TestResource first = pool.get();
+    pool.armed = true;
+    pool.release.countDown();
+    pool.failure = new TentackleRuntimeException("cannot connect");
+
+    TentackleRuntimeException exception = expectThrows(TentackleRuntimeException.class, pool::get);
+    assertEquals(exception.getMessage(), "cannot connect");
+    assertEquals(pool.getSize(), 1);
+
+    // the slot is free again: the maximum size of 2 is not reached yet
+    pool.failure = null;
+    TestResource second = pool.get();
+    assertNotSame(second, first);
+    assertEquals(pool.getSize(), 2);
+    pool.shutdown();
+  }
+
+  /**
+   * A resource created while the pool was shut down must be closed and not lent.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void shutdownDuringConcurrentCreationClosesTheNewResource() throws Exception {
+    ConcurrentTestPool pool = new ConcurrentTestPool("shutdown pool", 0);
+    pool.get();
+    pool.armed = true;
+
+    CompletableFuture<TestResource> creator = CompletableFuture.supplyAsync(pool::get);
+    assertTrue(pool.creating.await(AWAIT_TIMEOUT, TimeUnit.MILLISECONDS));
+    pool.shutdown();
+    pool.release.countDown();
+
+    ExecutionException exception = expectThrows(ExecutionException.class,
+                                                () -> creator.get(AWAIT_TIMEOUT, TimeUnit.MILLISECONDS));
+    assertTrue(exception.getCause().getMessage().contains("shut down"), exception.getCause().getMessage());
+    TestResource orphan = pool.created.getLast();
+    long deadline = System.currentTimeMillis() + AWAIT_TIMEOUT;
+    while (orphan.isOpen() && System.currentTimeMillis() < deadline) {
+      Thread.onSpinWait();    // closed asynchronously
+    }
+    assertFalse(orphan.isOpen(), "resource created during shutdown was not closed");
+  }
+
+  /**
+   * Slots reserved for resources being created count against the maximum pool size.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void reservedSlotsCountAgainstTheMaximumSize() throws Exception {
+    ConcurrentTestPool pool = new ConcurrentTestPool("max pool", 2);
+    pool.get();
+    pool.armed = true;
+
+    CompletableFuture<TestResource> creator = CompletableFuture.supplyAsync(pool::get);
+    assertTrue(pool.creating.await(AWAIT_TIMEOUT, TimeUnit.MILLISECONDS));
+
+    TentackleRuntimeException exception = expectThrows(TentackleRuntimeException.class, pool::get);
+    assertTrue(exception.getMessage().contains("max. pool size"), exception.getMessage());
+
+    pool.release.countDown();
+    assertNotNull(creator.get(AWAIT_TIMEOUT, TimeUnit.MILLISECONDS));
+    pool.shutdown();
+  }
+
+  /**
+   * With an increment size greater than one, a pool at its maximum size must still use its free slots.
+   */
+  @Test
+  public void usesFreeSlotsAtMaximumSize() {
+    TestPool pool = new TestPool("increment pool", 1, 2, 1, 2);
+    TestResource first = pool.get();
+    TestResource second = pool.get();
+    assertEquals(pool.getSize(), 2);
+    second.open = false;
+    pool.put(second);                     // closed: removed, its slot becomes free
+    assertEquals(pool.getSize(), 1);
+
+    TestResource third = pool.get();      // used to fail with "max. pool size reached"
+    assertNotSame(third, first);
+    assertEquals(pool.getSize(), 2);
   }
 
 
@@ -281,9 +583,11 @@ public class AbstractPoolTest {
   private static class TestPool extends AbstractPool<TestResource> {
 
     private final AtomicInteger monitorCount = new AtomicInteger();   // number of monitor() invocations
-    private int createdCount;
+    private final AtomicInteger logSlotCountPerThreadInvocations = new AtomicInteger();
+    private final AtomicInteger createdCount = new AtomicInteger();   // atomic: slots may be created concurrently
     private boolean createOpen = true;
     private boolean slotsRemovable = true;
+    private boolean restoringMinimumSize = true;
     private volatile boolean reenterOnClose;    // resources re-enter the pool while closing
 
     private TestPool() {
@@ -294,8 +598,26 @@ public class AbstractPoolTest {
       super(name, 1, 1, 1, 0, 0, 0);
     }
 
+    private TestPool(String name, int maximumSize) {
+      super(name, 1, 1, 1, maximumSize, 0, 0);
+    }
+
+    private TestPool(String name, int initialSize, int minimumSize) {
+      super(name, initialSize, 1, minimumSize, 0, 0, 0);
+    }
+
+    private TestPool(String name, int initialSize, int incrementSize, int minimumSize, int maximumSize) {
+      super(name, initialSize, incrementSize, minimumSize, maximumSize, 0, 0);
+    }
+
+    @Override
+    public void logSlotCountPerThread(Logger.Level level) {
+      logSlotCountPerThreadInvocations.incrementAndGet();
+      super.logSlotCountPerThread(level);
+    }
+
     private int getCreatedCount() {
-      return createdCount;
+      return createdCount.get();
     }
 
     @Override
@@ -307,13 +629,20 @@ public class AbstractPoolTest {
     }
 
     @Override
+    protected void restoreMinimumSize(int num) {
+      if (restoringMinimumSize) {
+        super.restoreMinimumSize(num);
+      }
+    }
+
+    @Override
     protected boolean isSlotRemovable(PoolSlot<TestResource> slot) {
       return slotsRemovable && super.isSlotRemovable(slot);
     }
 
     @Override
     protected PoolSlot<TestResource> createSlot(int slotNumber) {
-      return new AbstractPoolSlot<>(this, slotNumber, new TestResource(this, ++createdCount, createOpen)) {
+      return new AbstractPoolSlot<>(this, slotNumber, new TestResource(this, createdCount.incrementAndGet(), createOpen)) {
         @Override
         protected TentackleRuntimeException createException(String msg) {
           return new TentackleRuntimeException(msg);
@@ -335,6 +664,53 @@ public class AbstractPoolTest {
     @Override
     protected TentackleRuntimeException createException(TestResource resource, String msg) {
       return new TentackleRuntimeException(resource + ": " + msg);
+    }
+  }
+
+
+  /**
+   * A {@link TestPool} creating its slots without holding the pool's monitor.<br>
+   * Once armed, the creation of a slot waits until released and may fail.
+   */
+  private static class ConcurrentTestPool extends TestPool {
+
+    private volatile boolean armed;                                     // true to wait in createSlot
+    private final CountDownLatch creating = new CountDownLatch(1);      // a thread waits in createSlot
+    private final CountDownLatch release = new CountDownLatch(1);       // let it continue
+    private volatile RuntimeException failure;                         // thrown by createSlot if set
+    private final List<TestResource> created = new CopyOnWriteArrayList<>();
+
+    private ConcurrentTestPool(String name, int maximumSize) {
+      super(name, maximumSize);
+    }
+
+    private ConcurrentTestPool(String name, int initialSize, int incrementSize, int minimumSize, int maximumSize) {
+      super(name, initialSize, incrementSize, minimumSize, maximumSize);
+    }
+
+    @Override
+    protected boolean isCreatingSlotsConcurrently() {
+      return true;
+    }
+
+    @Override
+    protected PoolSlot<TestResource> createSlot(int slotNumber) {
+      if (armed) {
+        assertFalse(Thread.holdsLock(this), "slot must be created without holding the pool's monitor");
+        creating.countDown();
+        try {
+          assertTrue(release.await(AWAIT_TIMEOUT, TimeUnit.MILLISECONDS), "not released");
+        }
+        catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+        }
+        if (failure != null) {
+          throw failure;
+        }
+      }
+      PoolSlot<TestResource> slot = super.createSlot(slotNumber);
+      created.add(slot.getPoolable());
+      return slot;
     }
   }
 

@@ -6,7 +6,7 @@
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed input the hope that it will be useful,
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
@@ -23,8 +23,8 @@ package org.tentackle.maven.plugin;
  */
 public class PropertyDescriptor {
 
-  private String input;         // some input value
-  private String converter;     // name of the converter singleton to locate via META-INF/services
+  private String input;         // the input value to the converter
+  private String converter;     // FQCN of the converter, or @FQCN to locate it via META-INF/services
   private String property;      // name of the generated property
 
   /**
@@ -37,7 +37,7 @@ public class PropertyDescriptor {
   }
 
   /**
-   * The converter.
+   * Gets the converter.
    *
    * @return the FQCN of the converter, or the META-INF service if beginning with {@code @}
    */
@@ -46,7 +46,7 @@ public class PropertyDescriptor {
   }
 
   /**
-   * Gets the name of the property to generate
+   * Gets the name of the property to generate.
    *
    * @return the property name
    */
@@ -54,14 +54,29 @@ public class PropertyDescriptor {
     return property;
   }
 
+  /**
+   * Sets the input value.
+   *
+   * @param input the input value to the converter
+   */
   public void setInput(String input) {
     this.input = input;
   }
 
+  /**
+   * Sets the converter.
+   *
+   * @param converter the FQCN of the converter, or the META-INF service if beginning with {@code @}
+   */
   public void setConverter(String converter) {
     this.converter = converter;
   }
 
+  /**
+   * Sets the name of the property to generate.
+   *
+   * @param property the property name
+   */
   public void setProperty(String property) {
     this.property = property;
   }

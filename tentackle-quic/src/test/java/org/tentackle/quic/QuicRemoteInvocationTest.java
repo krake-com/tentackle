@@ -73,7 +73,7 @@ public class QuicRemoteInvocationTest {
   }
 
 
-  @Test(dataProvider = "schemes")
+  @Test(dataProvider = "schemes", timeOut = 90000)
   public void invokesRemoteMethodsOverQuic(String scheme) throws Exception {
     Reporter.log("invokesRemoteMethodsOverQuic", true);
     EchoServiceImpl service = new EchoServiceImpl("echo-" + scheme);
@@ -99,7 +99,7 @@ public class QuicRemoteInvocationTest {
     }
   }
 
-  @Test(dataProvider = "schemes")
+  @Test(dataProvider = "schemes", timeOut = 60000)
   public void propagatesServerSideExceptions(String scheme) throws Exception {
     Reporter.log("propagatesServerSideExceptions", true);
     try (Endpoints endpoints = startEndpoints(scheme, new EchoServiceImpl("echo"), "")) {
@@ -115,7 +115,7 @@ public class QuicRemoteInvocationTest {
   /**
    * Each pooled TRIP connection is a separate QUIC stream on one and the same QUIC connection.
    */
-  @Test
+  @Test(timeOut = 60000)
   public void multiplexesPooledConnectionsAsQuicStreams() throws Exception {
     Reporter.log("multiplexesPooledConnectionsAsQuicStreams", true);
     try (Endpoints endpoints = startEndpoints(QuicTripTransport.PROTOCOL, new EchoServiceImpl("echo"),
@@ -142,7 +142,7 @@ public class QuicRemoteInvocationTest {
   /**
    * Concurrent calls must be dispatched independently &mdash; each on its own QUIC stream.
    */
-  @Test
+  @Test(timeOut = 90000)
   public void handlesConcurrentInvocations() throws Exception {
     Reporter.log("handlesConcurrentInvocations", true);
     final int callCount = 8;
@@ -172,7 +172,7 @@ public class QuicRemoteInvocationTest {
    * The client must keep it alive, otherwise the next invocation fails with
    * "connection closed by server".
    */
-  @Test
+  @Test(timeOut = 60000)
   public void survivesAnIdlePeriodLongerThanTheQuicIdleTimeout() throws Exception {
     Reporter.log("survivesAnIdlePeriodLongerThanTheQuicIdleTimeout", true);
     try (Endpoints endpoints = startEndpoints(QuicTripTransport.PROTOCOL, new EchoServiceImpl("echo"),
@@ -194,7 +194,7 @@ public class QuicRemoteInvocationTest {
    * call: opening a pooled stream waits for the peer's credits, which used to be given up on an
    * interrupt that had nothing to do with the connection.
    */
-  @Test
+  @Test(timeOut = 60000)
   public void survivesAnInterruptOfTheCallingThread() throws Exception {
     Reporter.log("survivesAnInterruptOfTheCallingThread", true);
     try (Endpoints endpoints = startEndpoints(QuicTripTransport.PROTOCOL, new EchoServiceImpl("echo"), "")) {
@@ -221,11 +221,12 @@ public class QuicRemoteInvocationTest {
   /**
    * Client and server must agree on the ALPN id, otherwise the QUIC handshake is refused.
    */
-  @Test
+  @Test(timeOut = 60000)
   public void rejectsClientWithMismatchingAlpnId() throws Exception {
     Reporter.log("rejectsClientWithMismatchingAlpnId", true);
     try (Endpoints endpoints = startEndpoints(QuicTripTransport.PROTOCOL, new EchoServiceImpl("echo"), "")) {
-      URI uri = URI.create(QuicTripTransport.PROTOCOL + "://localhost:" + endpoints.port() + "?alpnid=nosuchprotocol");
+      URI uri = URI.create(QuicTripTransport.PROTOCOL + "://localhost:" + endpoints.port() +
+                           "?alpnid=nosuchprotocol&certcheck=false");
       Transport client = TripFactory.getInstance().createTransport(uri);
       try {
         expectThrows(RuntimeException.class, client::getConnection);
@@ -274,8 +275,9 @@ public class QuicRemoteInvocationTest {
     assertTrue(server.isAccepting());
     server.getRegistry().register(service, "echo");
 
+    // these tests are not about certificate checking, and the server's certificate is self-signed
     Transport client = TripFactory.getInstance().createTransport(URI.create(
-      scheme + "://localhost:" + port + "?idle=1" + clientParameters));
+      scheme + "://localhost:" + port + "?idle=1&certcheck=false" + clientParameters));
     return new Endpoints(server, client, port);
   }
 

@@ -35,13 +35,17 @@ interface SessionThreadLocalHolder {
 /**
  * The session.<br>
  * Describes a persistence and security context.
+ * <p>
+ * The session is location-transparent: the database is either connected to the current JVM
+ * (<em>local</em> session) or reached via a remote server (<em>remote</em> session), see {@link #isRemote()}.
+ * The implementation is provided by the database layer and created via the {@link SessionFactory}.
  *
  * @author harald
  */
 public interface Session extends Comparable<Session>, Poolable<Session> {
 
   /**
-   * Gets the session used by the current thread.<br>
+   * Gets the session used by the current thread.
    *
    * @return the session, null if the current thread is not using a session
    */
@@ -65,7 +69,7 @@ public interface Session extends Comparable<Session>, Poolable<Session> {
   }
 
   /**
-   * Asserts that a thread-local session is set.<br>
+   * Asserts that a thread-local session is set.
    *
    * @throws PersistenceException if the thread-local session is null
    */
@@ -74,7 +78,7 @@ public interface Session extends Comparable<Session>, Poolable<Session> {
   }
 
   /**
-   * Gets the thread-local session.<br>
+   * Gets the thread-local session.
    *
    * @return the session, never null
    * @throws PersistenceException if the thread-local session is null
@@ -123,7 +127,7 @@ public interface Session extends Comparable<Session>, Poolable<Session> {
    * The method must invoke <code>obj.setSession()</code> only if the session really differs.
    * This prevents infinite loops in object circular references.
    *
-   * @param obj the database object, null if ignore
+   * @param obj the session-dependable object, null to ignore
    */
   default void applyTo(SessionDependable obj) {
     if (obj != null && obj.getSession() != this)  {
@@ -132,9 +136,10 @@ public interface Session extends Comparable<Session>, Poolable<Session> {
   }
 
   /**
-   * Applies this session to a collection of session dependables.
+   * Applies this session to a collection of session dependables.<br>
+   * For a {@link TrackedList}, the session is applied to the removed objects as well.
    *
-   * @param list the collection of session dependables
+   * @param list the collection of session dependables, null to ignore
    */
   @SuppressWarnings("unchecked")
   default void applyTo(Collection<? extends SessionDependable> list) {
@@ -186,7 +191,7 @@ public interface Session extends Comparable<Session>, Poolable<Session> {
   void groupWith(int sessionId);
 
   /**
-   * Close a session.<br>
+   * Closes a session.<br>
    * Closing an already closed session is okay and ignored.<br>
    * If this session is the root of a session group, all grouped sessions will be ungrouped.
    * <p>
@@ -241,13 +246,13 @@ public interface Session extends Comparable<Session>, Poolable<Session> {
    * Starts a transaction.<br>
    * Does nothing if a transaction is already running!
    * <p>
-   * If a transaction is already running and the transactionIsolation or readOnly mode
+   * If a transaction is already running and the transaction isolation or writability
    * does not correspond to the values at the effective beginning of the transaction,
    * a {@link PersistenceException} is thrown.
    *
    * @param txName is the optional transaction name, null for none
    * @param transactionIsolation the transaction isolation level, null or {@link TransactionIsolation#DEFAULT} if default
-   * @param transactionWritability the transaction writabilty, null or {@link TransactionWritability#DEFAULT} if default
+   * @param transactionWritability the transaction writability, null or {@link TransactionWritability#DEFAULT} if default
    *
    * @return the tx-voucher, 0 if no tx begun
    */
@@ -264,7 +269,8 @@ public interface Session extends Comparable<Session>, Poolable<Session> {
   long begin(String txName);
 
   /**
-   * Starts a transaction.<br> Does nothing if a transaction is already running!
+   * Starts a transaction.<br>
+   * Does nothing if a transaction is already running!
    *
    * @return the transaction voucher, 0 if no transaction begun
    */
@@ -335,6 +341,46 @@ public interface Session extends Comparable<Session>, Poolable<Session> {
    * @return the nesting level, starting at 1, 0 if no transaction running
    */
   int getTxLevel();
+
+  /**
+   * Defers or immediately checks deferrable constraints for the rest of the current
+   * transaction.<br>
+   * Requires a running transaction and a backend supporting it (see the {@code deferred}
+   * attribute of {@code @Transaction} for the declarative equivalent).
+   * The state is reset to false after each begin/commit/rollback.
+   *
+   * @param deferred true to defer deferrable constraints, false to check them immediately again
+   * @throws PersistenceException if no transaction is running or the backend does not support it
+   */
+  void setConstraintsDeferred(boolean deferred);
+
+  /**
+   * Gets the state for constraintsDeferred.
+   *
+   * @return true if deferrable constraints are deferred, false if checked immediately (default)
+   */
+  boolean isConstraintsDeferred();
+
+  /**
+   * Limits the statement history for the rest of the current transaction.<br>
+   * Within a transaction, all executed statements are kept for diagnostic purposes, for example
+   * to be logged if the transaction is rolled back or times out. For large transactions, such as bulk inserts,
+   * this costs memory. With a limit, only the most recent statements are kept.
+   * Requires a running transaction (see the {@code statementHistoryLimit} attribute of {@code @Transaction}
+   * for the declarative equivalent).
+   * The limit is reset to unlimited after each begin/commit/rollback.
+   *
+   * @param limit the maximum number of most recent statements to keep, 0 to keep none, &lt; 0 for unlimited
+   * @throws PersistenceException if no transaction is running
+   */
+  void setStatementHistoryLimit(int limit);
+
+  /**
+   * Gets the statement history limit of the current transaction.
+   *
+   * @return the maximum number of statements kept, &lt; 0 if unlimited (default)
+   */
+  int getStatementHistoryLimit();
 
   /**
    * Runs code within a transaction.
@@ -429,8 +475,8 @@ public interface Session extends Comparable<Session>, Poolable<Session> {
   int getInstanceNumber();
 
   /**
-   * Sets the exclusive owner thread. <p> Allows detecting other threads
-   * accidentally using this session.
+   * Sets the exclusive owner thread.<br>
+   * Allows detecting other threads accidentally using this session.
    *
    * @param ownerThread the owner thread, null to clear
    */
@@ -460,7 +506,7 @@ public interface Session extends Comparable<Session>, Poolable<Session> {
 
   /**
    * Sets the auto keep-alive interval.<br>
-   * If set, the session will be setAlive all keepAliveInterval milliseconds
+   * If set, {@link #setAlive(boolean)} is invoked every keepAliveInterval milliseconds
    * by the {@link SessionKeepAliveDaemon}.
    * Useful for remote sessions to prevent them from being closed by
    * the remote server due to timeout.

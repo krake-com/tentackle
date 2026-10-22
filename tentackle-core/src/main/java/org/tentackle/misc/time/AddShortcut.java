@@ -29,7 +29,9 @@ import java.util.regex.Pattern;
  * Shortcut to add some value.
  * <p>
  * Example: {@code "+10h"} adds 10 hours.<br>
- * If the type is missing (e.g. {@code "-10"}), it defaults to {@code d} (days) for types containing a date
+ * The supported units are {@code y} (years), {@code M} (months, or minutes for types without a date),
+ * {@code m} (minutes, or months for types without a time), {@code d} (days), {@code h} (hours) and {@code s} (seconds).<br>
+ * If the unit is missing (e.g. {@code "-10"}), it defaults to {@code d} (days) for types containing a date
  * or to {@code h} (hours) otherwise.
  */
 public class AddShortcut implements SmartDateTimeParser.Shortcut {

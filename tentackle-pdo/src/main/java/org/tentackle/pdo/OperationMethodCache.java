@@ -42,8 +42,9 @@ public class OperationMethodCache<T extends Operation<T>> {
 
 
   /**
-   * Gets the cache for given class.
+   * Gets the cache for the given class.
    *
+   * @param <T> the operation type
    * @param effectiveClass the interceptable class
    * @return the method cache
    */
@@ -82,16 +83,21 @@ public class OperationMethodCache<T extends Operation<T>> {
    * @param invocationHandler the invocation handler
    * @param method the original method of the interface
    * @param args the method's args
-   * @return the methods return value
+   * @return the method's return value
    * @throws Throwable if invocation fails
    */
   public Object invoke(OperationInvocationHandler<T> invocationHandler, Method method, Object[] args) throws Throwable {
-    OperationMethod operationMethod = methodCache.computeIfAbsent(method, m -> {
-      OperationMethodCacheInfo info = invocationHandler.determineInvocation(method);
-      InterceptableMethod interceptableMethod = info.delegateClass() == null ? null :
-                                                InterceptionUtilities.getInstance().createInterceptableMethod(clazz, info.delegateClass(), method);
-      return new OperationMethod(interceptableMethod, info.invocation());
-    });
+    // get() first: the lambda below captures the invocation handler and would be allocated on every invocation,
+    // although the method is missing only on its first invocation
+    OperationMethod operationMethod = methodCache.get(method);
+    if (operationMethod == null) {
+      operationMethod = methodCache.computeIfAbsent(method, m -> {
+        OperationMethodCacheInfo info = invocationHandler.determineInvocation(m);
+        InterceptableMethod interceptableMethod = info.delegateClass() == null ? null :
+                                                  InterceptionUtilities.getInstance().createInterceptableMethod(clazz, info.delegateClass(), m);
+        return new OperationMethod(interceptableMethod, info.invocation());
+      });
+    }
     return operationMethod.invocation.invoke(invocationHandler, operationMethod.method, args);
   }
 

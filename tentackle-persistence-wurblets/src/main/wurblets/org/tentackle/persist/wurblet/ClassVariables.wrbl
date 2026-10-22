@@ -32,7 +32,7 @@ For more options, see {\@link DbModelWurblet}.
       String strAlias = alias != null ? "\"" + alias + "\"" : "null";
       String superCV = "null";
 
-      List<Relation> joins = getEagerRelations();
+      boolean withEagerJoins = !getEagerJoinTree().isEmpty();
 
       if (superEntity != null && !superEntity.getInheritanceType().isMappingToNoTable() ||
           !subEntities.isEmpty()) {
@@ -48,7 +48,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
         }
       }
-      else if (!joins.isEmpty()) {
+      else if (withEagerJoins) {
 ]@
   \@SuppressWarnings({"unchecked", "rawtypes"})
 @[
@@ -61,88 +61,7 @@ For more options, see {\@link DbModelWurblet}.
                     @(strAlias)@,
                     @(superCV)@,
 @[
-      if (!joins.isEmpty()) {
-        String poImpl = deriveClassNameForEntity(getEntity());
-]@
-                    List.of(
-@[
-        int joinCount = 0;
-        for (Relation join: joins) {
-          if (join.getMethodArgs().size() > 1) {
-            throw new ModelException("eager relations with 'args=...' are currently not supported", join);
-          }
-          joinCount++;
-          String joinClass = join.getForeignEntity().getName();
-          String joinAlias = join.getForeignEntity().getTopSuperEntity().getTableAlias();
-          if (join.getForeignEntity().isAbstract()) {
-            if (join.getRelationType() == RelationType.LIST) {
-]@
-                      new Join<>(JoinType.LEFT, "@(alias)@.id", "e_@(joinCount)@.@(join.getForeignAttribute().getColumnName())@", @(joinClass)@.class, "e_@(joinCount)@",
-                        (@(pdoName)@ @(alias)@, @(joinClass)@ @(joinAlias)@) -> {
-                          @(poImpl)@ po = (@(poImpl)@) @(alias)@.getPersistenceDelegate();
-                          po.@(join.getGetterName())@Blunt().add(@(joinAlias)@);
-                        }
-                      @(joinCount < joins.size() ? ")," : ")")@
-@[
-            }
-            else {
-]@
-                      new Join<>(JoinType.LEFT, "@(alias)@.@(join.getAttribute().getColumnName())@", "e_@(joinCount)@.id", @(joinClass)@.class, "e_@(joinCount)@",
-                        (@(pdoName)@ @(alias)@, @(joinClass)@ @(joinAlias)@) -> {
-                          @(alias)@.@(join.getSetterName())@(@(joinAlias)@);
-                        }
-                      @(joinCount < joins.size() ? ")," : ")")@
-@[
-            }
-          }
-          else  { // non-abstract
-            if (join.getRelationType() == RelationType.LIST) {
-]@
-                      new Join<>(JoinType.LEFT, "@(alias)@.id", "e_@(joinCount)@.@(join.getForeignAttribute().getColumnName())@", @(joinClass)@.class, "e_@(joinCount)@",
-                        (@(alias)@, @(joinAlias)@) -> {
-@[
-              if (join.isReversed()) {
-]@
-                          ((@(poImpl)@) @(alias)@.getPersistenceDelegate()).@(join.getSetterName())@@(join.isSerialized()?"Blunt":"")@(@(joinAlias)@);
-@[
-              }
-              else {
-]@
-                          ((@(poImpl)@) @(alias)@.getPersistenceDelegate()).@(join.getGetterName())@Blunt().addBlunt(@(joinAlias)@);
-@[
-                if (join.getLinkMethodName() != null) {
-                  String joinImpl = deriveClassNameForEntity(join.getForeignEntity());
-]@
-                          ((@(joinImpl)@) @(joinAlias)@.getPersistenceDelegate()).@(createRelationUpdateReferenceCode(join, alias, true))@;
-@[
-                }
-              }
-]@
-                        }
-                      @(joinCount < joins.size() ? ")," : ")")@
-@[
-            }
-            else {
-]@
-                      new Join<>(JoinType.LEFT, "@(alias)@.@(join.getAttribute().getColumnName())@", "e_@(joinCount)@.id", @(joinClass)@.class, "e_@(joinCount)@",
-                        (@(alias)@, @(joinAlias)@) -> {
-                          @(alias)@.@(join.getSetterName())@@(join.isSerialized()?"Blunt":"")@(@(joinAlias)@);
-                        }
-                      @(joinCount < joins.size() ? ")," : ")")@
-@[
-            }
-          }
-        }
-]@
-                    )
-                );
-@[
-      }
-      else {
-]@
-                    null);
-@[
-      }
+      out.print(createEagerJoins());
 ]@
 
   \@Override

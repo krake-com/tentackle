@@ -83,12 +83,14 @@ public interface BindableElement {
 
   /**
    * Sets the bound field.
+   *
    * @param field the field, null to clear
    */
   void setField(Field field);
 
   /**
    * Gets the getter method.
+   *
    * @return the method, null if none
    */
   Method getGetter();
@@ -140,20 +142,25 @@ public interface BindableElement {
   void addBindingOptions(String options);
 
   /**
-   * Gets the object of this element.
+   * Gets the object of this element.<br>
+   * The getter takes precedence over the field.
    *
    * @param parent the parent containing this element
    * @return the object of this member
+   * @throws BindingException if the object could not be retrieved
    */
   Object getObject(Object parent);
 
   /**
    * Sets the object of this member.<br>
+   * The setter takes precedence over the "from"-method, which takes precedence over the field.
+   * A null value for a primitive type is converted to {@code false}, blank or 0.
    * The method does nothing if the element is readonly.
    *
    * @param parent the parent containing this member
    * @param value the object to set
-   * @return the new parent if value was updated via "from"- or "with"-method
+   * @return the new parent if value was updated via "from"- or "with"-method, else null
+   * @throws BindingException if the object could not be set
    */
   Object setObject(Object parent, Object value);
 

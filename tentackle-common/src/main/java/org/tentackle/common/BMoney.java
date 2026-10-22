@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.common;
 
 import java.io.Serial;
@@ -25,9 +24,13 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 
 /**
- * Money value derived from BigDecimal.<br>
- *
+ * Money value derived from BigDecimal.
+ * <p>
  * A money value has a distinct and fixed scale that cannot change.
+ * Notice that only the arithmetic methods declared in this class return a {@code BMoney}.
+ * The methods inherited from {@link BigDecimal} return a plain {@link BigDecimal}.
+ * The methods involving a {@code double} are computed in double precision and
+ * are thus subject to rounding errors for very large values.
  *
  * @author harald
  */
@@ -41,7 +44,7 @@ public class BMoney extends BigDecimal implements Cloneable {
    * Creates a BMoney value.
    *
    * @param val double-representation of the number
-   * @param scale the digits after the comma (the value will be rounded to)
+   * @param scale the digits after the decimal point (the value will be rounded to)
    */
   public BMoney (double val, int scale)   {
     super(BigDecimal.valueOf(val).setScale(scale, RoundingMode.HALF_UP).unscaledValue(), scale);
@@ -51,7 +54,7 @@ public class BMoney extends BigDecimal implements Cloneable {
    * Creates a BMoney value.
    *
    * @param  val     the string
-   * @param  scale   digits after the comma (the value will be rounded to)
+   * @param  scale   digits after the decimal point (the value will be rounded to)
    */
   public BMoney (String val, int scale)  {
     super(new BigDecimal(val).setScale(scale, RoundingMode.HALF_UP).unscaledValue(), scale);
@@ -60,7 +63,7 @@ public class BMoney extends BigDecimal implements Cloneable {
   /**
    * Creates a zero BMoney value.
    *
-   * @param  scale the digits after comma
+   * @param  scale the digits after the decimal point
    */
   public BMoney (int scale)  {
     super(new BigInteger(0, new byte[] {}), scale);
@@ -68,11 +71,10 @@ public class BMoney extends BigDecimal implements Cloneable {
 
   /**
    * Creates a BMoney value from a BigInteger.<br>
-   *
-   * The scale sets the comma within the given integer.
+   * The scale sets the decimal point within the given integer, i.e., the integer is the unscaled value.
    *
    * @param intVal the big integer
-   * @param scale  the digits after comma
+   * @param scale  the digits after the decimal point
    */
   public BMoney (BigInteger intVal, int scale) {
     super(intVal, scale);
@@ -80,10 +82,10 @@ public class BMoney extends BigDecimal implements Cloneable {
 
 
   /**
-   * Creates a BMoney from a BMoney (useful to rescale)
+   * Creates a BMoney from a BMoney (useful to rescale).
    *
    * @param val the BMoney value
-   * @param scale the digits after comma the value should be rounded to
+   * @param scale digits after the decimal point the value should be rounded to
    */
   public BMoney (BMoney val, int scale) {
     super(val.setScale(scale, RoundingMode.HALF_UP).unscaledValue(), scale);
@@ -91,7 +93,8 @@ public class BMoney extends BigDecimal implements Cloneable {
 
 
   /**
-   * Creates a BMoney from a BigDecimal.
+   * Creates a BMoney from a BigDecimal.<br>
+   * The scale of the decimal value is taken over.
    *
    * @param val the decimal value
    */
@@ -111,6 +114,8 @@ public class BMoney extends BigDecimal implements Cloneable {
 
   /**
    * Clones a BMoney value.
+   *
+   * @return the clone
    */
   @Override
   public BMoney clone() {
@@ -177,8 +182,9 @@ public class BMoney extends BigDecimal implements Cloneable {
 
 
   /**
-   * Multiplies this BMoney by a double and returns a new object.
-   * This object remains unchanged.
+   * Multiplies this BMoney by a double and returns a new object.<br>
+   * This object remains unchanged. The product is computed in double precision
+   * and rounded to the scale of this value.
    *
    * @param val the double to multiply with
    * @return the product of this and given value
@@ -189,11 +195,11 @@ public class BMoney extends BigDecimal implements Cloneable {
 
 
   /**
-   * Divides a BMoney by this value and returns a new object.
-   * This object remains unchanged.
+   * Divides this value by the given money value.<br>
+   * This object remains unchanged. The quotient is computed in double precision.
    *
-   * @param val the money value to multiply
-   * @return the quotient of this and given value
+   * @param val the divisor
+   * @return the quotient as a double
    */
   public double divide(BMoney val) {
     return doubleValue() / val.doubleValue();
@@ -201,8 +207,9 @@ public class BMoney extends BigDecimal implements Cloneable {
 
 
   /**
-   * Divides a BMoney by double and returns a new object.
-   * This object remains unchanged.
+   * Divides this BMoney by a double and returns a new object.<br>
+   * This object remains unchanged. The quotient is computed in double precision
+   * and rounded to the scale of this value.
    *
    * @param val the value to divide this BMoney by
    * @return the quotient of this and given value
@@ -246,10 +253,11 @@ public class BMoney extends BigDecimal implements Cloneable {
 
   /**
    * Converts a money value to a string of digits as words.<br>
-   * The digits after the comma are ignored.
+   * The digits after the decimal point and the sign are ignored.
+   * The words are taken from {@link CommonCommonBundle} for the current locale.
    * Nice to print checks.
    * <pre>
-   * Example: 234,77 will become "two three four"
+   * Example: 234.77 will become "two three four"
    * </pre>
    *
    * @return the value as words
@@ -277,7 +285,7 @@ public class BMoney extends BigDecimal implements Cloneable {
 
 
   /**
-   * Check the scale of the given money value.
+   * Checks the scale of the given money value.
    * If it does not match the scale of this object,
    * scale it to the current scale of this object.
    *

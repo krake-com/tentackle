@@ -68,6 +68,15 @@ public interface Index extends ModelElement, Commented {
   String getFilterCondition();
 
   /**
+   * Gets the deferrability of this index's unique constraint.<br>
+   * Only meaningful for unique indexes: {@link #validate()} rejects a deferrability other than
+   * {@link Deferrability#NOT_DEFERRABLE} on a non-unique index.
+   *
+   * @return the deferrability, {@link Deferrability#NOT_DEFERRABLE} if none
+   */
+  Deferrability getDeferrability();
+
+  /**
    * Gets the index attributes.
    *
    * @return the attributes
@@ -87,6 +96,7 @@ public interface Index extends ModelElement, Commented {
    * @param backend the backend to create SQL code for
    * @param entity the entity to create the index for
    * @return the SQL code
+   * @throws org.tentackle.sql.BackendException if the index is not optional and not supported by the backend
    */
   String sqlCreateIndex(Backend backend, Entity entity);
 

@@ -46,7 +46,7 @@ public class MethodArgument {
   }
 
   /**
-   * Creates a method argument for another foreign attribute as the relation points to.
+   * Creates a method argument for a foreign attribute other than the one the relation points to.
    *
    * @param relation relation for delayed determination of the foreign attribute
    * @param foreignAttributeName the name of the foreign attribute
@@ -59,7 +59,7 @@ public class MethodArgument {
   }
 
   /**
-   * Creates a method argument for another foreign attribute as the relation points to.<br>
+   * Creates a fixed-value method argument for a foreign attribute other than the one the relation points to.<br>
    * If value is a String it must be enclosed in double quotes.
    *
    * @param relation relation for delayed determination of the foreign attribute
@@ -84,7 +84,7 @@ public class MethodArgument {
   /**
    * Gets the foreign attribute.
    *
-   * @return the attribute of the relation's entity (never null)
+   * @return the attribute of the foreign entity, null if not (yet) resolvable
    */
   public Attribute getForeignAttribute() {
     if (foreignAttribute == null) {
@@ -111,7 +111,7 @@ public class MethodArgument {
   /**
    * Gets the name of the foreign attribute.
    *
-   * @return the name of the foreign attribute, null not set and no foreign attribute
+   * @return the name of the foreign attribute, null if not set and no foreign attribute
    */
   public String getForeignAttributeName() {
     if (foreignAttributeName == null && foreignAttribute != null) {
@@ -132,7 +132,7 @@ public class MethodArgument {
   /**
    * Gets the fixed value.
    *
-   * @return the value (only valid if isValid() == true)
+   * @return the value (only valid if {@link #isValue()} is true)
    */
   public String getValue() {
     return value;
@@ -140,6 +140,9 @@ public class MethodArgument {
 
   /**
    * Gets the string for the method argument.
+   * <p>
+   * This is the fixed value, the name of the local attribute, or the getter invocation
+   * if the attribute is inherited or declared {@code super}.
    *
    * @return the argument string
    */
@@ -150,7 +153,7 @@ public class MethodArgument {
     else {
       if (attribute.getOptions().isFromSuper() ||
           !attribute.getEntity().equals(relation.getEntity())) {
-        return "get" + StringHelper.firstToUpper(attribute.getName()) + "()";
+        return attribute.getGetterName() + "()";
       }
       else {
         return attribute.getName();

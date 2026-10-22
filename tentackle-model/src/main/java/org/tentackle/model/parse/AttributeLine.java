@@ -27,7 +27,6 @@ import java.util.StringTokenizer;
 /**
  * The attribute definition line.
  * <p>
- *
  * An attribute line is defined as follows:
  * <pre>
  * javaType[&lt;innerType&gt;][(size[,scale])] javaName columnName [comment] [\[options\]]
@@ -35,24 +34,27 @@ import java.util.StringTokenizer;
  *
  * Where:
  * <ul>
- * <li>javaType - is the java class name or primitive. Allowed types are:
+ * <li>javaType - is the Java class name or primitive. Allowed types are:
  *   <ul>
- *     <li>primitives: boolean, byte, char, short, int, long, float, double</li>
- *     <li>classes: Boolean, Byte, Character, Short, Integer, Long, Float, Double, BigDecimal, BMoney, DMoney, Binary, Date, Time, Timestamp, String</li>
+ *     <li>any type known to the {@link org.tentackle.sql.DataTypeFactory}, such as the primitives,
+ *     their wrappers, String, BigDecimal, BMoney, DMoney, Binary, the java.sql and java.time types, UUID or I18NText</li>
+ *     <li>an application-specific type with an inner type (see {@code org.tentackle.misc.Convertible})</li>
  *   </ul>
  * </li>
  * <li>innerType: optional inner/generic type</li>
- * <li>size: optional number of columns or width or non-fractional digits if numeric</li>
+ * <li>size: optional number of columns or width or non-fractional digits if numeric.
+ * May be separated from the type by whitespace.</li>
  * <li>scale: optional scale (numeric types only)</li>
  * <li>javaName: the name used in Java sources (must start lowercase)</li>
  * <li>columnName: the database column name</li>
  * <li>comment: the optional comment</li>
- * <li>[options]: the options enclosed in double quotes. Options beginning with an '@' are treated as annotations</li>
+ * <li>[options]: the options enclosed in square brackets. Options beginning with an '@' are treated as annotations,
+ * options beginning with a '#' as stereotypes. Brackets and parentheses may be escaped by a backslash.</li>
  * </ul>
  * <p>
  * Examples:
  * <pre>
- * long             subsidiaryId    subsidiary_id     subsidiary ID [contextid]
+ * long             subsidiaryId    subsidiary_id     subsidiary ID [context]
  * String(10)       invoiceNo       invoice_no        the unique invoice number [uc]
  * Date             invoiceDate     invoice_date      the invoice's date
  * long             customerId      customer_id       object ID of the customer [uc]
@@ -114,7 +116,7 @@ public class AttributeLine extends SingleLine {
 
     StringTokenizer stok = new StringTokenizer(text, " \t");
     StringBuilder obuf = new StringBuilder(); // comment and option buffer
-    StringBuilder ssBuf = null;               // size and/or scale buffer (in case (size,scale) contains blanks or is sep. by blanks
+    StringBuilder ssBuf = null;               // size and/or scale buffer (in case (size,scale) contains blanks or is separated by blanks)
 
     // parse tokens
     while (stok.hasMoreTokens()) {
@@ -128,7 +130,7 @@ public class AttributeLine extends SingleLine {
           ssBuf = new StringBuilder();
         }
         if (ssBuf != null) {
-          // collect until the closing brace, which may be within this or one of the following tokens
+          // collect until the closing parenthesis, which may be within this or one of the following tokens
           ssBuf.append(token);
           if (ssBuf.charAt(ssBuf.length() - 1) == ')') {
             extractSizeAndOrScale(ssBuf.substring(1, ssBuf.length() - 1));
@@ -143,7 +145,7 @@ public class AttributeLine extends SingleLine {
         columnName = token;
       }
       else {
-        // still comment
+        // comment and options
         obuf.append(' ').append(token);
       }
     }
@@ -159,9 +161,9 @@ public class AttributeLine extends SingleLine {
 
 
   /**
-   * Gets the java type name.
+   * Gets the Java type name.
    *
-   * @return the java name, never null
+   * @return the Java type name, never null
    * @throws ModelException if not parsed
    */
   public String getJavaType() throws ModelException {
@@ -205,7 +207,7 @@ public class AttributeLine extends SingleLine {
   /**
    * Gets the Java attribute name.
    *
-   * @return the java name
+   * @return the Java name
    * @throws ModelException if not parsed
    */
   public String getJavaName() throws ModelException {
@@ -249,9 +251,9 @@ public class AttributeLine extends SingleLine {
 
 
   /**
-   * Parse comment and options.
+   * Parses the comment and options.
    *
-   * @param text the comment string
+   * @param text the comment and options text
    */
   private void parseCommentAndOptions(String text) {
     StringBuilder commentBuf = new StringBuilder();
@@ -266,7 +268,7 @@ public class AttributeLine extends SingleLine {
 
 
   /**
-   * Extracts the java type, optional inner type and optional size/scale.
+   * Extracts the Java type, optional inner type and optional size/scale.
    *
    * @param token the token
    * @throws ModelException if parsing failed
@@ -316,8 +318,8 @@ public class AttributeLine extends SingleLine {
       }
     }
     else {
-      // ever thrown??
-      throw createModelException("java type is empty");
+      // cannot happen: StringTokenizer never returns empty tokens
+      throw createModelException("Java type is empty");
     }
   }
 

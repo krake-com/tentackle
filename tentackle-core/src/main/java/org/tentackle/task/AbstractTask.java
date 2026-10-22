@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Default task.
+ * Base implementation of a task.<br>
+ * The task listeners are fired when the dispatcher sets the started and completed timestamps.
+ * Tasks are equal if their ids are equal.
  *
  * @author harald
  */
@@ -45,7 +47,7 @@ public abstract class AbstractTask implements Task {
 
 
   /**
-   * Parent constructor.
+   * Creates a task.
    */
   public AbstractTask() {
     // see -Xlint:missing-explicit-ctor since Java 16
@@ -106,6 +108,13 @@ public abstract class AbstractTask implements Task {
     return repeat;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Schedules the task for the first execution after the given interval.
+   *
+   * @throws IllegalArgumentException if the interval is not positive
+   */
   @Override
   public void setRepeatInterval(long repeat) {
     if (repeat <= 0) {

@@ -23,7 +23,7 @@ import java.util.Collection;
 /**
  * Enhanced collection.
  * <p>
- * Adds immutable and simple equals and hashcode.
+ * Adds the {@link Immutable} contract and an option for identity-based {@code equals} and {@code hashCode}.
  *
  * @author harald
  * @param <E> the element type
@@ -34,7 +34,7 @@ public interface ImmutableCollection<E> extends Collection<E>, Immutable {
    * Sets the immutable state.
    *
    * @param immutable true if object is immutable
-   * @param withElements true if set elements as well if they implement {@link Immutable}
+   * @param withElements true to apply to all elements as well that implement {@link Immutable}
    */
   void setImmutable(boolean immutable, boolean withElements);
 
@@ -42,21 +42,21 @@ public interface ImmutableCollection<E> extends Collection<E>, Immutable {
    * Makes this collection finally immutable.<br>
    * Any attempt to make it mutable again results in an {@link ImmutableException}.
    *
-   * @param withElements true if set elements as well if they implement {@link Immutable}
+   * @param withElements true to apply to all elements as well that implement {@link Immutable}
    */
   void setFinallyImmutable(boolean withElements);
 
   /**
-   * Sets whether the equals() and hashCode() methods should refer to the list instance alone.
+   * Sets whether the {@code equals()} and {@code hashCode()} methods should refer to the collection instance alone.
    *
-   * @param simpleEqualsAndHashCode true if instance alone, false if check list contents as well
+   * @param simpleEqualsAndHashCode true if instance alone, false if check the contents as well
    */
   void setSimpleEqualsAndHashCode(boolean simpleEqualsAndHashCode);
 
   /**
-   * Returns whether the equals() and hashCode() methods should refer to the list instance alone.
+   * Returns whether the {@code equals()} and {@code hashCode()} methods should refer to the collection instance alone.
    *
-   * @return true if instance alone, false if check list contents as well (default)
+   * @return true if instance alone, false if check the contents as well (default)
    */
   boolean isSimpleEqualsAndHashCode();
 

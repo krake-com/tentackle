@@ -28,7 +28,8 @@ interface DbClassVariablesFactoryHolder {
 
 
 /**
- * Factory for class variables.
+ * Factory for class variables.<br>
+ * Replaced by a PDO-aware factory in the persistence layer.
  */
 @Service(DbClassVariablesFactory.class)   // defaults to self
 public class DbClassVariablesFactory {
@@ -57,6 +58,7 @@ public class DbClassVariablesFactory {
    * @param classId the unique class id, 0 if abstract
    * @param tableName is the SQL table name
    * @param <P> the persistence type
+   * @return the class variables
    */
   public <P extends AbstractDbObject<P>> DbObjectClassVariables<P> dbPoCv(Class<P> clazz, int classId, String tableName) {
     return new DbObjectClassVariables<>(clazz, classId, tableName);
@@ -68,6 +70,7 @@ public class DbClassVariablesFactory {
    *
    * @param clazz is the class of the derived AbstractDbObject
    * @param <P> the persistence type
+   * @return the class variables
    */
   public <P extends AbstractDbObject<P>> DbObjectClassVariables<P> dbPoCv(Class<P> clazz) {
     return new DbObjectClassVariables<>(clazz);
@@ -78,6 +81,7 @@ public class DbClassVariablesFactory {
    *
    * @param clazz is the class of the derived AbstractDbOperation
    * @param <P> the persistent operation class
+   * @return the class variables
    */
   public <P extends AbstractDbOperation<P>> DbOperationClassVariables<P> dbOpCv(Class<P> clazz)  {
     return new DbOperationClassVariables<>(clazz);

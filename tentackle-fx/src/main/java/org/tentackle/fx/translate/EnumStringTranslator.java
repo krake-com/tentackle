@@ -24,7 +24,9 @@ import org.tentackle.fx.ValueTranslatorService;
 import java.util.function.Function;
 
 /**
- * Abstract base class for enum translators.
+ * Enum translator for text components.<br>
+ * The view shows the enum's {@code toString()}, which may be localized,
+ * and the input is mapped back by comparing with {@code toString()} of all enum constants.
  *
  * @author harald
  * @param <T> the enum type

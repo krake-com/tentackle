@@ -37,7 +37,8 @@ interface RdcFactoryHolder {
 
 
 /**
- * A factory for FX-RDC-related stuff.
+ * Factory for the RDC controllers, tree items, cells, and table popups.<br>
+ * Replaceable via {@code @Service(RdcFactory.class)}.
  *
  * @author harald
  */
@@ -54,59 +55,59 @@ public interface RdcFactory {
 
 
   /**
-   * Creates a CRUD controller for a pdo.
+   * Creates a CRUD controller for a PDO.
    *
-   * @param <T> the pdo type
-   * @param pdo the pdo
-   * @param editable true if edit pdo, false to view only
+   * @param <T> the PDO type
+   * @param pdo the PDO
+   * @param editable true if the user may edit the PDO, false if view only
    * @param modal true if modal mode
-   * @return the crud controller
+   * @return the CRUD controller
    */
   <T extends PersistentDomainObject<T>> PdoCrud<T> createPdoCrud(T pdo, boolean editable, boolean modal);
 
   /**
-   * Creates a search controller for a pdo.
+   * Creates a search controller for a PDO.
    *
-   * @param <T> the pdo type
-   * @param pdo the pdo
+   * @param <T> the PDO type
+   * @param pdo the PDO
    * @return the search controller
    */
   <T extends PersistentDomainObject<T>> PdoSearch<T> createPdoSearch(T pdo);
 
   /**
-   * Creates a tree item for a pdo.
+   * Creates a tree item for a PDO.
    *
-   * @param pdo the pdo
-   * @param <T> the pdo type
+   * @param pdo the PDO
+   * @param <T> the PDO type
    * @return the tree item
    */
   <T extends PersistentDomainObject<T>> PdoTreeItem<T> createTreeItem(T pdo);
 
   /**
-   * Creates a tree cell for a pdo type.
+   * Creates a tree cell for a PDO type.
    *
    * @param treeView the tree view
-   * @param <T> the pdo type
+   * @param <T> the PDO type
    * @return the tree cell
    */
   <T extends PersistentDomainObject<T>> PdoTreeCell<T> createTreeCell(TreeView<T> treeView);
 
   /**
-   * Creates a tree table cell for a pdo type.
+   * Creates a tree table cell for a PDO type.
    *
    * @param columnConfig the table column configuration
    * @param <S> the table row's type
-   * @param <T> the table cell's pdo type
+   * @param <T> the table cell's PDO type
    * @return the tree table cell
    */
   <S, T extends PersistentDomainObject<T>> PdoTreeTableCell<S, T> createTreeTableCell(TableColumnConfiguration<S, T> columnConfig);
 
   /**
-   * Creates a table cell for a pdo type.
+   * Creates a table cell for a PDO type.
    *
    * @param columnConfig the table column configuration
    * @param <S> the table row's type
-   * @param <T> the table cell's pdo type
+   * @param <T> the table cell's PDO type
    * @return the table cell
    */
   <S, T extends PersistentDomainObject<T>> PdoTableCell<S, T> createTableCell(TableColumnConfiguration<S, T> columnConfig);
@@ -126,7 +127,7 @@ public interface RdcFactory {
    * Creates a table popup for a tree table view.
    *
    * @param <S> the row type
-   * @param treeTable the treetable
+   * @param treeTable the tree table
    * @param preferencesSuffix the optional preferences suffix to load/save table preferences
    * @param title the optional title of the printed table
    * @return the popup

@@ -52,10 +52,10 @@ public class Informix extends AbstractSql92Backend {
   /** SKIP string. */
   public static final String SQL_SKIP = "SKIP ";
 
-  /** FIRST string. */
+  /** FIRST ? string. */
   public static final String SQL_FIRST_PAR = SQL_FIRST + "? ";
 
-  /** SKIP string. */
+  /** SKIP ? string. */
   public static final String SQL_SKIP_PAR = SQL_SKIP + "? ";
 
 
@@ -86,12 +86,23 @@ public class Informix extends AbstractSql92Backend {
     return "com.informix.jdbc.IfxDriver";
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Not implemented for Informix.
+   *
+   * @return null
+   */
   @Override
   public String getBackendId(Connection connection) {
-    // @todo
     return null;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Informix expects the credentials as part of the URL.
+   */
   @Override
   public Connection createConnection(String url, String username, char[] password)
          throws SQLException {
@@ -109,14 +120,17 @@ public class Informix extends AbstractSql92Backend {
 
   @Override
   public void buildSelectSql(StringBuilder sqlBuilder, boolean writeLock, int limit, int offset) {
-    boolean insertSelect = isLeadingSelectMissing(sqlBuilder);
-    if (limit > 0) {
-      sqlBuilder.insert(0, SQL_FIRST_PAR);
+    if (limit > 0 || offset > 0) {
+      removeLeadingSelect(sqlBuilder);
+      if (limit > 0) {
+        sqlBuilder.insert(0, SQL_FIRST_PAR);
+      }
+      if (offset > 0) {
+        sqlBuilder.insert(0, SQL_SKIP_PAR); // SKIP comes before FIRST
+      }
+      sqlBuilder.insert(0, SQL_SELECT);
     }
-    if (offset > 0) {
-      sqlBuilder.insert(0, SQL_SKIP_PAR); // SKIP comes before FIRST
-    }
-    if (insertSelect) {
+    else if (isLeadingSelectMissing(sqlBuilder)) {
       sqlBuilder.insert(0, SQL_SELECT);
     }
     if (writeLock) {
@@ -167,6 +181,8 @@ public class Informix extends AbstractSql92Backend {
       case TIMESTAMP -> TYPE_DATETIME_YEAR_TO_SECOND;
       case BLOB -> TYPE_BYTE;
       case CLOB -> TYPE_CLOB;
+      case XML -> TYPE_CLOB;   // no native XML type
+      case JSON -> TYPE_CLOB;     // informix has a native JSON type, but only in some editions
       default -> super.sqlTypeToString(sqlType, size);
     };
   }
@@ -176,6 +192,8 @@ public class Informix extends AbstractSql92Backend {
     return switch (jdbcType) {
       case Types.SMALLINT, Types.TINYINT -> new SqlType[]{SqlType.TINYINT, SqlType.SMALLINT};
       case Types.TIMESTAMP, Types.TIME -> new SqlType[]{SqlType.TIME, SqlType.TIMESTAMP};
+      // XML and JSON are stored as CLOB
+      case Types.CLOB, Types.NCLOB -> new SqlType[]{SqlType.CLOB, SqlType.JSON, SqlType.XML};
       default -> super.jdbcTypeToSqlType(jdbcType, size, scale);
     };
   }
@@ -261,19 +279,6 @@ public class Informix extends AbstractSql92Backend {
     }
     buf.append(");\n");
     return buf.toString();
-  }
-
-  @Override
-  protected String extractWhereClause(String sql, int whereOffset) {
-    int ndx = sql.indexOf(SQL_FIRST);
-    if (ndx >= 0) {
-      throw new BackendException("backend does not support merging selects with FIRST");
-    }
-    ndx = sql.indexOf(SQL_SKIP);
-    if (ndx >= 0) {
-      throw new BackendException("backend does not support merging selects with SKIP");
-    }
-    return super.extractWhereClause(sql, whereOffset);
   }
 
   @Override

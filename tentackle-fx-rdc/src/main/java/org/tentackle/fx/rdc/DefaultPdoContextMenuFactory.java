@@ -35,20 +35,24 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * The default GUI provider factory.
+ * The default PDO context menu factory.<br>
+ * Collects the menu items registered via {@link PdoTreeContextMenuItemService},
+ * {@link PdoTableContextMenuItemService} or {@link PdoTreeTableContextMenuItemService}
+ * for the PDO's effective class and its superclasses, sorts them by ordinal, and separates
+ * the groups. Invisible items are skipped.
  *
  * @author harald
  */
 @Service(PdoContextMenuFactory.class)
 public class DefaultPdoContextMenuFactory implements PdoContextMenuFactory {
 
-  /** maps PDO-classes to tree cell item classes. */
+  /** maps PDO classes to tree cell item classes. */
   private final ClassToServicesMapper<PdoTreeContextMenuItem<?>> treeItemClassMapper;
 
-  /** maps PDO-classes to table cell items classes. */
+  /** maps PDO classes to table cell item classes. */
   private final ClassToServicesMapper<PdoTableContextMenuItem<?>> tableItemClassMapper;
 
-  /** maps PDO-classes to treetable cell items classes. */
+  /** maps PDO classes to tree table cell item classes. */
   private final ClassToServicesMapper<PdoTreeTableContextMenuItem<?>> treeTableItemClassMapper;
 
 
@@ -194,8 +198,8 @@ public class DefaultPdoContextMenuFactory implements PdoContextMenuFactory {
   /**
    * Item configuration.<br>
    * The configuration is unique per ordinal.
-   * This allows to override a predefined item (such as EditItem) for a certain PDO,
-   * for example.
+   * Since the items of the PDO's effective class are added first, this allows overriding
+   * a predefined item (such as EditItem) for a certain PDO, for example.
    */
   private static class ItemConfig implements Comparable<ItemConfig> {
 

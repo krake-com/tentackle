@@ -29,9 +29,12 @@ import java.util.StringTokenizer;
  * <p>
  * There are 2 configuration options:
  * <ol>
- * <li>table:&lt;name&gt;</li>
- * <li>sequence:&lt;name&gt;[:&lt;sequence-multiplier&gt;:&lt;global-multiplier&gt;]</li>
+ * <li>table:&lt;name&gt;: an {@link ObjectId} counting in the given table</li>
+ * <li>sequence:&lt;name&gt;[:&lt;sequence-multiplier&gt;:&lt;global-multiplier&gt;]: an {@link ObjectSequenceId}
+ * on the given sequence</li>
  * </ol>
+ * Without a configuration, the default is {@code sequence:object_sequence_id} if the backend supports
+ * sequences, otherwise {@code table:object_id}.
  *
  * @author harald
  */
@@ -53,18 +56,7 @@ public class DefaultIdSourceConfigurator implements IdSourceConfigurator {
   }
 
   @Override
-  public IdSource configure(Db db, String idConfig) {
-    if (idConfig == null) {
-      // default from backend
-      Backend backend = db.getBackend();
-      if (backend.isSequenceSupported()) {
-        idConfig = SEQUENCE_BASED + ":object_sequence_id";
-      }
-      else  {
-        idConfig = TABLE_BASED + ":object_id";
-      }
-    }
-
+  public IdSource configure(String idConfig) {
     // parse
     String type = null;
     String name = null;
@@ -105,9 +97,19 @@ public class DefaultIdSourceConfigurator implements IdSourceConfigurator {
         }
         throw new PersistenceException("sequenceMultiplier and globalMultiplier must be defined both or not at all");
       }
-      case TABLE_BASED -> new ObjectId(name);
+      case TABLE_BASED -> ObjectId.get(name);
       default -> throw new PersistenceException("unsupported idSource type: " + type);
     };
+  }
+
+  @Override
+  public IdSource configure(Backend backend) {
+    if (backend.isSequenceSupported()) {
+      return configure(SEQUENCE_BASED + ":object_sequence_id");
+    }
+    else  {
+      return configure(TABLE_BASED + ":object_id");
+    }
   }
 
 }

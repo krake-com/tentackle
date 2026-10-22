@@ -99,6 +99,11 @@ public class ModificationEventTest {
     Assert.assertThrows(IllegalArgumentException.class, () -> new ModificationEvent(session(), null));
   }
 
+  @Test
+  public void testMasterEventRequiresSession() {
+    Assert.assertThrows(NullPointerException.class, () -> new ModificationEvent(null, 42));
+  }
+
 
   /**
    * Creates a session that is never actually used by the event.

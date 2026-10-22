@@ -55,6 +55,11 @@ interface ValidationUtilitiesHolder {
 
 /**
  * Utilities for validation.
+ * <p>
+ * Determines the validators from the annotations, applies them according to the effective scope
+ * and their conditions, and provides helper methods for validation results and localized messages.
+ * <p>
+ * Replaceable via &#64;{@link Service}.
  *
  * @author harald
  */
@@ -65,7 +70,7 @@ public class ValidationUtilities {
 
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */
@@ -82,6 +87,14 @@ public class ValidationUtilities {
    */
   public record MapResult(Binder binder, String bindingPath) {
 
+    /**
+     * Creates a mapping result.<br>
+     * A leading dot of the binding path is removed.
+     *
+     * @param binder the binder
+     * @param bindingPath the binding path
+     * @throws NullPointerException if binder or bindingPath is null
+     */
     public MapResult {
       Objects.requireNonNull(binder);
       bindingPath = Objects.requireNonNull(bindingPath).startsWith(".") ? bindingPath.substring(1) : bindingPath;
@@ -91,7 +104,9 @@ public class ValidationUtilities {
 
 
   /**
-   * Key to override field annotations by method annotations.
+   * Key to identify a validator of a field or method.<br>
+   * Since the validation index is unique per class, field and method annotations
+   * of the same attribute get different keys and are both applied.
    *
    * @param elementName  the name of the validated element
    * @param validatorClass the class of the validator
@@ -133,10 +148,10 @@ public class ValidationUtilities {
 
   /**
    * Configures test mode.<p>
-   * In test mode, all validators will be executed, regardless of scope or condition
-   * and logged in the given LogLevel.<br>
+   * In test mode, all validators will be executed, regardless of scope or condition,
+   * and logged in the given log level.<br>
    * Useful to check whether validators work at all, scripts compile and run, etc...<br>
-   * Notice that even the result is not used, the conditions and scopes will be executed/checked in test mode as well.<p>
+   * Notice that the conditions and scopes are evaluated in test mode as well, although their results are ignored.<p>
    * Test mode is disabled by default.
    *
    * @param testLogLevel != null if running in test mode, null to clear test mode
@@ -169,7 +184,7 @@ public class ValidationUtilities {
    * with the first letter in lowercase (according to variable name rules).
    *
    * @param object the object to validate
-   * @return the default (root) validation path, null if the object is null
+   * @return the default (root) validation path, {@code "null"} if the object is null
    */
   public String getDefaultValidationPath(Object object) {
     Class<?> clazz = EffectiveClassProvider.getEffectiveClass(object);
@@ -194,10 +209,11 @@ public class ValidationUtilities {
 
   /**
    * Convenience method for simple objects such as DTOs.<br>
-   * Validates for path <code>"object"</code> and {@link org.tentackle.validate.scope.AllScope}.<br>
-   * Throws {@link ValidationFailedException} if failed.
+   * Validates for the default validation path and the {@link org.tentackle.validate.scope.AllScope}.
    *
    * @param object the validateable object
+   * @throws ValidationFailedException if the validation failed
+   * @see #getDefaultValidationPath(Object)
    */
   public void validate(Object object) {
     List<ValidationResult> results;
@@ -240,10 +256,12 @@ public class ValidationUtilities {
    * Validates a collection of objects.<br>
    * Elements of the collection implementing {@link Validateable} will be validated
    * by calling the {@link Validateable#validate(String, ValidationScope)} method.
-   * All other objects will be validated by calling {@link #validate(Object, String, ValidationScope)}
+   * All other objects will be validated by calling {@link #validate(Object, String, ValidationScope)}.
+   * The validation path of each element gets the element's index appended, for example {@code "lines[3]"}.
+   * Null elements are skipped and not counted.
    *
    * @param collection the objects to validate
-   * @param validationPath the validation path, null if {@link #getDefaultValidationPath(java.lang.Object) }
+   * @param validationPath the validation path, null if {@link #getDefaultValidationPath(java.lang.Object)} of each element
    * @param scope the validation scope
    * @return the validation results, empty if okay, never null
    */
@@ -255,7 +273,7 @@ public class ValidationUtilities {
         int ndx = 0;
         for (Object obj : collection) {
           if (obj != null) {
-            String path = validationPath + "[" + (ndx++) + "]";
+            String path = (validationPath == null ? getDefaultValidationPath(obj) : validationPath) + "[" + (ndx++) + "]";
             if (obj instanceof Validateable validateable) {
               // redirect to the object in case the validate-method is overridden
               results.addAll(validateable.validate(path, scope));
@@ -276,7 +294,8 @@ public class ValidationUtilities {
   /**
    * Gets all validators for all annotated fields or methods of the given class.<br>
    * If an attribute is annotated both at the field and the (getter-)method level,
-   * the method gets precedence.
+   * the validators of both are applied.
+   * The validators are sorted by priority and order of declaration.
    *
    * @param clazz the class to inspect
    * @param scope optional validation scope, null = all
@@ -291,7 +310,8 @@ public class ValidationUtilities {
   }
 
   /**
-   * Get validators for an annotated field and/or method.<br>
+   * Gets the validators for an annotated field and/or method.<br>
+   * The validators are sorted by priority and order of declaration.
    *
    * @param field the field, null if none
    * @param method the (getter-)method, null if none
@@ -311,7 +331,7 @@ public class ValidationUtilities {
    *
    * @param clazz the class to inspect
    * @param scope optional validation scope, null = all
-   * @return the list of field validators
+   * @return the list of object validators
    */
   public List<Validator> getObjectValidators(Class<?> clazz, ValidationScope scope) {
     List<Validator> validators = new ArrayList<>();
@@ -338,9 +358,7 @@ public class ValidationUtilities {
           List<Validator> validators, ValidationScope effectiveScope,
           String validationPath, Object parentObject) {
 
-    if (validationPath == null) {
-      validationPath = getDefaultValidationPath(parentObject);
-    }
+    String path = validationPath == null ? getDefaultValidationPath(parentObject) : validationPath;
 
     List<ValidationResult> allResults = new ArrayList<>();
 
@@ -351,7 +369,7 @@ public class ValidationUtilities {
     try {
       for (Validator validator : validators) {
 
-        ValidationContext validationContext = contextMap.computeIfAbsent(validationPath + "." + validator.getValidatedElementName(), path -> {
+        ValidationContext validationContext = contextMap.computeIfAbsent(validator.getValidatedElementName(), elementName -> {
           // build validation context
           Supplier<?> objectSupplier = null;      // lazy object provider
           Class<?> type = null;                   // the object's type
@@ -398,19 +416,15 @@ public class ValidationUtilities {
               }
             };
           }
-          return ValidationContextFactory.getInstance().create(path, type, objectSupplier, parentObject, effectiveScope, allResults);
+          return ValidationContextFactory.getInstance().create(path + "." + elementName, type, objectSupplier,
+                                                               parentObject, effectiveScope, allResults);
         });
 
         if (inTest) {
           logTest(validator, validationContext);
         }
 
-        // check if scope applies
-        // runs the condition check even if in testmode
-        if (validator.isConditionValid(validationContext) &&
-            (effectiveScope == null || effectiveScope.appliesTo(validator.getConfiguredScopes(validationContext)))
-            ||
-            inTest) {
+        if (isApplicable(validator, validationContext, effectiveScope, inTest)) {
           // condition and scope apply
           List<? extends ValidationResult> results = validator.validate(validationContext);
           if (results != null && !results.isEmpty()) {  // should never be null, but who knows...
@@ -464,11 +478,7 @@ public class ValidationUtilities {
             logTest(validator, validationContext);
           }
 
-          // check if scope applies and validator is valid (even if in testmode)
-          if (validator.isConditionValid(validationContext) &&
-              (effectiveScope == null || effectiveScope.appliesTo(validator.getConfiguredScopes(validationContext)))
-              ||
-              inTest) {
+          if (isApplicable(validator, validationContext, effectiveScope, inTest)) {
             // condition and scope apply
             try {
               List<? extends ValidationResult> results = validator.validate(validationContext);
@@ -491,6 +501,35 @@ public class ValidationUtilities {
     }
 
     return allResults;
+  }
+
+  /**
+   * Determines whether a validator applies, i.e. its scope applies and its condition is valid.
+   * <p>
+   * The scope is checked first, since it's cheap, whereas the condition may be a script.
+   * In test mode, all validators apply, but the condition is evaluated anyway to detect broken ones.
+   *
+   * @param validator the validator
+   * @param validationContext the validation context
+   * @param effectiveScope the effective scope, null if all
+   * @param inTest true if in test mode
+   * @return true if the validator must be invoked
+   */
+  private boolean isApplicable(Validator validator, ValidationContext validationContext,
+                               ValidationScope effectiveScope, boolean inTest) {
+    if (inTest) {
+      // runs the condition check (and the scope check, if the condition holds) even in test mode
+      if (validator.isConditionValid(validationContext)) {
+        isScopeApplicable(validator, validationContext, effectiveScope);
+      }
+      return true;
+    }
+    return isScopeApplicable(validator, validationContext, effectiveScope) &&
+           validator.isConditionValid(validationContext);
+  }
+
+  private boolean isScopeApplicable(Validator validator, ValidationContext validationContext, ValidationScope effectiveScope) {
+    return effectiveScope == null || effectiveScope.appliesTo(validator.getConfiguredScopes(validationContext));
   }
 
   /**
@@ -629,17 +668,19 @@ public class ValidationUtilities {
    * Instead of
    * <pre>java.text.MessageFormat.format(my.domain.application.package.Bundle.getString("{0}_is_wrong"), value)</pre>
    * you can write in a Groovy-script:
-   * <pre>ValidationUtilities().getInstance().format(clazz, '{0}_is_wrong', value)</pre>
+   * <pre>ValidationUtilities.getInstance().format(clazz, '{0}_is_wrong', value)</pre>
    * Or much shorter directly as a message parameter in the validator:
    * <pre>message={ @('{0}_is_wrong', value) }</pre>
    * <p>
    * This method will look up a class named <code>ValidationBundle</code> in the package or super-packages of where the validator is used
-   * and invokes the static method getString().
+   * and invokes its public static method {@code getString(String)}.
    *
-   * @param clazz the class to look for <code>ValidationBundle</code> in the same package
+   * @param clazz the class to look for <code>ValidationBundle</code> in the same package or its super-packages
    * @param pattern the message pattern
    * @param args arguments to pattern
-   * @return the formatted and localized string
+   * @return the formatted and localized string, null if pattern is null
+   * @throws ValidationRuntimeException if clazz is null, no valid {@code ValidationBundle} was found,
+   *         or the bundle provides no translation for the pattern
    *
    * @see MessageFormat
    */
@@ -726,11 +767,11 @@ public class ValidationUtilities {
 
 
   /**
-   * Gets all validators for all annotated fields or methods of the given class.<br>
+   * Adds all validators for all annotated fields or methods of the given class to a map.<br>
    * If an attribute is annotated both at the field and the (getter-)method level,
-   * the method gets precedence.
+   * the validators of both are applied.
    *
-   * @param validatorMap the validator map (unique on attribute names)
+   * @param validatorMap the validator map
    * @param clazz the class to inspect
    * @param scope optional validation scope, null = all
    */
@@ -756,9 +797,9 @@ public class ValidationUtilities {
   }
 
   /**
-   * Get validators for an annotated field and/or method.<br>
+   * Adds the validators for an annotated field and/or method to a map.
    *
-   * @param validatorMap the validator map (unique on attribute names)
+   * @param validatorMap the validator map
    * @param field the field, null if none
    * @param method the (getter-)method, null if none
    * @param scope optional validation scope, null = all
@@ -819,8 +860,8 @@ public class ValidationUtilities {
   }
 
   /**
-   * Extract validators for an annotation.
-   * Allows also lists of annotations.
+   * Extracts the validators for an annotation.<br>
+   * Supports repeated annotations as well.
    *
    * @param annotation the annotation
    * @param element the annotated element
@@ -867,6 +908,7 @@ public class ValidationUtilities {
    * @param validators the list of validators
    * @param scope the validation scope
    * @param validatorClass the class to create a validator instance from
+   * @throws ValidationRuntimeException if the validator could not be created
    */
   protected void addValidator(Annotation annotation, AnnotatedElement element, int validationIndex,
                               List<Validator> validators, ValidationScope scope,
@@ -882,13 +924,13 @@ public class ValidationUtilities {
       }
     }
     catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
-           SecurityException | InvocationTargetException ex) {
+           InvocationTargetException ex) {
       throw new ValidationRuntimeException("could not create validator", ex);
     }
   }
 
   /**
-   * Gets all validators for annotated attributes
+   * Gets all validators for an annotated attribute.
    *
    * @param element the {@link Field} or {@link Method} to inspect
    * @param scope optional validation scope, null = all

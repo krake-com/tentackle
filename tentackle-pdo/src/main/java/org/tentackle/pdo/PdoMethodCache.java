@@ -64,15 +64,20 @@ public class PdoMethodCache<T extends PersistentDomainObject<T>> {
    * @param invocationHandler the invocation handler
    * @param method the original method of the interface
    * @param args the method's args
-   * @return the methods return value
+   * @return the method's return value
    * @throws Throwable if invocation fails
    */
   public Object invoke(PdoInvocationHandler<T> invocationHandler, Method method, Object[] args) throws Throwable {
-    PdoMethod pdoMethod = methodCache.computeIfAbsent(method, m -> {
-      PdoMethodCacheInfo info = invocationHandler.determineInvocation(m);
-      InterceptableMethod interceptableMethod = InterceptionUtilities.getInstance().createInterceptableMethod(clazz, info.delegateClass(), m);
-      return new PdoMethod(interceptableMethod, info.invocation());
-    });
+    // get() first: the lambda below captures the invocation handler and would be allocated on every invocation,
+    // although the method is missing only on its first invocation
+    PdoMethod pdoMethod = methodCache.get(method);
+    if (pdoMethod == null) {
+      pdoMethod = methodCache.computeIfAbsent(method, m -> {
+        PdoMethodCacheInfo info = invocationHandler.determineInvocation(m);
+        InterceptableMethod interceptableMethod = InterceptionUtilities.getInstance().createInterceptableMethod(clazz, info.delegateClass(), m);
+        return new PdoMethod(interceptableMethod, info.invocation());
+      });
+    }
     return pdoMethod.invocation.invoke(invocationHandler, pdoMethod.method, args);
   }
 

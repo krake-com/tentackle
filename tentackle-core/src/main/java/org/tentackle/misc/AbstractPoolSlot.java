@@ -32,7 +32,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
- * A slot holding a poolable managed by a pool.
+ * A slot holding a poolable managed by a pool.<br>
+ * While the poolable is lent, the slot holds only a weak reference to it,
+ * so that lent but never returned poolables can be detected via {@link #isUnreferenced()}.
+ *
+ * @param <T> the type of poolable resources
  */
 public abstract class AbstractPoolSlot<T extends Poolable<T>> implements PoolSlot<T> {
 
@@ -66,6 +70,7 @@ public abstract class AbstractPoolSlot<T extends Poolable<T>> implements PoolSlo
    * @param pool the pool
    * @param slotNumber the slot number within the pool (== pool-ID - 1)
    * @param poolable the managed poolable
+   * @throws NullPointerException if pool or poolable is null
    */
   public AbstractPoolSlot(Pool<T> pool, int slotNumber, T poolable) {
     this.pool = Objects.requireNonNull(pool);
@@ -231,7 +236,7 @@ public abstract class AbstractPoolSlot<T extends Poolable<T>> implements PoolSlo
   }
 
   /**
-   * Creates an exception.
+   * Creates the exception thrown by this slot.
    *
    * @param msg the message
    * @return the exception

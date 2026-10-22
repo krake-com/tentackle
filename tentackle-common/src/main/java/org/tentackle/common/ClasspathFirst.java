@@ -28,12 +28,16 @@ import java.lang.annotation.Target;
  * Annotation to override a service on the module path from the classpath.
  * <p>
  * By default, the {@link ModuleSorter} organizes resources for the <em>same</em> service name
- * according to the module dependency hierarchy first and then followed by the automatic modules and classpath.
- * This is the desired behavior in most cases since it allows modules to override/implement services declared or already
- * implemented by real modules or traditional artifacts.<br>
+ * according to the module dependency hierarchy first, followed by the automatic modules and classpath.
+ * This is the desired behavior in most cases, since it allows modules to override or implement services
+ * that are declared or already implemented by other modules or by traditional (non-modular) artifacts.<br>
  * This would mean, however, that a non-modularized dependency could never override a service from a real module.
- * Think of maven artifacts that in turn depend on some 3rd party dependency that isn't modularized yet.<br>
- * In such cases, this annotation causes the classpath to take precedence over the module path.
+ * Think of Maven artifacts that in turn depend on some 3rd party dependency that isn't modularized yet.<br>
+ * In such cases, this annotation causes the classpath to take precedence over the module path
+ * for the service given by {@link #value()}.
+ * <p>
+ * The annotation is a meta-service: the analyze goal of the tentackle-maven-plugin appends the serviced class to
+ * {@code META-INF/meta-services/org.tentackle.common.ClasspathFirst}, which is read by the {@link ModuleSorter}.
  * <p>
  * For an example, see {@code PoiTableUtilities} in {@code tentackle-fx-rdc-poi}.
  *
@@ -46,7 +50,7 @@ import java.lang.annotation.Target;
 public @interface ClasspathFirst {
 
   /**
-   * Gets the serviced class.<br>
+   * Gets the serviced class to be overridden from the classpath.
    *
    * @return the serviced class
    */

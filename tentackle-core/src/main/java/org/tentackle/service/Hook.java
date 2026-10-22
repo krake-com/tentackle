@@ -23,7 +23,9 @@ import java.util.ResourceBundle;
 import org.tentackle.common.ModuleHook;
 
 /**
- * Hook for the core module.
+ * Module hook for the core module.<br>
+ * Gives the {@link org.tentackle.common.ServiceFinder} and the bundle support access to the
+ * resources of the module {@code org.tentackle.core}.
  *
  * @author harald
  */

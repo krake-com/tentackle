@@ -25,7 +25,8 @@ import java.io.Serial;
 import java.util.Objects;
 
 /**
- * Simple failed result.
+ * Simple failed result.<br>
+ * Created by the {@link MajorSeverity}. Requires a message.
  *
  * @author harald
  */
@@ -40,6 +41,8 @@ public class FailedValidationResult extends AbstractValidationResult {
    * @param validator the validator
    * @param validationContext the validation context
    * @param message the message
+   * @throws NullPointerException if message is null
+   * @throws IllegalArgumentException if message is empty
    */
   public FailedValidationResult(Validator validator, ValidationContext validationContext, String message) {
     super(validator, validationContext, message);

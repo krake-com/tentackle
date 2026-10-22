@@ -167,4 +167,11 @@ public class DateTimeTest {
     assertFalse(new Timestamp(0L).isUTC());
   }
 
+  @Test
+  public void testTimestampValueOfKeepsNanos() {
+    Timestamp timestamp = Timestamp.valueOf("2020-01-02 03:04:05.123456789");
+    assertEquals(timestamp.getNanos(), 123456789);
+    assertEquals(timestamp, java.sql.Timestamp.valueOf("2020-01-02 03:04:05.123456789"));
+  }
+
 }

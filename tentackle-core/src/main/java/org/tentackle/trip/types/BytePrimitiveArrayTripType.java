@@ -47,6 +47,7 @@ public final class BytePrimitiveArrayTripType extends AbstractPredefinedArrayTri
     super(byte[].class);
   }
 
+
   @Override
   public void write(byte[] value, TripStream stream) {
     Serializer serializer = stream.getSerializer();
@@ -56,54 +57,42 @@ public final class BytePrimitiveArrayTripType extends AbstractPredefinedArrayTri
     else {
       TripType<Byte> byteTripType = BytePrimitiveTypeHolder.INSTANCE;
       if (writeArrayHeader(value, stream)) {
-        int skip = 0;
+        int length = value.length;
         int ndx = 0;
-        int blockStart = -1;
-        for (byte byteValue : value) {
-          int blockLen = blockStart == -1 ? 0 : ndx - blockStart;
-          if (byteValue != 0) {
-            if (skip > 0) {
-              if (skip == 1) {
-                blockStart = ndx - 1;
-              }
-              else {
-                writeSkip(skip, serializer);
-              }
-              skip = 0;
+        while (ndx < length) {
+          if (value[ndx] == 0) {
+            int end = ndx + 1;
+            while (end < length && value[end] == 0) {
+              end++;
             }
-            if (blockStart == -1) {
-              blockStart = ndx;
-            }
-            else if (blockLen == 255) {
-              flushBlock(serializer, value, blockStart, blockLen);
-              blockStart = ndx;
-            }
+            writeSkip(end - ndx, serializer);
+            ndx = end;
           }
           else {
-            skip++;
-            if (blockStart != -1) {
-              if (blockLen > 1) {
-                flushBlock(serializer, value, blockStart, blockLen);
+            // the block always ends behind a non-zero byte, short zero runs in between are kept
+            int blockEnd = ndx + 1;
+            int maxEnd = Math.min(length, ndx + MAX_BLOCK_LENGTH);
+            int pos = blockEnd;
+            while (pos < maxEnd) {
+              if (value[pos] != 0) {
+                blockEnd = ++pos;
+              }
+              else if (pos - blockEnd < MAX_INNER_ZEROS) {
+                pos++;
               }
               else {
-                byteTripType.write(value[blockStart], stream);
+                break;
               }
-              blockStart = -1;
             }
+            int blockLen = blockEnd - ndx;
+            if (blockLen > 1) {
+              flushBlock(serializer, value, ndx, blockLen);
+            }
+            else {
+              byteTripType.write(value[ndx], stream);
+            }
+            ndx = blockEnd;
           }
-          ndx++;
-        }
-        if (blockStart != -1) {
-          int blockLen = ndx - blockStart;
-          if (blockLen > 1) {
-            flushBlock(serializer, value, blockStart, blockLen);
-          }
-          else {
-            byteTripType.write(value[blockStart], stream);
-          }
-        }
-        else if (skip > 0) {
-          writeSkip(skip, serializer);
         }
       }
     }
@@ -123,17 +112,18 @@ public final class BytePrimitiveArrayTripType extends AbstractPredefinedArrayTri
       int count = 0;
       while (count < length) {
         opCode = stream.receiveOpCode();
-        switch (opCode) {
-          case DefaultOpCode.SKIP -> count += deserializer.deserializeInt();
-          case DefaultOpCode.SKIP2 -> count += deserializer.deserializeShortAsUnsigned();
-          case DefaultOpCode.SKIP1 -> count += deserializer.deserializeByteAsUnsigned();
-          case DefaultOpCode.BYTEN -> {
-            int blockLen = deserializer.deserializeByteAsUnsigned();
-            while (blockLen-- > 0) {
-              result[count++] = deserializer.deserializeByte();
-            }
-          }
-          case null, default -> result[count++] = byteTripType.read(stream, opCode);
+        int skip = readSkip(deserializer, opCode);
+        if (skip != NO_SKIP) {
+          count += skip;
+        }
+        else if (opCode == DefaultOpCode.BYTEN) {
+          int blockLen = deserializer.deserializeByteAsUnsigned();
+          // one bulk System.arraycopy instead of a capacity check per byte
+          deserializer.deserialize(result, count, blockLen);
+          count += blockLen;
+        }
+        else {
+          result[count++] = byteTripType.read(stream, opCode);
         }
       }
       stream.addReference(reference, result, false);
@@ -149,9 +139,7 @@ public final class BytePrimitiveArrayTripType extends AbstractPredefinedArrayTri
   private void flushBlock(Serializer serializer, byte[] value, int blockStart, int blockLen) {
     serializer.serializeOpCode(DefaultOpCode.BYTEN);
     serializer.serializeUnsignedAsByte(blockLen);
-    while (blockLen-- > 0) {
-      serializer.serializeByte(value[blockStart++]);
-    }
+    serializer.serialize(value, blockStart, blockLen);
   }
 
 }

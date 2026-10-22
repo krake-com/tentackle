@@ -105,7 +105,8 @@ public final class AnnotationProcessingHelper {
   }
 
   /**
-   * Gets an array of modifiers from a string tokenizer.
+   * Gets an array of modifiers from a string tokenizer.<br>
+   * Reads all remaining tokens. Unknown modifiers are ignored.
    *
    * @param stok the string tokenizer
    * @return the modifier array
@@ -144,8 +145,9 @@ public final class AnnotationProcessingHelper {
   }
 
   /**
-   * Creates a string from an object array.
-   * Copied from StringHelper to keep dependencies small.
+   * Creates a string from an object array.<br>
+   * Unlike {@code StringHelper.objectArrayToString}, which formats the objects for logging,
+   * this method uses the plain {@code toString()} of each object, as needed for the info files.
    *
    * @param objArray the array of objects
    * @param separator the string between two objects
@@ -173,7 +175,7 @@ public final class AnnotationProcessingHelper {
    * @param processingEnv the annotation processing environment
    * @param typeMirror the element type
    * @param className the class to check
-   * @param genType the generic type
+   * @param genType the generic type, null if any; else at least one type argument must be an instance of it
    * @return true if the type is an instance of a given classname
    */
   public static boolean isTypeInstanceOf(ProcessingEnvironment processingEnv, TypeMirror typeMirror, String className, String genType) {
@@ -213,7 +215,8 @@ public final class AnnotationProcessingHelper {
   }
 
   /**
-   * Checks whether a type is a given instance of a class.
+   * Checks whether a type is an instance of a given classname.<br>
+   * The supertypes are checked recursively.
    *
    * @param processingEnv the annotation processing environment
    * @param typeMirror the element type
@@ -226,7 +229,7 @@ public final class AnnotationProcessingHelper {
 
 
   /**
-   * prevent instantiation.
+   * Prevents instantiation.
    */
   private AnnotationProcessingHelper() {}
 

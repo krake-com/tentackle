@@ -33,18 +33,19 @@ import java.util.concurrent.CountDownLatch;
 /**
  * Serves the model to coding agents over MCP.
  * <p>
- * Blocks until the server is stopped with {@code Ctrl-C}.
+ * Loads the model, logs the configuration warnings and the endpoint, and blocks until the server is stopped
+ * with {@code Ctrl-C}. If the model does not load, the goal fails instead of serving a fragment of it.
  *
  * @author harald
  */
-@Mojo(name = "serve", aggregator = true)
+@Mojo(name = "serve", aggregator = true, threadSafe = true)
 public class ServeMojo extends AbstractMcpMojo {
 
   /** The address to bind to. */
   @Parameter(defaultValue = "localhost", property = "tentackle.mcp.host")
   private String host;
 
-  /** The port to listen on. */
+  /** The port to listen on, 0 for any free port (the logged endpoint shows the one chosen). */
   @Parameter(defaultValue = "8770", property = "tentackle.mcp.port")
   private int port;
 
@@ -60,7 +61,7 @@ public class ServeMojo extends AbstractMcpMojo {
   @Parameter(defaultValue = "1000")
   private long stalenessCheckMillis;
 
-  /** The maximum number of rows a tool may return. */
+  /** The hard upper bound for the number of rows a tool may return, also the default of every {@code limit}. */
   @Parameter(defaultValue = "1000")
   private int maxResults;
 
@@ -76,12 +77,12 @@ public class ServeMojo extends AbstractMcpMojo {
     }
 
     for (String warning : session.getWarnings()) {
-      getLog().warn(warning);
+      getLogger().warn(warning);
     }
 
     try {
-      getLog().info(session.getModel().getAllEntities().size() + " entities loaded from " +
-                    String.join(", ", session.getConfiguration().modelDirs()));
+      getLogger().info("{} entities loaded from {}",
+                       session.getModel().getAllEntities().size(), String.join(", ", session.getConfiguration().modelDirs()));
     }
     catch (ModelException mex) {
       throw new MojoFailureException("cannot determine entities: " + mex.getMessage(), mex);
@@ -99,9 +100,9 @@ public class ServeMojo extends AbstractMcpMojo {
         .start();
 
     String url = "http://" + host + ':' + server.port() + path;
-    getLog().info("MCP endpoint: " + url);
-    getLog().info("claude mcp add --transport http " + serverName + ' ' + url);
-    getLog().info("stop with Ctrl-C");
+    getLogger().info("MCP endpoint: {}", url);
+    getLogger().info("claude mcp add --transport http {} {}", serverName, url);
+    getLogger().info("stop with Ctrl-C");
 
     awaitShutdown();
     server.stop();

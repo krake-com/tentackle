@@ -17,7 +17,10 @@
  */
 
 /**
- * tentackle-fx-rdc module.
+ * The rich desktop client.<br>
+ * Bridges the PDO layer and the extended JavaFX layer: per-entity GUI providers, generic CRUD and search
+ * dialogs, PDO trees, tables and context menus, PDO-aware components and value translators,
+ * background execution, the security rules editor, and the desktop application lifecycle with login.
  */
 module org.tentackle.fx.rdc {
 
@@ -46,8 +49,6 @@ module org.tentackle.fx.rdc {
 
   requires transitive org.tentackle.fx;
   requires transitive org.tentackle.pdo;
-
-  requires transitive java.desktop;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.fx.rdc.service.Hook;
 

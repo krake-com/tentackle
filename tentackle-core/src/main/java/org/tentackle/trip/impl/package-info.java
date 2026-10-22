@@ -17,6 +17,8 @@
  */
 
 /**
- * Default implementations.
+ * Default implementations of the TRIP API.
+ * <p>
+ * The entry point is the {@link org.tentackle.trip.impl.DefaultTripFactory}.
  */
 package org.tentackle.trip.impl;

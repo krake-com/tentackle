@@ -40,11 +40,21 @@ public final class AllPermissionImpl extends AbstractPermission implements AllPe
     return NAME;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Requesting all permissions is only allowed if ALL is granted.
+   */
   @Override
   public boolean isAllowedBy(Class<?>... permissions) {
-    return true;
+    return super.isAllowedBy(permissions);
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Requesting all permissions is denied by the denial of any permission.
+   */
   @Override
   public boolean isDeniedBy(Class<?>... permissions) {
     return true;

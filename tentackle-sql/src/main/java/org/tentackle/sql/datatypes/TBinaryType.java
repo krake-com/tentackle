@@ -74,9 +74,7 @@ public class TBinaryType extends AbstractDataType<TBinary<?>> {
 
   @Override
   public Object[] set(Backend backend, PreparedStatement statement, int pos, TBinary<?> object, boolean mapNull, Integer size) throws SQLException {
-    if (object == null || object.getLength() == 0) {
-      // "empty" binaries are treated as null
-      object = null;
+    if (object == null) {
       statement.setNull(pos, Types.LONGVARBINARY);
     }
     else {

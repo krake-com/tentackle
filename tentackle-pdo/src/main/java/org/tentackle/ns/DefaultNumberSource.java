@@ -25,19 +25,18 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
  * The default implementation of a number source.<br>
  * Based on {@link NumberPool} and {@link NumberRange}.<br>
  * This number source does not implement any logic to access an uplink source,
- * and thus needs to be extended if an uplink is required.
+ * and thus needs to be wrapped or replaced if an uplink is required.
  * <p>
  * Notice that the DefaultNumberSource is not remoting capable.
  *
@@ -53,6 +52,7 @@ public class DefaultNumberSource implements NumberSource {
    * Creates a number source from a given pool.
    *
    * @param pool the number pool
+   * @throws PersistenceException if the pool's session is remote
    */
   public DefaultNumberSource(NumberPool pool) {
     if (pool.getSession().isRemote()) {
@@ -98,10 +98,8 @@ public class DefaultNumberSource implements NumberSource {
 
   @Override
   public synchronized boolean isOnline() {
-    return Session.getSession().transaction(() -> {
-      lockPool();
-      return pool.isOnline();
-    });
+    loadPool(pool.reload());    // no lock and no online check: the pool may be offline
+    return pool.isOnline();
   }
 
   @Override
@@ -112,15 +110,15 @@ public class DefaultNumberSource implements NumberSource {
      * The happy path is:
      * - pool hasn't changed (name, whatever)
      *    -> exclusive lock on pool
-     * - current range hasn't changed (since the last getNumber())
-     *    -> pop a number and persist pool (i.e. that range)
+     * - current range hasn't changed (since the last popNumber())
+     *    -> pop a number and persist pool (i.e., that range)
      */
     return Session.getSession().transaction(() -> {
       lockPool();
       findCurrentRange();
       long number = currentRange.popNumber();
       // this will only update the ranges (if no range removed).
-      // see NumberPoolPI.isUpdatingSerialEvenIfNotModified
+      // see NumberPoolPersistenceImpl.isUpdatingSerialEvenIfNotModified
       pool = pool.persist();
       return number;
     });
@@ -280,19 +278,27 @@ public class DefaultNumberSource implements NumberSource {
 
 
   /**
-   * Locks the pool.
+   * Locks the pool and asserts that it is online.
    */
   private void lockPool() {
-    NumberPool lockedPool = pool.reloadForUpdate();
-    if (lockedPool == null) {
-      throw new NumberSourceException("pool " + pool + " vanished");
-    }
-    if (lockedPool.getSerial() != pool.getSerial()) {
-      pool = lockedPool;
-      currentRange = null;
-    }
+    loadPool(pool.reloadForUpdate());
     if (!pool.isOnline()) {
       throw new NumberSourceException("pool " + pool + " is offline");
+    }
+  }
+
+  /**
+   * Takes over the reloaded pool if it has been modified in the meantime.
+   *
+   * @param reloadedPool the reloaded pool, null if it vanished
+   */
+  private void loadPool(NumberPool reloadedPool) {
+    if (reloadedPool == null) {
+      throw new NumberSourceException("pool " + pool + " vanished");
+    }
+    if (reloadedPool.getSerial() != pool.getSerial()) {
+      pool = reloadedPool;
+      currentRange = null;
     }
   }
 
@@ -319,18 +325,13 @@ public class DefaultNumberSource implements NumberSource {
 
 
   /**
-   * Combines overlapping ranges.<br>
+   * Combines overlapping or adjacent ranges.<br>
    * Necessary to guarantee uniqueness of the numbers in this pool.
    */
   private void fixRanges() {
-    // ranges sorted by begin
-    Map<Range, NumberRange> rangeMap = new TreeMap<>(Comparator.comparingLong(Range::begin));
-    for (NumberRange range: pool.getNumberRangeList()) {
-      rangeMap.put(new Range(range.getBegin(), range.getEnd()), range);
-    }
-
-    NumberRange[] ranges = new NumberRange[rangeMap.size()];
-    rangeMap.values().toArray(ranges);
+    // ranges sorted by begin, then by end (several ranges may start with the same number!)
+    NumberRange[] ranges = pool.getNumberRangeList().toArray(new NumberRange[0]);
+    Arrays.sort(ranges, Comparator.comparingLong(NumberRange::getBegin).thenComparingLong(NumberRange::getEnd));
 
     for (int i=0; i < ranges.length; i++) {
       NumberRange range = ranges[i];
@@ -344,8 +345,8 @@ public class DefaultNumberSource implements NumberSource {
               pool.getNumberRangeList().remove(nextRange);
               ranges[j] = null;
             }
-            else if (range.getEnd() > nextRange.getBegin()) {
-              // merge
+            else if (range.getEnd() >= nextRange.getBegin()) {
+              // overlapping or adjacent: merge
               range.setEnd(nextRange.getEnd());
               pool.getNumberRangeList().remove(nextRange);
               ranges[j] = null;

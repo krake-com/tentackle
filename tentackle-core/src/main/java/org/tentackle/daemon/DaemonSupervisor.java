@@ -30,9 +30,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 /**
  * A supervisor controlling the life cycle of daemons.
  * <p>
- * Daemons are ordinary threads. Optionally, daemons
+ * Daemons are ordinary threads created by {@link #createDaemon(int)}. Optionally, daemons
  * may implement {@link Supervisable} which allows further
- * checks and control.
+ * checks and control, such as the detection and killing of dead daemons.
+ * <p>
+ * Every {@link #getCheckInterval() check interval}, the supervisor restarts terminated daemons,
+ * unless disabled or the {@link #getMaxStartCount() maximum start count} is reached.
  *
  * @author harald
  */
@@ -233,6 +236,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
    * @param checkInterval the checking interval in milliseconds
    * @param maxStartCount max. number of starts, 0 = unlimited
    * @param daemonNum number of daemons to start
+   * @throws IllegalArgumentException if one of the parameters is out of range
    */
   public DaemonSupervisor(String name, long checkInterval, int maxStartCount, int daemonNum) {
 
@@ -271,7 +275,8 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
   /**
    * Sets the check interval in milliseconds.
    *
-   * @param checkInterval the check interval
+   * @param checkInterval the check interval, must be &gt; 0
+   * @throws IllegalArgumentException if the interval is not positive
    */
   public void setCheckInterval(long checkInterval) {
     if (checkInterval < 1) {
@@ -386,7 +391,9 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
   }
 
   /**
-   * The daemon may clear this if properly running.
+   * Clears the start counter of a daemon.<br>
+   * A daemon may invoke this once it is running properly, so that the maximum start count
+   * limits the number of consecutive failed starts only.
    *
    * @param index the daemon index
    */
@@ -401,7 +408,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
    * Determines whether the daemon for the given index is enabled or not.
    * <p>
    * Only enabled daemons are started. If a running daemon is disabled,
-   * it will be terminated.
+   * it will be killed.
    *
    * @param index the daemon index
    * @return true if enabled
@@ -413,8 +420,8 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
 
   /**
    * Sets the enabled state for daemon at the given index.<br>
-   * Setting a daemon to disabled will terminate it if running
-   * and prevent the daemon from be (re-)started.
+   * Setting a daemon to disabled will kill it if running
+   * and prevent the daemon from being (re-)started.
    * By default, all daemons are enabled.
    * Setting the daemon to "enabled" will also clear the start counter.
    *
@@ -442,8 +449,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
   /**
    * Terminates the supervisor.<br>
    * Waits until the supervisor has terminated.<br>
-   * If the running thread is a {@link Supervisable} the thread
-   * will be killed.
+   * Daemons implementing {@link Supervisable} will be killed. Ordinary threads are left running.
    */
   public void terminate() {
     requestTermination();
@@ -468,7 +474,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
    * if necessary.
    *
    * @param index the daemon's slot [0 ... daemonNum-1]
-   * @return the daemon, null if wait for the interval and try again
+   * @return the daemon (not started yet), null if wait for the interval and try again
    */
   public abstract Thread createDaemon(int index);
 
@@ -600,7 +606,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
   /**
    * Gets the earliest termination time of all supervised daemons.
    *
-   * @return the start time, 0 if no supervised terminated daemon
+   * @return the termination time, 0 if no supervised terminated daemon
    */
   public long getEarliestTerminationTime() {
     long time = 0;
@@ -618,7 +624,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
   /**
    * Gets the latest termination time of all supervised daemons.
    *
-   * @return the start time, 0 if no supervised terminated daemon
+   * @return the termination time, 0 if no supervised terminated daemon
    */
   public long getLatestTerminationTime() {
     long time = 0;
@@ -646,7 +652,8 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
   }
 
   /**
-   * Safely interrupt the dispatcher without interrupting any running task.
+   * Safely interrupts the supervisor.<br>
+   * The supervisor is interrupted while sleeping, not while checking the daemons.
    */
   public void safeInterrupt() {
     /*

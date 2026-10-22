@@ -17,6 +17,6 @@
  */
 
 /**
- * Visitors for annotation processors.
+ * Type visitors used by the annotation processors.
  */
 package org.tentackle.apt.visitor;

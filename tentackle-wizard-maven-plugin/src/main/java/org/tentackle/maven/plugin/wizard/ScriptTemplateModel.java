@@ -23,7 +23,7 @@ import org.tentackle.buildsupport.codegen.TemplateModel;
 import java.io.Serial;
 
 /**
- * The freemarker model to weave a script fragment into a harness.<br>
+ * The FreeMarker model to weave a script fragment into a harness.<br>
  * Provides the following variables:
  * <ul>
  *   <li>{@code content}: the script fragment inserted into the harness</li>

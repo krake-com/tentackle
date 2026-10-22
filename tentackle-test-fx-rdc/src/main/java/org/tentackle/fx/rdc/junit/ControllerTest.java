@@ -19,8 +19,7 @@
 package org.tentackle.fx.rdc.junit;
 
 import org.junit.jupiter.api.Test;
-import org.junit.platform.commons.logging.Logger;
-import org.junit.platform.commons.logging.LoggerFactory;
+import org.junit.jupiter.api.TestReporter;
 
 import org.tentackle.common.Version;
 import org.tentackle.fx.Fx;
@@ -29,9 +28,13 @@ import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.FxFactory;
 
 /**
- * Junit5 test to verify that controllers can be loaded and bound.<br>
+ * JUnit 5 test to verify that all controllers can be loaded and bound.<br>
  * Opens a session in case some controllers need it.<br>
  * Simply extend this class and put that in a test source folder.
+ * <p>
+ * Each controller is loaded and its injections are validated. Unless the controller's
+ * {@link FxControllerService#binding()} is {@code NO}, all its bindable members must be bound.
+ * Controllers annotated with {@code test = false} are skipped.
  * <p>
  * Example:
  * <pre>
@@ -42,14 +45,12 @@ import org.tentackle.fx.FxFactory;
  */
 public abstract class ControllerTest extends FxRdcTestApplication {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ControllerTest.class);
-
   private final String packagePrefix;
 
   /**
    * Creates the controller test.
    *
-   * @param packagePrefix optional package prefix, null or empty if all
+   * @param packagePrefix optional prefix of the controller class names, null or empty if all
    */
   public ControllerTest(String packagePrefix) {
     super("fx-rdc-controller-test", Version.RELEASE);
@@ -63,14 +64,20 @@ public abstract class ControllerTest extends FxRdcTestApplication {
     this(null);
   }
 
+  /**
+   * Loads and verifies all controllers.
+   *
+   * @param reporter the test reporter
+   */
   @Test
-  public void testControllers() {
+  public void testControllers(TestReporter reporter) {
+
     for (Class<FxController> clazz : FxFactory.getInstance().getControllerClasses()) {
       if (packagePrefix == null || clazz.getName().startsWith(packagePrefix)) {
         FxControllerService anno = clazz.getAnnotation(FxControllerService.class);
         if (anno == null || anno.test()) {
           runFx(clazz.getName(), () -> {
-            LOGGER.info(() -> "testing controller " + clazz.getName());
+            reporter.publishEntry("testing controller " + clazz.getName());
             FxController controller = Fx.load(clazz);
             controller.validateInjections();
             if (anno == null || anno.binding() != FxControllerService.BINDING.NO) {
@@ -79,7 +86,7 @@ public abstract class ControllerTest extends FxRdcTestApplication {
           });
         }
         else {
-          LOGGER.info(() -> "controller " + clazz.getName() + " not tested!");
+          reporter.publishEntry("controller " + clazz.getName() + " not tested!");
         }
       }
     }

@@ -20,6 +20,7 @@ package org.tentackle.security.permissions;
 
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.security.Permission;
+import org.tentackle.security.SecurityException;
 
 import java.util.Objects;
 

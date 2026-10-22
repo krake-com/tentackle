@@ -64,11 +64,14 @@ import java.util.Set;
 import java.util.TreeMap;
 
 /**
- * Generates an SQL script to migrate the database tables according to the model.
+ * Generates an SQL script to migrate the database tables according to the model.<br>
+ * Connects to each connectable backend, compares its metadata table by table against the model,
+ * and writes the SQL required to bring the database in line, optionally guided by
+ * {@link MigrationHints}. The script is only generated, never executed.
  *
  * @author harald
  */
-@Mojo(name = "migrate", aggregator = true)
+@Mojo(name = "migrate", aggregator = true, threadSafe = true)
 public class MigrateSqlMojo extends AbstractSqlMojo {
 
   private static final String DEFAULT_SCHEMA = "<default>";     // default schema name
@@ -85,58 +88,52 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   private String sqlFileName;
 
   /**
-   * Optionally, the generated migration file is passed to freemarker as a template.<br>
-   * For each entity in the model a template variable is created of the form:
-   * <pre>
-   *   &lt;entity-name&gt;:TRUE|FALSE
-   * </pre>
-   * If TRUE, the entity needs migration, FALSE if not.
+   * Processes the generated migration file as a FreeMarker template.<br>
+   * The migration is first written to {@code <sqlFileName with dots replaced by dashes>.ftl}
+   * (e.g. {@code migratemodel-sql.ftl}), which is then rendered into the final SQL file and removed.
+   * See {@link MigrateTemplateModel} for the template variables, most notably
+   * {@code migrate.<EntityName>}, which is {@code true} if that entity's table needs migration.
    */
   @Parameter(defaultValue = "false",
              property = "tentackle.migrateSqlAsTemplate")
   private boolean asTemplate;
 
   /**
-   * The generated SQL file can be split into one file per entity.<br>
+   * Splits the generated migration into one file per migrated table.<br>
    * This is especially useful if the migrations are processed any further,
    * for example, by shell scripts.
    * <p>
-   * The main migration file will just contain statistic comments.<br>
-   * Each migrated table gets its own directory, which is a number starting at 1
-   * with leading zeros as necessary to keep the directory names in numeric order.<br>
-   * If there is a before-all SQL, it will go into the folder zero, i.e., 0 or 00, etc...<br>
-   * Any after-all SQL will go into the folder with the highest number.
+   * Each migrated table gets its own sub-folder of the backend's SQL directory, numbered from 1
+   * with leading zeros as necessary to keep the folder names in numeric order.
+   * The foreign key migrations follow the tables in a folder of their own ({@code _foreign_keys.sql}),
+   * then the {@code after all} hint ({@code _after_all.sql}) and finally the {@code always after}
+   * hint ({@code _always_after.sql}).
+   * The {@code always before} and {@code before all} hints go into folder zero, i.e. {@code 0}, {@code 00}, etc.
+   * <p>
+   * The main migration file just contains the statistics, the unexpected tables, the dropped tables
+   * and the warnings.
    */
   @Parameter
   private boolean split;
 
   /**
-   * Fail if unexpected tables are found in the database.
+   * Fails if unexpected tables are found in the database.<br>
+   * Unexpected tables are user tables that are neither in the model nor match the {@code alienTables}.
+   * If set, the migration script contains {@code DROP TABLE} statements for them
+   * instead of just listing them as a comment.
    */
   @Parameter(defaultValue = "false")
   private boolean failOnUnexpectedTables;
 
   /**
-   * Fail if the model differs from the database metadata.<br>
+   * Fails if the model differs from the database metadata.<br>
    * Useful to validate that no migrations are necessary.
    * <p>
-   * Same as {@code validate} goal.
+   * Same as the {@code validate} goal. Notice that there is no user property for this parameter,
+   * i.e. {@code -Dvalidate=true} has no effect: use the {@code validate} goal instead.
    */
   @Parameter
   private boolean validate;
-
-  /**
-   * Uses the model found in the resources of the classpath.<br>
-   * Useful to migrate the database tables for dependencies, for example, the Tentackle-framework's model.<br>
-   * Requires that the plugin dependencies contain the model resources
-   * (see {@link #dumpModelIndex}) amd {@link #dumpModelSource}).
-   * <p>
-   * Notice: when this flag is true, the model files in the filesets are ignored!
-   * If only the tentackle tables should be migrated, make sure to set checkReservedTables to false.
-   */
-  @Parameter
-  private boolean loadModelFromClassPath;
-
 
   /**
    * The database metadata retrieved from the backend.
@@ -265,6 +262,9 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       migrationValidation = new StringBuilder();
       otherTablesMap = new TreeMap<>();
       alienTablesMap = new HashMap<>();
+      tableStats = null;
+      processedEntities = 0;
+      skippedEntities = 0;
 
       try {
         DatabaseMetaData[] metaData = backendInfo.getBackend().getMetaData(backendInfo);
@@ -311,34 +311,33 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         throw new MojoExecutionException("could not retrieve metadata from " + backendInfo, sqx);
       }
 
-      getLog().info("migration hint filter: " + VersionFileFilter.getInstance().getName());
+      getLogger().info("migration hint filter: {}", VersionFileFilter.getInstance().getName());
 
-      backendMigrationHints = migrationHints.get(backendInfo.getUrl());
-      if (backendMigrationHints != null) {
-        if (backendMigrationHints.getHintFileNames().isEmpty()) {
-          getLog().info("no migration hints applied");
-        }
-        else {
-          StringBuilder buf = new StringBuilder();
-          buf.append("migration hints: ");
-          boolean needComma = false;
-          for (String hintFileName : backendMigrationHints.getHintFileNames()) {
-            if (needComma) {
-              buf.append(", ");
-            }
-            else {
-              needComma = true;
-            }
-            buf.append(hintFileName);
-            if (buf.length() > 80) {
-              getLog().info(buf);
-              buf.setLength(0);
-              needComma = false;
-            }
-          }
+      // backends configured via backendProperties have no migration hints
+      backendMigrationHints = migrationHints.computeIfAbsent(backendInfo.getUrl(), url -> new MigrationHints());
+      if (backendMigrationHints.getHintFileNames().isEmpty()) {
+        getLogger().info("no migration hints applied");
+      }
+      else {
+        StringBuilder buf = new StringBuilder();
+        buf.append("migration hints: ");
+        boolean needComma = false;
+        for (String hintFileName : backendMigrationHints.getHintFileNames()) {
           if (needComma) {
-            getLog().info(buf);
+            buf.append(", ");
           }
+          else {
+            needComma = true;
+          }
+          buf.append(hintFileName);
+          if (buf.length() > 80) {
+            getLogger().info(buf.toString());
+            buf.setLength(0);
+            needComma = false;
+          }
+        }
+        if (needComma) {
+          getLogger().info(buf.toString());
         }
       }
 
@@ -346,12 +345,12 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         Backend backend = backendInfo.getBackend();
         backend.setDropIfExistsEnabled(true);
         if (!backend.isDropIfExistsEnabled()) {
-          getLog().warn("backend " + backend + " does not support DROP IF EXISTS");
+          getLogger().warn("backend {} does not support DROP IF EXISTS", backend);
         }
       }
     }
     else  {
-      getLog().debug("no connection parameters available for " + backendInfo + " -> skipped");
+      getLogger().debug("no connection parameters available for {} -> skipped", backendInfo);
     }
   }
 
@@ -456,7 +455,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
           }
         }
         catch (SQLException sqx) {
-          getLog().warn("could not close connection " + con, sqx);
+          getLogger().warn("could not close connection {}", con, sqx);
         }
       }
     }
@@ -469,10 +468,10 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       if (validate) {
         throw new MojoFailureException(STR_CHANGES_DETECTED);
       }
-      getLog().warn(STR_CHANGES_DETECTED);
+      getLogger().warn(STR_CHANGES_DETECTED);
     }
     else {
-      getLog().info(STR_NO_CHANGES_DETECTED);
+      getLogger().info(STR_NO_CHANGES_DETECTED);
     }
 
     if (failOnUnexpectedTables && !otherTablesMap.isEmpty()) {
@@ -495,8 +494,8 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   protected void processBackend(BackendInfoParameter backendParameter, BackendInfo backendInfo) throws MojoExecutionException {
     MigrationHints hints = backendParameter.loadMigrationHints(backendInfo, this, verbosityLevel.isDebug(), getResourceDirs(false));
     migrationHints.put(backendInfo.getUrl(), hints);
-    getLog().info("backend: " + backendInfo);
-    getLog().info("version: " + backendParameter.minVersion);
+    getLogger().info("backend: {}", backendInfo);
+    getLogger().info("version: {}", backendParameter.minVersion);
   }
 
   @Override
@@ -521,18 +520,18 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       String commentLead = backendInfo.getBackend().getSingleLineComment();
 
       if (fileSet.getDirectory() == null) {
-        // directory missing: use sourceDir as default
+        // directory missing: use modelDir as default
         fileSet.setDirectory(modelDir.getAbsolutePath());
       }
 
       File modelDir = new File(fileSet.getDirectory());
       String modelDirName = getCanonicalPath(modelDir);
       if (verbosityLevel.isDebug()) {
-        getLog().info("processing files in " + modelDirName);
+        getLogger().info("processing files in {}", modelDirName);
       }
 
       writeModelIntroComment(backendInfo, modelDirName);
-      MigrationHints hints = migrationHints.get(backendInfo.getUrl());
+      MigrationHints hints = backendMigrationHints;
       ModelDefaults defaults = getModelDefaults();
       EntityAliases aliases = getEntityAliases();
 
@@ -559,13 +558,14 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
           model.loadFromDirectory(modelDirName, true);
         }
         foreignKeys = model.getForeignKeys();
+        warnIfDeferredNotSupported(backendInfo.getBackend(), model.getAllEntities(), foreignKeys);
         // build table rename maps if hints given
         renamedTables = determineRenamedTables(hints);
         revRenamedTables = new HashMap<>();
         for (Map.Entry<String, String> entry: renamedTables.entrySet()) {
           String dup = revRenamedTables.put(entry.getValue(), entry.getKey());
           if (dup != null) {
-            getLog().error("rename of '" + entry.getValue() + "' not unique! Found '" + entry.getKey() + "' and '" + dup + "'");
+            getLogger().error("rename of '{}' not unique! Found '{}' and '{}'", entry.getValue(), entry.getKey(), dup);
             errorCount++;
           }
         }
@@ -585,14 +585,14 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         try {
           for (Entity entity : getModel().getAllEntities()) {
             if (verbosityLevel.isDebug()) {
-              getLog().info("processing " + entity + " from classpath");
+              getLogger().info("processing {} from classpath", entity);
             }
             errorCount += migrateEntity(entity, backendInfo, hints, commentLead, renamedTables, revRenamedTables,
                                         foreignKeys, migratedTablenames, pendingMigrations, warningSql, foreignKeySql);
           }
         }
         catch (ModelException | RuntimeException ex) {
-          getLog().error("parsing model from classpath failed", ex);
+          getLogger().error("parsing model from classpath failed", ex);
           errorCount++;
         }
       }
@@ -604,12 +604,12 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
             // check if file exists
             File modelFile = new File(modelDirName, filename);
             if (!modelFile.exists()) {
-              getLog().error("no such model file: " + filename);
+              getLogger().error("no such model file: {}", filename);
               errorCount++;
             }
             else {
               if (verbosityLevel.isDebug()) {
-                getLog().info("processing " + modelFile);
+                getLogger().info("processing {}", modelFile);
               }
               try {
                 URL url = modelFile.toURI().toURL();
@@ -622,7 +622,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                                             foreignKeys, migratedTablenames, pendingMigrations, warningSql, foreignKeySql);
               }
               catch (IOException | ModelException | RuntimeException ex) {
-                getLog().error("parsing model failed for " + filename, ex);
+                getLogger().error("parsing model failed for {}", filename, ex);
                 errorCount++;
               }
             }
@@ -637,7 +637,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         String pendingTablename = entry.getKey();
         if (isMigrationPending(backendMigrationHints.getDependencies(pendingTablename), migratedTablenames)) {
           String msg = "dependency loop detected for " + pendingTablename + "! migration order may be not as expected!";
-          getLog().error(msg);
+          getLogger().error(msg);
           depErrors.append(commentLead).append(' ');
           depErrors.append(msg);
           depErrors.append('\n');
@@ -647,8 +647,13 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       }
 
       if (!foreignKeySql.isEmpty()) {
-        sqlCode.append('\n');
-        sqlCode.append(foreignKeySql);
+        if (split) {
+          splitMigrations.put("_foreign_keys.sql", foreignKeySql.toString());
+        }
+        else {
+          sqlCode.append('\n');
+          sqlCode.append(foreignKeySql);
+        }
       }
 
       for (String droppedTable : droppedTables) {
@@ -661,8 +666,13 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       sqlWarnings.append(warningSql);
 
       if (!depErrors.isEmpty()) {
-        sqlCode.append("\n\n").append(commentLead).append(" ************* CAUTION *************\n");
-        sqlCode.append(depErrors);
+        String caution = "\n\n" + commentLead + " ************* CAUTION *************\n" + depErrors;
+        if (split) {
+          splitMigrations.merge("_foreign_keys.sql", caution, String::concat);
+        }
+        else {
+          sqlCode.append(caution);
+        }
       }
 
       if (split) {
@@ -670,13 +680,12 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       }
 
       if (!migrationValidation.isEmpty()) {
-        getLog().error(migrationValidation);
+        getLogger().error(migrationValidation.toString());
       }
 
-      getLog().info(getModelLocation(modelDirName) + ": " +
-                    processedEntities + " entities processed, " +
-                    errorCount + " errors, " +
-                    getPathRelativeToBasedir(sqlDirName) + File.separator + sqlFileName + " created");
+      getLogger().info("{}: {} entities processed, {} errors, {}{}{} created",
+                       getModelLocation(modelDirName), processedEntities, errorCount,
+                       getPathRelativeToBasedir(sqlDirName), File.separator, sqlFileName);
 
       totalErrors += errorCount;
     }
@@ -710,7 +719,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         }
       }
       if (!add) {
-        getLog().debug(entity + " skipped because of wrong schema " + entity.getSchemaName());
+        getLogger().debug("{} skipped because of wrong schema {}", entity, entity.getSchemaName());
         skippedEntities++;
         return 0;
       }
@@ -749,7 +758,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               schemaBuf.append(tableHeader.getSchema());
             }
             else {
-              getLog().error("table " + entity.getTableName() + " of entity " + entity + " conflicts with " + tableHeader);
+              getLogger().error("table {} of entity {} conflicts with {}", entity.getTableName(), entity, tableHeader);
               errorCount++;
               conflicts = true;
             }
@@ -758,18 +767,18 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
             return errorCount;
           }
           if (schemaCount > 1) {
-            getLog().warn("table " + entity.getTableNameWithoutSchema() + " of entity " + entity +
-                          " exists in different schemas: " + schemaBuf);
+            getLogger().warn("table {} of entity {} exists in different schemas: {}",
+                             entity.getTableNameWithoutSchema(), entity, schemaBuf);
           }
         }
         else {
-          getLog().warn("table found in wrong schema: " + table.getFullTableName());
+          getLogger().warn("table found in wrong schema: {}", table.getFullTableName());
           errorCount++;
           return errorCount;
         }
       }
       catch (SQLException sqx) {
-        getLog().warn("could not retrieve table header info for table " + tableName, sqx);
+        getLogger().warn("could not retrieve table header info for table {}", tableName, sqx);
       }
 
       if (isAlienTable(plainTableName)) {
@@ -779,7 +788,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         if (header != null && !StringHelper.isAllWhitespace(header.getComment())) {
           buf.append(": ").append(header.getComment());
         }
-        getLog().error(buf);
+        getLogger().error(buf.toString());
         errorCount++;
         return errorCount;
       }
@@ -979,7 +988,19 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
    */
   private void writeSplitMigrations(BackendInfo backendInfo) throws MojoExecutionException {
 
+    if (!splitMigrations.isEmpty()) {
+      String sql = backendMigrationHints.getAfterAll();
+      if (!sql.isEmpty()) {
+        splitMigrations.put("_after_all.sql", sql);
+      }
+    }
+
+    // number of digits of the highest folder number
     int digits = 1;
+    int folderCount = splitMigrations.size() + (backendMigrationHints.getAlwaysAfter().isEmpty() ? 0 : 1);
+    while ((folderCount /= 10) > 0) {
+      digits++;
+    }
 
     String sql = backendMigrationHints.getAlwaysBefore();
     if (!sql.isEmpty()) {
@@ -987,16 +1008,6 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
     }
 
     if (!splitMigrations.isEmpty()) {
-      sql = backendMigrationHints.getAfterAll();
-      if (!sql.isEmpty()) {
-        splitMigrations.put("_after_all.sql", sql);
-      }
-
-      int tableCount = splitMigrations.size() + (backendMigrationHints.getAlwaysAfter().isEmpty() ? 0 : 1);
-      while ((tableCount /= 10) > 0) {
-        digits++;
-      }
-
       int splitCounter = 1;
       for (Map.Entry<String, String> entry : splitMigrations.entrySet()) {
         writeSplitMigration(splitCounter++, digits, entry.getKey(), entry.getValue(), backendInfo);
@@ -1040,7 +1051,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
     catch (IOException e) {
       throw new MojoExecutionException("writing to " + file + " failed", e);
     }
-    getLog().debug(file + " created");
+    getLogger().debug("{} created", file);
 
     if (asTemplate) {
       new MigrateGenerator(this, file, backendInfo, migratedEntitiesMap).generate(fileName);

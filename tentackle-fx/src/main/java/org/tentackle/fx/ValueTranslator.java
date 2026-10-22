@@ -25,7 +25,7 @@ import java.util.function.Function;
 
 /**
  * A value translator.<br>
- * Converts between view and model types.<br>
+ * Converts between view and model types.
  * <p>
  * Notice: tentackle uses the term "translator" instead of "converter" to prevent
  * tentackle-translators from being mixed up with JavaFX StringConverters.
@@ -44,14 +44,14 @@ public interface ValueTranslator<M,V> {
   FxComponent getComponent();
 
   /**
-   * Function to translate a model value to a view value.<br>
+   * Function to translate a model value to a view value.
    *
    * @return the function
    */
   Function<M,V> toViewFunction();
 
   /**
-   * Function to translate a view value to a model value.<br>
+   * Function to translate a view value to a model value.
    *
    * @return the function
    */
@@ -66,7 +66,7 @@ public interface ValueTranslator<M,V> {
 
   /**
    * Returns whether the model value is only mapped partially to the view.<br>
-   * Such data types may hold more data that could have changed by the translator, but
+   * Such data types may hold more data that could have been changed by the translator, but
    * the view object still looks unchanged.<br>
    * An example for such a type is {@link org.tentackle.common.I18NText}.
    *
@@ -83,7 +83,7 @@ public interface ValueTranslator<M,V> {
   void saveModelValue(M modelValue);
 
   /**
-   * Returns whether the model is modified compared to value saved via {@link #saveModelValue(Object)}.<br>
+   * Returns whether the model is modified compared to the value saved via {@link #saveModelValue(Object)}.<br>
    * Only invoked if {@link #isMappingIncomplete()} is <code>true</code>.
    *
    * @return true if model is modified
@@ -92,7 +92,7 @@ public interface ValueTranslator<M,V> {
 
   /**
    * Returns whether toModel must be invoked twice.<br>
-   * An example is a DoubleStringTranslator:<br>
+   * An example is the {@link org.tentackle.fx.translate.DoubleStringTranslator}:<br>
    * let fraction number input be 1.211111 and formatting scale 2.
    * <ul>
    * <li>after first updateModel the model contains 1.211111</li>
@@ -111,7 +111,7 @@ public interface ValueTranslator<M,V> {
    * Not to be mixed up with the component's properties (see {@link Node#getProperties()}),
    * which may require explicit invocation of this method.<br>
    * May be necessary if some action must be taken by the translator, for example
-   * re-initialize, cleanup, etc...
+   * re-initialization, cleanup, etc.
    */
   default void bindingPropertiesUpdated() {
     // default does nothing.

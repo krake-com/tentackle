@@ -35,6 +35,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A script based on JSR-223.
+ * <p>
+ * The code is compiled lazily on first use via the {@link Compilable} interface of the language's engine,
+ * shared by all scripts with the same code and engine if cached. Each execution gets its own {@link SimpleBindings} replacing
+ * the engine scope. If the script is thread-safe, compilation is synchronized on the engine and so is execution,
+ * unless the engine itself is thread-safe.
  *
  * @author harald, bei
  */
@@ -42,8 +47,17 @@ public class JSR223Script extends AbstractScript {
 
   private static final Logger LOGGER = Logger.get(JSR223Script.class);
 
-  /** map of code:scripts. */
-  private static final Map<String, CompiledJSR223Script> SCRIPT_CACHE = new ConcurrentHashMap<>();
+  /**
+   * Cache key.<br>
+   * Since the compiled scripts are bound to their engine, the key includes the engine as well.
+   *
+   * @param engine the script engine
+   * @param code the source code
+   */
+  private record CacheKey(ScriptEngine engine, String code) {}
+
+  /** map of engine+code:scripts. */
+  private static final Map<CacheKey, CompiledJSR223Script> SCRIPT_CACHE = new ConcurrentHashMap<>();
 
   private volatile CompiledJSR223Script compiledScript;      // the JSR compiled script
 
@@ -77,7 +91,7 @@ public class JSR223Script extends AbstractScript {
     CompiledJSR223Script script = getCompiledScript();
     LOGGER.finer(() -> "execute: \n" + script.getCode() + "\nwith args: " + ScriptVariable.variablesToString(variables));
     try {
-      Bindings bindings = new SimpleBindings();
+      Bindings bindings = new SimpleBindings();    // used as ENGINE_SCOPE for this execution only
       if (variables != null) {
         for (ScriptVariable variable: variables) {
           bindings.put(getLanguage().createLocalVariableReference(variable.getName()), variable.getValue());
@@ -103,7 +117,7 @@ public class JSR223Script extends AbstractScript {
 
   /**
    * Gets the compiled script.<br>
-   * Will be parsed if not done yet.
+   * Will be compiled if not done yet.
    *
    * @return the compiled script, never null
    */
@@ -114,7 +128,8 @@ public class JSR223Script extends AbstractScript {
         localScript = compiledScript;
         if (localScript == null) {
           localScript = compiledScript = isCached() ?
-                                         SCRIPT_CACHE.computeIfAbsent(getCode(), this::compileScript) :
+                                         SCRIPT_CACHE.computeIfAbsent(new CacheKey(getLanguage().getEngine(), getCode()),
+                                                                      key -> compileScript(key.code())) :
                                          compileScript(getCode());
         }
       }
@@ -127,23 +142,31 @@ public class JSR223Script extends AbstractScript {
    *
    * @param code the scripting source code
    * @return the compiled script
+   * @throws ScriptRuntimeException if the engine does not implement {@link Compilable} or compilation failed
    */
   protected CompiledJSR223Script compileScript(String code) {
     try {
       ScriptEngine engine = getLanguage().getEngine();
+      if (!(engine instanceof Compilable compilable)) {
+        throw new ScriptRuntimeException("engine " + getLanguage().getEngineFactory().getEngineName() +
+                                         " does not support compilation (javax.script.Compilable): " + this);
+      }
       LOGGER.fine("compiling script with {0}:\n{1}", engine, code);
       CompiledScript script;
       if (isThreadSafe()) {
         // compile may be thread-unsafe as well
-        // at least Jruby throws ConcurrentModificationException sporadically!
+        // at least JRuby throws ConcurrentModificationException sporadically!
         synchronized (engine) {
-          script = ((Compilable) engine).compile(code);
+          script = compilable.compile(code);
         }
       }
       else {
-        script = ((Compilable) engine).compile(code);
+        script = compilable.compile(code);
       }
       return new CompiledJSR223Script(code, script);
+    }
+    catch (ScriptRuntimeException sx) {
+      throw sx;
     }
     catch (RuntimeException | ScriptException ex) {
       String message = ex.getMessage();

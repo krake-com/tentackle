@@ -40,7 +40,7 @@ public class ${remoteImplementation}<T extends ${pdoInterface}<T>, P extends ${p
    *
    * @param serverSession the TRIP session
    * @param persistenceClass the persistence implementation class
-   * @param pdoClass the pdo interface class
+   * @param pdoClass the PDO interface class
    */
   public ${remoteImplementation}(RemoteDbSessionImpl serverSession, Class<P> persistenceClass, Class<T> pdoClass) {
     super(serverSession, persistenceClass, pdoClass);
@@ -55,7 +55,7 @@ public class ${remoteImplementation}
    *
    * @param serverSession the TRIP session
    * @param persistenceClass the persistence implementation class
-   * @param pdoClass the pdo interface class
+   * @param pdoClass the PDO interface class
    */
   public ${remoteImplementation}(RemoteDbSessionImpl serverSession, Class<${persistenceImplementation}> persistenceClass, Class<${pdoInterface}> pdoClass) {
     super(serverSession, persistenceClass, pdoClass);

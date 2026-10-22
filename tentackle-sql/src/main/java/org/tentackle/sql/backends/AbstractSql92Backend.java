@@ -20,6 +20,7 @@ package org.tentackle.sql.backends;
 
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendPreparedStatement;
+import org.tentackle.sql.metadata.Deferrability;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -110,12 +111,30 @@ public abstract class AbstractSql92Backend extends AbstractBackend {
    * Determines whether {@link #buildSelectSql(StringBuilder, boolean, int, int)} must prepend a <code>"SELECT "</code>.
    *
    * @param sqlBuilder the sql builder
-   * @return true if leading select keyword is missing
+   * @return true if the SQL starts with neither {@code SELECT} nor {@code WITH}
    */
   protected boolean isLeadingSelectMissing(StringBuilder sqlBuilder) {
     // does not start with SELECT or WITH
     String sql = sqlBuilder.toString().toUpperCase(Locale.ROOT);
     return !sql.startsWith(SQL_SELECT) && !sql.startsWith("WITH ");
+  }
+
+  /**
+   * Removes the leading {@code SELECT}, if present.<br>
+   * Used by backends that must insert paging keywords right after the {@code SELECT}
+   * or wrap the whole select into an enclosing one.
+   *
+   * @param sqlBuilder the sql builder
+   * @throws BackendException if the SQL starts with {@code WITH}, which cannot be paged this way
+   */
+  protected void removeLeadingSelect(StringBuilder sqlBuilder) {
+    String sql = sqlBuilder.toString().toUpperCase(Locale.ROOT);
+    if (sql.startsWith(SQL_SELECT)) {
+      sqlBuilder.delete(0, SQL_SELECT.length());
+    }
+    else if (sql.startsWith("WITH ")) {
+      throw new BackendException("backend " + this + " does not support LIMIT or OFFSET for selects starting with WITH");
+    }
   }
 
   @Override
@@ -147,7 +166,7 @@ public abstract class AbstractSql92Backend extends AbstractBackend {
 
   @Override
   public String sqlCreateForeignKey(String referencingTableName, String referencingColumnName, String referencedTableName,
-          String referencedColumnName, String foreignKeyName, boolean composite) {
+          String referencedColumnName, String foreignKeyName, boolean composite, Deferrability deferrability) {
     StringBuilder buf = new StringBuilder(SQL_ALTER_TABLE);
     buf.append(referencingTableName);
     buf.append(" ADD CONSTRAINT ");
@@ -162,18 +181,49 @@ public abstract class AbstractSql92Backend extends AbstractBackend {
     if (composite) {
       buf.append(" ON DELETE CASCADE");
     }
+    if (deferrability != null && deferrability.isDeferrable() && isSetConstraintsDeferredSupported()) {
+      buf.append(' ').append(deferrability.getSql());
+    }
+    buf.append(getStatementSeparator()).append('\n');
+    return buf.toString();
+  }
+
+  @Override
+  public String sqlCreateUniqueConstraint(String tableName, String constraintName, Deferrability deferrability, String... columnNames) {
+    StringBuilder buf = new StringBuilder(SQL_ALTER_TABLE);
+    buf.append(tableName);
+    buf.append(" ADD CONSTRAINT ");
+    buf.append(constraintName);
+    buf.append(" UNIQUE (");
+    boolean needsComma = false;
+    for (String columnName : columnNames) {
+      if (needsComma) {
+        buf.append(", ");
+      }
+      buf.append(columnName);
+      needsComma = true;
+    }
+    buf.append(')');
+    if (deferrability != null && deferrability.isDeferrable() && isSetConstraintsDeferredSupported()) {
+      buf.append(' ').append(deferrability.getSql());
+    }
     buf.append(getStatementSeparator()).append('\n');
     return buf.toString();
   }
 
   @Override
   public String sqlDropForeignKey(String referencingTableName, String foreignKeyName) {
+    return sqlDropConstraint(referencingTableName, foreignKeyName);
+  }
+
+  @Override
+  public String sqlDropConstraint(String tableName, String constraintName) {
     StringBuilder buf = new StringBuilder();
-    buf.append(SQL_ALTER_TABLE).append(referencingTableName).append(" DROP CONSTRAINT ");
+    buf.append(SQL_ALTER_TABLE).append(tableName).append(" DROP CONSTRAINT ");
     if (isDropIfExistsEnabled()) {
       buf.append(SQL_IF_EXISTS);
     }
-    buf.append(foreignKeyName).append(getStatementSeparator()).append('\n');
+    buf.append(constraintName).append(getStatementSeparator()).append('\n');
     return buf.toString();
   }
 

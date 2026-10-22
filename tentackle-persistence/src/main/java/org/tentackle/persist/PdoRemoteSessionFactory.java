@@ -24,7 +24,8 @@ import org.tentackle.dbms.trip.RemoteDbSession;
 import org.tentackle.session.RemoteSession;
 
 /**
- * PDO-aware implementation for a remote session factory.
+ * PDO-aware implementation of a remote session factory.<br>
+ * Creates {@link PdoRemoteSessionAdapter}s.
  *
  * @author harald
  */

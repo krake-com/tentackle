@@ -33,7 +33,9 @@ import java.util.Calendar;
 import java.util.Collection;
 
 /**
- * Just an interface to decouple dependency from PreparedStatementWrapper.
+ * Backend-facing view of a prepared statement.<br>
+ * Implemented by the {@code PreparedStatementWrapper} of the persistence layer, so that backends and
+ * data types can set parameters without depending on it.
  *
  * @author harald
  */
@@ -69,6 +71,7 @@ public interface BackendPreparedStatement {
 
   /**
    * Generic setter for objects via known {@link SqlType}.
+   *
    * @param sqlType the sql type
    * @param p the positional index, starting at 1
    * @param object the object of given sql type
@@ -182,14 +185,13 @@ public interface BackendPreparedStatement {
    *
    * @param p the first parameter is 1, the second is 2, ...
    * @param d the parameter value
-   * @param mapNull to map null values to 1.1.1970 (epochal time zero), else SQL NULL
+   * @param mapNull true to map null values to 1.1.1970 (epochal time zero), else SQL NULL
    */
   void setDate(int p, Date d, boolean mapNull);
 
   /**
    * Sets the designated parameter to the given <code>java.sql.Date</code> value
-   * using the default time zone of the virtual machine that is running
-   * the application.
+   * using the time zone of the given calendar.
    * The driver converts this
    * to an SQL <code>DATE</code> value when it sends it to the database.
    *
@@ -201,15 +203,14 @@ public interface BackendPreparedStatement {
 
   /**
    * Sets the designated parameter to the given <code>java.sql.Date</code> value
-   * using the default time zone of the virtual machine that is running
-   * the application.
+   * using the time zone of the given calendar.
    * The driver converts this
    * to an SQL <code>DATE</code> value when it sends it to the database.
    *
    * @param p the first parameter is 1, the second is 2, ...
    * @param d the parameter value
    * @param timezone the calendar providing the timezone configuration
-   * @param mapNull to map null values to 1.1.1970 (epochal time zero), else SQL NULL
+   * @param mapNull true to map null values to 1.1.1970 (epochal time zero), else SQL NULL
    */
   void setDate(int p, Date d, Calendar timezone, boolean mapNull);
 
@@ -290,7 +291,7 @@ public interface BackendPreparedStatement {
    *
    * @param p the first parameter is 1, the second is 2, ...
    * @param d the parameter value
-   * @param mapNull to map null values to 1.1.1970 (epochal time zero), else SQL NULL
+   * @param mapNull true to map null values to 1.1.1970 (epochal time zero), else SQL NULL
    */
   void setLocalDate(int p, LocalDate d, boolean mapNull);
 
@@ -307,7 +308,7 @@ public interface BackendPreparedStatement {
    *
    * @param p the first parameter is 1, the second is 2, ...
    * @param ts the parameter value
-   * @param mapNull to map null values to 1.1.1970 00:00:00.000 (epochal time zero),
+   * @param mapNull true to map null values to 1.1.1970 00:00:00.000 (epochal time zero),
    * else SQL NULL
    */
   void setLocalDateTime(int p, LocalDateTime ts, boolean mapNull);
@@ -325,7 +326,7 @@ public interface BackendPreparedStatement {
    *
    * @param p the first parameter is 1, the second is 2, ...
    * @param ts the parameter value
-   * @param mapNull to map null values to 1.1.1970 00:00:00.000 (epochal time zero),
+   * @param mapNull true to map null values to 1.1.1970 00:00:00.000 (epochal time zero),
    * else SQL NULL
    */
   void setOffsetDateTime(int p, OffsetDateTime ts, boolean mapNull);
@@ -343,7 +344,7 @@ public interface BackendPreparedStatement {
    *
    * @param p the first parameter is 1, the second is 2, ...
    * @param ts the parameter value
-   * @param mapNull to map null values to 1.1.1970 00:00:00.000 GMT (epochal time zero),
+   * @param mapNull true to map null values to 1.1.1970 00:00:00.000 GMT (epochal time zero),
    * else SQL NULL
    */
   void setZonedDateTime(int p, ZonedDateTime ts, boolean mapNull);
@@ -361,7 +362,7 @@ public interface BackendPreparedStatement {
    *
    * @param p the first parameter is 1, the second is 2, ...
    * @param ts the parameter value
-   * @param mapNull to map null values to 1.1.1970 00:00:00.000 (epochal time zero),
+   * @param mapNull true to map null values to 1.1.1970 00:00:00.000 (epochal time zero),
    * else SQL NULL
    */
   void setInstant(int p, Instant ts, boolean mapNull);
@@ -405,10 +406,10 @@ public interface BackendPreparedStatement {
   /**
    * Sets the designated parameter to SQL <code>NULL</code>.
    *
-   * @param pos the first parameter is 1, the second is 2, ...
+   * @param p the first parameter is 1, the second is 2, ...
    * @param type the SQL type code defined in <code>java.sql.Types</code>
    */
-  void setNull(int pos, int type);
+  void setNull(int p, int type);
 
   /**
    * Sets the designated parameter to the given Java <code>Short</code> value.
@@ -477,6 +478,50 @@ public interface BackendPreparedStatement {
   void setLargeString(int p, String s);
 
   /**
+   * Sets a string bridged through the JDBC {@code SQLXML} interface.<br>
+   * This is usually converted to a native XML column, or emulated as <code>CLOB</code>/<code>VARCHAR</code>.
+   *
+   * @param p the first parameter is 1, the second is 2, ...
+   * @param s the parameter value
+   * @param mapNull true if null values should be mapped to the empty string, else SQL NULL.
+   *        Ignored if the backend stores the value in a native XML column, since the empty
+   *        string is not an XML document
+   */
+  void setSqlxml(int p, String s, boolean mapNull);
+
+  /**
+   * Sets a string bridged through the JDBC {@code SQLXML} interface.<br>
+   * This is usually converted to a native XML column, or emulated as <code>CLOB</code>/<code>VARCHAR</code>.
+   *
+   * @param p the first parameter is 1, the second is 2, ...
+   * @param s the parameter value, null if the value should be set to SQL NULL
+   */
+  void setSqlxml(int p, String s);
+
+  /**
+   * Sets a string holding a JSON document.<br>
+   * This is usually converted to a native JSON column, or emulated as <code>CLOB</code>/<code>VARCHAR</code>.
+   * Notice that the document is not validated by tentackle, and that a backend with a native type
+   * may normalize it.
+   *
+   * @param p the first parameter is 1, the second is 2, ...
+   * @param s the parameter value
+   * @param mapNull true if null values should be mapped to the empty string, else SQL NULL.
+   *        Ignored if the backend stores the value in a native JSON column, since the empty
+   *        string is not a JSON document
+   */
+  void setJson(int p, String s, boolean mapNull);
+
+  /**
+   * Sets a string holding a JSON document.<br>
+   * This is usually converted to a native JSON column, or emulated as <code>CLOB</code>/<code>VARCHAR</code>.
+   *
+   * @param p the first parameter is 1, the second is 2, ...
+   * @param s the parameter value, null if the value should be set to SQL NULL
+   */
+  void setJson(int p, String s);
+
+  /**
    * Sets the designated parameter to the given <code>java.sql.Time</code> value.
    * The driver converts this
    * to an SQL <code>TIME</code> value when it sends it to the database.
@@ -516,7 +561,7 @@ public interface BackendPreparedStatement {
    *
    * @param p the first parameter is 1, the second is 2, ...
    * @param ts the parameter value
-   * @param mapNull to map null values to 1.1.1970 00:00:00.000 (epochal time zero),
+   * @param mapNull true to map null values to 1.1.1970 00:00:00.000 (epochal time zero),
    * else SQL NULL
    */
   void setTimestamp(int p, Timestamp ts, boolean mapNull);
@@ -530,7 +575,6 @@ public interface BackendPreparedStatement {
    * @param p the first parameter is 1, the second is 2, ...
    * @param ts the parameter value
    * @param timezone the calendar providing the timezone configuration
-   * else SQL NULL
    */
   void setTimestamp(int p, Timestamp ts, Calendar timezone);
 
@@ -543,7 +587,7 @@ public interface BackendPreparedStatement {
    * @param p the first parameter is 1, the second is 2, ...
    * @param ts the parameter value
    * @param timezone the calendar providing the timezone configuration
-   * @param mapNull to map null values to 1.1.1970 00:00:00.000 (epochal time zero),
+   * @param mapNull true to map null values to 1.1.1970 00:00:00.000 (epochal time zero),
    * else SQL NULL
    */
   void setTimestamp(int p, Timestamp ts, Calendar timezone, boolean mapNull);

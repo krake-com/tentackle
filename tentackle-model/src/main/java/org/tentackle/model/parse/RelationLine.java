@@ -33,11 +33,12 @@ import java.util.Map;
  *
  * Properties:<p>
  *
- * relation = &lt;object|list|reversed&gt; [composite|component] [tracked] [referenced] [processed] [readonly|writeonly|nomethod]
+ * relation = [object|list] [composite|component] [tracked] [referenced] [processed] [readonly|writeonly|nomethod]
  *            [serialized] [remoteclear] [reversed] [shallow] [immutable] [normtext] [blunt]
  * <ul>
- *    <li>object: single object association [1:1]. This is the default.</li>
- *    <li>reversed: non-composite list relation that contains max. one object (reversed 1:1 object relation)</li>
+ *    <li>object: single object association [1:1]. This is the default, unless reversed.</li>
+ *    <li>reversed: non-composite list relation that contains at most one object. The foreign entity holds the link.
+ *    The generated accessors look like those of an object relation. Implies list.</li>
  *    <li>list: list of objects [1:N]. ([N:M] see below nm = ...)</li>
  *    <li>composite/component: the relation points to a component (default if the related entity's type is embedded)</li>
  *    <li>tracked: modification state of the object or list is tracked</li>
@@ -46,31 +47,36 @@ import java.util.Map;
  *    <li>readonly: don't generate set-method</li>
  *    <li>writeonly: don't generate get-method</li>
  *    <li>nomethod: don't generate set- and get-method (shorthand for readonly writeonly)</li>
- *    <li>serialized (only if lazy and not composite): lazy non-composite references are transient by default. "serialized" makes them non-transient.</li>
+ *    <li>serialized (only if lazy or eager and not composite): lazy non-composite references are transient by default. "serialized" makes them non-transient.</li>
  *    <li>remoteclear: clear serialized relation before save (i.e. sending to server)</li>
  *    <li>shallow: exclude this relation in snapshots or copies</li>
  *    <li>immutable: set this relation immutable after the initial load</li>
  *    <li>normtext: add the toString value of this relation to the normtext. If this is a list, add toStrings of all PDOs.</li>
  *    <li>blunt: the blunt-method becomes part of the persistence interface.</li>
  * </ul>
- * If the relation is associated to an attribute the readonly and writeonly flags are overwritten
+ * If the relation is associated with an attribute, the readonly and writeonly flags are overridden
  * by the attribute.
  * <p>
  *
- * select = &lt;always|eager|lazy|embedded&gt; [cached] [| wurbletargs]
+ * select = &lt;always|eager[:depth]|lazy|embedded&gt; [cached] [| wurbletargs]
  * <ul>
  *    <li>always: fetched on every get (default if cached)</li>
  *    <li>eager: fetched in advance whenever the main class is fetched</li>
+ *    <li>depth: number of relation hops the eager join cascade may span, at least 1 (the default).<br>
+ *        A depth &gt; 1 also joins the eager relations of the related entity, and so on.<br>
+ *        Example: <code>select = eager:2</code></li>
  *    <li>lazy: fetched within the first get only (default if not cached)</li>
  *    <li>embedded: fetched by parent (default if the related entity's type is embedded)</li>
- *    <li>cached: use caching select methods if possible (only for objects-relations)</li>
+ *    <li>cached: use caching select methods if possible (only for non-composite, non-serialized object relations)</li>
  *    <li>wurbletargs: additional arguments passed to the PdoSelectList-wurblet (only for list-relations)<br>
  *        Example: <code>select = lazy | -pilePosition</code></li>
  * </ul>
  *
  * delete = [cascade]
  * <ul>
- *    <li>cascade: composition is a list that contains compositions (only if model without integrity checks)</li>
+ *    <li>cascade: delete the components of a component list cascaded.
+ *    Only for component lists, since object relations are always deleted cascaded.
+ *    Only relevant if the integrity disables database integrity checks for components.</li>
  * </ul>
  *
  * link = &lt;name-of-link-method&gt; [index]
@@ -78,7 +84,7 @@ import java.util.Map;
  *    <li>only for composite relations: special method to set the links in composite lists or objects
  *    in saveReferencingRelations. For example: <code>setBlah</code>. <code>set</code> alone will be
  *    replaced by the corresponding method name according to the model.<br>
- *    The methods arguments are fixed to (this).</li>
+ *    The method's arguments are fixed to (this).</li>
  *    <li>
  *    [index] is an integer attribute of the referenced entity.<br>
  *    If [index] is set, (this, ndx) is invoked with index beginning at 0 (only for lists).<br>
@@ -88,8 +94,8 @@ import java.util.Map;
  *
  * args = &lt;foreign-attribute2&gt;[&lt;method&gt; | &lt;constant&gt;] &lt;foreign-attribute3&gt;[&lt;method&gt; | &lt;constant&gt;]...
  * <ul>
- *    <li>second and more arguments passed to selectBy- or deleteBy-method. Only applicable to list relations
- *      or reversed object relations.<br>
+ *    <li>second and more arguments passed to selectBy- or deleteBy-method. Only applicable to list relations,
+ *      including reversed ones.<br>
  *      Example: <code>args = forCreditor[isCreditor()] lineType[CalculationLineType.ON_CALCULATION]</code><br>
  *      The first argument cannot be overwritten. For lists, it is <code>&lt;name-of-current-entity&gt;Id[getId()]</code>.<br>
  *      (For object relations it is <code>id[get&lt;name-of-relation&gt;Id()]</code> and no extra args are allowed anyway.)
@@ -108,7 +114,7 @@ import java.util.Map;
  *    <li>relationname: name of the relation. Defaults to &lt;class&gt;.<br>
  *    The getter- and setter-names are generated as follows:<br>
  *    get&lt;name&gt; and set&lt;name&gt; (always first letter in uppercase) for object-relations and
- *    get&lt;name&gt;List, set&lt;name&gt;List for list-relations.<br>
+ *    get&lt;name&gt;List, set&lt;name&gt;List for non-reversed list-relations.<br>
  *    If &lt;name&gt; is explicitly set, the methods will be named get&lt;name&gt; and set&lt;name&gt;
  *    regardless of the relation type.
  *    </li>
@@ -118,19 +124,20 @@ import java.util.Map;
  * <ul>
  *    <li>columnprefix: the prefix to add to the column names of the related embedded PDO.<br>
  *    Only applicable to embedded relations!<br>
- *    Defaults to lowercase of &lt;relationname&gt; plus an underline.<br>
+ *    Defaults to lowercase of &lt;relationname&gt; plus an underscore.<br>
  *    For nested embedded PDOs, the prefixes are concatenated accordingly.
  *    </li>
  * </ul>
  *
- * nm = &lt;entity&gt; [mnMethodName] [nmScope]
+ * nm = &lt;relation&gt; [nmMethodName] [nmScope]
  * <ul>
- *    <li>entity: name of opposite entity the N:M relation.</li>
- *    <li>mnMethodName: optional method name to access the list of opposite entities.</li>
- *    <li>mnScope: optional access scope of the nm-method (defaults to scope = ...). Can be used
- *        to hide the technical methods via <code>scope=private</code> from the interfaces and making the nm-method <code>public</code>.</li>
+ *    <li>relation: name of the non-composite object relation in the link entity that points to the opposite
+ *        entity of the N:M relation.</li>
+ *    <li>nmMethodName: optional method name to access the list of opposite entities.</li>
+ *    <li>nmScope: optional access scope of the nm-method (defaults to scope = ...). Can be used
+ *        to hide the technical methods via <code>scope=private</code> from the interfaces and make the nm-method <code>public</code>.</li>
  * </ul>
- * The relation must be a list relation.<p>
+ * The relation must be a component list relation.<p>
  *
  * scope = &lt;public|private|protected|package&gt;
  * <ul>
@@ -139,7 +146,8 @@ import java.util.Map;
  *
  * count = &lt;counter attribute&gt;
  * <ul>
- *    <li>sets the counter attribute. Must be numeric. Only available for composite non-reversed list relations.</li>
+ *    <li>sets the counter attribute. Must be numeric and not nullable, and is made hidden.
+ *    Only available for composite non-reversed list relations of fulltracked entities.</li>
  * </ul>
  *
  * comment = &lt;comment&gt;
@@ -187,7 +195,7 @@ public class RelationLine extends MultiLine {
     String configText = text.substring(ndx + 1);
 
     // scan properties , ....
-    properties = new LinkedHashMap<>();   // preserver order
+    properties = new LinkedHashMap<>();   // preserve order
     OptionParser parser = new OptionParser(configText, null);
     String prop;
     while ((prop = parser.nextOption()) != null) {

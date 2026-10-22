@@ -127,7 +127,13 @@ public class TimestampType extends AbstractDateTimeType<Timestamp> {
     return org.tentackle.common.Timestamp.createFrozen(timestamp.getTime(), timestamp.getNanos());
   }
 
-
+  /**
+   * Parses a string in the format {@code yyyy-MM-dd HH:mm:ss[.SSS]}.
+   *
+   * @param str the string, optionally enclosed in double quotes
+   * @return the timestamp
+   * @throws BackendException if parsing failed
+   */
   protected Timestamp parse(String str) throws BackendException {
     str = StringHelper.parseString(str);
     if (str.contains(".")) {
@@ -148,6 +154,12 @@ public class TimestampType extends AbstractDateTimeType<Timestamp> {
     }
   }
 
+  /**
+   * Formats a timestamp as {@code yyyy-MM-dd HH:mm:ss}, with {@code .SSS} appended if it has milliseconds.
+   *
+   * @param timestamp the timestamp
+   * @return the formatted string
+   */
   protected String format(Timestamp timestamp) {
     if (timestamp.getTime() % 1000 != 0) {
       synchronized(MS_TIMESTAMP_FORMAT) {

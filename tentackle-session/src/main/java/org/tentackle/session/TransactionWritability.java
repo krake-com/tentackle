@@ -63,7 +63,7 @@ public enum TransactionWritability {
    * Derives the transaction writability enum from the low-level boolean.
    *
    * @param writable the low-level constant
-   * @return the transaction isolation, {@link #DEFAULT} if no such level
+   * @return the transaction writability, {@link #DEFAULT} if null
    */
   public static TransactionWritability valueOf(Boolean writable) {
     for (TransactionWritability transactionWritability : TransactionWritability.values()) {

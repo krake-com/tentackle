@@ -31,7 +31,9 @@ import org.tentackle.fx.table.type.BooleanTableCellType;
 import org.tentackle.security.pdo.Security;
 
 /**
- * GUI provider for Security.
+ * GUI provider for {@link Security}.<br>
+ * Edits the security rules with the {@link SecurityEditor} and displays them in a table
+ * of grantee, context, permissions, allowed flag, and message.
  *
  * @author harald
  */
@@ -41,7 +43,7 @@ public class SecurityGuiProvider extends DefaultGuiProvider<Security> {
   /**
    * Creates the provider.
    *
-   * @param pdo the pdo
+   * @param pdo the PDO
    */
   public SecurityGuiProvider(Security pdo) {
     super(pdo);

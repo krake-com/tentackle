@@ -17,6 +17,6 @@
  */
 
 /**
- * Security rules remoting.
+ * TRIP remote delegates for the security rule PDO.
  */
 package org.tentackle.persist.security.trip;

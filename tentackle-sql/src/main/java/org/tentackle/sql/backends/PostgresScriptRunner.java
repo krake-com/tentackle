@@ -28,7 +28,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 /**
- * Script runner for postgres.
+ * Script runner for PostgreSQL.<br>
+ * Determines the support for POSIX escapes from the server setting {@code standard_conforming_strings}.
  */
 public class PostgresScriptRunner extends DefaultScriptRunner {
 
@@ -37,7 +38,7 @@ public class PostgresScriptRunner extends DefaultScriptRunner {
    *
    * @param backend the backend
    * @param connection the SQL connection
-   * @see AbstractBackend#createScriptRunner(Connection)
+   * @see Postgres#createScriptRunner(Connection)
    */
   public PostgresScriptRunner(Backend backend, Connection connection) {
     super(backend, connection);
@@ -56,7 +57,7 @@ public class PostgresScriptRunner extends DefaultScriptRunner {
       return false;
     }
     catch (SQLException ex) {
-      throw new BackendException("cannot determine posix escape syntax support", ex);
+      throw new BackendException("cannot determine POSIX escape syntax support", ex);
     }
   }
 

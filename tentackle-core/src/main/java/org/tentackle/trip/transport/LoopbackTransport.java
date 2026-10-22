@@ -31,7 +31,7 @@ import java.net.URI;
 /**
  * Loopback transport for testing purposes.
  * <p>
- * Differs from regular transports that it accepts only one connection.<br>
+ * Differs from regular transports in that it accepts only one connection.<br>
  * Emulates the server side in separate threads in the same way a regular transport would do.
  */
 @TransportService(LoopbackTransport.PROTOCOL)

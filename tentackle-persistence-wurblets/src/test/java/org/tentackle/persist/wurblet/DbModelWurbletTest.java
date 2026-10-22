@@ -26,7 +26,11 @@ import org.wurbelizer.wurbel.WurbelException;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
 
+import java.util.List;
+
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
 import static org.tentackle.persist.wurblet.WurbletTestSupport.attribute;
@@ -101,6 +105,46 @@ public class DbModelWurbletTest {
   }
 
   /**
+   * A {@code JSON} attribute is a {@code String} with a variant, so the accessor name cannot come
+   * from the java type alone: it must be {@code getJson}/{@code setJson}, not {@code getString}.
+   * <p>
+   * Going through the model DSL covers the {@code JSON} keyword as well, which is what selects
+   * the variant in the first place.
+   */
+  @Test
+  public void derivesTheJsonAccessorNames() throws Exception {
+    Entity jsonEntity = createEntity("""
+        name := Payload
+        id := 2
+        table := payload
+
+        JSON  doc  doc  the JSON document
+        """);
+    Attribute doc = attribute(jsonEntity, "doc");
+    assertEquals(wurblet.createJdbcGetterName(doc), "getJson");
+    assertEquals(wurblet.createJdbcSetterName(doc.getEffectiveDataType()), "setJson");
+  }
+
+  /**
+   * {@code byte[]} is not a valid part of a method name, so the accessors are named after
+   * the JDBC methods {@code getBytes}/{@code setBytes}.
+   */
+  @Test
+  public void derivesTheByteArrayAccessorNames() throws Exception {
+    Entity bytesEntity = createEntity("""
+        name := RawData
+        id := 3
+        table := rawdata
+
+        byte[]  someRawData  raw_data  some raw binary data
+        """);
+    Attribute rawData = attribute(bytesEntity, "someRawData");
+    assertEquals(rawData.getJavaType(), "byte[]");
+    assertEquals(wurblet.createJdbcGetterName(rawData), "getBytes");
+    assertEquals(wurblet.createJdbcSetterName(rawData.getEffectiveDataType()), "setBytes");
+  }
+
+  /**
    * Column-name constants are what the generated SQL refers to; the suffix disambiguates the
    * columns of a multi-column type.
    */
@@ -123,6 +167,65 @@ public class DbModelWurbletTest {
     Attribute user = attribute(entity, "user");
     assertEquals(wurblet.getModelCode(user, "rs.getString(1)"), "rs.getString(1)");
     assertEquals(wurblet.getJdbcCode(user, "getUser()"), "getUser()");
+  }
+
+  /**
+   * The wurblet cannot resolve the java type of an argument, so whether it is a constant is
+   * derived from the Java naming conventions alone.
+   *
+   * @return code and whether it is a constant
+   */
+  @DataProvider(name = "constants")
+  public Object[][] constants() {
+    return new Object[][] {
+      { "COMMIT",                         true },
+      { "MAX_VALUE2",                     true },
+      { "DbModificationType.COMMIT",      true },
+      { "org.tentackle.dbms.Foo.COMMIT",  true },
+      { "modType",                        false },
+      { "this.modType",                   false },
+      { "Foo.commit",                     false },
+      { "getModType()",                   false },
+      { "FOO.getX()",                     false },
+      { "Foo.COMMIT.name()",              false },
+      { "",                               false },
+    };
+  }
+
+  @Test(dataProvider = "constants")
+  public void detectsConstantsByNamingConvention(String code, boolean constant) {
+    assertEquals(wurblet.isConstant(code), constant);
+  }
+
+  /**
+   * A constant needs no null guard, even if declared in a subclass of the application type,
+   * such as {@code DbModificationType.COMMIT} for a {@code ModificationType}.
+   */
+  @Test
+  public void convertsConvertiblesToJdbc() throws Exception {
+    Entity convEntity = createEntity("""
+        name := Conv
+        id := 3
+        table := conv
+
+        ModificationType<char>       modType  modtype  the modification type
+        ModificationType<Character>  optType  opttype  the optional modification type
+        """);
+    Attribute modType = attribute(convEntity, "modType");
+    assertEquals(wurblet.getJdbcCode(modType, "DbModificationType.COMMIT"),
+                 "DbModificationType.COMMIT.toExternal()");
+    assertEquals(wurblet.getJdbcCode(modType, "ModificationType.COMMIT"),
+                 "ModificationType.COMMIT.toExternal()");
+    assertEquals(wurblet.getJdbcCode(modType, "modType"),
+                 "modType == null ? ModificationType.getDefault().toExternal() : modType.toExternal()");
+    assertEquals(wurblet.getJdbcCode(modType, "getModType()"),
+                 "getModType() == null ? ModificationType.getDefault().toExternal() : getModType().toExternal()");
+
+    Attribute optType = attribute(convEntity, "optType");
+    assertEquals(wurblet.getJdbcCode(optType, "DbModificationType.COMMIT"),
+                 "DbModificationType.COMMIT.toExternal()");
+    assertEquals(wurblet.getJdbcCode(optType, "optType"),
+                 "optType == null ? null : optType.toExternal()");
   }
 
 
@@ -273,6 +376,63 @@ public class DbModelWurbletTest {
     WurbelException ex = expectThrows(WurbelException.class,
                                       () -> mixed.createRelopCode(parseArgument(entity, "user:ANY")));
     assertTrue(ex.getMessage().contains("MySQL"), ex.getMessage());
+  }
+
+  /**
+   * Creates a wurblet with the given options, as {@code run()} would have parsed them.
+   *
+   * @param options the options without the leading dashes
+   * @return the wurblet
+   */
+  private static DbModelWurblet createWurbletWithOptions(String... options) {
+    return new DbModelWurblet() {
+      @Override
+      public List<String> getOptionArgs() {
+        return List.of(options);
+      }
+    };
+  }
+
+  /**
+   * The tracking options override each other, the last one wins.
+   */
+  @Test
+  public void appliesTheTrackingOptions() throws Exception {
+    DbModelWurblet fullTracked = createWurbletWithOptions("fulltracked");
+    fullTracked.applyTrackingAndContextOptions(entity);
+    assertTrue(fullTracked.isTracked());
+    assertTrue(fullTracked.isAttracked());
+    assertTrue(fullTracked.isFullTracked());
+
+    DbModelWurblet untracked = createWurbletWithOptions("fulltracked", "untracked");
+    untracked.applyTrackingAndContextOptions(entity);
+    assertFalse(untracked.isTracked());
+    assertFalse(untracked.isAttracked());
+    assertFalse(untracked.isFullTracked());
+  }
+
+  /**
+   * {@code --context=<key>} names the context attribute, an empty key turns the context off.
+   */
+  @Test
+  public void appliesTheContextOption() throws Exception {
+    DbModelWurblet withContext = createWurbletWithOptions("context=txId");
+    withContext.applyTrackingAndContextOptions(entity);
+    assertEquals(withContext.getContextAttribute(), attribute(entity, "txId"));
+
+    DbModelWurblet noContext = createWurbletWithOptions("context=");
+    noContext.applyTrackingAndContextOptions(entity);
+    assertNull(noContext.getContextAttribute());
+  }
+
+  /**
+   * A misspelled context attribute must not silently drop the context condition.
+   */
+  @Test
+  public void refusesAnUnknownContextAttribute() {
+    DbModelWurblet typo = createWurbletWithOptions("context=txIdent");
+    WurbelException ex = expectThrows(WurbelException.class, () -> typo.applyTrackingAndContextOptions(entity));
+    assertTrue(ex.getMessage().contains("txIdent"), ex.getMessage());
   }
 
 }

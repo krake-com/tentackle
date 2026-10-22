@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.pdo;
 
 import org.tentackle.reflect.Interception;
@@ -27,9 +26,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-
 /**
- * Annotation to express that the annotated method must be within a given named context.
+ * Annotation to express that the annotated method must be within a given named context.<br>
+ * If more than one name is given, the domain context must be within all of them.
+ * Throws a {@link DomainException} if not.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -40,9 +40,8 @@ public @interface WithinContext {
   /**
    * The name(s) that must be within the current domain context.
    *
-   * @return the context name
+   * @return the context names
    */
-  String[] value() default "";
+  String[] value();
 
 }
-

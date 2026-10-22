@@ -24,7 +24,16 @@ import org.tentackle.misc.Identifiable;
 import java.io.Serial;
 
 /**
- * Database runtime exception.
+ * The root of all persistence-related runtime exceptions.
+ * <p>
+ * The exception optionally refers to the {@link Session} and/or the {@link Identifiable} it belongs to.
+ * The session is transient, i.e. it does not travel to another JVM. The message is created lazily on
+ * the first invocation of {@link #getMessage()} and extended by the identifiable and session, if any,
+ * see {@link SessionUtilities#createLazyExceptionMessage(String, Throwable, Identifiable, Session)}.
+ * <p>
+ * The constructors with a cause pass it through {@link SessionUtilities#alignExceptionCause(Throwable)}.
+ * Those with a session or identifiable additionally determine the temporary status via
+ * {@link SessionUtilities#alignTemporaryExceptionStatus(PersistenceException)}.
  *
  * @author harald
  */
@@ -55,7 +64,7 @@ public class PersistenceException extends TentackleRuntimeException {
 
   private transient Session session;        // the session this exception belongs to
   private Identifiable identifiable;        // the db object this exception belongs to
-  private String lazyMessage;               // null if messsage not computed yet
+  private String lazyMessage;               // null if message not computed yet
 
 
   /**
@@ -198,7 +207,7 @@ public class PersistenceException extends TentackleRuntimeException {
   /**
    * Gets the session.
    *
-   * @return the session
+   * @return the session, null if unknown or the exception was transferred from another JVM
    */
   public Session getSession() {
     return session;
@@ -223,8 +232,8 @@ public class PersistenceException extends TentackleRuntimeException {
 
   /**
    * Evaluates the message for {@link #getMessage()}.<br>
-   * Used to evaluate the message text within transactions if the logging
-   * happens later when the transaction is already rolled back or
+   * Used to evaluate the message text within the transaction if the logging
+   * happens later, when the transaction is already rolled back, or
    * the exception is logged at the remote side.
    *
    * @return this exception
@@ -235,9 +244,10 @@ public class PersistenceException extends TentackleRuntimeException {
   }
 
   /**
-   * Updates the pdo if not set so far.<br>
-   * Used to add more info for exceptions thrown in a context where
-   * the pdo isn't known.
+   * Sets the identifiable if not set so far.<br>
+   * Used to add more info to exceptions thrown in a context where
+   * the object isn't known.<br>
+   * If the identifiable is a {@link SessionProvider}, its session is taken over as well.
    *
    * @param object the persistent object
    */
@@ -249,7 +259,8 @@ public class PersistenceException extends TentackleRuntimeException {
 
 
   /**
-   * Sets the pdo.
+   * Sets the identifiable and, if it provides one, the session.
+   *
    * @param object the persistent object
    */
   private void setIdentifiable(Identifiable object) {
@@ -260,7 +271,7 @@ public class PersistenceException extends TentackleRuntimeException {
   }
 
   /**
-   * Sets the db.<br>
+   * Sets the session.
    *
    * @param session the session
    */

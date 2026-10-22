@@ -29,9 +29,10 @@ import java.lang.annotation.Target;
  * <p>
  * The class may be any kind of class (not necessarily a bean, but maybe),
  * usually a PDO or a GUI-view. The members may be regular objects
- * or primitives. Annotated objects itself may contain annotated members.
- * In fact, only the leafs of such binding hierarchies are actually bound.
+ * or primitives. Annotated objects themselves may contain annotated members.
+ * In fact, only the leaves of such binding hierarchies are actually bound.
  * <p>
+ * Fields, getters, setters and "from"- or "with"-methods (of immutable objects) can be annotated.
  *
  * @author harald
  */
@@ -43,7 +44,7 @@ public @interface Bindable {
   /**
    * GUI Binding options.
    * <p>
-   * Example: <code>@Bindable(options="UC,MAXCOLS=5)</code>
+   * Example: <code>@Bindable(options="UC,MAXCOLS=5")</code>
    *
    * @return the options, the empty string if none
    */

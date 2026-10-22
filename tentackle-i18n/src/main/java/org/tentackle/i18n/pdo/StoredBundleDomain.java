@@ -35,17 +35,23 @@ public interface StoredBundleDomain extends DomainObject<StoredBundle> {
 
   /**
    * Gets the translated string.
+   * <p>
+   * The translations are cached in a map built on first access and rebuilt after
+   * {@link #setTranslation(String, String)}.
    *
-   * @param key the string to translate
+   * @param key the bundle key
    * @return the translated string, null if there is no translation
    */
   String getTranslation(String key);
 
   /**
    * Sets a translation.
+   * <p>
+   * Adds, changes or removes the {@link StoredBundleKey} component for the given key.
+   * Removing a key that does not exist is a no-op.
    *
-   * @param key the string to translate
-   * @param value the translated string, null to remove
+   * @param key the bundle key, never null
+   * @param value the translated string, null to remove the translation
    */
   void setTranslation(String key, String value);
 

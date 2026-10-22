@@ -114,7 +114,10 @@ public abstract class AbstractTransaction implements Serializable {
   }
 
   /**
-   * Increments the transaction level.
+   * Increments the transaction level.<br>
+   * Does nothing if the level is invalid.
+   *
+   * @param txName the name of the nested transaction, null if unnamed
    */
   public void incrementTxLevel(String txName) {
     if (isTxLevelValid()) {
@@ -130,7 +133,10 @@ public abstract class AbstractTransaction implements Serializable {
   }
 
   /**
-   * Decrements the transaction level.
+   * Decrements the transaction level.<br>
+   * Does nothing if the level is invalid.
+   *
+   * @throws PersistenceException if the level would drop below 1
    */
   public void decrementTxLevel() {
     if (isTxLevelValid()) {

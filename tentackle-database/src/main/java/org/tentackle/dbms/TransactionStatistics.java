@@ -24,7 +24,6 @@ import org.tentackle.misc.FormatHelper;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -69,10 +68,7 @@ public class TransactionStatistics {
     if (session != null) {
       ManagedConnection connection = session.getConnection();
       if (connection != null) {
-        List<StatementHistory> statementHistory = connection.getStatementHistory();
-        if (statementHistory != null) {
-          result.countStatements(statementHistory.size());
-        }
+        result.countStatements(connection.getStatementCount());
       }
     }
   }

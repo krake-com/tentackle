@@ -25,7 +25,8 @@ import org.tentackle.session.SessionPool;
 import org.tentackle.session.SessionPoolFactory;
 
 /**
- * SessionPool factory implementation.
+ * SessionPool factory implementation.<br>
+ * Creates {@link DbPool}s and {@link MultiUserDbPool}s.
  */
 @Service(SessionPoolFactory.class)
 public class DbPoolFactory implements SessionPoolFactory {

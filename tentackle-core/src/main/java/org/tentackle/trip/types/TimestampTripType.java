@@ -40,7 +40,7 @@ import static java.util.Calendar.YEAR;
 /**
  * Trip type for {@link Timestamp}.
  * <p>
- * Timestamps are treated as value objects and thus not referencable.
+ * Timestamps are treated as value objects and thus not referenceable.
  * In Tentackle, org.tentackle.common.Timestamps are usually frozen, but java.sql.Timestamps are
  * mutable and therefore technically no real value objects. However, since it is very bad practice to modify
  * such objects or share their references, we treat them as non-referenceable value objects.

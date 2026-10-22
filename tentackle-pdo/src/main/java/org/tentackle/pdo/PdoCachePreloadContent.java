@@ -44,7 +44,8 @@ public record PdoCachePreloadContent<T extends PersistentDomainObject<T>>
    * Notice that the cache of an entity with multi-table inheritance has more than one table!
    *
    * @param tableName the table name (as used by the modification tracker, including the schema)
-   * @param idSerial the modification tracker's row id and serial of the table from the modification tracker
+   * @param pdoClass the PDO class of the table
+   * @param idSerial the modification tracker's row id and serial of the table
    * @param <S> the PDO subtype (same as T if no multi-table inheritance)
    */
   @TripDeduplicatable(TripDeduplicatable.NEVER)

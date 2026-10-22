@@ -17,6 +17,7 @@
  */
 
 /**
- * Tentackle binding for FX.
+ * Tentackle binding for FX.<br>
+ * Binds controller components and table columns to the {@link org.tentackle.bind.Bindable} members of the model.
  */
 package org.tentackle.fx.bind;

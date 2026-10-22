@@ -59,7 +59,7 @@ The constructor tests the text in this order, and the **first** match wins:
 4. **Anything else** → `CONSTANT`.
 
 An empty or `null` text throws `IllegalArgumentException`, as does a marker with nothing behind it (`"$"`, `"!$"`,
-`"\"`).
+`"\"`) and a static class name with no member behind it (`"$com.acme.Foo"`, see below).
 
 Because classification happens once, in the constructor, all the parsing and script-compilation cost is paid at
 construction time; `getValue()` only evaluates.
@@ -110,9 +110,10 @@ A reference is a dotted path evaluated with
 ```
 
 **Each path element resolves in a fixed order**: a public no-arg method named exactly like the element, then `isXxx`,
-then `getXxx`, and finally a field of that name. A trailing `()` is tolerated and stripped, so `$sayHello()` and
-`$sayHello` mean the same thing. Non-public members are retried with `setAccessible(true)`, which under JPMS
-requires the declaring package to be `opens` to `org.tentackle.core`.
+then `getXxx`, and finally a public field of that name. A trailing `()` is tolerated and stripped, so `$sayHello()` and
+`$sayHello` mean the same thing. Only public members are found; if the declaring class itself is not accessible
+(a non-public class, for example), the access is retried with `setAccessible(true)`, which under JPMS requires the
+declaring package to be `opens` to `org.tentackle.core`.
 
 **A `null` along the path yields `null`** rather than an NPE — the path simply stops. Append an asterisk to demand
 the opposite: `"$customer.name*"` throws if `customer` is null. Use it when a silent `null` would mask a bug rather
@@ -134,13 +135,15 @@ evaluated against that class's static member.
      └──────── class ────────┘ └─┘ static member  → DateHelper.now()
 ```
 
-Only the *first* element after the class name is resolved statically; the rest continues as an ordinary instance
-path against whatever that returned. A static reference needs no parent object.
+Only the *first* element after the class name is resolved statically — by a public static method (again tried
+as-is, with `is` and with `get`) or a public static field; the rest continues as an ordinary instance path against
+whatever that returned. A static reference needs no parent object.
 
 > **The uppercase rule has teeth.** Any uppercase path element triggers class interpretation — a property path such
 > as `$customer.Name` will be read as the class `customer.Name`, not as a getter. Keep reference paths in the usual
 > Java property spelling. Equally, the class name must be **fully qualified** (`Class.forName` gets exactly what was
-> parsed), and it must be followed by a member: `"$com.acme.Foo"` on its own has nothing to evaluate and fails.
+> parsed), and it must be followed by a member: `"$com.acme.Foo"` on its own has nothing to evaluate and is rejected
+> by the constructor.
 
 ---
 
@@ -341,7 +344,7 @@ The `object` in the generated call is emitted through the language's own `create
 rewrite stays valid in Groovy, Ruby and JSR-223 alike. `ValidationUtilities.format` then walks up from the validated
 class's package looking for a `ValidationBundle` and runs the result through `MessageFormat` — giving
 `message = "{ @('{0}_is_wrong', value) }"` a per-package, locale-aware, parameterized message for almost no
-boilerplate. See [Validation](validation.md#localized-messages--the-validationbundle-lookup).
+boilerplate. See [Validation](validation.md#localized-messages-the-validationbundle-lookup).
 
 `createMessageParameter` guards this path explicitly: if the message contains the i18n intro but no message
 converter is registered for the script's language, it throws `ScriptRuntimeException` at construction, rather than
@@ -450,7 +453,8 @@ script when the condition earns it.
 - **A `null` in a reference path yields `null` silently.** Append `*` when that would hide a bug.
 - **`object` is the parent, `value` is the element** — in validation scripts, the field under test is `value`.
 - **A `{` at index 0 always means a script.** A constant that starts with a brace needs the backslash escape.
-- **Non-public members need `opens`** under JPMS for `setAccessible` to succeed.
+- **Only public members are found.** Public members of non-public classes need `opens` under JPMS for
+  `setAccessible` to succeed.
 
 ---
 
@@ -475,5 +479,3 @@ script when the condition earns it.
   `ValidatorCompoundValueFactory` are replaced.
 - [Model Definition](../../../../tentackle-model/src/main/docs/model-definition.md) — compound values in the model DSL.
 - [Check Maven Plugin](../../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md) — build-time validation of compound values.
-</content>
-</invoke>

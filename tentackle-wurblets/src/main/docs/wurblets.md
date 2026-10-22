@@ -5,7 +5,9 @@
 `tentackle-wurblets` is the build-time **code generation** module that produces the *interface side* of a
 Tentackle application: the constants, accessor declarations, relation methods, unique-domain-key types, model
 documentation, and Data Transfer Objects that belong to a [PDO](../../../../tentackle-pdo/src/main/docs/pdo.md)
-interface or operation interface. Together with its sibling
+interface or operation interface. Two of its wurblets, `ColumnNames` and `DomainMethods`, generate code for the
+implementation classes instead, because the code depends only on the model, not on SQL generation (see
+[Where the wurblets go](#where-the-wurblets-go)). Together with its sibling
 [`tentackle-persistence-wurblets`](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md) — which generates the matching
 *implementation* side — it turns the application
 [model](../../../../tentackle-model/src/main/docs/model-definition.md) into compilable Java.
@@ -39,7 +41,15 @@ The first token after `@wurblet` is the *tag* (used to name the generated elemen
 second is the *wurblet name* (the template to run); the rest are options and arguments. The author writes only the
 anchor line — the fold markers and their contents are managed by the wurbelizer. A *tag-less* wurblet such as
 [`Inject`](#the-wurblets) instead uses the pseudo-tags `<` or `>` to fill an inline `/*@*/…/*@*/` region, e.g.
-`@TableName(/*@*/"customer"/*@*/) // @wurblet < Inject --string $tablename`.
+`@TableName(/*@*/"customer"/*@*/) // @wurblet < Inject --string $tablename`. The wurbelizer also accepts the older
+`/**/…/**/` markers, but since Java 23 `javac` warns about them as dangling doc comments.
+
+Arguments starting with `$` are wurbelizer variables, such as `$tablename` or `$classid`. A PDO interface defines
+them as `name = value` lines in its leading comment block, next to the here-document holding the entity's model;
+others, such as `$model`, come from the wurbelizer configuration. The anchor itself may carry wurbelizer
+parameters in parentheses, e.g. `// @wurblet(fold=expanded) modelComment ModelComment`, which keeps the generated
+fold expanded in the IDE. See the [Wurbelizer documentation](https://wurbelizer.org/how-it-works/) for the full
+anchor syntax.
 
 ### Why generate the interfaces?
 
@@ -87,10 +97,31 @@ generated wurblet. The DTO and Include wurblets extend their own bases (`DTOWurb
 
 ### Phases
 
-Some wurblets declare `@{phase 2}` (e.g. [`ModelComment`](#the-wurblets) and
+The wurbelizer processes a source file in phases. Phase 0 extracts the here-documents, the wurblets run from
+phase 1 on. Some wurblets declare `@{phase 2}` (e.g. [`ModelComment`](#the-wurblets) and
 [`UniqueDomainKey`](#the-wurblets)). Wurblets run in phase order, so phase-2 wurblets see the results of phase-1
 generation. This matters when a generated comment or nested type needs constants or members emitted earlier in the
 same file.
+
+### Parallel builds
+
+The `wurbelizer-maven-plugin` runs only wurblets that declare themselves thread-safe concurrently
+(`Wurblet.isThreadSafe()`). All other wurblets run one at a time within the JVM. The Tentackle wurblets
+keep their state in singletons, most notably the model, which is not thread-safe. They are safe to run
+concurrently anyway, as long as each wurbel run loads them in its own classloader:
+
+- If the wurblets are declared via `<wurbletDependencies>` (as in the
+  [archetype](../../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md) and all
+  Tentackle modules), the plugin creates a separate class realm for each execution. Each execution therefore
+  gets its own model, caches and factories. Because an execution processes its sources sequentially, no two
+  threads ever share them. The wurblets run concurrently in `mvn -T` builds.
+- If the wurblets are loaded by the plugin's own classloader instead (for example, declared as plugin
+  `<dependencies>`), all executions of the build share the singletons. The wurblets then fall back to
+  sequential execution.
+
+The check is implemented by `WurbletThreadSafety.isIsolated(Class)`, which the base classes `ModelWurblet`,
+`DTOWurblet` and `IncludeWurblet` use in `isThreadSafe()`. See the
+[Wurblet API](wurblet-api.md#thread-safety) for custom wurblets.
 
 ---
 
@@ -106,12 +137,31 @@ its leading `@{comment ...}@` block.
 | [`ColumnLengths`](../wurblets/org/tentackle/wurblet/ColumnLengths.wrbl)     | `CL_*` constants giving the maximum character length of sized `String` columns.                                                        | `--noif`                                                                    |
 | [`Methods`](../wurblets/org/tentackle/wurblet/Methods.wrbl)                 | Getter/setter declarations for every (non-muted, non-hidden) attribute, plus the `selectByUniqueDomainKey` declaration.                | `--noudk` (omit the UDK select method)                                      |
 | [`Relations`](../wurblets/org/tentackle/wurblet/Relations.wrbl)             | Relation navigation methods (getters/setters, n:m link methods) according to each relation's type, scope and read/write rules.         |                                                                             |
-| [`DomainMethods`](../wurblets/org/tentackle/wurblet/DomainMethods.wrbl)     | Domain-side unique-domain-key methods (`isUniqueDomainKeyProvided`, `getUniqueDomainKeyType`, `findByUniqueDomainKey`).                | `--noif`                                                                    |
-| [`UniqueDomainKey`](../wurblets/org/tentackle/wurblet/UniqueDomainKey.wrbl) | The unique-domain-key type (a nested record) for root entities that define one. *(phase 2)*                                            |                                                                             |
-| [`ModelComment`](../wurblets/org/tentackle/wurblet/ModelComment.wrbl)       | A Javadoc comment documenting the entity's referencing, composite and inheritance relationships. *(phase 2)*                           |                                                                             |
+| [`DomainMethods`](../wurblets/org/tentackle/wurblet/DomainMethods.wrbl)     | The unique-domain-key methods of the domain implementation (`isUniqueDomainKeyProvided`, `getUniqueDomainKeyType`, `findByUniqueDomainKey`, `get`/`setUniqueDomainKey`). Nothing if the entity has no UDK or inherits it unchanged. |                                                                             |
+| [`UniqueDomainKey`](../wurblets/org/tentackle/wurblet/UniqueDomainKey.wrbl) | The `<Entity>UDK` record (`Serializable`, `Comparable`) for root entities whose unique domain key spans several attributes. A single-attribute key needs no type and gets only an explanatory comment. *(phase 2)* |                                                                             |
+| [`ModelComment`](../wurblets/org/tentackle/wurblet/ModelComment.wrbl)       | A Javadoc comment documenting the entity's referencing, composite and inheritance relationships. *(phase 2)* For a navigable, hyperlinked rendering of the same relationships, see [`tentackle-sql:document`](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md#the-document-goal). |                                                                             |
 | [`DTO`](../wurblets/org/tentackle/wurblet/DTO.wrbl)                         | A complete Data Transfer Object from a property model.                                                                                 | see [DTO](#the-dto-wurblet) below                                           |
 | [`Include`](../wurblets/org/tentackle/wurblet/Include.wrbl)                 | Inlines another file into the source.                                                                                                  | `--comment`, `--missingok`, `--translate` (expand `$variables`), `--delete` |
-| [`Inject`](../wurblets/org/tentackle/wurblet/Inject.wrbl)                   | Injects literal text from the argument list — a *tag-less* wurblet that fills the gap between two empty `/**/.../**/` comment markers. | `--string` (wrap in double quotes)                                          |
+| [`Inject`](../wurblets/org/tentackle/wurblet/Inject.wrbl)                   | Injects literal text from the argument list — a *tag-less* wurblet that fills the gap between two `/*@*/…/*@*/` comment markers.       | `--string` (wrap in double quotes)                                          |
+
+### Where the wurblets go
+
+The [PDO wizard](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) and the
+[archetype](../../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md) place the anchors
+for you. A PDO named `Message` gets this layout (the `persistence-wurblets` anchors are shown for completeness):
+
+| Source file                                    | Anchors                                                                                                                                                                                                                  |
+|------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Message.java` — the PDO interface             | `Inject` for `@TableName` and `@ClassId`, `ModelComment`, `UniqueDomainKey`                                                                                                                                              |
+| `MessagePersistence.java` — persistence API    | `AttributeNames`, `ColumnLengths`, `Methods`, `Relations`                                                                                                                                                                |
+| `MessageDomainImpl.java` — domain impl.        | `DomainMethods`                                                                                                                                                                                                          |
+| `MessagePersistenceImpl.java` — persist. impl. | `ColumnNames`, plus [`ClassVariables`, `Declare`, `MethodsImpl`, `PdoRelations`, `PdoCache`, …](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md) from `tentackle-persistence-wurblets` |
+
+The column names live in the persistence implementation because only the SQL layer needs them. All other code
+refers to attributes and relations by the `AN_*`/`RN_*` constants of the persistence interface.
+
+Low-level persistent objects that are not PDOs (for example `DbModification` in `tentackle-database`) use the same
+wurblets with an explicit model, e.g. `// @wurblet fieldnames ColumnNames --model=$mapfile`.
 
 ### The DTO wurblet
 
@@ -139,7 +189,7 @@ and a leading `[...]` line defines global annotations applied to all properties 
 `--equals`, `--hashCode`, `--validate` (requires `Validateable`; integrates with
 [validation](../../../../tentackle-core/src/main/docs/validation.md)), `--names` (name constants), `--from`/`--with`
 (copy factories), `--canonical` (emit `@Canonical*` annotations for [TRIP](../../../../tentackle-core/src/main/docs/trip.md)),
-`--nofinal` (serialization-friendly non-final fields) and `--nott` (no Tentackle dependency in the generated code).
+`--nofinal` (serialization-friendly non-final fields plus a protected no-args constructor) and `--nott` (no Tentackle dependency in the generated code).
 
 ---
 

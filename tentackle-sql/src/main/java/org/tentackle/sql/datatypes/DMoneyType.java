@@ -36,7 +36,7 @@ import java.util.Optional;
  * Datatype for {@link DMoney}.<br>
  * Stored as two columns:
  * <ol>
- *   <li>the value as a decimal without scale/li>
+ *   <li>the value as a decimal without scale</li>
  *   <li>the scale</li>
  * </ol>
  * This type is not sortable by the database in a meaningful manner.

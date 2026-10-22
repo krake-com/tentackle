@@ -21,7 +21,8 @@ package org.tentackle.validate.validator;
 import java.lang.annotation.Annotation;
 
 /**
- * Object validator base class.
+ * Object validator base class.<br>
+ * Object validators have neither a value nor a condition.
  *
  * @author harald
  * @param <T> the annotation type
@@ -29,7 +30,7 @@ import java.lang.annotation.Annotation;
 public abstract class AbstractObjectValidator<T extends Annotation> extends AbstractValidator<T> {
 
   /**
-   * Parent constructor.
+   * Creates an object validator.
    */
   public AbstractObjectValidator() {
     // see -Xlint:missing-explicit-ctor since Java 16

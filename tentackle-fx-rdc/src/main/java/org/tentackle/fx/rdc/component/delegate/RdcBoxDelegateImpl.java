@@ -31,16 +31,18 @@ import java.util.Collection;
 import java.util.function.Supplier;
 
 /**
- * Common implementation for choice- and combobox delegates.
+ * Common implementation for the choice box and combo box delegates.<br>
+ * Loads the items of a component bound to a PDO type and reloads them when the entity's
+ * modification count changes. A PDO modified via F2 replaces its outdated entry in the item list.
  */
 public class RdcBoxDelegateImpl {
 
-  private final FxComponent component;                          // the combo- or choice-box
+  private final FxComponent component;                          // the combo box or choice box
   @SuppressWarnings("rawtypes")
   private final Supplier<ObservableList> itemSupplier;          // component::getItems
   @SuppressWarnings("rawtypes")
   private final Supplier<PdoComponentAddon> pdoAddonSupplier;   // delegate::getPdoAddon
-  private long lastModificationCount;                           // 0 if no pdo, -1 if load initial serial, else last serial at time of selectAll
+  private long lastModificationCount;                           // 0 if no PDO, -1 if load initial count, else last count at time of loading
   private long lastPdoId;                                       // the ID of the last current PDO
   private long lastPdoSerial;                                   // the last current PDO serial
   @SuppressWarnings("rawtypes")
@@ -48,11 +50,11 @@ public class RdcBoxDelegateImpl {
 
 
   /**
-   * Creates the delegate impl.
+   * Creates the delegate implementation.
    *
    * @param component the component
    * @param itemSupplier gets the list of items shown by the component
-   * @param pdoAddonSupplier get the PDO addon
+   * @param pdoAddonSupplier gets the PDO addon
    */
   @SuppressWarnings("rawtypes")
   public RdcBoxDelegateImpl(FxComponent component, Supplier<ObservableList> itemSupplier,
@@ -63,7 +65,7 @@ public class RdcBoxDelegateImpl {
   }
 
   /**
-   * Prepare the component's setType method.
+   * Prepares the component's setType method.
    *
    * @param type the type
    */
@@ -89,7 +91,8 @@ public class RdcBoxDelegateImpl {
   }
 
   /**
-   * Prepare the component's setViewValue method.
+   * Prepares the component's setViewValue method.<br>
+   * Loads the items initially or if the modification count has changed.
    */
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public void prepareSetViewValue() {
@@ -147,6 +150,7 @@ public class RdcBoxDelegateImpl {
    * Gets the callback to load all PDOs.<br>
    * Used by {@link PdoComponentAddon#getAllPdos(PersistentDomainObject)}.
    *
+   * @param <T> the PDO type
    * @return the callback
    */
   @SuppressWarnings("unchecked")
@@ -158,6 +162,7 @@ public class RdcBoxDelegateImpl {
    * Sets the callback to load all PDOs.<br>
    * Used by {@link PdoComponentAddon#getAllPdos(PersistentDomainObject)}.
    *
+   * @param <T> the PDO type
    * @param loadAllPdosCallback the callback
    */
   @SuppressWarnings("unchecked")

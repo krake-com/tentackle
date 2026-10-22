@@ -54,17 +54,20 @@ import java.text.MessageFormat;
 import java.util.List;
 
 /**
- * Controller to add, edit, and remove backends.
+ * Controller to add, edit, and remove backends.<br>
+ * The backend and JDBC driver configurations are stored in the user or system preferences.
+ * One backend can be marked as the default.
  */
 @FxControllerService(binding = FxControllerService.BINDING.BINDABLE_INHERITED)
 public class Backends extends AbstractFxController {
 
   /**
-   * Opens a dialog to edit the backend- and driver configurations.
+   * Opens a modal dialog to edit the backend and driver configurations.<br>
+   * The configurations are persisted when the dialog is closed.
    *
    * @param owner the owner window or node
    * @param application the application name
-   * @param system true if user system preferences, else user preferences
+   * @param system true if system preferences, else user preferences
    * @param updatedRunnable invoked whenever the backend was modified, null if none
    */
   public static void editBackends(Object owner, String application, boolean system, Runnable updatedRunnable) {
@@ -124,7 +127,7 @@ public class Backends extends AbstractFxController {
   private FxCheckBox asDefault;
 
 
-  // list of drivers with buttons to add and remove a backend
+  // list of drivers with buttons to add and remove a driver
   @FXML
   private FxTab driverTab;
   @FXML
@@ -154,7 +157,7 @@ public class Backends extends AbstractFxController {
 
 
   /**
-   * Creates the backends-controller.
+   * Creates the backends controller.
    */
   public Backends() {
     // see -Xlint:missing-explicit-ctor since Java 16
@@ -295,6 +298,7 @@ public class Backends extends AbstractFxController {
    */
   public void setApplication(String application, boolean system) {
     this.application = application;
+    this.system = system;
     backends.getSelectionModel().clearSelection();
     backends.getItems().addAll(BackendConfiguration.getBackendConfigurations(application, system).values());
     drivers.getSelectionModel().clearSelection();
@@ -332,7 +336,7 @@ public class Backends extends AbstractFxController {
   }
 
   /**
-   * Persists currently edited backend and/or driver.<br>
+   * Persists the currently edited backend and driver.<br>
    * Invoked when the dialog is closed.
    */
   public void persist() {

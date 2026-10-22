@@ -40,11 +40,11 @@ public @interface PdoTreeTableContextMenuItemService {
 
   /**
    * Determines the serviced PDO class.<br>
-   * The PDO-class usually is an interface extending the persistent
+   * The PDO class usually is an interface extending the persistent
    * and the domain interfaces.
    * <p>
-   * The class may be also a super-interface. For example,
-   * PersistentDomainObject will apply to all PDOs.
+   * The class may also be a super interface. For example,
+   * {@code PersistentDomainObject} will apply to all PDOs.
    *
    * @return the PDO class
    */
@@ -52,8 +52,8 @@ public @interface PdoTreeTableContextMenuItemService {
   Class<? extends PersistentDomainObject> value();
 
   /**
-   * The ordinal to sort the menu-items within the context menu.<br>
-   * 0 comes first.
+   * The ordinal to sort the menu items within the context menu.<br>
+   * Lower values come first.
    * <p>
    * If the same ordinal is defined more than once, the menu item closest
    * in the PDO inheritance tree will override all others.

@@ -20,6 +20,7 @@ package org.tentackle.validate;
 
 import org.testng.annotations.Test;
 
+import org.tentackle.validate.scope.PersistenceScope;
 import org.tentackle.validate.severity.FailedValidationResult;
 import org.tentackle.validate.severity.InfoValidationResult;
 import org.tentackle.validate.validator.NotNull;
@@ -46,6 +47,16 @@ public class ValidationUtilitiesTest {
   public static class SomeEntity {
   }
 
+  public static class ConditionalBean {
+    @NotNull(condition = "$checked", scope = PersistenceScope.class) public String text;
+    public int conditionEvaluations;
+
+    public boolean isChecked() {
+      conditionEvaluations++;
+      return true;
+    }
+  }
+
   private final ValidationUtilities utilities = ValidationUtilities.getInstance();
 
   private ValidationResult result(boolean failed, String message) {
@@ -62,6 +73,43 @@ public class ValidationUtilitiesTest {
   public void testGetDefaultValidationPath() {
     assertEquals(utilities.getDefaultValidationPath(new SomeEntity()), "someEntity");
     assertEquals(utilities.getDefaultValidationPath(null), "null");
+  }
+
+  @Test
+  public void testValidateCollectionPaths() {
+    ValidationScope all = ValidationScopeFactory.getInstance().getAllScope();
+    List<Bean> beans = List.of(new Bean(), new Bean());
+    List<ValidationResult> results = utilities.validateCollection(beans, "beans", all);
+    assertEquals(results.size(), 2);
+    assertEquals(results.get(0).getValidationPath(), "beans[0].text");
+    assertEquals(results.get(1).getValidationPath(), "beans[1].text");
+    // null path: the default path of each element
+    results = utilities.validateCollection(beans, null, all);
+    assertEquals(results.get(0).getValidationPath(), "bean[0].text");
+  }
+
+  /**
+   * Annotations of objects that are not a {@link ScopeConfigurator} keep the {@link DefaultScope},
+   * which only the {@link org.tentackle.validate.scope.AllScope} applies.
+   */
+  @Test
+  public void testDefaultScopeAppliesToAllScopeOnly() {
+    ValidationScopeFactory factory = ValidationScopeFactory.getInstance();
+    assertEquals(utilities.validate(new Bean(), null, factory.getAllScope()).size(), 1);
+    assertTrue(utilities.validate(new Bean(), null, factory.getPersistenceScope()).isEmpty());
+  }
+
+  /**
+   * The condition may be an expensive script: it must not be evaluated if the scope does not apply.
+   */
+  @Test
+  public void testConditionNotEvaluatedOutOfScope() {
+    ValidationScopeFactory factory = ValidationScopeFactory.getInstance();
+    ConditionalBean bean = new ConditionalBean();
+    assertTrue(utilities.validate(bean, null, factory.getInteractiveScope()).isEmpty());
+    assertEquals(bean.conditionEvaluations, 0);
+    assertEquals(utilities.validate(bean, null, factory.getPersistenceScope()).size(), 1);
+    assertEquals(bean.conditionEvaluations, 1);
   }
 
   @Test

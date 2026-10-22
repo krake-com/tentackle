@@ -35,7 +35,7 @@ import java.util.Map;
 public interface Binder extends Comparable<Binder> {
 
   /**
-   * Gets the unique instance number.<br>
+   * Gets the unique instance number.
    *
    * @return the instance number to make binders comparable
    */
@@ -47,6 +47,7 @@ public interface Binder extends Comparable<Binder> {
    * and throws a {@link BindingException} if it finds at least one
    * unbound object.<br>
    * All unbound objects are logged.
+   *
    * @throws BindingException if at least one unbound component found
    */
   void assertAllBound();
@@ -75,20 +76,21 @@ public interface Binder extends Comparable<Binder> {
   int bindAllInherited();
 
   /**
-   * Gets a binding by object.
+   * Gets a binding by its binding path.
    *
    * @param bindingPath the object path (for ex.: "....customer.customerNumber")
-   * @return null if added, else the old replaced binding
+   * @return the binding, null if no such binding
    */
   Binding getBinding(String bindingPath);
 
   /**
    * Programmatically adds a binding to this view.
    * <p>
-   * Notice that adding a binding for a component or a bindingpath
-   * more than once is not allowed and throws a {@link BindingException}.
+   * Notice that adding a binding for a component or a binding path
+   * more than once is not allowed.
    *
    * @param binding the binding to add
+   * @throws BindingException if the component or binding path is already bound
    */
   void addBinding(Binding binding);
 
@@ -104,7 +106,7 @@ public interface Binder extends Comparable<Binder> {
   Object getBindingProperty(Object key);
 
   /**
-   * Gets a binding property for an object of given class.<br>
+   * Gets a binding property stored with its class as the key.<br>
    * Some components need additional info which is not provided by the bound field.
    * <p>
    * Example: context = getBindingProperty(DomainContext.class);
@@ -263,6 +265,7 @@ public interface Binder extends Comparable<Binder> {
 
   /**
    * Sets the validation scope.<br>
+   * The scope is used to validate the bindings.
    *
    * @param validationScope the validation scope
    */
@@ -271,7 +274,7 @@ public interface Binder extends Comparable<Binder> {
   /**
    * Gets the validation scope.
    *
-   * @return the validation scope
+   * @return the validation scope, the {@link org.tentackle.validate.scope.InteractiveScope} by default
    */
   ValidationScope getValidationScope();
 

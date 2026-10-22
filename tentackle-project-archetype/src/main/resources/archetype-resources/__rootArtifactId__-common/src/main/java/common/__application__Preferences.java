@@ -25,11 +25,14 @@ interface ${application}PreferencesHolder {
 public class ${application}Preferences extends CompositePreferences {
 
 
-  /** online help prefix. */
+  /** key of the online help URL. */
   public static final String HELP_URL = "helpURL";
 
 
-
+  /**
+   * Creates the preferences.<br>
+   * Refers to the system preferences only.
+   */
   public ${application}Preferences() {
     super(true);
   }

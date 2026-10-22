@@ -25,7 +25,7 @@ import org.tentackle.common.LocaleProvider;
 import java.util.ResourceBundle;
 
 /**
- * Bundle for rdc-package in tentackle-swing-rdc.
+ * Bundle for the {@code org.tentackle.fx.rdc} package.
  *
  * @author harald
  */
@@ -47,6 +47,7 @@ public class RdcFxRdcBundle {
    * @param key the key
    * @return the string from the bundle
    */
+  @SuppressWarnings("bundle")
   public static String getString(String key) {
     return getBundle().getString(key);
   }

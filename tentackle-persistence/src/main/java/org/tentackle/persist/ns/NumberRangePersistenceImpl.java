@@ -37,7 +37,7 @@ import org.tentackle.sql.Backend;
 import java.io.Serial;
 
 /**
- * Number Space persistence implementation.
+ * Number range persistence implementation.
  *
  * @author harald
  */
@@ -111,9 +111,9 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
   //<editor-fold defaultstate="collapsed" desc="constructors">
 
   /**
-   * Creates a number space.
+   * Creates a number range.
    *
-   * @param pdo the number space PDO
+   * @param pdo the number range PDO
    * @param context the domain context
    */
   public NumberRangePersistenceImpl (NumberRange pdo, DomainContext context)    {
@@ -121,9 +121,9 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
   }
 
   /**
-   * Creates a number space with a session only.
+   * Creates a number range with a session only.
    *
-   * @param pdo the number space PDO
+   * @param pdo the number range PDO
    * @param session the session
    */
   public NumberRangePersistenceImpl(NumberRange pdo, Session session) {
@@ -131,16 +131,16 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
   }
 
   /**
-   * Creates a number space without domain context or session.
+   * Creates a number range without domain context or session.
    *
-   * @param pdo the number space PDO
+   * @param pdo the number range PDO
    */
   public NumberRangePersistenceImpl(NumberRange pdo) {
     super(pdo);
   }
 
   /**
-   * Creates a number space without domain context or session.
+   * Creates a number range without PDO, domain context or session.
    */
   public NumberRangePersistenceImpl() {
     super();

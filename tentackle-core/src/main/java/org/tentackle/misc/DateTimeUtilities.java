@@ -66,12 +66,17 @@ interface DateTimeUtilitiesHolder {
 
 /**
  * Utility methods related to the {@code java.time} API.
+ * <p>
+ * Provides the smart parsers for the {@code java.time} types, which accept shortcuts and
+ * incomplete input in addition to the regular format. See {@link SmartDateTimeParser}.
+ * <p>
+ * Replaceable via &#64;{@link Service}.
  */
 @Service(DateTimeUtilities.class)   // defaults to self
 public class DateTimeUtilities {
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */
@@ -84,7 +89,8 @@ public class DateTimeUtilities {
    * Smart {@link LocalTime} parser.
    *
    * @param text the input string
-   * @return the time
+   * @return the time, null if text is null
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static LocalTime parseLocalTime(String text) {
     return getInstance().parse(LocalTime.class, LocalTime::from, LocalTime::truncatedTo, LocalTime::now,
@@ -96,7 +102,8 @@ public class DateTimeUtilities {
    * Smart {@link LocalDate} parser.
    *
    * @param text the input string
-   * @return the date
+   * @return the date, null if text is null
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static LocalDate parseLocalDate(String text) {
     return getInstance().parse(LocalDate.class, LocalDate::from, null, LocalDate::now,
@@ -108,7 +115,8 @@ public class DateTimeUtilities {
    * Smart {@link LocalDateTime} parser.
    *
    * @param text the input string
-   * @return the timestamp
+   * @return the timestamp, null if text is null
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static LocalDateTime parseLocalDateTime(String text) {
     return getInstance().parse(LocalDateTime.class, LocalDateTime::from, LocalDateTime::truncatedTo, LocalDateTime::now,
@@ -120,7 +128,8 @@ public class DateTimeUtilities {
    * Smart {@link OffsetTime} parser.
    *
    * @param text the input string
-   * @return the time with offset
+   * @return the time with offset, null if text is null
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static OffsetTime parseOffsetTime(String text) {
     return getInstance().parse(OffsetTime.class, OffsetTime::from, OffsetTime::truncatedTo, OffsetTime::now,
@@ -132,7 +141,8 @@ public class DateTimeUtilities {
    * Smart {@link OffsetDateTime} parser.
    *
    * @param text the input string
-   * @return the timestamp with offset
+   * @return the timestamp with offset, null if text is null
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static OffsetDateTime parseOffsetDateTime(String text) {
     return getInstance().parse(OffsetDateTime.class, OffsetDateTime::from, OffsetDateTime::truncatedTo, OffsetDateTime::now,
@@ -144,7 +154,8 @@ public class DateTimeUtilities {
    * Smart {@link ZonedDateTime} parser.
    *
    * @param text the input string
-   * @return the timestamp with timezone
+   * @return the timestamp with timezone, null if text is null
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static ZonedDateTime parseZonedDateTime(String text) {
     return getInstance().parse(ZonedDateTime.class, ZonedDateTime::from, ZonedDateTime::truncatedTo, ZonedDateTime::now,
@@ -157,7 +168,8 @@ public class DateTimeUtilities {
    * Smart short format {@link LocalTime} parser.
    *
    * @param text the input string
-   * @return the time
+   * @return the time, null if text is null
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static LocalTime parseShortLocalTime(String text) {
     return getInstance().parse(LocalTime.class, LocalTime::from, LocalTime::truncatedTo, LocalTime::now,
@@ -169,7 +181,8 @@ public class DateTimeUtilities {
    * Smart short format {@link LocalDate} parser.
    *
    * @param text the input string
-   * @return the date
+   * @return the date, null if text is null
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static LocalDate parseShortLocalDate(String text) {
     return getInstance().parse(LocalDate.class, LocalDate::from, null, LocalDate::now,
@@ -181,7 +194,8 @@ public class DateTimeUtilities {
    * Smart short format {@link LocalDateTime} parser.
    *
    * @param text the input string
-   * @return the timestamp
+   * @return the timestamp, null if text is null
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static LocalDateTime parseShortLocalDateTime(String text) {
     return getInstance().parse(LocalDateTime.class, LocalDateTime::from, LocalDateTime::truncatedTo, LocalDateTime::now,
@@ -193,7 +207,8 @@ public class DateTimeUtilities {
    * Smart short format {@link OffsetTime} parser.
    *
    * @param text the input string
-   * @return the time with offset
+   * @return the time with offset, null if text is null
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static OffsetTime parseShortOffsetTime(String text) {
     return getInstance().parse(OffsetTime.class, OffsetTime::from, OffsetTime::truncatedTo, OffsetTime::now,
@@ -205,7 +220,8 @@ public class DateTimeUtilities {
    * Smart short format {@link OffsetDateTime} parser.
    *
    * @param text the input string
-   * @return the timestamp with offset
+   * @return the timestamp with offset, null if text is null
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static OffsetDateTime parseShortOffsetDateTime(String text) {
     return getInstance().parse(OffsetDateTime.class, OffsetDateTime::from, OffsetDateTime::truncatedTo, OffsetDateTime::now,
@@ -217,7 +233,8 @@ public class DateTimeUtilities {
    * Smart short format {@link ZonedDateTime} parser.
    *
    * @param text the input string
-   * @return the timestamp with timezone
+   * @return the timestamp with timezone, null if text is null
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static ZonedDateTime parseShortZonedDateTime(String text) {
     return getInstance().parse(ZonedDateTime.class, ZonedDateTime::from, ZonedDateTime::truncatedTo, ZonedDateTime::now,
@@ -288,8 +305,10 @@ public class DateTimeUtilities {
   }
 
   /**
-   * Converts a string to a temporal value of the given type.
+   * Converts a string to a temporal value of the given type.<br>
+   * Uses a {@link SmartDateTimeParser} with the filters, shortcuts and error handlers of this utility.
    *
+   * @param clazz the temporal class
    * @param temporalQuery the formatter query
    * @param truncate the truncate method reference, null if the type does not support it
    * @param currentValueSupplier the supplier for the current/initial/default value, usually a reference to a method such as {@code ::now}
@@ -298,6 +317,7 @@ public class DateTimeUtilities {
    * @param text the string to parse
    * @param <T> the type
    * @return the temporal value object
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public <T extends Temporal> T parse(Class<T> clazz,
                                       TemporalQuery<T> temporalQuery, BiFunction<T, TemporalUnit, T> truncate,
@@ -312,12 +332,12 @@ public class DateTimeUtilities {
 
   /**
    * Creates a zone offset from a string.<br>
-   * Returns the default offset if the string is null or empty.
-   * <p>
-   * Throws {@link DateTimeException} if parsing failed.
+   * Returns the current default offset if the string is null or empty.
+   * A missing leading zero of the hours is added, for example {@code +2:30} becomes {@code +02:30}.
    *
    * @param text the string
    * @return the zone offset, never null
+   * @throws DateTimeException if parsing failed
    */
   public ZoneOffset parseOffset(String text) {
     if (text != null && !text.isEmpty()) {
@@ -358,11 +378,12 @@ public class DateTimeUtilities {
   /**
    * Creates a timezone from a string.<br>
    * Returns the default zone if the string is null or empty.
-   * <p>
-   * Throws {@link DateTimeException} if parsing failed.
+   * If the string is not a valid zone ID, the first zone ID (in sorted order) containing the string,
+   * ignoring the case, is used.
    *
    * @param text the string
    * @return the timezone, never null
+   * @throws DateTimeException if parsing failed
    */
   public ZoneId parseZoneId(String text) {
     if (text != null && !text.isEmpty()) {
@@ -393,12 +414,13 @@ public class DateTimeUtilities {
    * <pre>
    *   Temporal temporal = ....   // some Temporal of unknown type
    *   // the method temporal.now() does not exist, nor Temporal.nowOf(...) or alike
-   *   Temporal now = DateTimeUtilities.getInstance().nowOf(temporal);
+   *   Temporal now = DateTimeUtilities.getInstance().nowOf(temporal.getClass());
    * </pre>
    *
    * @param temporalClass the temporal class
    * @param <T> the type
-   * @return the current time of the template's type
+   * @return the current time of the given type
+   * @throws DateTimeException if the type is not supported
    */
   @SuppressWarnings("unchecked")
   public <T extends Temporal> T nowOf(Class<T> temporalClass) {

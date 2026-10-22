@@ -49,20 +49,22 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
        extends DbObjectClassVariables<P> {
 
 
-  /** property key for the check security. */
+  /** Property key to enable or disable the security checks. */
   public static final String PROPERTY_CHECKSECURITY = "checksecurity";
 
 
   /**
-   * Creates a PDO class-variable.
+   * Creates PDO class variables.<br>
+   * Delegates to the {@link PersistentClassVariablesFactory}.
    *
    * @param pdoClass the PDO's class (i.e., interface)
    * @param poClass the class of the persistence implementation
    * @param tableAlias the table alias to be used in joined select statements
    * @param superClassVariables the class variables of the superclass, null if not inherited
-   * @param eagerJoins the optional eager joins, null of empty if none
+   * @param eagerJoins the optional eager joins, null or empty if none
    * @param <T> the PDO class type
    * @param <P> the persistence class type
+   * @return the class variables
    */
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public static <T extends PersistentDomainObject<T>, P extends AbstractPersistentObject<T,P>> PersistentObjectClassVariables<T,P> create(
@@ -76,13 +78,15 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   }
 
   /**
-   * Creates a PDO class variable.
+   * Creates PDO class variables.<br>
+   * Delegates to the {@link PersistentClassVariablesFactory}.
    *
    * @param pdoClass the PDO's class (i.e., interface)
    * @param poClass the class of the persistence implementation
    * @param tableAlias the table alias to be used in joined select statements
    * @param <T> the PDO class type
    * @param <P> the persistence class type
+   * @return the class variables
    */
   public static <T extends PersistentDomainObject<T>, P extends AbstractPersistentObject<T,P>>  PersistentObjectClassVariables<T,P> create(
       Class<T> pdoClass, Class<P> poClass, String tableAlias)  {
@@ -91,7 +95,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   /**
-   * The associated PDO class (i.e., the interface)
+   * The associated PDO class (i.e., the interface).
    */
   public final Class<T> pdoClass;
 
@@ -101,12 +105,12 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   public final PdoMethodCache<T> methodCache;
 
   /**
-   * The optional eager join as defined in the model.
+   * The optional eager joins as defined in the model, null or empty if none.
    */
   public final List<Join<T,?>> eagerJoins;
 
   /**
-   * the pdo base-classname.
+   * The simple class name of the PDO interface.
    */
   public final String pdoClassBaseName;
 
@@ -215,7 +219,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   private volatile boolean topSuperClassVariablesPending = true;
 
   /**
-   * The effective tablename.
+   * The effective table name.
    */
   private volatile String effectiveTableName;
   private volatile boolean effectiveTableNamePending = true;
@@ -234,7 +238,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
   /**
    * Flag is true to check the security rules for each access to objects of this class.<br>
-   * See isSecurityEnabled() below.
+   * See {@link #isSecurityEnabled()}.
    */
   private volatile boolean securityEnabled;
   private volatile boolean securityEnabledPending = true;
@@ -257,7 +261,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    */
 
   /**
-   * Columns for single table inheritance select-clause.
+   * The cached column names for the select clause.
    */
   private String sqlColumnNames;
 
@@ -273,14 +277,14 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   private Runnable foreignReferencesInitializer;
 
   /**
-   * Constructs a class variable.<p>
-   * Notice: the superPoClass is necessary only in SINGLE and MULTI table inheritance configurations.
+   * Constructs PDO class variables.<p>
+   * Notice: the superClassVariables are necessary only in SINGLE and MULTI table inheritance configurations.
    *
    * @param pdoClass the PDO's class (i.e., interface)
    * @param poClass the class of the persistence implementation
    * @param tableAlias the table alias to be used in joined select statements
    * @param superClassVariables the class variables of the superclass, null if not inherited
-   * @param eagerJoins the optional eager joins, null of empty if none
+   * @param eagerJoins the optional eager joins, null or empty if none
    */
   public PersistentObjectClassVariables(Class<T> pdoClass, Class<P> poClass, String tableAlias,
                                         PersistentObjectClassVariables<? super T, ? super P> superClassVariables,
@@ -299,7 +303,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   }
 
   /**
-   * Constructs a class variable.
+   * Constructs PDO class variables.
    *
    * @param pdoClass the PDO's class (i.e., interface)
    * @param poClass the class of the persistence implementation
@@ -311,7 +315,9 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   /**
-   * Gets the comma-separated list of column names with table alias.
+   * Gets the comma-separated list of column names with table alias.<br>
+   * The result is computed on the first invocation and cached. Hence, all invocations
+   * must pass the same arguments.
    *
    * @param columnPrefix the optional column name prefix (used for embedded PDOs)
    * @param columnNames the list of column names
@@ -343,7 +349,9 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   /**
-   * Gets the SQL string used in WHERE-clauses for single table inheritance entities.
+   * Gets the SQL string used in WHERE clauses for single table inheritance entities.<br>
+   * The result is computed on the first invocation and cached. Hence, all invocations
+   * must pass the same class IDs.
    *
    * @param classIds the valid class IDs, null or empty if none
    * @return the SQL string, empty if no such condition necessary
@@ -359,10 +367,10 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   /**
-   * Creates the SQL string used in WHERE-clauses for inherited entities.
+   * Creates the SQL string used in WHERE clauses for inherited entities.
    *
    * @param classIds the valid class IDs, null or empty if none
-   * @param withAlias prepend classID column name with table alias
+   * @param withAlias prepend class ID column name with table alias
    * @return the SQL string, empty if no such condition necessary
    */
   public String createSqlClassIdCondition(List<Integer> classIds, boolean withAlias) {
@@ -400,7 +408,8 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   /**
-   * Gets the effective eager joins.
+   * Gets the effective eager joins.<br>
+   * These are the eager joins of this class and all its superclasses.
    *
    * @return the joins, null for none
    */
@@ -426,11 +435,11 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   /**
-   * Returns the tablename for this class variable.
+   * Returns the table name for these class variables.
    * <p>
-   * If the class has no tablename, it is derived from its superclasses.
+   * If the class has no table name, it is derived from its superclasses.
    *
-   * @return the tablename, null if the class does not map to any database table
+   * @return the table name, null if the class does not map to any database table
    */
   public String getTableName () {
     if (effectiveTableNamePending) {
@@ -455,7 +464,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   /**
    * Gets the table alias.
    * <p>
-   * If the class has no tablename, it is derived from its superclasses.
+   * If the class has no table alias, it is derived from its superclasses.
    *
    * @return the alias, null if the class does not map to any database table
    */
@@ -511,7 +520,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
   /**
    * Returns the topmost class variables.<br>
-   * Useful for multi-inheritance.
+   * Useful for multi-table inheritance.
    *
    * @return the topmost variables, this if not inherited, never null
    */
@@ -528,6 +537,13 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   }
 
 
+  /**
+   * Returns whether security checks are enabled for this class.<br>
+   * Security checks are enabled unless the property {@value #PROPERTY_CHECKSECURITY} is set to
+   * {@code no}, {@code off}, {@code false}, {@code disabled} or {@code 0}.
+   *
+   * @return true if security checks are enabled
+   */
   public boolean isSecurityEnabled() {
     if (securityEnabledPending) {
       String prop = getProperty(PROPERTY_CHECKSECURITY);
@@ -540,6 +556,11 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to map PDO interfaces to their persistence classes.
+   */
   @Override
   protected Class<?> determineImplementingClassOfReturnType(Class<?> clazz) {
     if (clazz.isInterface() && PersistentDomainObject.class.isAssignableFrom(clazz)) {
@@ -563,6 +584,12 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to run the foreign references initializer once and to check the
+   * references of the superclasses as well.
+   */
   @Override
   public boolean isReferenced(Db db, long id) {
     PersistentObjectClassVariables<? super T, ? super P> cv = this;
@@ -592,7 +619,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   }
 
   /**
-   * Returns whether the pdo class is abstract.
+   * Returns whether the PDO class is abstract.
    *
    * @return true if abstract
    */
@@ -602,7 +629,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   /**
-   * Check the read security for this class.
+   * Checks the read security for this class.
    * The implementation checks that the class rules will accept
    * and that no object rule denies.
    * <p>
@@ -617,7 +644,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   }
 
   /**
-   * Check the read security for this class in all contexts.
+   * Checks the read security for this class in all contexts.
    *
    * @return false if operation (select) is denied.
    */
@@ -629,7 +656,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   /**
-   * Check the write-security for this class.
+   * Checks the write security for this class.
    * The implementation checks that the class rules will accept
    * and that no object rule denies.
    *
@@ -641,7 +668,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   }
 
   /**
-   * Check the write-security for this class in all contexts.
+   * Checks the write security for this class in all contexts.
    *
    * @return false if operation (delete, update, or insert) is denied.
    */
@@ -651,13 +678,12 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   /**
-   * Check the read permission for a PDO.
+   * Checks the read permission for a PDO.
    * <p>
-   * Components are readable if their root-entity is readable.
+   * Components are readable if their root entity is readable.
    *
-   * @param object the object to check the security rules for.
-   *
-   * @return false if operation (select) is denied.
+   * @param object the object to check the security rules for
+   * @return false if operation (select) is denied
    */
   public boolean isReadAllowed(AbstractPersistentObject<?,?> object) {
     if (isSecurityEnabled()) {
@@ -674,17 +700,16 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   }
 
   /**
-   * Check the write-permission for a PDO.
+   * Checks the write permission for a PDO.
    * <p>
-   * Only root-entities are writable.
+   * Only root entities are writable.
    * Components are not writable by default (because only the root can be persisted).
    * <p>
    * Notice that the persistence layer will not invoke isWriteAllowed on components
    * because the root is already checked when saving or deleting a PDO. Remember that
    * the application can persist only root entities!
    *
-   * @param object the object to check the security rules for.
-   *
+   * @param object the object to check the security rules for
    * @return false if the operation is denied
    */
   public boolean isWriteAllowed(AbstractPersistentObject<?,?> object) {
@@ -694,12 +719,11 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   }
 
   /**
-   * Check the view permission for a PDO.
+   * Checks the view permission for a PDO.
    * <p>
-   * Components are viewable if their root-entity is viewable.
+   * Components are viewable if their root entity is viewable.
    *
-   * @param object the object to check the security rules for.
-   *
+   * @param object the object to check the security rules for
    * @return false if the operation is denied
    */
   public boolean isViewAllowed(AbstractPersistentObject<?,?> object) {
@@ -717,13 +741,12 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   }
 
   /**
-   * Check the edit permission for a PDO.
+   * Checks the edit permission for a PDO.
    * <p>
-   * Only root-entities are editable.
+   * Only root entities are editable.
    * Components are not editable by default (because only the root can be persisted).
    *
-   * @param object the object to check the security rules for.
-   *
+   * @param object the object to check the security rules for
    * @return false if the operation is denied
    */
   public boolean isEditAllowed(AbstractPersistentObject<?,?> object) {
@@ -778,9 +801,9 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * Snapshot methods
    * {@link AbstractPersistentObject#createComponentsInSnapshot(AbstractPersistentObject)},
    * {@link AbstractPersistentObject#revertAttributesToSnapshot(AbstractPersistentObject)} and
-   * {@link AbstractPersistentObject#revertComponentsToSnapshot(AbstractPersistentObject)}) take the snapshot
-   * object with the correct implementation type and are implemented at some implementation class.
-   * This method finds the most specific snapshot-method along the inheritance hierarchy.
+   * {@link AbstractPersistentObject#revertComponentsToSnapshot(AbstractPersistentObject)} take the snapshot
+   * object with the correct implementation type and are implemented in some implementation class.
+   * This method finds the most specific snapshot method along the inheritance hierarchy.
    * <p>
    * There is no createAttributesInSnapshot, since the snapshot is cloned and all attributes are either immutable or frozen.
    *
@@ -807,7 +830,8 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   /**
    * {@inheritDoc}
    * <p>
-   * Overridden to determine the priority according to the presence of a cache:
+   * Overridden to determine the priority according to the presence of a cache.
+   * References with a lower value are checked first:
    * <ol>
    *  <li>high: class provides a preloading cache (low-volume data, usually master data)</li>
    *  <li>medium: class provides a non-preloading cache (medium volume data)</li>
@@ -826,9 +850,10 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   /**
-   * Check security for this class.
+   * Checks the security for this class.<br>
+   * If the evaluation fails (e.g., no domain context set), the permission is denied.
    *
-   * @param context the domain context
+   * @param context the domain context, null = all
    * @param permission the permission
    * @return true if accepted
    */

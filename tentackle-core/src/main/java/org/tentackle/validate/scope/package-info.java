@@ -18,5 +18,8 @@
 
 /**
  * Predefined validation scopes.
+ * <p>
+ * Each scope is an interface extending {@link org.tentackle.validate.ValidationScope} plus an implementation
+ * annotated with &#64;{@link org.tentackle.validate.ValidationScopeService}.
  */
 package org.tentackle.validate.scope;

@@ -24,7 +24,7 @@ import org.tentackle.pdo.DomainObject;
 
 
 /**
- * Number space domain interface.
+ * Number range domain interface.
  *
  * @author harald
  */

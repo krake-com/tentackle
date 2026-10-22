@@ -33,8 +33,9 @@ import java.util.Collection;
 import java.util.function.Function;
 
 /**
- * PDO to TreeItem translator for {@link FxTreeView} and {@link FxTreeTableView}.<br>
- * Used if the model provides a collection.
+ * Collection to TreeItem translator for {@link FxTreeView} and {@link FxTreeTableView}.<br>
+ * Used if the model provides a collection. The elements become the children of an invisible root item.
+ * The tree items are created via the {@link TableConfiguration}, if available.
  *
  * @author harald
  * @param <T> the object type
@@ -131,9 +132,6 @@ public class CollectionTreeItemTranslator<T, C extends Collection<T>> extends Ab
       Class<T> elemClass = ReflectionHelper.extractGenericInnerTypeClass(getComponent().getGenericType());
       if (elemClass != null) {
         provider = TableConfigurationProviderFactory.getInstance().createTableConfigurationProvider(elemClass);
-        if (provider != null) {
-          configuration = provider.createTableConfiguration();
-        }
       }
       providerLoaded = true;
     }
@@ -161,7 +159,7 @@ public class CollectionTreeItemTranslator<T, C extends Collection<T>> extends Ab
    * Uses the {@link TableConfigurationProvider} if available.
    *
    * @param object the object
-   * @return the treeitem
+   * @return the tree item
    */
   @SuppressWarnings("unchecked")
   protected TreeItem<T> createTreeItem(Object object) {     // we cannot write T object, because method is overridden...
@@ -173,9 +171,9 @@ public class CollectionTreeItemTranslator<T, C extends Collection<T>> extends Ab
   }
 
   /**
-   * Configures the treetableview.
+   * Configures the treetable view.
    *
-   * @param treeTableView the treetableview
+   * @param treeTableView the treetable view
    * @param configuration the table configuration, null if none
    */
   protected void configureTreeTableView(FxTreeTableView<T> treeTableView, TableConfiguration<T> configuration) {

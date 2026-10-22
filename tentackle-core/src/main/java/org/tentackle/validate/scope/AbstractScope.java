@@ -29,21 +29,22 @@ import org.tentackle.validate.ValidationScope;
  */
 public abstract class AbstractScope implements ValidationScope {
 
-  // the extracted permission interface
+  // the extracted scope interface
   private Class<?> iFace;
 
 
   /**
-   * Parent constructor.
+   * Creates a scope.
    */
   public AbstractScope() {
     // see -Xlint:missing-explicit-ctor since Java 16
   }
 
   /**
-   * Gets the scope interface of this request scope.
+   * Gets the scope interface of this scope.
    *
    * @return the interface
+   * @throws ValidationRuntimeException if this class does not implement a {@link ValidationScope} interface
    */
   protected Class<?> getIFace() {
     if (iFace == null) {
@@ -55,6 +56,14 @@ public abstract class AbstractScope implements ValidationScope {
     return iFace;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * A scope applies if one of the given scopes is the {@link AllScope} (or one of its super interfaces)
+   * or a super interface of this scope's interface.
+   *
+   * @throws ValidationRuntimeException if one of the given scopes is not an interface
+   */
   @Override
   public boolean appliesTo(Class<?>... scopes) {
     for (Class<?> scope: scopes) {

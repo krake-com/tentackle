@@ -26,13 +26,20 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 
-// @Service does not work in tentackle-common, since there is no analyze-maven-plugin available at this build step yet.
-// Needs explicit config in resources/services/META-INF.
+/**
+ * Default implementation of an {@link ObjectSerializer} based on Java Object Serialization.
+ * <p>
+ * The objects must implement {@link java.io.Serializable}.
+ *
+ * @author harald
+ */
+// @Service does not work in tentackle-common, since the analyze goal of the tentackle-maven-plugin is not available at this build step yet.
+// Needs explicit config in src/main/resources/META-INF/services.
 @Service(ObjectSerializer.class)
 public class DefaultObjectSerializer implements ObjectSerializer {
 
   /**
-   * Creates the JOS serializer.
+   * Creates the Java Object Serialization based serializer.
    */
   public DefaultObjectSerializer() {
     // see -Xlint:missing-explicit-ctor since Java 16

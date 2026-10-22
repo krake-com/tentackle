@@ -26,6 +26,8 @@ package org.tentackle.trip;
  * to provide thread-safety!
  * <p>
  * Implementations must be annotated with {@link TripTypeBuilderService}.
+ *
+ * @param <T> the data type
  */
 public interface TripTypeBuilder<T> {
 

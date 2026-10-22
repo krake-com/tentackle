@@ -77,7 +77,7 @@ public class DefaultRdcFactory implements RdcFactory {
 
   @Override
   public <T extends PersistentDomainObject<T>> PdoTreeCell<T> createTreeCell(TreeView<T> treeView) {
-    return new PdoTreeCell<>();   // treeview is ignored by default but application may override this
+    return new PdoTreeCell<>();   // treeView is ignored by default, but applications may override this
   }
 
   @Override

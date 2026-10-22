@@ -19,6 +19,8 @@
 /**
  * Binding.
  * <p>
- * Interfaces and abstract groundwork for binding implementations.
+ * Interfaces and abstract groundwork for binding implementations, such as the binding
+ * of PDOs to JavaFX views in tentackle-fx. Members eligible for binding are annotated with
+ * &#64;{@link org.tentackle.bind.Bindable}.
  */
 package org.tentackle.bind;

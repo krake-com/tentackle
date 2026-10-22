@@ -47,8 +47,9 @@ interface ManagedConnectionMonitorHolder {
 /**
  * Maintains a set of all open managed connections.<br>
  * The connections are held by a weak reference, and the set is cleaned up once a minute.<br>
- * Optionally, idle connections with {@link ManagedConnection#isConnectionVerificationNecessary()} {@code == true}
- * will be verified (via dummy SELECTs) periodically and to prevent premature closing by the database backend.
+ * Optionally, if {@link ManagedConnection#isConnectionKeepAliveEnabled()}, idle connections with
+ * {@link ManagedConnection#isConnectionVerificationNecessary()} {@code == true}
+ * will be verified (via dummy SELECTs) periodically to prevent premature closing by the database backend.
  * This is especially useful for databases running in the cloud, where the idle connection interval
  * cannot be deactivated or made longer than the idle times maintained by the {@link MpxConnectionManager}.
  * <p>
@@ -196,7 +197,9 @@ public class ManagedConnectionMonitor extends Thread {
         managedConnection.isConnectionVerificationNecessary(currentTimeMillis) &&
         currentTimeMillis - managedConnection.getLastVerified() >= managedConnection.getConnectionInactivityTimeoutMs()) {
 
-      if (managedConnection.verifyConnection()) {
+      // the connection manager makes sure that the connection isn't attached while being verified
+      managedConnection.getManager().verifyIdleConnection(managedConnection);
+      if (!managedConnection.isDead()) {
         LOGGER.fine("{0} verified", managedConnection);
       }
       // else marked DEAD! -> will be cleaned up when used again

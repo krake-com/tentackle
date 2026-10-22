@@ -41,6 +41,15 @@ import static org.testng.Assert.fail;
 
 /**
  * Base class for TestNG tests that must run as an application.
+ * <p>
+ * Unlike {@code AbstractPdoTest}, the session is opened per test class. If the backend is in-memory,
+ * the tables are created from the model for each class. Therefore, the in-memory database must not
+ * outlive the session (no {@code DB_CLOSE_DELAY=-1} in the URL, no other session open on it), or the
+ * second class fails to create the tables again.
+ * <p>
+ * The modification tracker gets the session, unless disabled via
+ * {@link AbstractApplication#DISABLE_MODIFICATION_TRACKER}, but is not started.
+ * There is no automatic transaction handling.
  *
  * @author harald
  */
@@ -56,6 +65,12 @@ public abstract class TestApplication extends AbstractApplication {
     super(name, version);
   }
 
+  /**
+   * Opens the session and registers the application.<br>
+   * Skips the tests if no backend is available.
+   *
+   * @throws Exception if failed
+   */
   @BeforeClass(alwaysRun = true)
   public void setUpClass() throws Exception {
     SessionInfo sessionInfo = Pdo.createSessionInfo();
@@ -97,6 +112,11 @@ public abstract class TestApplication extends AbstractApplication {
     }
   }
 
+  /**
+   * Closes the session and unregisters the application.
+   *
+   * @throws Exception if failed
+   */
   @AfterClass(alwaysRun = true)
   public void tearDownClass() throws Exception {
     Session session = getSession();
@@ -107,11 +127,23 @@ public abstract class TestApplication extends AbstractApplication {
     }
   }
 
+  /**
+   * Not invoked: the application is set up by {@link #setUpClass()}.
+   */
   @Override
   protected void startup() {
     // not invoked
   }
 
+  /**
+   * Returns no user.<br>
+   * Override if the tests need users.
+   *
+   * @param <U> the user type
+   * @param context the domain context
+   * @param userId the user's object ID
+   * @return always null
+   */
   @Override
   public <U extends Identifiable> U getUser(DomainContext context, long userId) {
     return null;
@@ -136,7 +168,9 @@ public abstract class TestApplication extends AbstractApplication {
   }
 
   /**
-   * Populates the database with test data.
+   * Populates the database with test data.<br>
+   * Invoked for each test class after the tables were created, if the database is in-memory.
+   * The default implementation does nothing.
    */
   protected void populateDatabase() {
     // default does nothing

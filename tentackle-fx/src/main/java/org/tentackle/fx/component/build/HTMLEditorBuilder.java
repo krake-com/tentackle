@@ -26,7 +26,7 @@ import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.component.FxHTMLEditor;
 
 /**
- * Builder to create a HTMLEditor.
+ * Builder to create an HTMLEditor.
  *
  * @author harald
  */

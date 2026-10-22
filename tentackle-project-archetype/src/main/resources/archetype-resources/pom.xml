@@ -28,8 +28,7 @@
 
   <properties>
     <rootBasedir>\${symbol_dollar}{project.basedir}</rootBasedir>
-    <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
-
+    <project.build.outputTimestamp>${project.build.outputTimestamp}</project.build.outputTimestamp>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -47,12 +46,13 @@
 
     <postgres.version>${postgresql.version}</postgres.version>
     <h2.version>${h2.version}</h2.version>
-    <dbUrl>jdbc:postgresql://localhost/\${artifactId}</dbUrl>
+    <serverHost>localhost</serverHost>
+    <dbUrl>jdbc:postgresql://\${serverHost}/\${artifactId}</dbUrl>
     <dbUser>\${artifactId}</dbUser>
     <dbPasswd>\${artifactId}</dbPasswd>
-    <dbService>trip://localhost:8888/\${application}Server</dbService>
-    <updateService>trip://localhost:8890/\${application}Update</updateService>
-    <updateURL>http://localhost/\${artifactId}/downloads</updateURL>
+    <dbService>trip://\${serverHost}:8888/\${application}Server</dbService>
+    <updateService>trip://\${serverHost}:8890/\${application}Update</updateService>
+    <updateURL>http://\${serverHost}/\${artifactId}/downloads</updateURL>
 
   </properties>
 
@@ -132,8 +132,8 @@
                 <pdoPackage>\${package}.pdo.md</pdoPackage>
                 <minClassId>1000</minClassId>
                 <tablePrefix>md.</tablePrefix>
-                <pdoInterface>MasterData</pdoInterface>
-                <persistenceImplementation>AbstractPersistentMasterData</persistenceImplementation>
+                <pdoInterface>\${package}.pdo.MasterData</pdoInterface>
+                <persistenceImplementation>\${package}.persist.md.AbstractPersistentMasterData</persistenceImplementation>
                 <domainPackage>\${package}.pdo.md.domain</domainPackage>
                 <persistencePackage>\${package}.pdo.md.persist</persistencePackage>
                 <domainImplPackage>\${package}.domain.md</domainImplPackage>
@@ -144,8 +144,8 @@
                 <pdoPackage>\${package}.pdo.td</pdoPackage>
                 <minClassId>2000</minClassId>
                 <tablePrefix>td.</tablePrefix>
-                <pdoInterface>TransactionData</pdoInterface>
-                <persistenceImplementation>AbstractPersistentTransactionData</persistenceImplementation>
+                <pdoInterface>\${package}.pdo.TransactionData</pdoInterface>
+                <persistenceImplementation>\${package}.persist.td.AbstractPersistentTransactionData</persistenceImplementation>
                 <domainPackage>\${package}.pdo.td.domain</domainPackage>
                 <persistencePackage>\${package}.pdo.td.persist</persistencePackage>
                 <domainImplPackage>\${package}.domain.td</domainImplPackage>
@@ -473,13 +473,6 @@
           <configuration>
             <argLine>-Duser.language=en -Duser.region=US</argLine>
           </configuration>
-          <dependencies>
-            <dependency>
-              <groupId>org.ow2.asm</groupId>
-              <artifactId>asm</artifactId>
-              <version>${asm.version}</version> <!-- Use newer version of ASM -->
-            </dependency>
-          </dependencies>
         </plugin>
 
         <plugin>
@@ -492,13 +485,6 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
           <version>${maven.javadoc.plugin.version}</version>
-          <dependencies>
-            <dependency>
-              <groupId>org.ow2.asm</groupId>
-              <artifactId>asm</artifactId>
-              <version>${asm.version}</version>
-            </dependency>
-          </dependencies>
         </plugin>
 
         <plugin>

@@ -35,10 +35,18 @@ import java.util.function.Function;
  * <p>
  * The datatype {@code <T>} determines both the domain the arithmetic is carried out in and the
  * type of the result. Integral types ({@link Byte}, {@link Short}, {@link Integer}, {@link Long}
- * and {@link BigInteger}) are evaluated with integer semantics (i.e. {@code /} truncates towards
+ * and {@link BigInteger}) are evaluated with integer semantics (i.e., {@code /} truncates towards
  * zero), floating-point types ({@link Float}, {@link Double} and {@link BigDecimal}) with
- * floating-point semantics. The type defaults to {@link Integer} if the shorthand constructor is
- * used. Variable and result types are checked at compile time via generics.
+ * floating-point semantics. Notice that the arithmetic is carried out in {@code long} or
+ * {@code double} precision, respectively, and only the result is converted to the datatype.
+ * Hence, {@link BigInteger} values beyond the {@code long} range overflow and {@link BigDecimal}
+ * values are subject to the precision of {@code double}.
+ * <p>
+ * Variable and result types are checked at compile time via generics. The only exception is the
+ * shorthand constructor, which always uses {@link Integer}: it must only be used with {@code <Integer>}
+ * (or the diamond operator), since the result type is not checked.
+ * <p>
+ * An evaluator is not thread-safe.
  * <p>
  * Examples:
  * <pre>
@@ -63,11 +71,13 @@ public class NumericEvaluator<T extends Number> implements Function<String, Stri
   private int pos;                                // current parser position within expression
 
   /**
-   * Creates an evaluator for the given datatype and evaluates the expression.
+   * Creates an evaluator for the given datatype.<br>
+   * The expression is evaluated by {@link #evaluate()}.
    *
    * @param type the result datatype
    * @param expression the expression to evaluate
    * @param arguments the variables referenced by the expression
+   * @throws NullPointerException if type or expression is null
    */
   @SafeVarargs
   public NumericEvaluator(Class<T> type, String expression, NumericVariable<T>... arguments) {
@@ -81,11 +91,12 @@ public class NumericEvaluator<T extends Number> implements Function<String, Stri
   }
 
   /**
-   * Creates an evaluator for the {@link Integer} datatype and evaluates the expression.
+   * Creates an evaluator for the {@link Integer} datatype.<br>
+   * The expression is evaluated by {@link #evaluate()}.
    *
    * @param expression the expression to evaluate
    * @param arguments the variables referenced by the expression
-   * @throws TentackleRuntimeException if the expression is malformed or cannot be evaluated
+   * @throws NullPointerException if expression is null
    */
   @SafeVarargs
   @SuppressWarnings("unchecked")
@@ -103,10 +114,9 @@ public class NumericEvaluator<T extends Number> implements Function<String, Stri
 
   /**
    * Evaluates the expression.
-   * <p>
-   * @throws TentackleRuntimeException if the expression is malformed or cannot be evaluated
    *
    * @return the result, never null
+   * @throws TentackleRuntimeException if the expression is malformed or cannot be evaluated
    */
   public T evaluate() {
     return convert(parse());
@@ -127,13 +137,15 @@ public class NumericEvaluator<T extends Number> implements Function<String, Stri
   }
 
   /**
-   * Convenience method to evaluate a numeric expression without variables.
+   * Convenience method to evaluate a numeric expression without variables.<br>
+   * The expression is always evaluated with the {@link Integer} datatype, regardless of {@link #getType()}.
    * <p>
    * This allows the NumericEvaluator to be used as a {@code PropertyDescriptor}
    * within the {@code tentackle-maven-plugin}.
    *
    * @param expression the expression to evaluate
    * @return the result as string
+   * @throws TentackleRuntimeException if the expression is malformed or cannot be evaluated
    */
   @Override
   public String apply(String expression) {

@@ -35,10 +35,12 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * A PDO tree cell.
+ * A PDO tree cell.<br>
+ * Displays the text, tooltip and graphic provided by the PDO's {@link GuiProvider}, shows the
+ * PDO's context menu, and supports drag and drop.
  *
  * @author harald
- * @param <T> the pdo type
+ * @param <T> the PDO type
  */
 public class PdoTreeCell<T extends PersistentDomainObject<T>> extends TreeCell<T> {
 
@@ -46,7 +48,7 @@ public class PdoTreeCell<T extends PersistentDomainObject<T>> extends TreeCell<T
   private ContextMenu contextMenu;    // != null if menu shown
 
   /**
-   * Creates a pdo tree cell.
+   * Creates a PDO tree cell.
    */
   public PdoTreeCell() {
     addEventHandler(MouseEvent.ANY, this::showContextMenu);
@@ -77,7 +79,7 @@ public class PdoTreeCell<T extends PersistentDomainObject<T>> extends TreeCell<T
         setText(treeText);
         String tooltipText = provider.getToolTipText(parentItem == null ? null : parentItem.getPdo());
         if (StringHelper.isAllWhitespace(tooltipText) || Objects.equals(treeText, tooltipText)) {
-          tooltipText = null; // empty or same as treetext -> no tooltip (default)
+          tooltipText = null; // empty or same as tree text -> no tooltip (default)
         }
         setTooltip(tooltipText == null ? null : new Tooltip(tooltipText));
         setGraphic(provider.createGraphic());
@@ -97,7 +99,7 @@ public class PdoTreeCell<T extends PersistentDomainObject<T>> extends TreeCell<T
   /**
    * Gets the GUI provider.
    *
-   * @return the provider, null if the items value (the PDO) is null
+   * @return the provider, null if the item's value (the PDO) is null
    */
   protected GuiProvider<T> getGuiProvider() {
     return provider;
@@ -105,7 +107,8 @@ public class PdoTreeCell<T extends PersistentDomainObject<T>> extends TreeCell<T
 
 
   /**
-   * Handles the drag detected mouse event.
+   * Handles the drag detected mouse event.<br>
+   * If PDOs are selected in the tree, all of them are dragged, else only the PDO of this cell.
    *
    * @param event the mouse event after drag has been detected
    */
@@ -145,7 +148,8 @@ public class PdoTreeCell<T extends PersistentDomainObject<T>> extends TreeCell<T
   }
 
   /**
-   * Handles the drag-dropped event.
+   * Handles the drag-dropped event.<br>
+   * Drops the dragboard on the cell's PDO and replaces its tree item with a reloaded one.
    *
    * @param event the drag event
    */

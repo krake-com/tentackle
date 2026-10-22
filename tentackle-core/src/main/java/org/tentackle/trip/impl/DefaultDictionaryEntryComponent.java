@@ -32,8 +32,11 @@ public final class DefaultDictionaryEntryComponent implements DictionaryEntryCom
   private final TripType<?> type;
 
   /**
+   * Creates a dictionary entry component.
+   *
    * @param componentName the name of the component
    * @param type          the compile-time type of the component
+   * @throws NullPointerException if componentName or type is null
    */
   public DefaultDictionaryEntryComponent(String componentName, TripType<?> type) {
     this.componentName = Objects.requireNonNull(componentName);

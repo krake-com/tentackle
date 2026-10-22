@@ -30,13 +30,20 @@ interface InterceptableFactoryHolder {
 
 /**
  * Factory to create interceptable objects.
+ * <p>
+ * Interceptables are dynamic proxies for interfaces extending {@link Interceptable}.
+ * The proxy delegates to the implementation annotated with &#64;{@link InterceptionService}
+ * and invokes the interceptors of the methods, if any.
+ * <p>
+ * Replaceable via &#64;{@link org.tentackle.common.Service}.
+ * The default implementation is {@link DefaultInterceptableFactory}.
  *
  * @author harald
  */
 public interface InterceptableFactory {
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */
@@ -50,6 +57,7 @@ public interface InterceptableFactory {
    * @param <T> the object class
    * @param clazz the class of the interceptable, usually an interface
    * @return the created object
+   * @throws org.tentackle.common.TentackleRuntimeException if the interceptable could not be created
    */
   <T extends Interceptable & Serializable> T createInterceptable(Class<T> clazz);
 

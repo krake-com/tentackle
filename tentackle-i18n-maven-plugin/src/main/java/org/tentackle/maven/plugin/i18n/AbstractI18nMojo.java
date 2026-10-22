@@ -18,10 +18,10 @@
 
 package org.tentackle.maven.plugin.i18n;
 
-import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.eclipse.aether.resolution.DependencyResolutionException;
 
 import org.tentackle.common.BundleSupport;
 import org.tentackle.common.Constants;
@@ -30,6 +30,7 @@ import org.tentackle.common.Settings;
 import org.tentackle.i18n.StoredBundleFactory;
 import org.tentackle.maven.AbstractTentackleMojo;
 import org.tentackle.maven.ProjectClassLoader;
+import org.tentackle.maven.ProjectDependencies;
 import org.tentackle.misc.PropertiesUtilities;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
@@ -51,43 +52,66 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 /**
- * Base class for i18n mojos.
+ * Base class for the i18n mojos.<br>
+ * Opens a session to the backend holding the {@code StoredBundle}s, determines the bundles of the projects
+ * via {@link BundleSupport} and passes the property files of each bundle, for the default locale and for
+ * each configured locale, to {@link #processBundle}.
  *
  * @author harald
  */
 public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements DomainContextProvider {
 
   /**
-   * The backend URL.
+   * Serializes the executions in parallel builds.<br>
+   * The {@code ModificationTracker} is a singleton of the plugin's class realm, which is shared by all projects
+   * of a build. Each execution binds it to its own database session, so concurrent executions would
+   * corrupt each other.
+   */
+  private static final Lock EXECUTION_LOCK = new ReentrantLock();
+
+  @Override
+  protected Lock getExecutionLock() {
+    return EXECUTION_LOCK;
+  }
+
+
+  /**
+   * The JDBC URL of the backend holding the stored bundles.
    */
   @Parameter(required = true)
   protected String url;
 
   /**
-   * The backend username.
+   * The backend user.
    */
   @Parameter(required = true)
   public String user;
 
   /**
-   * The backend password.
+   * The backend password.<br>
+   * May be omitted for password-less or externally authenticated connections.
    */
   @Parameter
   public String password;
 
   /**
-   * Additional locales except the default one.<br>
+   * The additional locales to process besides the default one.<br>
+   * A list separated by commas, semicolons or whitespace, e.g. {@code "de, en_US"}.
+   * Hyphens are normalized to underscores ({@code en-US} becomes {@code en_US}), because that is the
+   * locale suffix of the property files and the stored bundles.
    */
   @Parameter
   protected String locales;
 
 
   /**
-   * Additional locale suffixes to scan for property files.<br>
-   * Without leading underscore.
+   * The additional locale suffixes parsed from {@link #locales}.<br>
+   * Without the leading underscore.
    */
   protected List<String> localeSuffixes;
 
@@ -97,17 +121,17 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
   protected DomainContext context;
 
   /**
-   * Bundle bundleCount.
+   * Number of processed bundles, counted per locale.
    */
   protected int bundleCount;
 
   /**
-   * Error bundleCount.
+   * Number of errors. Fails the build if not zero.
    */
   protected int errors;
 
   /**
-   * Warning bundleCount.
+   * Number of warnings.
    */
   protected int warnings;
 
@@ -136,7 +160,7 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
     if (locales != null) {
       StringTokenizer stok = new StringTokenizer(locales, ",; \n\r\t");
       while (stok.hasMoreTokens()) {
-        String localeName = stok.nextToken().replace('_', '-');   // transform en_US to en-US
+        String localeName = stok.nextToken().replace('-', '_');   // transform en-US to en_US
         if (!localeName.isEmpty()) {
           localeSuffixes.add(localeName);
         }
@@ -147,7 +171,9 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
     EncryptedProperties props = PropertiesUtilities.getInstance().create();
     props.setProperty(Constants.BACKEND_URL, url);
     props.setProperty(Constants.BACKEND_USER, user);
-    props.setProperty(Constants.BACKEND_PASSWORD, password);
+    if (password != null) {
+      props.setProperty(Constants.BACKEND_PASSWORD, password);
+    }
     SessionInfo sessionInfo = Pdo.createSessionInfo(props);
 
     try {
@@ -159,16 +185,7 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
         ModificationTracker pdoTracker = ModificationTracker.getInstance();   // create the tracker but don't start the thread
         pdoTracker.setSession(session);
 
-        List<MavenProject> projects;
-        if (isExecutionRecursive()) {
-          projects = new ArrayList<>();
-          projects.add(getMavenProject());
-        }
-        else {
-          projects = getMavenProject().getCollectedProjects();
-        }
-
-        processBundles(session, projects);
+        processBundles(session, getProjects());
       }
       finally {
         session.close();
@@ -178,18 +195,60 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
       throw new MojoExecutionException("cannot connect to the backend", ex);
     }
 
-    getLog().info(bundleCount + " bundle" + (bundleCount == 1 ? "" : "s") + " processed, " +
-                  warnings + " warning" + (warnings == 1 ? "" : "s") + ", " +
-                  errors + " error" + (errors == 1 ? "" : "s") + ", " +
-                  updates + " update" + (updates == 1 ? "" : "s"));
+    getLogger().info("{} bundle{} processed, {} warning{}, {} error{}, {} update{}",
+                     bundleCount, bundleCount == 1 ? "" : "s",
+                     warnings, warnings == 1 ? "" : "s",
+                     errors, errors == 1 ? "" : "s",
+                     updates, updates == 1 ? "" : "s");
 
     if (errors > 0) {
-      throw new MojoExecutionException("pushing to the database failed");
+      throw new MojoExecutionException(errors + " error" + (errors == 1 ? "" : "s") + " found");
     }
   }
 
   /**
-   * Process the bundles.
+   * Gets the projects to process.<br>
+   * In recursive executions, this is only the current project. Otherwise, i.e. for aggregators or if invoked
+   * with {@code --non-recursive}, the current project followed by all projects collected by the reactor.
+   * The current project is skipped if its packaging is {@code pom}. Including it makes the aggregators work
+   * for single-module projects as well, where no other projects are collected at all.
+   *
+   * @return the projects
+   */
+  protected List<MavenProject> getProjects() {
+    MavenProject mavenProject = getMavenProject();
+    List<MavenProject> projects = new ArrayList<>();
+    if (isExecutionRecursive()) {
+      projects.add(mavenProject);
+    }
+    else {
+      if (!"pom".equals(mavenProject.getPackaging())) {
+        projects.add(mavenProject);
+      }
+      List<MavenProject> collectedProjects = mavenProject.getCollectedProjects();
+      if (collectedProjects != null) {
+        projects.addAll(collectedProjects);
+      }
+    }
+    return projects;
+  }
+
+  /**
+   * Gets the compile classpath of a project.<br>
+   * The project's output directory followed by its resolved compile dependencies.
+   *
+   * @param project the project
+   * @return the classpath elements
+   * @throws DependencyResolutionException if the dependencies cannot be resolved
+   */
+  protected List<String> getCompileClasspathElements(MavenProject project) throws DependencyResolutionException {
+    return ProjectDependencies.getClasspathElements(getRepositorySystem(), getMavenSession().getRepositorySession(),
+                                                    project, ProjectDependencies.COMPILE_SCOPES);
+  }
+
+  /**
+   * Processes the bundles of the given projects.<br>
+   * Each project is processed within its own transaction.
    *
    * @param session the open database session
    * @param projects the maven projects
@@ -198,8 +257,8 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
   protected void processBundles(Session session, List<MavenProject> projects) throws MojoExecutionException {
     try {
       for (MavenProject project : projects) {
-        List<String> classpathElements = project.getCompileClasspathElements();
-        ClassLoader classLoader = new ProjectClassLoader((URLClassLoader) getClass().getClassLoader(), classpathElements);
+        List<String> classpathElements = getCompileClasspathElements(project);
+        ClassLoader classLoader = createProjectClassLoader(classpathElements);
 
         session.transaction(() -> {   // within tx to minimize cache reloads in running application servers
           // for all annotations like @Bundle or @FxControllerService (need a META-INF/services file!)
@@ -214,7 +273,7 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
               }
               resourceName = resourceName.replace('.', '/') + Constants.PROPS_EXTENSION;
               if (verbosityLevel.isDebug()) {
-                getLog().debug("processing " + resourceName);
+                getLogger().debug("processing {}", resourceName);
               }
               processBundle(classLoader, bundleName, suffix, resourceName);
               if (iter.hasNext()) {
@@ -229,11 +288,11 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
         });
       }
     }
-    catch (DependencyResolutionRequiredException dx) {
+    catch (DependencyResolutionException dx) {
       throw new MojoExecutionException("cannot determine classpath elements", dx);
     }
     catch (MalformedURLException mx) {
-      getLog().error("cannot create project classloader", mx);
+      throw new MojoExecutionException("cannot create project classloader", mx);
     }
     catch (RuntimeException rex) {
       throw new MojoExecutionException("processing the bundles failed", rex);
@@ -241,23 +300,36 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
   }
 
   /**
-   * Process the given bundle resource name.<br>
-   * The resource name must not start with a leading slash because this method directly uses
-   * the classloader's getResourceAsStream method.
+   * Creates the classloader to load the bundles of a project from.
+   *
+   * @param classpathElements the compile classpath elements of the project
+   * @return the classloader
+   * @throws MalformedURLException if a classpath element is not a valid path
+   */
+  protected ClassLoader createProjectClassLoader(List<String> classpathElements) throws MalformedURLException {
+    // the plugin's classloader is the plexus class realm, which is a URLClassLoader
+    return new ProjectClassLoader((URLClassLoader) getClass().getClassLoader(), classpathElements);
+  }
+
+  /**
+   * Processes the property file of a bundle for one locale.<br>
+   * The resource name must not start with a leading slash because it is passed
+   * to the classloader's {@code getResourceAsStream} method.
    *
    * @param classLoader the project classloader
-   * @param resourceName the bundle resource name without a leading slash
-   * @param bundleName the original bundle class name
-   * @param locale the locale, null if default
+   * @param bundleName the bundle name, i.e. the fully qualified name without the locale suffix
+   * @param locale the locale suffix such as {@code de} or {@code de_DE}, null for the default locale
+   * @param resourceName the resource name of the property file without a leading slash
    * @throws MojoExecutionException if execution failed
    */
   public abstract void processBundle(ClassLoader classLoader, String bundleName, String locale, String resourceName) throws MojoExecutionException;
 
   /**
-   * Loads resource properties via classloader.
+   * Loads resource properties via a classloader.<br>
+   * The properties keep the order of the file.
    *
    * @param classLoader the classloader to use
-   * @param resourceName the resource name (with locale)
+   * @param resourceName the resource name (with the locale suffix)
    * @return the properties, null if not found
    * @throws IOException if IO error
    */
@@ -274,7 +346,8 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
   }
 
   /**
-   * Loads resource properties from the filesystem.
+   * Loads resource properties from the filesystem.<br>
+   * The properties keep the order of the file.
    *
    * @param file the file
    * @return the properties, null if not found

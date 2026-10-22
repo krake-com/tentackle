@@ -24,7 +24,7 @@ import javafx.scene.control.Accordion;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a {@link Accordion}.
+ * Configures an {@link Accordion}.
  *
  * @author harald
  * @param <T> the container type
@@ -33,7 +33,7 @@ import org.tentackle.fx.ConfiguratorService;
 public class AccordionConfigurator<T extends Accordion> extends ContainerConfigurator<T> {
 
   /**
-   * Creates the configurator for a {@link Accordion}.
+   * Creates the configurator for an {@link Accordion}.
    */
   public AccordionConfigurator() {
     // see -Xlint:missing-explicit-ctor since Java 16

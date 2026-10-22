@@ -21,24 +21,28 @@ package org.tentackle.sql.metadata;
 import java.sql.DatabaseMetaData;
 
 /**
- * Enum for foreign key actions.
+ * The referential actions of a foreign key.<br>
+ * Maps the {@code importedKey...} codes of {@link DatabaseMetaData#getImportedKeys} to their SQL clauses.
+ * <p>
+ * The deferrability codes are listed as well, since JDBC reports them via the same constants.
+ * However, the deferrability of a foreign key is described by {@link Deferrability}.
  *
  * @author harald
  */
 public enum ForeignKeyAction {
 
   /**
-   * When the primary key is updated, the foreign key (imported key) is changed to agree with it.
+   * When the primary key is updated or deleted, the foreign key (imported key) is changed or deleted accordingly.
    */
   CASCADE(DatabaseMetaData.importedKeyCascade, "CASCADE"),
 
   /**
-   * The primary key may not be updated if it has been imported by another table as a foreign key.
+   * The primary key may not be updated or deleted if it has been imported by another table as a foreign key.
    */
   RESTRICT(DatabaseMetaData.importedKeyRestrict, "RESTRICT"),
 
   /**
-   * When the primary key is updated or deleted, the foreign key (imported key) is changed to <code>NULL</code>..
+   * When the primary key is updated or deleted, the foreign key (imported key) is changed to <code>NULL</code>.
    */
   SET_NULL(DatabaseMetaData.importedKeySetNull, "SET NULL"),
 

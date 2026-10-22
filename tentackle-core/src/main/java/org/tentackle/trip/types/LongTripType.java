@@ -22,6 +22,7 @@ import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.Serializer;
 import org.tentackle.trip.TripConstants;
+import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
 import org.tentackle.trip.TripTypeService;
 import org.tentackle.trip.impl.DefaultOpCode;
@@ -50,74 +51,123 @@ public sealed class LongTripType extends AbstractTripType<Long> permits LongPrim
 
   @Override
   public void write(Long value, TripStream stream) {
-    Serializer serializer = stream.getSerializer();
     if (value == null) {
-      serializer.serializeOpCode(DefaultOpCode.NULL);
+      stream.getSerializer().serializeOpCode(DefaultOpCode.NULL);
     }
     else {
-      long longValue = value;
-      if (longValue >= Integer.MIN_VALUE && longValue <= Integer.MAX_VALUE) {
-        int intValue = (int) longValue;
-        if (intValue >= Short.MIN_VALUE && intValue <= Short.MAX_VALUE) {
-          if (intValue >= Byte.MIN_VALUE && intValue <= Byte.MAX_VALUE) {
-            serializer.serializeOpCode(DefaultOpCode.LONG1);
-            serializer.serializeByte((byte) intValue);
-          }
-          else {
-            serializer.serializeOpCode(DefaultOpCode.LONG2);
-            serializer.serializeShort((short) intValue);
-          }
-        }
-        else {
-          if (intValue >= TripConstants.INT3_MIN && intValue <= TripConstants.INT3_MAX) {
-            serializer.serializeOpCode(DefaultOpCode.LONG3);
-            serializer.serializeInt3(intValue);
-          }
-          else {
-            serializer.serializeOpCode(DefaultOpCode.LONG4);
-            serializer.serializeInt(intValue);
-          }
-        }
-      }
-      else {
-        if (longValue >= TripConstants.LONG6_MIN && longValue <= TripConstants.LONG6_MAX) {
-          if (longValue >= TripConstants.LONG5_MIN && longValue <= TripConstants.LONG5_MAX) {
-            serializer.serializeOpCode(DefaultOpCode.LONG5);
-            serializer.serializeLong5(longValue);
-          }
-          else {
-            serializer.serializeOpCode(DefaultOpCode.LONG6);
-            serializer.serializeLong6(longValue);
-          }
-        }
-        else {
-          if (longValue >= TripConstants.LONG7_MIN && longValue <= TripConstants.LONG7_MAX) {
-            serializer.serializeOpCode(DefaultOpCode.LONG7);
-            serializer.serializeLong7(longValue);
-          }
-          else {
-            serializer.serializeOpCode(DefaultOpCode.LONG);
-            serializer.serializeLong(longValue);
-          }
-        }
-      }
+      writeLong(value, stream);
     }
   }
 
   @Override
   public Long read(TripStream stream, OpCode opCode) {
     Deserializer deserializer = stream.getDeserializer();
-    return switch (opCode) {
-      case DefaultOpCode.LONG -> deserializer.deserializeLong();
-      case DefaultOpCode.LONG7 -> deserializer.deserializeLong7();
-      case DefaultOpCode.LONG6 -> deserializer.deserializeLong6();
-      case DefaultOpCode.LONG5 -> deserializer.deserializeLong5();
-      case DefaultOpCode.LONG4 -> (long) deserializer.deserializeInt();
-      case DefaultOpCode.LONG3 -> (long) deserializer.deserializeInt3();
-      case DefaultOpCode.LONG2 -> (long) deserializer.deserializeShort();
-      case DefaultOpCode.LONG1 -> (long) deserializer.deserializeByte();
-      default -> super.read(stream, opCode);
-    };
+    // Narrowed to DefaultOpCode before switching: with the OpCode interface as the selector
+    // type, javac compiles the switch to an invokedynamic typeSwitch, whose generated body is
+    // a linear chain of comparisons instead of a jump table. An opcode of another
+    // implementation is not one of ours and takes the same path as an unknown one.
+    if (opCode instanceof DefaultOpCode code) {
+      return switch (code) {
+        case LONG -> deserializer.deserializeLong();
+        case LONG7 -> deserializer.deserializeLong7();
+        case LONG6 -> deserializer.deserializeLong6();
+        case LONG5 -> deserializer.deserializeLong5();
+        case LONG4 -> (long) deserializer.deserializeInt();
+        case LONG3 -> (long) deserializer.deserializeInt3();
+        case LONG2 -> (long) deserializer.deserializeShort();
+        case LONG1 -> (long) deserializer.deserializeByte();
+        default -> super.read(stream, opCode);
+      };
+    }
+    return super.read(stream, opCode);
   }
 
+
+  /**
+   * Writes a long value.
+   * <p>
+   * The primitive counterpart of {@link #write(Long, TripStream)}, so that a primitive component
+   * can be written without boxing it first.
+   *
+   * @param value the value to write
+   * @param stream the stream to write to
+   */
+  public void writeLong(long value, TripStream stream) {
+    Serializer serializer = stream.getSerializer();
+    if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
+      int intValue = (int) value;
+      if (intValue >= Short.MIN_VALUE && intValue <= Short.MAX_VALUE) {
+        if (intValue >= Byte.MIN_VALUE && intValue <= Byte.MAX_VALUE) {
+          serializer.serializeOpCode(DefaultOpCode.LONG1);
+          serializer.serializeByte((byte) intValue);
+        }
+        else {
+          serializer.serializeOpCode(DefaultOpCode.LONG2);
+          serializer.serializeShort((short) intValue);
+        }
+      }
+      else {
+        if (intValue >= TripConstants.INT3_MIN && intValue <= TripConstants.INT3_MAX) {
+          serializer.serializeOpCode(DefaultOpCode.LONG3);
+          serializer.serializeInt3(intValue);
+        }
+        else {
+          serializer.serializeOpCode(DefaultOpCode.LONG4);
+          serializer.serializeInt(intValue);
+        }
+      }
+    }
+    else {
+      if (value >= TripConstants.LONG6_MIN && value <= TripConstants.LONG6_MAX) {
+        if (value >= TripConstants.LONG5_MIN && value <= TripConstants.LONG5_MAX) {
+          serializer.serializeOpCode(DefaultOpCode.LONG5);
+          serializer.serializeLong5(value);
+        }
+        else {
+          serializer.serializeOpCode(DefaultOpCode.LONG6);
+          serializer.serializeLong6(value);
+        }
+      }
+      else {
+        if (value >= TripConstants.LONG7_MIN && value <= TripConstants.LONG7_MAX) {
+          serializer.serializeOpCode(DefaultOpCode.LONG7);
+          serializer.serializeLong7(value);
+        }
+        else {
+          serializer.serializeOpCode(DefaultOpCode.LONG);
+          serializer.serializeLong(value);
+        }
+      }
+    }
+  }
+
+  /**
+   * Reads a long value.
+   * <p>
+   * The primitive counterpart of {@link #read(TripStream, OpCode)}, so that a primitive component
+   * can be read without boxing it. The opcode switch is deliberately repeated instead of delegating:
+   * going through the boxed method is exactly the allocation this avoids.
+   *
+   * @param stream the stream to read from
+   * @param opCode the op code (already read from the stream)
+   * @return the value
+   * @throws TripRuntimeException if the opcode does not denote a long
+   */
+  public long readLong(TripStream stream, OpCode opCode) {
+    if (opCode instanceof DefaultOpCode code) {
+      Deserializer deserializer = stream.getDeserializer();
+      return switch (code) {
+        case LONG -> deserializer.deserializeLong();
+        case LONG7 -> deserializer.deserializeLong7();
+        case LONG6 -> deserializer.deserializeLong6();
+        case LONG5 -> deserializer.deserializeLong5();
+        case LONG4 -> (long) deserializer.deserializeInt();
+        case LONG3 -> (long) deserializer.deserializeInt3();
+        case LONG2 -> (long) deserializer.deserializeShort();
+        case LONG1 -> (long) deserializer.deserializeByte();
+        default -> throw new TripRuntimeException("illegal opcode " + opCode + " for " + this);
+      };
+    }
+    throw new TripRuntimeException("illegal opcode " + opCode + " for " + this);
+  }
 }

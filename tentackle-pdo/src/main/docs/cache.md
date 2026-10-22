@@ -116,7 +116,7 @@ The map key is a `CacheKey` combining **the unique key value *and* the
 [`DomainContext`](pdo.md)** (plus the session instance number). This is essential:
 the same logical row may be cached simultaneously under different contexts —
 different tenants or different database sessions — and they must not collide. A
-`null` key or context throws a `PdoCacheException`.
+`null` key never matches: the lookup is logged as a warning and returns no PDO.
 
 Each index is defined by two functions (supplied by the generated code): one to
 **select** a PDO by key from storage, and one to **extract** the key from a PDO.
@@ -158,23 +158,28 @@ need to edit cached instances. Closing a session removes its objects and lists
 The cache works in one of four [`PdoCacheStrategy`](../java/org/tentackle/pdo/PdoCacheStrategy.java)
 modes:
 
-| Strategy              | Behaviour when `maxSize` is reached                                                        | Best for                                                                                                                                     |
+| Strategy              | Behavior when `maxSize` is exceeded                                                        | Best for                                                                                                                                     |
 |-----------------------|--------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
 | **PRELOAD** (default) | n/a — the first select loads the **whole table**, so subsequent selects never hit storage. | Small master-data tables; also **large or transactional tables** when a tableserial is configured (in-memory read model / CQRS — see below). |
 | **LRU**               | Evicts the **least recently used** PDOs down to `keepQuota` %.                             | Large tables, keep hot subset.                                                                                                               |
 | **LFU**               | Evicts the **least frequently used** PDOs.                                                 | Large tables with skewed access.                                                                                                             |
 | **FORGET**            | **Clears the entire cache.**                                                               | Large tables, cheap to refill.                                                                                                               |
 
-LRU/LFU ordering uses the per-PDO `cacheAccessTime` / `cacheAccessCount` that
-`markCacheAccess()` stamps on every hit. Shrinking (`shrinkCache`) either removes
-the surplus objects in place or, when more than half must go, invalidates and
-re-adds the survivors — whichever touches fewer entries. `keepQuota = 0` behaves
-like `FORGET`.
+The cache is shrunk on a `select` that is not served from a list, *before* the
+lookup, whenever it holds more than `maxSize` PDOs. LRU/LFU ordering uses the
+per-PDO `cacheAccessTime` / `cacheAccessCount` that `markCacheAccess()` stamps on
+every hit. Shrinking (`shrinkCache`) either removes the surplus objects in place or,
+when more than half must go, clears the indexes and re-adds the survivors —
+whichever touches fewer entries. `keepQuota = 0` behaves like `FORGET`.
 
-> **`selectAll` puts the cache into PRELOAD.** The first `selectAll()` loads the
-> whole table and, unless `maxSizeHardLimit` is set, **auto-enlarges** `maxSize` to
-> fit (size + 10 %). From then on the cache behaves exactly as if `PRELOAD` had been
-> declared: eviction is off and the cache keeps the full list coherent instead.
+> **`selectAll` turns the cache into a list cache.** The first `selectAll()` for a
+> domain context loads the whole table for that context and, unless `maxSizeHardLimit`
+> is set, **auto-enlarges** `maxSize` to fit (size + 10 %). With `maxSizeHardLimit`, a
+> table larger than `maxSize` fails with a `PdoRuntimeException` instead. From then on the
+> cache behaves for that context as if `PRELOAD` had been declared: eviction is off
+> and the cache keeps the full list coherent instead. The strategy itself is not
+> changed, though — `isPreloading()` stays false, and `@PreloadCache` still rejects
+> such a cache.
 > Crucially, with a tableserial configured this coherency is **additive** — new
 > inserts are appended as they happen — so the cache **always holds every object**
 > and stays **fully searchable** from memory (see *PRELOAD for large tables* below).
@@ -190,13 +195,15 @@ The core `select(index, context, key, loadIfMissing)` flow
 ([`PdoCache`](../java/org/tentackle/pdo/PdoCache.java)):
 
 1. If caching is globally or locally disabled → read straight from storage.
-2. Run any **delayed expiration** for the session (and `refreshList` if preloading
-   or a list exists for this context).
+2. If preloading or a list exists for this context, `refreshList` (which runs any
+   **delayed expiration** for the session as well). Otherwise, run the delayed
+   expiration and shrink the cache if it exceeds `maxSize`.
 3. Look the key up in the index.
 4. If the hit is **expired** (and not list-managed), drop it and treat as a miss.
-5. On a miss, if `loadIfMissing` and the key isn't in the **missing set**, select
-   from the database (or remote cache). A found PDO that `isCacheable()` is added
-   to **all** indexes; a non-existent key is recorded in the missing set.
+5. On a miss, if `loadIfMissing`, no list is loaded for this context, and the key isn't
+   in the **missing set**, select from the database (or remote cache). A found PDO that
+   `isCacheable()` is added to **all** indexes; a non-existent key is recorded in the
+   missing set. In list mode a miss is final: the list already holds every PDO.
 6. `markCacheAccess()` the returned PDO.
 
 A `PdoCacheException` thrown mid-operation (a detected unique violation or key
@@ -214,6 +221,10 @@ either patches the list in place or rebuilds it from the ID index, whichever is
 cheaper (`isDeleteBetterThanRebuild`).
 
 `selectAny(context, ids)` returns a specific subset, refreshing expired entries.
+
+The desktop client relies on this: a combo or choice box bound to a PDO type loads its items with
+`selectAllCached()` if the entity has a preloading cache, and logs a warning recommending one
+otherwise — see [PDO-bound components](../../../../tentackle-fx-rdc/src/main/docs/rdc.md#pdo-bound-components).
 
 ---
 
@@ -255,7 +266,7 @@ happen) or quietly in local-client mode (where it can).
 How gaps arise depends on the **operation mode**:
 
 - **Local client mode** — the app is directly connected to the database with few
-  users ([`ModificationTracker.isLocalClientMode()`](../../../../tentackle-session/src/main/docs/session.md)).
+  users ([`ModificationTracker.isLocalClientMode()`](../../../../tentackle-session/src/main/docs/modification-tracking.md)).
   Modifications update the *modification table* inside the transaction (extra
   locks, limited throughput). Updates can be detected via tableserials, but
   **deletions cannot** — a gap appears and the cache invalidates.
@@ -331,7 +342,7 @@ from the cache within that same uncommitted transaction** would poison the cache
 if the transaction later rolls back. The cache tracks the tableserials expired per
 running transaction (`SerialInfo.TxIdSet`) and, on such an attempt, throws a
 `PdoCacheException` that **rolls the transaction back** rather than corrupting the
-shared cache.
+shared cache. Unlike the key-change case above, this exception is never retried.
 
 ---
 
@@ -428,8 +439,8 @@ push the load time onto whichever client connects first.
 `PdoCache.getPreloadContent(context)` snapshots a cache into a
 [`PdoCachePreloadContent`](../java/org/tentackle/pdo/PdoCachePreloadContent.java): the PDO list plus
 one `PdoCachePreloadContent.TableInfo` per table,
-holding the table name and the `IdSerialTuple` — the modification row id **and** serial — the
-server's tracker had at that moment. (A cache for a `MULTI`-table inheritance hierarchy has more than
+holding the table name and the `IdSerialTuple` — the modification row id **and** the serial up to
+which the server's cache is coherent at that moment. (A cache for a `MULTI`-table inheritance hierarchy has more than
 one table, hence the array.) Both records are `@TripDeduplicatable(NEVER)` / `@TripReferencable(NEVER)`:
 records are deduplicated and back-referenced by default, but each of these occurs exactly once in the
 transfer, so [TRIP](../../../../tentackle-core/src/main/docs/trip.md) would keep that bookkeeping for
@@ -474,11 +485,11 @@ From there the ordinary machinery described under *Coherency* takes over.
 
 ## Security
 
-Cache persistence operations run on behalf of the **current thread's user**, so
-restrictive `ReadPermission` rules on a cached entity would make the cache behave
-differently per user — which is almost never intended. Prefer `ViewPermission`
-rules for cached entities; see
-[session.md](../../../../tentackle-session/src/main/docs/session.md).
+A cache is shared by all users of a JVM, so it must not depend on who happened to load a PDO
+first. Hence, the `PdoCache` wurblet overrides `isReadAllowed()` to return `true`: cached
+entities are always readable, and `ReadPermission` rules are not applied to them. Use
+`ViewPermission` rules to restrict what a user may see of a cached entity; see
+[security.md](security.md#permissions-and-their-hierarchy).
 
 ---
 
@@ -540,8 +551,8 @@ debugging or batch jobs).
 - [pdo.md](pdo.md) — the PDO model and `DomainContext` the cache is keyed on.
 - [immutable.md](../../../../tentackle-core/src/main/docs/immutable.md) — why and how cached PDOs are made immutable.
 - [snapshot.md](snapshot.md) — `copy()` a cached PDO to get an editable instance.
-- [session.md](../../../../tentackle-session/src/main/docs/session.md) — the `ModificationTracker`, tableserial and operation modes.
-- [modification-tracking.md](../../../../tentackle-session/src/main/docs/modification-tracking.md) — the serials the cache expires on, and how a preload seeds them.
+- [session.md](../../../../tentackle-session/src/main/docs/session.md) — the session the cache runs on.
+- [modification-tracking.md](../../../../tentackle-session/src/main/docs/modification-tracking.md) — the `ModificationTracker`, its operation modes, the serials the cache expires on, and how a preload seeds them.
 - [database.md](../../../../tentackle-database/src/main/docs/database.md#preloading-remote-delegates) — `@PreloadRemoteDelegate`, the companion of `@PreloadCache` for slow links.
 - [application.md](application.md) — where `preloadCaches()` runs in the startup sequence.
 - [model-definition.md](../../../../tentackle-model/src/main/docs/model-definition.md) — the `cached` / `tableserial` model options.

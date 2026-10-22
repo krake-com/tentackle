@@ -21,7 +21,7 @@ package org.tentackle.fx.rdc;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
- * A wrapper for some view controller that can be used as a pdo editor.<br>
+ * A wrapper for a view controller that can be used as a PDO editor.<br>
  * Useful to view PDOs that cannot be edited.
  * <p>
  * Example (in a GuiProvider):
@@ -69,18 +69,14 @@ public class PdoViewer<T extends PersistentDomainObject<T>, C extends PdoControl
     return viewController.getPdo();
   }
 
-  /**
-   * Sets the PDO.<br>
-   *
-   * @param pdo the pdo
-   */
+  @Override
   public void setPdo(T pdo) {
     viewController.setPdo(pdo);
   }
 
   @Override
   public void requestInitialFocus() {
-    // default does nothing, assumes setPdo() does it already
+    // does nothing by default, assumes that setPdo() does it already
   }
 
   @Override

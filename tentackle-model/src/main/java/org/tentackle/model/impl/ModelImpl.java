@@ -20,12 +20,14 @@ package org.tentackle.model.impl;
 
 import org.tentackle.common.Constants;
 import org.tentackle.common.ExceptionHelper;
+import org.tentackle.common.FileHelper;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.Settings;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.CustomModelValidator;
+import org.tentackle.model.Deferrability;
 import org.tentackle.model.Entity;
 import org.tentackle.model.EntityAliases;
 import org.tentackle.model.EntityFactory;
@@ -60,6 +62,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -69,6 +72,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -93,7 +97,7 @@ public class ModelImpl implements Model {
   /** cached entities mapped by URL. */
   private final Map<String, EntityInfo> urlToEntityInfoMap;
 
-  /** cached java source paths mapped to file paths. */
+  /** source infos mapped by entity (to detect entities defined in more than one file). */
   private final Map<Entity, SourceInfo> entityToSourceInfoMap;
 
   /** cached entities mapped by entity name. */
@@ -102,7 +106,7 @@ public class ModelImpl implements Model {
   /** cached entities mapped by the table name (for entities associated with a table). */
   private final Map<String, EntityInfo> tableToEntityInfoMap;
 
-  /** cached entities mapped by entity id (for entities associated with a class id). */
+  /** cached entities mapped by class id (for entities associated with a class id). */
   private final Map<Integer, EntityInfo> classidToEntityInfoMap;
 
   /** model dirs processed so far. */
@@ -133,7 +137,8 @@ public class ModelImpl implements Model {
   /**
    * Creates a model.
    *
-   * @param name the model name.
+   * @param name the model name
+   * @throws ModelException if the model defaults or entity aliases given as system properties are malformed
    */
   public ModelImpl(String name) throws ModelException {
     this.name = name;
@@ -149,7 +154,7 @@ public class ModelImpl implements Model {
     /*
      * Presets model configuration from the runtime properties.
      * This is provided to easily configure unit tests as an alternative
-     * to extend DbTestUtilities in tentackle-test-pdo.
+     * to extending DbTestUtilities in tentackle-test-pdo.
      * Example:
      *
        <plugin>
@@ -254,6 +259,7 @@ public class ModelImpl implements Model {
     }
 
     // update track type and cascaded delete according to model defaults
+    // (the track type is only raised, never lowered by the defaults)
     boolean updateRelationsNecessary = false;
     for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       ModelDefaults defaults = entityInfo.getModelDefaults();
@@ -267,7 +273,9 @@ public class ModelImpl implements Model {
 
         if (Boolean.TRUE.equals(defaults.getDeletionCascaded())) {
           for (Relation relation : entity.getRelations()) {
-            if (relation.isComposite() && !relation.isDeletionCascaded()) {
+            // object relations are always deleted cascaded and must not be marked explicitly
+            if (relation.isComposite() && relation.getRelationType() == RelationType.LIST &&
+                !relation.isDeletionCascaded()) {
               ((RelationImpl) relation).setDeletionCascaded(true);
               updateRelationsNecessary = true;
             }
@@ -301,7 +309,7 @@ public class ModelImpl implements Model {
     }
 
     if (entityInfo == null) {
-      // load from file
+      // load from URL
       try {
         entityInfo = createEntityInfo(modelDefaults, url);
       }
@@ -394,13 +402,21 @@ public class ModelImpl implements Model {
   public void updateRelations() throws ModelException {
     updateRelations(null);
 
+    ModelDefaults defaults = getModelDefaults();
+    boolean setDeferrability = defaults != null && defaults.getDeferrability() != null &&
+                               defaults.getDeferrability() != Deferrability.NOT_DEFERRABLE;
+
     // indexes are parsed when the model is complete
     for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       EntityImpl entity = (EntityImpl) entityInfo.getEntity();
-      for (Index idx: entity.getIndexes()) {
+      for (Index idx : entity.getIndexes()) {
         IndexImpl index = (IndexImpl) idx;
         if (!index.isParsed()) {
           index.parse(entity);
+          // only unique indexes can be deferrable, and neither filtered nor function-based ones
+          if (setDeferrability && index.isUnique() && index.getFilterCondition() == null && !index.isFunctionBased()) {
+            index.applyDefaultDeferrability(Deferrability.DEFERRABLE_IMMEDIATE);
+          }
         }
       }
       entity.validate();  // validate again
@@ -415,6 +431,7 @@ public class ModelImpl implements Model {
     urlToEntityInfoMap.clear();
     entityToSourceInfoMap.clear();
     modelDirs.clear();
+    foreignKeys = null;
   }
 
   @Override
@@ -621,6 +638,20 @@ public class ModelImpl implements Model {
       }
 
       foreignKeys = foreignKeyMap.values();
+
+      // apply the model defaults' deferrability: foreign keys are not user-declared,
+      // so this is the only way to set their deferrability, always as DEFERRABLE_IMMEDIATE
+      // (deferred is never propagated automatically, see ModelDefaults#getDeferrability())
+      for (ForeignKey foreignKey : foreignKeys) {
+        Entity referencingEntity = foreignKey.getReferencingEntity();
+        if (!referencingEntity.getOptions().noModelDefaults()) {
+          EntityInfo referencingEntityInfo = nameToEntityInfoMap.get(referencingEntity.getName().toLowerCase(Locale.ROOT));
+          ModelDefaults defaults = referencingEntityInfo != null ? referencingEntityInfo.getModelDefaults() : null;
+          if (defaults != null && defaults.getDeferrability() != null && defaults.getDeferrability() != Deferrability.NOT_DEFERRABLE) {
+            ((ForeignKeyImpl) foreignKey).setDeferrability(Deferrability.DEFERRABLE_IMMEDIATE);
+          }
+        }
+      }
     }
 
     return foreignKeys;
@@ -628,9 +659,11 @@ public class ModelImpl implements Model {
 
 
   /**
-   * Adds an entity to the model.
+   * Adds an entity to the model.<br>
+   * If schema names are mapped, the schema-qualified table name is folded into a flat table name
+   * ({@code schema.table} becomes {@code schema_table}).
    *
-   * @param entityInfo the model entity
+   * @param entityInfo the entity info
    * @throws ModelException if duplicate entities detected
    */
   protected void addEntityInfo(EntityInfo entityInfo) throws ModelException {
@@ -688,7 +721,7 @@ public class ModelImpl implements Model {
     Set<ModelError> errors = new LinkedHashSet<>();
     Entity loadedEntity = loadedEntityInfo == null ? null : loadedEntityInfo.getEntity();
 
-    // set inheritance entities links
+    // rebuild the super/sub entity links
 
     for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       EntityImpl entity = (EntityImpl) entityInfo.getEntity();
@@ -856,7 +889,7 @@ public class ModelImpl implements Model {
                 }
                 if (nmRelation.getSelectionType() == SelectionType.LAZY && !nmRelation.isSerialized()) {
                   // the PdoRelations wurblet will generate a join
-                  // which makes only sense if the PDOs are transferred via network
+                  // which only makes sense if the PDOs are transferred via network
                   ((RelationImpl) nmRelation).setSerialized(true);      // retrieve from server
                   ((RelationImpl) nmRelation).setClearOnRemoteSave(true); // but don't send back to server
                 }
@@ -942,7 +975,7 @@ public class ModelImpl implements Model {
     for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
       /*
-       * The entity should provide a root class id if it is a composite of more than one root entities
+       * The entity should provide a root class id if it is a composite of more than one root entity
        * and holds exactly one root attribute column (2 means N:M relation, for example).
        */
       Set<Entity> rootEntities = entity.getRootEntities();
@@ -979,7 +1012,7 @@ public class ModelImpl implements Model {
         }
       }
 
-      // The entity should provide a rootId if it is a composite with a relation path of more than one hops
+      // The entity should provide a rootId if it is a composite with a relation path of more than one hop
       // or an OBJECT-relation
       if (!entity.isEmbedded()) {
         for (List<Relation> compositePath : entity.getCompositePaths()) {
@@ -992,7 +1025,8 @@ public class ModelImpl implements Model {
       }
     }
 
-    // applies model defaults
+    // apply the model defaults:
+    // the track type is only raised, ROOT, ROOTID and ROOTCLASSID go to the top super entity, REMOTE is forced
     for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       ModelDefaults defaults = entityInfo.getModelDefaults();
       Entity entity = entityInfo.getEntity();
@@ -1175,7 +1209,7 @@ public class ModelImpl implements Model {
       }
     }
 
-    // generate the table aliases.
+    // collect the explicitly defined table aliases and detect duplicates
     Map<String,Entity> aliasMap = new HashMap<>();
     for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
@@ -1193,72 +1227,7 @@ public class ModelImpl implements Model {
     }
 
     // generate automatic alias if not specified in model
-
-    // prio 1: apply camelcase letters and digits if possible
-    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
-      Entity entity = entityInfo.getEntity();
-      if (entity.getTableName() != null && entity.getTableAlias() == null) {
-        // determine the meaningful letters: Start and end of camel case words
-        StringBuilder letters = new StringBuilder();
-        for (int i = 0; i < entity.getName().length(); i++) {
-          char currentChar = entity.getName().charAt(i);
-          // each uppercase letter and digit (2=to, 4=for, etc...)
-          if (Character.isUpperCase(currentChar) || Character.isDigit(currentChar)) {
-            letters.append(currentChar);
-          }
-        }
-        applyTableAlias(aliasMap, entity, letters.toString().toLowerCase(Locale.ROOT));
-      }
-    }
-
-    // for all others still unnamed
-    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
-      Entity entity = entityInfo.getEntity();
-      if (entity.getTableName() != null && entity.getTableAlias() == null) {
-        StringBuilder letters = new StringBuilder();
-        boolean aliasFound = false;
-
-        // try syllables
-        List<String> syllables = ModelUtilities.getInstance().extractSyllables(entity.getName());
-        if (!syllables.isEmpty()) {
-          for (String syllable : syllables) {
-            letters.append(syllable.charAt(0));
-            if (applyTableAlias(aliasMap, entity, letters.toString().toLowerCase(Locale.ROOT))) {
-              aliasFound = true;
-              break;
-            }
-          }
-        }
-
-        if (!aliasFound) {
-          // try the first 3 chars, then the first 4, finally 5 non-vocal chars
-          if (letters.length() > 1) {
-            letters.setLength(1);
-          }
-          for (int i = 1; i < entity.getName().length() && i < 6; i++) {
-            char c = Character.toLowerCase(entity.getName().charAt(i));
-            if (c != 'a' && c != 'e' && c != 'i' && c != 'o' && c != 'u') {
-              letters.append(c);
-              if (letters.length() >= 3) {
-                if (applyTableAlias(aliasMap, entity, letters.toString().toLowerCase(Locale.ROOT))) {
-                  aliasFound = true;
-                  break;
-                }
-              }
-            }
-          }
-
-          if (!aliasFound) {
-            // just take the first letter and count. This will always work
-            String aliasPrefix = entity.getName().substring(0, 1).toLowerCase(Locale.ROOT);
-            int count = 1;
-            while (!applyTableAlias(aliasMap, entity, aliasPrefix + count)) {
-              count++;
-            }
-          }
-        }
-      }
-    }
+    generateTableAliases(aliasMap);
 
     // sets the inheritance level (ordinal)
     for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
@@ -1275,7 +1244,7 @@ public class ModelImpl implements Model {
     // sets the ordinals of attributes, relations and indexes
     for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
-      if (!entity.isAbstract()) {   // only leafs
+      if (!entity.isAbstract()) {   // only concrete entities
         Entity[] entities = new Entity[entityInfo.getEntity().getOrdinal() + 1];
         List<Entity> superEntities = entity.getSuperEntities();
         // reverse the path in the array
@@ -1315,7 +1284,7 @@ public class ModelImpl implements Model {
       validateComponents(topEntity, topEntity.getIntegrity(), errors);
     }
     else  {
-      // check that within each class hierarchy
+      // validate every (sub)hierarchy
       for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
         Entity entity = entityInfo.getEntity();
         validateInheritanceHierarchy(entity, entity.getInheritanceType(), entity.getOptions().getTrackType(),
@@ -1333,7 +1302,7 @@ public class ModelImpl implements Model {
    * Checks whether extending the given super entity would create a cycle in the inheritance hierarchy.<br>
    * Walking up such a hierarchy would never terminate, so the link must not be established at all.
    *
-   * @param entity the entity to extend the super entity
+   * @param entity the entity that would extend the super entity
    * @param superEntity the super entity to be extended
    * @return true if the link would create a cycle
    */
@@ -1347,6 +1316,203 @@ public class ModelImpl implements Model {
       current = current.getSuperEntity();
     }
     return false;
+  }
+
+  /**
+   * Generates the table aliases for all entities providing a table but without an alias.
+   * <p>
+   * The entities at the core of a domain model are usually the ones with the most relations, and they
+   * show up in most of the joins. Hence, the shorter aliases go to the more central entities:
+   * <ol>
+   *   <li>the entities are ranked by {@link #rankByCentrality(Collection)},</li>
+   *   <li>the prefixes of the camel-case initials ({@link #createPrimaryTableAliasCandidates(Entity)}) are assigned
+   *   in rounds of increasing alias length: in each round, the entities in ranking order take the first free
+   *   candidate of that length,</li>
+   *   <li>the entities still without an alias get the less obvious candidates
+   *   ({@link #createSecondaryTableAliasCandidates(Entity)}) the same way,</li>
+   *   <li>all entities still without an alias get the first letter of their name followed by a counter.</li>
+   * </ol>
+   * Within each step, an entity can only end up with a longer alias than a less central one, if all its shorter
+   * candidates were already taken by more central entities or defined explicitly in the model.
+   *
+   * @param aliasMap the map holding the aliases already assigned mapped to entities
+   */
+  protected void generateTableAliases(Map<String,Entity> aliasMap) {
+    List<Entity> entities = new ArrayList<>();
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
+      Entity entity = entityInfo.getEntity();
+      if (entity.getTableName() != null && entity.getTableAlias() == null) {
+        entities.add(entity);
+      }
+    }
+
+    if (!entities.isEmpty()) {
+      List<Entity> rankedEntities = rankByCentrality(entities);
+      applyTableAliasCandidates(aliasMap, rankedEntities, this::createPrimaryTableAliasCandidates);
+      applyTableAliasCandidates(aliasMap, rankedEntities, this::createSecondaryTableAliasCandidates);
+
+      // for all others still unnamed: just take the first letter and count. This will always work
+      for (Entity entity : rankedEntities) {
+        if (entity.getTableAlias() == null) {
+          String aliasPrefix = entity.getName().substring(0, 1).toLowerCase(Locale.ROOT);
+          int count = 1;
+          while (!applyTableAlias(aliasMap, entity, aliasPrefix + count)) {
+            count++;
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Applies alias candidates to the entities without an alias in rounds of increasing alias length.<br>
+   * In each round, the entities in ranking order take their first free candidate of that length.
+   *
+   * @param aliasMap the map holding the aliases already assigned mapped to entities
+   * @param rankedEntities the entities ranked by centrality, most central first
+   * @param candidateFactory creates the candidates of an entity
+   */
+  protected void applyTableAliasCandidates(Map<String,Entity> aliasMap, List<Entity> rankedEntities,
+                                           Function<Entity,List<String>> candidateFactory) {
+    Map<Entity,List<String>> candidateMap = new HashMap<>();
+    int maxLength = 0;
+    for (Entity entity : rankedEntities) {
+      if (entity.getTableAlias() == null) {
+        List<String> candidates = candidateFactory.apply(entity);
+        candidateMap.put(entity, candidates);
+        for (String candidate : candidates) {
+          maxLength = Math.max(maxLength, candidate.length());
+        }
+      }
+    }
+
+    for (int length = 1; length <= maxLength; length++) {
+      for (Entity entity : rankedEntities) {
+        if (entity.getTableAlias() == null) {
+          for (String candidate : candidateMap.get(entity)) {
+            if (candidate.length() == length && applyTableAlias(aliasMap, entity, candidate)) {
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Ranks the entities by their centrality within the model, most central first.
+   * <p>
+   * The primary criterion is the number of related entities (see {@link #getRelatedEntities(Entity)}),
+   * the secondary the sum of the related entities' number of related entities, i.e. an entity related to the
+   * core of the model ranks higher than an entity related to its periphery. Ties are resolved by the entity name.
+   *
+   * @param entities the entities to rank
+   * @return the ranked entities
+   */
+  protected List<Entity> rankByCentrality(Collection<Entity> entities) {
+    Map<Entity,Set<Entity>> relatedMap = new HashMap<>();
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
+      Entity entity = entityInfo.getEntity();
+      relatedMap.put(entity, getRelatedEntities(entity));
+    }
+
+    Map<Entity,Integer> degreeMap = new HashMap<>();
+    Map<Entity,Integer> weightMap = new HashMap<>();
+    for (Entity entity : entities) {
+      Set<Entity> relatedEntities = relatedMap.computeIfAbsent(entity, this::getRelatedEntities);
+      int weight = 0;
+      for (Entity relatedEntity : relatedEntities) {
+        weight += relatedMap.computeIfAbsent(relatedEntity, this::getRelatedEntities).size();
+      }
+      degreeMap.put(entity, relatedEntities.size());
+      weightMap.put(entity, weight);
+    }
+
+    List<Entity> rankedEntities = new ArrayList<>(entities);
+    rankedEntities.sort(Comparator.<Entity>comparingInt(degreeMap::get).reversed()
+                                  .thenComparing(Comparator.<Entity>comparingInt(weightMap::get).reversed())
+                                  .thenComparing(Entity::getName));
+    return rankedEntities;
+  }
+
+  /**
+   * Gets the entities related to the given entity.<br>
+   * Includes the relations in both directions, components as well as non-composite references.
+   * Inheritance hierarchies count as a single entity represented by their top super entity.
+   *
+   * @param entity the entity
+   * @return the top super entities of the related entities, never containing the entity's own hierarchy
+   */
+  protected Set<Entity> getRelatedEntities(Entity entity) {
+    Set<Entity> relatedEntities = new HashSet<>();
+    for (Relation relation : entity.getAllRelations()) {
+      if (relation.getForeignEntity() != null) {
+        relatedEntities.add(relation.getForeignEntity().getTopSuperEntity());
+      }
+    }
+    for (Relation relation : entity.getAllReferencingRelations()) {
+      if (relation.getEntity() != null) {
+        relatedEntities.add(relation.getEntity().getTopSuperEntity());
+      }
+    }
+    relatedEntities.remove(entity.getTopSuperEntity());
+    return relatedEntities;
+  }
+
+  /**
+   * Creates the primary table alias candidates for an entity.<br>
+   * These are the prefixes of the camel-case initials and digits (2=to, 4=for, etc...).
+   * For example, {@code CustomerOrder} yields {@code c} and {@code co}.
+   *
+   * @param entity the entity
+   * @return the distinct candidates in lowercase
+   */
+  protected List<String> createPrimaryTableAliasCandidates(Entity entity) {
+    Set<String> candidates = new LinkedHashSet<>();
+    String name = entity.getName();
+    StringBuilder letters = new StringBuilder();
+    for (int i = 0; i < name.length(); i++) {
+      char currentChar = name.charAt(i);
+      if (Character.isUpperCase(currentChar) || Character.isDigit(currentChar)) {
+        letters.append(Character.toLowerCase(currentChar));
+        candidates.add(letters.toString());
+      }
+    }
+    return new ArrayList<>(candidates);
+  }
+
+  /**
+   * Creates the secondary table alias candidates for an entity.<br>
+   * Used if all primary candidates are already taken.
+   * <ol>
+   *   <li>the prefixes of the first letters of the syllables</li>
+   *   <li>the first letter followed by the consonants of the next 5 characters, starting at an alias length of 3</li>
+   * </ol>
+   *
+   * @param entity the entity
+   * @return the distinct candidates in lowercase
+   */
+  protected List<String> createSecondaryTableAliasCandidates(Entity entity) {
+    Set<String> candidates = new LinkedHashSet<>();
+    String name = entity.getName();
+    StringBuilder letters = new StringBuilder();
+    for (String syllable : ModelUtilities.getInstance().extractSyllables(name)) {
+      letters.append(Character.toLowerCase(syllable.charAt(0)));
+      candidates.add(letters.toString());
+    }
+
+    letters.setLength(0);
+    letters.append(Character.toLowerCase(name.charAt(0)));
+    for (int i = 1; i < name.length() && i < 6; i++) {
+      char c = Character.toLowerCase(name.charAt(i));
+      if (c != 'a' && c != 'e' && c != 'i' && c != 'o' && c != 'u') {
+        letters.append(c);
+        if (letters.length() >= 3) {
+          candidates.add(letters.toString());
+        }
+      }
+    }
+    return new ArrayList<>(candidates);
   }
 
   /**
@@ -1433,15 +1599,15 @@ public class ModelImpl implements Model {
    * @throws ModelException if the directory does not exist or is not a directory
    */
   protected ModelDirectory createModelDirectory(String modelDir) throws ModelException {
-    return new ModelDirectoryImpl(modelDir, modelDefaults, entityAliases);
+    return new ModelDirectoryImpl(modelDir);
   }
 
   /**
-   * Creates a model entity wrapper.
+   * Creates the entity info for a model source.
    *
-   * @param defaults the optional model defaults
-   * @param url the url of the model file
-   * @return the model entity
+   * @param defaults the optional model defaults, overridden by the defaults embedded in the model source
+   * @param url the URL of the model source
+   * @return the entity info
    * @throws ModelException if creation failed
    */
   protected EntityInfo createEntityInfo(ModelDefaults defaults, URL url) throws ModelException {
@@ -1466,7 +1632,7 @@ public class ModelImpl implements Model {
   }
 
   /**
-   * Creates a reader for the given name.
+   * Creates a reader for the given URL.
    *
    * @param url the model url
    * @return the reader
@@ -1474,7 +1640,7 @@ public class ModelImpl implements Model {
    */
   protected Reader createReader(URL url) throws ModelException {
     try {
-      return new BufferedReader(new InputStreamReader(url.openStream(), Settings.getEncodingCharset()));
+      return new BufferedReader(new InputStreamReader(FileHelper.openStreamUncached(url), Settings.getEncodingCharset()));
     }
     catch (IOException ex) {
       throw new ModelException("cannot open reader for " + url, ex);
@@ -1521,7 +1687,7 @@ public class ModelImpl implements Model {
   }
 
   /**
-   * Verifies that the integrity is the same within a given composite hierarchy.<br>
+   * Verifies that the integrity is the same within a given composite hierarchy.
    *
    * @param entity the entity to check
    * @param integrity the integrity type

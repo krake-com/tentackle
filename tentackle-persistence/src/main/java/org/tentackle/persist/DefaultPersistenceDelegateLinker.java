@@ -26,7 +26,9 @@ import org.tentackle.pdo.PersistentObject;
 import org.tentackle.pdo.PersistentOperation;
 
 /**
- * Default implementation of {@link PersistenceDelegateLinker}.
+ * Default implementation of {@link PersistenceDelegateLinker}.<br>
+ * Links PDO and operation proxies to their persistence delegates, which must
+ * extend {@link AbstractPersistentObject} or {@link AbstractPersistentOperation}, respectively.
  */
 @Service(PersistenceDelegateLinker.class)
 public class DefaultPersistenceDelegateLinker implements PersistenceDelegateLinker {

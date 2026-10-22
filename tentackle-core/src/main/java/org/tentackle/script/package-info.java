@@ -18,5 +18,8 @@
 
 /**
  * Scripting abstraction layer.
+ * <p>
+ * The concrete languages are provided by the modules tentackle-script-groovy, tentackle-script-ruby
+ * and tentackle-script-jsr. Scripts are created via the {@link org.tentackle.script.ScriptFactory}.
  */
 package org.tentackle.script;

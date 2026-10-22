@@ -18,5 +18,8 @@
 
 /**
  * Supervisor daemon.
+ * <p>
+ * The {@link org.tentackle.daemon.DaemonSupervisor} keeps daemon threads running, restarting them if they terminate
+ * and killing those that are dead.
  */
 package org.tentackle.daemon;

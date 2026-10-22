@@ -160,16 +160,18 @@ public interface StoredBundlePersistence extends PersistentObject<StoredBundle> 
   TrackedList<StoredBundle> findByName(String name);
 
   /**
-   * Find the bundle by its name and locale.
+   * Finds the bundle by its name and locale.<br>
+   * Unlike {@link #selectCachedByUniqueDomainKey}, this always queries the backend.
    *
    * @param name the bundle name
-   * @param locale the locale
-   * @return the bundle
+   * @param locale the locale, null for the default bundle
+   * @return the bundle, null if no such bundle
    */
   StoredBundle findByNameAndLocale(String name, String locale);
 
   /**
-   * Selects via remote cache, if session is remote.
+   * Selects by unique domain key on behalf of the cache.<br>
+   * If the session is remote, the server's cache is used.
    *
    * @param udk the unique key
    * @return the pdo, null if no such object

@@ -17,6 +17,7 @@
  */
 
 /**
- * Extended FX containers.
+ * Extended FX containers.<br>
+ * The tentackle implementations of the JavaFX layout panes and containers, implementing {@link org.tentackle.fx.FxContainer}.
  */
 package org.tentackle.fx.container;

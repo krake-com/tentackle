@@ -22,8 +22,8 @@ import java.util.function.Function;
 
 /**
  * Interface tentackle scripting languages must implement.
- * <br>
- * Scripting languages are dynamically loaded and must be annotated with @Service(ScriptingLanguage.class).
+ * <p>
+ * Scripting languages are dynamically loaded and must be annotated with {@code @Service(ScriptingLanguage.class)}.
  *
  * @author harald
  */
@@ -46,7 +46,8 @@ public interface ScriptingLanguage {
    * <pre>
    * "#!gv{object.mainCarriage != null}"
    * </pre>
-   * Describes a groovy script.
+   * Describes a groovy script.<br>
+   * Abbreviations are case-insensitive.
    *
    * @return the abbreviations
    */
@@ -54,20 +55,19 @@ public interface ScriptingLanguage {
 
   /**
    * Creates a script.
-   * <p>
-   * Throws {@link ScriptRuntimeException} if script cannot be created.
    *
    * @param code the scripting code
    * @param cached true to use caching if possible because script code may be used more than once
    * @param threadSafe true if the script may be invoked in parallel from different threads
    * @param converterProvider the optional script converter provider
    * @return the created script object
+   * @throws ScriptRuntimeException if the script cannot be created
    */
   Script createScript(String code, boolean cached, boolean threadSafe, Function<String, ScriptConverter> converterProvider);
 
   /**
    * Creates a local reference for a variable name.<br>
-   * Some languages need a special syntax.
+   * Some languages need a special syntax, for example {@code @name} in Ruby.
    *
    * @param name the variable
    * @return the language-specific variable

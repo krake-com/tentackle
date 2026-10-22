@@ -58,8 +58,10 @@ public class PoolTimeoutThread extends Thread implements Scavenger {
 
   /**
    * Registers a new pool for monitoring.<br>
+   * Starts the timeout thread, if not running.<br>
    * There is no "unregister".
-   * Pools are automatically unregistered when GC'd or shut down.
+   * Pools are automatically unregistered when garbage collected or shut down.
+   * The thread terminates when there are no more pools to monitor.
    *
    * @param pool the pool
    */
@@ -76,7 +78,7 @@ public class PoolTimeoutThread extends Thread implements Scavenger {
         timeoutThread.start();
       }
     }
-    LOGGER.info("session pool {0} registered", pool);
+    LOGGER.info("pool {0} registered", pool);
   }
 
 
@@ -120,12 +122,17 @@ public class PoolTimeoutThread extends Thread implements Scavenger {
              * for its resources to be closed. Holding it would also invert the locking order
              * against register(), which is invoked while holding the pool's monitor.
              */
-            pool.monitor();   // bring down timed out unused instances
+            try {
+              pool.monitor();   // bring down timed out unused instances
+            }
+            catch (RuntimeException ex) {
+              LOGGER.severe("monitoring pool " + pool + " failed", ex);
+            }
           }
         }
       }
       catch(RuntimeException ex){
-        LOGGER.severe("cleaning up unused session instance(s) failed", ex);
+        LOGGER.severe("monitoring pools failed", ex);
       }
     }
     LOGGER.info(this + " terminated");

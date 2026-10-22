@@ -26,9 +26,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-
 /**
- * Annotation to express that the annotated class is an implementation of the domain logic for a given operation type.
+ * Annotation to express that the annotated class is an implementation of the persistence logic for a given operation type.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -37,10 +36,10 @@ import java.lang.annotation.Target;
 public @interface PersistentOperationService {
 
   /**
-   * Determines the PO interface.<br>
-   * The PO-interface extends the persistence operation interface.
+   * Determines the operation interface.<br>
+   * The operation interface extends its persistence interface.
    *
-   * @return the PO interface
+   * @return the operation interface
    */
   @SuppressWarnings("rawtypes")
   Class<? extends PersistentOperation> value(); // no <?> because of abstract operations!

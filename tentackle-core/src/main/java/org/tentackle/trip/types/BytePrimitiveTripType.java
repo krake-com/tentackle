@@ -21,7 +21,7 @@ package org.tentackle.trip.types;
 import org.tentackle.trip.TripTypeService;
 
 /**
- * Trip type for byte primitive.
+ * Trip type for the {@code byte} primitive.
  */
 @TripTypeService(byte.class)
 public final class BytePrimitiveTripType extends ByteTripType {

@@ -30,6 +30,7 @@ import java.util.List;
 
 /**
  * Remote delegate implementation for {@link DbModificationTracker}.
+ *
  * @param <T> the modification tracker class
  * @author  harald
  */
@@ -49,7 +50,8 @@ public class DbModificationTrackerRemoteDelegateImpl<T extends DbModificationTra
 
   @Override
   public MasterSerial selectMasterSerial() {
-    return createMasterSerial(((DbModificationTracker) ModificationTracker.getInstance()).getMasterSerial());
+    DbModificationTracker tracker = (DbModificationTracker) ModificationTracker.getInstance();
+    return createMasterSerial(tracker.getMasterSerial(), tracker.getGeneration());
   }
 
   @Override
@@ -75,9 +77,10 @@ public class DbModificationTrackerRemoteDelegateImpl<T extends DbModificationTra
    * the next event will be polled from the queue, its serial set, and that event returned.
    *
    * @param serial the long master serial
+   * @param generation the generation of the modification table
    * @return the master serial object
    */
-  protected MasterSerial createMasterSerial(long serial) {
+  protected MasterSerial createMasterSerial(long serial, long generation) {
     MasterSerialEvent masterSerialEvent = getServerSession().pollMasterSerialEvent();
     if (masterSerialEvent != null) {
       masterSerialEvent.setSerial(serial);
@@ -96,7 +99,7 @@ public class DbModificationTrackerRemoteDelegateImpl<T extends DbModificationTra
       }
       return masterSerialEvent;
     }
-    return new DefaultMasterSerial(serial);
+    return new DefaultMasterSerial(serial, generation);
   }
 
 }

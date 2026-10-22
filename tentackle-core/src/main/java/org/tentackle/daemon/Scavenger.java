@@ -42,7 +42,7 @@ public interface Scavenger {
    * Returns whether given thread is a scavenger.
    *
    * @param thread the thread
-   * @return true if thread implements Scavenger and isScavenging=true or thread is a finalizer/cleaner
+   * @return true if thread implements Scavenger and isScavenging()==true, or thread is a finalizer/cleaner
    */
   static boolean isScavenger(Thread thread) {
     return thread instanceof Scavenger && ((Scavenger) thread).isScavenging() ||

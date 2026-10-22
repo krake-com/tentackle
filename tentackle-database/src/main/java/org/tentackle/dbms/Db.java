@@ -21,6 +21,7 @@ package org.tentackle.dbms;
 import org.tentackle.common.Constants;
 import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.ExceptionHelper;
+import org.tentackle.common.ServiceFactory;
 import org.tentackle.daemon.Scavenger;
 import org.tentackle.dbms.trip.DbRemoteDelegate;
 import org.tentackle.dbms.trip.PreloadRemoteDelegate;
@@ -75,7 +76,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -85,6 +85,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -113,10 +114,9 @@ import java.util.function.Consumer;
  * The configuration is achieved by a property file, which is located
  * by the {@link SessionInfo} passed to the session.
  * <p>
- * Local sessions can be either a DataSource bound via JNDI or a direct
- * JDBC connection. JNDI is used in application servers, for example, running
- * a JRuby on Rails application from within Glassfish (see tentackle-web).<br>
- * JDBC connections are for standalone 2-tier applications or Tentackle application servers.
+ * Local sessions use either a direct JDBC connection or a DataSource bound via JNDI.
+ * JDBC connections are for standalone 2-tier applications and Tentackle application servers.
+ * JNDI is used when the application runs inside a container that provides the DataSource.
  * <br>
  * For local sessions via JDBC, the file contains at least the following properties:
  *
@@ -153,6 +153,7 @@ import java.util.function.Consumer;
  * The currently supported transports are:
  * <ul>
  *   <li>{@code trip}: tentackle remote invocation protocol using TCP</li>
+ *   <li>{@code tripc}: compressed</li>
  *   <li>{@code trips}: trip with SSL</li>
  *   <li>{@code tripcs}: compressed + SSL</li>
  *   <li>{@code tripe}: encrypted (pre-shared key, see {@link org.tentackle.common.Cryptor})</li>
@@ -182,9 +183,10 @@ import java.util.function.Consumer;
  *  user=fixed-user
  *  password=fixed-password
  *  </pre>
- *  If the password begins with a {@code ~} <em>and</em> the application provides a {@link org.tentackle.common.Cryptor},
- *  the string following the {@code ~} is considered to be encrypted. If an unencrypted password must begin with a {@code ~},
- *  use {@code ~~} instead.
+ *  If the password begins with a {@code ~}, the string following the {@code ~} is considered to be encrypted
+ *  and is decrypted by the application's {@link org.tentackle.common.Cryptor}.
+ *  If an unencrypted password must begin with a {@code ~}, escape it as {@code \\~} in the property file.
+ *  See {@link org.tentackle.common.EncryptedProperties}.
  *  </li>
  *  <li>
  *  By default, the credentials used to connect to the backend are the same as the ones in the session info.
@@ -199,8 +201,16 @@ import java.util.function.Consumer;
  *  <pre>
  *  batchsize=size
  *  </pre>
- *  If the size is &gt; 1. The persistence layer collects matching statements and executes them within batches.
+ *  If the size is &gt; 1, the persistence layer collects matching statements and executes them within batches.
  *  See {@link DbBatch}.
+ *  </li>
+ *  <li>
+ *  Taking part in global (JTA/XA) transactions:
+ *  <pre>
+ *  jta=none|join|required
+ *  </pre>
+ *  See {@link GlobalTransactionMode}. Requires a {@link GlobalTransactionSupport} service, such as provided
+ *  by the module {@code tentackle-jta}, and a connection manager providing XA connections.
  *  </li>
  * </ul>
  * <p>
@@ -209,7 +219,9 @@ import java.util.function.Consumer;
  *  <li>
  *  Each object persistable to the database (database object for short)
  *  gets a unique object ID which is generated
- *  by an {@link IdSource}. The default source is {@link ObjectId}.
+ *  by an {@link IdSource}. The default source is an {@link ObjectSequenceId} on the sequence
+ *  {@code object_sequence_id} if the backend supports sequences, otherwise an {@link ObjectId}
+ *  on the table {@code object_id}.
  *  <pre>
  *  idsource=id-source-descriptor
  *  </pre>
@@ -236,6 +248,13 @@ public class Db implements Session, Cloneable {
    * Property key to enable batching for this session.
    */
   public static final String BATCHSIZE = "batchsize";
+
+  /**
+   * Property key for the global transaction mode.
+   *
+   * @see GlobalTransactionMode
+   */
+  public static final String JTA = "jta";
 
 
   private static final Logger LOGGER = Logger.get(Db.class);
@@ -366,6 +385,9 @@ public class Db implements Session, Cloneable {
 
   private static final Cleaner CLEANER = Cleaner.create();        // instead of deprecated finalize()
 
+  private static final Object GLOBAL_TX_SUPPORT_LOCK = new Object();
+  private static volatile GlobalTransactionSupport globalTransactionSupport;   // loaded on demand
+
   // crashed remote sessions are closed from a separate thread to avoid blocking (TCP stack, whatever)
   private static final AtomicInteger REMOTE_CLOSING_COUNTER = new AtomicInteger();
   private static final ExecutorService REMOTE_CLOSING_EXECUTOR = Executors.newCachedThreadPool(runnable -> {
@@ -384,11 +406,12 @@ public class Db implements Session, Cloneable {
     private DbRemoteDelegate rdel;                          // remote database delegate
     private RemoteDbConnection rcon;                        // != null if remote connection established to TRIP-server
     private RemoteDbSession rses;                           // remote database session if logged in to TRIP-server
-    private int sessionId;                                  // the session ID
+    private volatile int sessionId;                         // the session ID (read by other threads via isOpen)
     private volatile ManagedConnection con;                 // connection if attached, null = detached
-    private boolean crashed;                                // true = session is closed because it is treated as crashed
+    private volatile boolean crashed;                       // true = session is closed because it is treated as crashed
     private final Set<SessionCloseHandler> closeHandlers;   // close handlers
     private Db me;                                          // != null if programmatic cleanup (close)
+    private Cleanable cleanable;                            // the cleanable running these resources (published along with them)
 
     Resources(ConnectionManager conMgr, int sessionId, Transport transport, DbRemoteDelegate rdel, RemoteDbConnection rcon, RemoteDbSession rses) {
       this.conMgr = conMgr;
@@ -397,7 +420,7 @@ public class Db implements Session, Cloneable {
       this.rdel = rdel;
       this.rcon = rcon;
       this.rses = rses;
-      closeHandlers = new HashSet<>();
+      closeHandlers = ConcurrentHashMap.newKeySet();   // may be registered while being closed by another thread
     }
 
     @Override
@@ -439,7 +462,7 @@ public class Db implements Session, Cloneable {
                 TransportManager.getInstance().releaseTransport(transport);
               }
               if (me != null) {
-                DbUtilities.getInstance().closeGroupsOfSession(me);
+                closeGroupsOfSession();
                 LOGGER.info("remote session {0} closed", name);
               }
               else {
@@ -457,7 +480,7 @@ public class Db implements Session, Cloneable {
                 }
               }
               if (me != null) {
-                DbUtilities.getInstance().closeGroupsOfSession(me);
+                closeGroupsOfSession();   // must not prevent the logout below
                 conMgr.logout(me);
                 LOGGER.info("session {0} closed", name);
               }
@@ -518,6 +541,19 @@ public class Db implements Session, Cloneable {
       }
     }
 
+    /**
+     * Closes the session groups if the closing session is a group root.<br>
+     * Failures are logged only, since the session must be closed nevertheless.
+     */
+    private void closeGroupsOfSession() {
+      try {
+        DbUtilities.getInstance().closeGroupsOfSession(me);
+      }
+      catch (RuntimeException ex) {
+        LOGGER.warning("closing the session groups failed for " + name, ex);
+      }
+    }
+
     private void remoteClose(Transport transport, RemoteDbSession remoteDbSession) {
       LOGGER.warning("closing remote session " + remoteDbSession);
       try {
@@ -575,12 +611,15 @@ public class Db implements Session, Cloneable {
   }
 
   private final BackendInfo backendInfo;                      // the backend information
-  private Resources resources;                                // resources to be cleaned up (not final due to reopen)
-  private Cleanable cleanable;                                // to clean up the connection (not final due to reopen)
+  private final int backendIdentity;                          // identity of the physical backend (0 if remote)
+  private volatile Resources resources;                       // resources to be cleaned up (not final due to reopen, which may run in background)
+  private Object reOpenLock = new Object();                   // serializes close and reopen (not final: replaced by clone)
+  private AtomicBoolean reconnectionPending = new AtomicBoolean();   // true while a background reconnection runs (not final: replaced by clone)
+  private volatile Thread reconnectingThread;                 // the thread performing the background reconnection attempt, null if none
   private int instanceNumber;                                 // each session gets a unique instance number
   private String idConfig;                                    // configuration of IdSource
-  private int sessionGroupId;                                 // ID of the session group, 0 = none
-  private int exportedSessionGroupId;                         // session group exported to the remote client, 0 = none
+  private volatile int sessionGroupId;                        // ID of the session group, 0 = none (read by other threads)
+  private volatile int exportedSessionGroupId;                // session group exported to the remote client, 0 = none (read by the cleanup thread)
   private Pool<Session> dbPool;                               // != null if this Db is managed by a SessionPool
   private int poolId;                                         // the pool id if dbPool != null
   private SessionInfo sessionInfo;                            // session information
@@ -595,8 +634,10 @@ public class Db implements Session, Cloneable {
   private boolean logModificationTxEnabled;                   // true if log the transaction begin/commit in the modification log
   private long logModificationTxId;                           // transaction id. !=0 if 'commit' is pending in the modification log
   private boolean logModificationDeferred;                    // true if log to memory rather than dbms
+  private boolean constraintsDeferred;                        // true if deferrable constraints are deferred for the current tx
+  private int statementHistoryLimit = -1;                     // max. statements kept in the history of the current tx, < 0 if unlimited
   private List<ModificationLog> modificationLogList;          // in-memory modification-log for current transaction
-  private DbTransaction transaction;                          // the running transaction (only for local sessions)
+  private volatile DbTransaction transaction;                 // the running transaction (only for local sessions, read by the modification tracker)
   private RemoteTransaction remoteTransaction;                // the running transaction (only for remote sessions)
   private Map<Object, Object> transactionProperties;          // application-specific properties
   private Map<CommitKey, Consumer<Session>> postCommits;      // post commits
@@ -614,13 +655,14 @@ public class Db implements Session, Cloneable {
   private RemoteDbDelegate[] delegates;                       // the delegates per session (TRIP only)
   private Map<String, RemoteDbDelegate> preloadedDelegates;   // preloaded delegates by classname, null if not preloaded
   private boolean preloadRequested;                           // true if the application requested preloading
+  private GlobalTransactionMode globalTransactionMode = GlobalTransactionMode.NONE;   // participation in global transactions
 
 
   /**
-   * Creates an instance of a logical session.<br>
+   * Creates an instance of a logical session and opens it.<br>
    * If the login fails due to wrong passwords
-   * or denied access by the application server,
-   * the method {@link #handleConnectException} is invoked.
+   * or denied access by the application server, a {@link LoginFailedException} is thrown.
+   * Other connection errors are reported as a {@link PersistenceException}.
    *
    * @param conMgr the connection manager for the local connection (ignored if remote)
    * @param sessionInfo session information
@@ -684,6 +726,7 @@ public class Db implements Session, Cloneable {
 
       if (backendInfo.isRemote()) {
         conMgr = null;  // no connection manager for remote connections
+        backendIdentity = 0;
       }
       else  {
         if (conMgr == null) {
@@ -693,6 +736,8 @@ public class Db implements Session, Cloneable {
         if (val != null) {
           batchSize = Integer.parseInt(val);
         }
+        globalTransactionMode = GlobalTransactionMode.parse(backendProperties.getPropertyIgnoreCase(JTA));
+        backendIdentity = DbUtilities.getInstance().getBackendIdentity(backendInfo);
       }
 
       String val = sessionProperties.getPropertyIgnoreCase(IDSOURCE);
@@ -752,22 +797,24 @@ public class Db implements Session, Cloneable {
         // direct connection to the database
         sessionId = conMgr.login(this);
         transaction = null;
+        setupIdSource(idConfig);
       }
 
       // fresh connections are always in autoCommit mode
       autoCommit = true;
 
-      setupIdSource();
       if (!sessionInfo.isImmutable()) {
         sessionInfo.setSince(System.currentTimeMillis());
       }
 
       alive = true;   // all sessions start alive!
 
-      resources = new Resources(conMgr, sessionId, transport, rdel, rcon, rses);
-      resources.name = toString();
-      cleanable = CLEANER.register(this, resources);
+      // the cleanable belongs to the resources: both are published at once by the volatile write below
+      Resources res = new Resources(conMgr, sessionId, transport, rdel, rcon, rses);
+      res.cleanable = CLEANER.register(this, res);
       transportHandedOver = true;   // from here on the resources release the transport
+      resources = res;
+      res.name = toString();
 
       registerSession();
 
@@ -818,6 +865,10 @@ public class Db implements Session, Cloneable {
     StringBuilder buf = new StringBuilder();
     buf.append("Db");
     buf.append(instanceNumber);
+    if (backendIdentity != 0) {
+      buf.append('i');
+      buf.append(backendIdentity);
+    }
     if (resources != null) {
       buf.append('c').append(resources.sessionId);
     }
@@ -982,6 +1033,52 @@ public class Db implements Session, Cloneable {
     this.batchSize = batchSize;
   }
 
+  /**
+   * Gets the mode this session takes part in global transactions.
+   *
+   * @return the mode, never null
+   */
+  public GlobalTransactionMode getGlobalTransactionMode() {
+    return globalTransactionMode;
+  }
+
+  /**
+   * Sets the mode this session takes part in global transactions.<br>
+   * Defaults to the backend property {@value #JTA}.
+   *
+   * @param globalTransactionMode the mode, null for {@link GlobalTransactionMode#NONE}
+   */
+  public void setGlobalTransactionMode(GlobalTransactionMode globalTransactionMode) {
+    this.globalTransactionMode = globalTransactionMode == null ? GlobalTransactionMode.NONE : globalTransactionMode;
+  }
+
+  /**
+   * Gets the bridge to the global transaction manager.<br>
+   * The implementation is loaded on first use.
+   *
+   * @return the global transaction support, never null
+   * @throws PersistenceException if no {@link GlobalTransactionSupport} service is available
+   */
+  public static GlobalTransactionSupport getGlobalTransactionSupport() {
+    GlobalTransactionSupport support = globalTransactionSupport;
+    if (support == null) {
+      synchronized (GLOBAL_TX_SUPPORT_LOCK) {
+        support = globalTransactionSupport;
+        if (support == null) {
+          try {
+            support = ServiceFactory.createService(GlobalTransactionSupport.class);
+          }
+          catch (RuntimeException ex) {
+            throw new PersistenceException("no " + GlobalTransactionSupport.class.getSimpleName() +
+                                           " service found (module tentackle-jta missing?)", ex);
+          }
+          globalTransactionSupport = support;
+        }
+      }
+    }
+    return support;
+  }
+
 
   /**
    * Gets the remote connection object.
@@ -1063,7 +1160,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Asserts that a transaction with the given voucher is running.
+   * Asserts that a local transaction is running.
    */
   public void assertTxRunning() {
     try {
@@ -1093,7 +1190,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * asserts that this is not a remote session
+   * Asserts that this is not a remote session.
    */
   public void assertNotRemote() {
     if (isRemote()) {
@@ -1102,7 +1199,7 @@ public class Db implements Session, Cloneable {
   }
 
   /**
-   * asserts that this is a remote session
+   * Asserts that this is a remote session.
    */
   public void assertRemote() {
     if (!isRemote()) {
@@ -1279,17 +1376,13 @@ public class Db implements Session, Cloneable {
 
   /**
    * Configures the ID source if not remote.
+   *
+   * @param idConfig the ID configuration, null for default by backend
    */
-  private void setupIdSource() {
-    if (!isRemote()) {
-      if (idConfig != null) {
-        setDefaultIdSource(IdSourceConfigurator.getInstance().configure(this, idConfig));
-      }
-      else  {
-        IdSource idSource = IdSourceConfigurator.getInstance().configure(this, null);
-        setDefaultIdSource(idSource);
-      }
-    }
+  protected void setupIdSource(String idConfig) {
+    setDefaultIdSource(idConfig == null ?
+                         IdSourceConfigurator.getInstance().configure(getBackend()) :
+                         IdSourceConfigurator.getInstance().configure(idConfig));
   }
 
 
@@ -1312,21 +1405,28 @@ public class Db implements Session, Cloneable {
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Serialized with other reopens, which may run in background, see {@link #enableReconnection(boolean, long)}.
+   */
   @Override
   public void reOpen() {
-    if (isOpen()) {
-      try {
-        close();
+    synchronized (reOpenLock) {
+      if (isOpen()) {
+        try {
+          close();
+        }
+        catch (PersistenceException ex) {
+          // nothing to log
+        }
       }
-      catch (PersistenceException ex) {
-        // nothing to log
+      clearMembers();
+      unregisterSession();
+      open(resources.conMgr);
+      if (sessionGroupId > 0) {
+        groupWith(sessionGroupId);
       }
-    }
-    clearMembers();
-    unregisterSession();
-    open(resources.conMgr);
-    if (sessionGroupId > 0) {
-      groupWith(sessionGroupId);
     }
   }
 
@@ -1335,6 +1435,10 @@ public class Db implements Session, Cloneable {
    * Enables the automatic reconnection capability.<br>
    * If the backend is shutdown or not available for some other reason,
    * the application will retry to connect periodically.
+   * <p>
+   * If non-blocking, the session is reopened in the background, at most once at a time.
+   * Meanwhile, the session cannot be used by other threads: attaching it fails with a temporary
+   * {@link PersistenceException}, see {@link #isReconnecting()}.
    *
    * @param blocking true if reconnection blocks the current thread
    * @param millis the milliseconds between connection retries
@@ -1356,11 +1460,86 @@ public class Db implements Session, Cloneable {
    * @return true if reconnected, false if reconnection is disabled or runs non-blocking (in background)
    */
   public boolean optionallyReconnect() {
-    if (reconnectionPolicy != null) {
-      Reconnector.getInstance().submit(reconnectionPolicy, this);
-      return reconnectionPolicy.isBlocking();
+    ReconnectionPolicy<Db> policy = reconnectionPolicy;
+    if (policy != null) {
+      if (policy.isBlocking()) {
+        Reconnector.getInstance().submit(policy, this);
+        return true;
+      }
+      // non-blocking: at most one reconnection at a time, no matter how many statements fail meanwhile
+      if (reconnectionPending.compareAndSet(false, true)) {
+        try {
+          Thread.ofPlatform().daemon().name("reconnect " + this).start(() -> reconnectInBackground(policy));
+        }
+        catch (RuntimeException | Error ex) {
+          reconnectionPending.set(false);
+          throw ex;
+        }
+      }
     }
     return false;
+  }
+
+  /**
+   * Runs the reconnection in the background.<br>
+   * The reconnection is performed by the {@link Reconnector} within the current thread, so that the
+   * pending reconnection is cleared however it terminates: reconnected, aborted by the policy, interrupted
+   * or failed due to an {@link Error}. Otherwise, the session would refuse to attach forever.
+   *
+   * @param policy the application's non-blocking policy
+   */
+  private void reconnectInBackground(ReconnectionPolicy<Db> policy) {
+    try {
+      Reconnector.getInstance().submit(new BackgroundReconnection(policy), this);
+    }
+    catch (RuntimeException rx) {
+      LOGGER.severe("reconnection of " + this + " failed", rx);
+    }
+    finally {
+      reconnectionPending.set(false);   // the session is usable again, or must be reconnected by the next failure
+    }
+  }
+
+  /**
+   * Wraps a non-blocking reconnection policy.<br>
+   * Tracks the thread reopening the session in the background, which is the only thread allowed to use the session
+   * while it is being reopened.
+   * <p>
+   * Blocking, because it is submitted from the background thread, see {@link #reconnectInBackground(ReconnectionPolicy)}.
+   */
+  private final class BackgroundReconnection implements ReconnectionPolicy<Db> {
+
+    private final ReconnectionPolicy<Db> policy;    // the application's policy
+
+    private BackgroundReconnection(ReconnectionPolicy<Db> policy) {
+      this.policy = policy;
+    }
+
+    @Override
+    public boolean isBlocking() {
+      return true;
+    }
+
+    @Override
+    public long timeToReconnect() {
+      return policy.timeToReconnect();
+    }
+
+    @Override
+    public void reconnect(Db resource) {
+      reconnectingThread = Thread.currentThread();
+      try {
+        policy.reconnect(resource);
+      }
+      finally {
+        reconnectingThread = null;
+      }
+    }
+
+    @Override
+    public String toString() {
+      return policy.toString();
+    }
   }
 
 
@@ -1377,10 +1556,17 @@ public class Db implements Session, Cloneable {
 
   @Override
   public void close() {
-    if (isOpen()) {
+    /*
+     * Not serialized with reOpen: closing a session closes the other sessions of its group as well,
+     * which may be reopened concurrently. Hence, the resources are read only once and cleaned up
+     * by their own cleanable. Otherwise, a concurrent reopen could replace the cleanable in between,
+     * and the reopened session would be cleaned up as if it were unreferenced.
+     */
+    Resources res = resources;
+    if (res.isOpen()) {
       LOGGER.fine("closing session {0}", this);
-      resources.me = this;    // programmatic close
-      cleanable.clean();
+      res.me = this;    // programmatic close
+      res.cleanable.clean();
     }
   }
 
@@ -1416,7 +1602,8 @@ public class Db implements Session, Cloneable {
     if (isRemote()) {
       return remoteTransaction == null ? 0 : remoteTransaction.getTxNumber();
     }
-    return transaction == null ? 0 : transaction.getTxNumber();
+    DbTransaction tx = transaction;   // local copy: may be read by another thread, e.g., the modification tracker
+    return tx == null ? 0 : tx.getTxNumber();
   }
 
   @Override
@@ -1438,7 +1625,7 @@ public class Db implements Session, Cloneable {
 
   /**
    * Sets an application-specific transaction property.<br>
-   * For local sessions, properties can be set while a transaction is running.
+   * Only for local sessions and only while a transaction is running.
    * The properties are cleared when a new transaction begins but survive
    * a commit or rollback. Thus, they can be queried before or after the transaction
    * has ended, for example, by a post-commit.
@@ -1460,7 +1647,7 @@ public class Db implements Session, Cloneable {
    * Gets a transaction property.
    *
    * @param key the key
-   * @return the value, null no such key
+   * @return the value, null if no such key
    */
   public synchronized Object getTransactionProperty(Object key) {
     return transactionProperties == null ? null : transactionProperties.get(key);
@@ -1558,7 +1745,7 @@ public class Db implements Session, Cloneable {
    * @param txName is the optional transaction name, null for none
    * @param fromRemote true if invocation from the remote client via {@link DbRemoteDelegate#begin}
    * @param transactionIsolation the transaction isolation level, null or {@link TransactionIsolation#DEFAULT} if default
-   * @param transactionWritability the transaction writabilty, null or {@link TransactionWritability#DEFAULT} if default
+   * @param transactionWritability the transaction writability, null or {@link TransactionWritability#DEFAULT} if default
    *
    * @return the transaction voucher (!= 0) if a new transaction was begun, else 0
    */
@@ -1596,6 +1783,15 @@ public class Db implements Session, Cloneable {
 
       alive = true;
 
+      if (autoCommit && !fromRemote && globalTransactionMode != GlobalTransactionMode.NONE) {
+        // client-initiated transactions span several remote calls and are always local
+        GlobalTransactionSupport support = getGlobalTransactionSupport();
+        boolean globalActive = support.isGlobalTransactionActive();
+        if (globalActive || globalTransactionMode == GlobalTransactionMode.REQUIRED) {
+          return beginGlobal(support, !globalActive, txName, transactionIsolation, transactionWritability);
+        }
+      }
+
       if (setAutoCommit(c -> {
         // new transaction
         assertNoTxRunning();
@@ -1618,9 +1814,9 @@ public class Db implements Session, Cloneable {
         // already running transaction
         assertTxRunning();
         if (transactionIsolation != null && transactionIsolation != TransactionIsolation.DEFAULT &&
-            connection().getTransactionIsolation() != transactionIsolation.getLevel()) {
+            connection().getCurrentTransactionIsolation() != transactionIsolation.getLevel()) {
           throw new PersistenceException(this, "cannot change a running transaction's isolation from " +
-                                               TransactionIsolation.valueOf(connection().getTransactionIsolation()) +
+                                               TransactionIsolation.valueOf(connection().getCurrentTransactionIsolation()) +
                                                " to " + transactionIsolation);
         }
         if (transactionWritability != null && transactionWritability != TransactionWritability.DEFAULT) {
@@ -1638,6 +1834,210 @@ public class Db implements Session, Cloneable {
     }
 
     return txVoucher;
+  }
+
+
+  /**
+   * Starts or joins a global transaction.
+   * <p>
+   * The session is attached until the global transaction completes, see {@link GlobalCompletion}.
+   * If the session joins, level 1 of the transaction belongs to the owner of the global transaction,
+   * and the session continues at level 2, as if nested. Hence, no voucher is returned, and the session
+   * never commits or rolls back the global transaction on its own.
+   *
+   * @param support the global transaction support
+   * @param start true to start a new global transaction, false to join the global transaction of the current thread
+   * @param txName is the optional transaction name, null for none
+   * @param transactionIsolation the transaction isolation level, null or {@link TransactionIsolation#DEFAULT} if default
+   * @param transactionWritability the transaction writability, null or {@link TransactionWritability#DEFAULT} if default
+   * @return the transaction voucher if started, 0 if joined
+   */
+  private long beginGlobal(GlobalTransactionSupport support, boolean start, String txName,
+                           TransactionIsolation transactionIsolation, TransactionWritability transactionWritability) {
+
+    if (transactionIsolation != null && transactionIsolation != TransactionIsolation.DEFAULT ||
+        transactionWritability != null && transactionWritability != TransactionWritability.DEFAULT) {
+      throw new PersistenceException(this, "isolation and writability of global transactions cannot be changed");
+    }
+
+    if (start) {
+      support.begin(this, txName);
+    }
+
+    boolean attached = false;
+    DbTransaction tx = null;
+    try {
+      attach();
+      attached = true;
+      tx = createTransaction(txName, false);
+      tx.setGlobal(start);
+      support.enlist(this, new GlobalCompletion(tx));
+    }
+    catch (RuntimeException rex) {
+      if (tx != null) {
+        tx.rollback();    // finish the orphaned transaction
+      }
+      if (attached) {
+        detachSafely();
+      }
+      if (start) {
+        try {
+          support.rollback(this);
+        }
+        catch (RuntimeException rx) {
+          LOGGER.warning("rolling back the global transaction failed", rx);
+        }
+      }
+      throw rex;
+    }
+
+    immediatelyRolledBack = 0;
+    modificationLogList = null;
+    transactionProperties = null;
+    transaction = tx;
+    autoCommit = false;
+
+    if (start) {
+      LOGGER.fine("{0}: begin global transaction, voucher {1}", this, tx.getTxVoucher());
+      return tx.getTxVoucher();
+    }
+
+    tx.incrementTxLevel(txName);
+    LOGGER.fine("{0}: joined global transaction", this);
+    return 0;
+  }
+
+
+  /**
+   * Commits the global transaction started by this session.<br>
+   * The work of all enlisted sessions is done by their {@link GlobalCompletion}s.
+   *
+   * @param txVoucher the transaction voucher
+   */
+  private void commitGlobal(long txVoucher) {
+    LOGGER.fine("{0}: commit global transaction, voucher {1}", this, txVoucher);
+    transaction.assertValidTxVoucher(txVoucher);
+    if (transaction.isTxLevelValid() && transaction.getTxLevel() != 1) {
+      LOGGER.warning(this + ": txLevel=" + transaction.getTxLevel() + ", should be 1");
+    }
+    getGlobalTransactionSupport().commit(this);
+  }
+
+
+  /**
+   * Rolls back a global transaction.<br>
+   * The global transaction is rolled back if this session started it.
+   * Otherwise, it is marked rollback-only when the outermost joined level is rolled back.
+   *
+   * @param txVoucher the transaction voucher, 0 if nested or joined
+   * @return true if rolled back
+   */
+  private boolean rollbackGlobal(long txVoucher) {
+    GlobalTransactionSupport support = getGlobalTransactionSupport();
+    if (txVoucher != 0) {
+      LOGGER.fine("{0}: rollback global transaction, voucher {1}", this, txVoucher);
+      transaction.assertValidTxVoucher(txVoucher);
+      DbTransaction tx = transaction;
+      try {
+        support.rollback(this);
+      }
+      finally {
+        if (transaction == tx) {
+          // the transaction manager did not complete it, e.g., because the global transaction was already gone
+          new GlobalCompletion(tx).afterCompletion(false);
+        }
+      }
+      return true;
+    }
+    LOGGER.fine("{0}: nested rollback", this);
+    transaction.decrementTxLevel();
+    if (!transaction.isGlobalOwner() && transaction.getTxLevel() == 1) {
+      // the unit of work of this session failed: the global transaction must not commit
+      support.setRollbackOnly(this);
+    }
+    return false;
+  }
+
+
+  /**
+   * Completes the session's part of a global transaction.<br>
+   * Replaces the commit and rollback logic of local transactions.
+   */
+  private class GlobalCompletion implements GlobalTransactionListener {
+
+    private final DbTransaction tx;   // the transaction to complete
+
+    private GlobalCompletion(DbTransaction tx) {
+      this.tx = tx;
+    }
+
+    @Override
+    public void beforeCompletion() {
+      if (transaction == tx) {
+        runPreCommits();
+        tx.executeBatch();
+        logCommitTx();
+      }
+      // else: already completed
+    }
+
+    @Override
+    public void afterCompletion(boolean committed) {
+      if (transaction != tx) {
+        return;   // already completed
+      }
+      long txNo = tx.getTxNumber();
+      ManagedConnection c = resources.con;
+      RuntimeException notifyFailure = committed ? null : notifyRollback(txNo);   // while the transaction is still running!
+      transaction = null;
+      autoCommit = true;
+      logModificationDeferred = false;
+      constraintsDeferred = false;
+      statementHistoryLimit = -1;
+      modificationLogList = null;
+      if (committed) {
+        tx.finishCommit();
+      }
+      else {
+        tx.rollback();
+        logModificationTxId = 0;
+        postCommits = null;
+        preCommits = null;
+        if (c != null) {
+          c.rolledBackExternally();
+        }
+      }
+      if (c != null) {
+        // the branch is completed: back to local mode, as expected from a detached connection.
+        // Most drivers restore the autocommit mode by themselves, but the JDBC spec does not require it.
+        try {
+          if (!c.getAutoCommit()) {
+            c.setAutoCommit(true);
+          }
+        }
+        catch (RuntimeException rx) {
+          LOGGER.warning("restoring autocommit of " + c + " after global transaction failed", rx);
+          c.setDead(true);    // don't use this connection anymore
+        }
+      }
+      if (c != null && resources.sessionId > 0) {
+        // not detach(), since this may be invoked from a thread other than the owner, e.g., a timeout
+        try {
+          resources.conMgr.detach(Db.this);
+        }
+        catch (RuntimeException rx) {
+          LOGGER.warning("detaching " + Db.this + " after global transaction failed", rx);
+        }
+      }
+      LOGGER.fine("{0}: global transaction {1}", Db.this, committed ? "committed" : "rolled back");
+      if (committed) {
+        DbUtilities.getInstance().notifyCommit(Db.this, txNo);
+        runPostCommits();
+      }
+      else if (notifyFailure != null) {
+        throw notifyFailure;
+      }
+    }
   }
 
 
@@ -1703,7 +2103,21 @@ public class Db implements Session, Cloneable {
         throw new PersistenceException(this, "no such savepoint to rollback: " + handle);
       }
       connection().rollback(savepoint);
+      transaction.countSavepointRollback();
+      DbUtilities.getInstance().notifySavepointRollback(this);
     }
+  }
+
+  /**
+   * Gets the number of rollbacks to savepoints within the current transaction.<br>
+   * Allows detecting whether a savepoint has been rolled back since a given point in time.
+   * Notice that some backends, such as PostgreSQL, release the locks acquired after a savepoint
+   * when the savepoint is rolled back.
+   *
+   * @return the number of savepoint rollbacks, 0 if no transaction running or not a local session
+   */
+  public int getSavepointRollbackCount() {
+    return transaction == null ? 0 : transaction.getSavepointRollbackCount();
   }
 
   /**
@@ -1865,7 +2279,9 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Runs the post-commits in reverse order of their registration.
+   * Runs the post-commits.<br>
+   * Post-commits registered at a deeper transaction level run first.
+   * Within the same level, they run in the order of their registration.
    */
   public void runPostCommits() {
     if (postCommits != null) {
@@ -1901,7 +2317,19 @@ public class Db implements Session, Cloneable {
   }
 
   /**
-   * Runs the pre-commits in reverse order of their registration.
+   * Returns whether the pre-commits are currently being executed.<br>
+   * While running, no more pre-commits can be registered, and those already executed won't run again.
+   *
+   * @return true if invoked from within a pre-commit
+   */
+  public boolean isPreCommitsRunning() {
+    return preCommitsRunning;
+  }
+
+  /**
+   * Runs the pre-commits.<br>
+   * Pre-commits registered at a deeper transaction level run first.
+   * Within the same level, they run in the order of their registration.
    */
   public void runPreCommits() {
     if (preCommits != null) {
@@ -1962,7 +2390,11 @@ public class Db implements Session, Cloneable {
       alive = true;
       assertTxRunning();
 
-      if (txVoucher != 0) {
+      if (txVoucher != 0 && transaction != null && transaction.isGlobal()) {
+        commitGlobal(txVoucher);
+        committed = true;
+      }
+      else if (txVoucher != 0) {
 
         if (!autoCommit) {
           // within a transaction: commit!
@@ -1976,6 +2408,8 @@ public class Db implements Session, Cloneable {
           logCommitTx();
           setAutoCommit(null);    // according to the specs: this will commit!
           logModificationDeferred = false;
+          constraintsDeferred = false;
+          statementHistoryLimit = -1;
           long txNo = getTxNumber();
           transaction = null;
           modificationLogList = null;
@@ -2057,6 +2491,10 @@ public class Db implements Session, Cloneable {
         rolledBack = txVoucher != 0;
       }
 
+      else if (transaction.isGlobal()) {
+        rolledBack = rollbackGlobal(txVoucher);
+      }
+
       else {
         if (txVoucher != 0) {
           // matching begin() started a new tx
@@ -2070,22 +2508,29 @@ public class Db implements Session, Cloneable {
             transaction.rollback();
             ManagedConnection c = resources.con;
             if (c != null) {
-              c.rollback(withLog);  // avoid a commit ...
-              setAutoCommit(null);    // ... in setAutoCommit
+              c.rollback(withLog);  // avoid a commit in setAutoCommit below
+            }
+            long txNo = getTxNumber();
+            RuntimeException notifyFailure = notifyRollback(txNo);   // while the transaction is still running!
+            if (c != null) {
+              setAutoCommit(null);
             }
             else {
               LOGGER.warning("rollback too late: connection already detached");
               autoCommit = true;
             }
             logModificationDeferred = false;
+            constraintsDeferred = false;
+            statementHistoryLimit = -1;
             modificationLogList = null;
             logModificationTxId = 0;
-            long txNo = getTxNumber();
             transaction = null;
             postCommits = null;
             preCommits = null;
             rolledBack = true;
-            DbUtilities.getInstance().notifyRollback(this, txNo);
+            if (notifyFailure != null) {
+              throw notifyFailure;
+            }
           }
           else {
             throw new PersistenceException(this, "transaction ended unexpectedly before rollback (valid voucher)");
@@ -2102,6 +2547,26 @@ public class Db implements Session, Cloneable {
     return rolledBack;
   }
 
+
+  /**
+   * Notifies the rollback of the current transaction.<br>
+   * Must be invoked while the session is still running the transaction, i.e., before the autocommit mode is
+   * restored and the transaction is cleared. Otherwise, the modification tracker could take the
+   * pending modification counts as committed (see {@link ModificationTally#performPendingCount()})
+   * before they are rolled back.
+   *
+   * @param txNo the transaction number
+   * @return the failure to be thrown once the transaction is cleared, null if none
+   */
+  private RuntimeException notifyRollback(long txNo) {
+    try {
+      DbUtilities.getInstance().notifyRollback(this, txNo);
+      return null;
+    }
+    catch (RuntimeException rx) {
+      return rx;
+    }
+  }
 
   /**
    * Rolls back the current transaction, if pending.<br>
@@ -2123,6 +2588,26 @@ public class Db implements Session, Cloneable {
       ManagedConnection c = resources.con;
       if (c != null) {
         c.cancelRunningStatements();
+      }
+
+      if (transaction != null && transaction.isGlobal()) {
+        // the connection remains enlisted until the transaction manager completes the global transaction
+        LOGGER.warning("*** immediate rollback for {0} ***", this);
+        DbTransaction tx = transaction;
+        int currentTxLevel = tx.getTxLevel();
+        tx.invalidateTxLevel();    // avoid misleading warnings
+        GlobalTransactionSupport support = getGlobalTransactionSupport();
+        if (tx.isGlobalOwner()) {
+          rollbackGlobal(tx.getTxVoucher());
+          immediatelyRolledBack = currentTxLevel;
+        }
+        else if (support.isGlobalTransactionActive()) {
+          support.setRollbackOnly(this);    // completed by the transaction manager
+        }
+        else {
+          new GlobalCompletion(tx).afterCompletion(false);    // orphaned: the global transaction is gone
+        }
+        return;
       }
 
       if (transaction != null) {
@@ -2149,7 +2634,7 @@ public class Db implements Session, Cloneable {
           // check low-level transaction state
           boolean connectionInTransaction = false;
           try {
-            connectionInTransaction = c.getConnection().getAutoCommit();
+            connectionInTransaction = !c.getConnection().getAutoCommit();
           }
           catch (SQLException ex) {
             c.checkForDeadLink(ex);
@@ -2359,7 +2844,41 @@ public class Db implements Session, Cloneable {
     if (resources.conMgr == null) {
       throw new PersistenceException(this, "no connection manager");
     }
+    if (reconnectionPending.get() && reconnectingThread != Thread.currentThread()) {
+      PersistenceException px = new PersistenceException(this, "reconnection in progress");
+      px.setTemporary(true);
+      throw px;
+    }
+    if (!autoCommit && resources.con == null) {
+      throw createConnectionLostException();    // fast path: checked by the connection manager as well
+    }
     resources.conMgr.attach(this);
+  }
+
+  /**
+   * Creates the exception thrown if the connection was lost within a transaction.<br>
+   * The connection was force-detached or is dead, and the transaction has been rolled back.
+   * The application must roll back the transaction as well.
+   * <p>
+   * Used by the connection managers.
+   *
+   * @return the exception
+   */
+  PersistenceException createConnectionLostException() {
+    DbTransaction tx = transaction;
+    return new PersistenceException(this, tx != null && tx.isTimedOut() ?
+        tx + " timed out and has been rolled back by the transaction supervisor" :
+        "connection lost within transaction (force-detached and rolled back)");
+  }
+
+  /**
+   * Returns whether a reconnection is running in the background.
+   *
+   * @return true if a non-blocking reconnection was submitted and has not succeeded yet
+   * @see #enableReconnection(boolean, long)
+   */
+  public boolean isReconnecting() {
+    return reconnectionPending.get();
   }
 
   /**
@@ -2689,6 +3208,21 @@ public class Db implements Session, Cloneable {
     return backendInfo;
   }
 
+  /**
+   * Gets the backend identity.
+   * <p>
+   * This is an integer denoting the physical backend and unique within the current JVM.
+   * For remote sessions, the identity is 0.<br>
+   * It is primarily used to make sure that the object sequences and modification log dictionaries
+   * can be distinguished from each other if an application connects to more than
+   * one database simultaneously.
+   *
+   * @return the backend identity
+   * @see DbUtilities#getBackendIdentity(BackendInfo)
+   */
+  public int getBackendIdentity() {
+    return backendIdentity;
+  }
 
   @Override
   public String getUrl() {
@@ -2697,7 +3231,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * clears the session's local data for close/clone
+   * Clears the session's local data for close/clone.
    */
   private void clearMembers() {
     if (isRemote()) {
@@ -2712,9 +3246,12 @@ public class Db implements Session, Cloneable {
       transaction = null;
       logModificationTxId = 0;
       logModificationDeferred = false;
+      constraintsDeferred = false;
+      statementHistoryLimit = -1;
       modificationLogList = null;
       immediatelyRolledBack = 0;
       applicationProperties = null;
+      transactionProperties = null;
     }
 
     postCommits = null;
@@ -2758,6 +3295,9 @@ public class Db implements Session, Cloneable {
       }
 
       newDb.resources = null;
+      newDb.reOpenLock = new Object();
+      newDb.reconnectionPending = new AtomicBoolean();
+      newDb.reconnectingThread = null;
       newDb.clearMembers();
       newDb.sessionGroupId = 0;
       newDb.exportedSessionGroupId = 0;
@@ -2810,20 +3350,19 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Gets the default fetchsize
+   * Gets the default fetch size.
    *
-   * @return the default fetchSize.
+   * @return the default fetch size, 0 = driver's default
    */
   public int getFetchSize() {
     return fetchSize;
   }
 
   /**
-   * Sets the default fetchsize for all "wrapped" statements
-   * (PreparedStatementWrapper and StatementWrapper)
+   * Sets the default fetch size for all "wrapped" statements
+   * (PreparedStatementWrapper and StatementWrapper).
    *
-   * @param fetchSize the new default fetchSize
-   *
+   * @param fetchSize the new default fetch size, 0 = driver's default
    */
   public void setFetchSize(int fetchSize) {
     this.fetchSize = fetchSize;
@@ -2831,7 +3370,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * gets the maximum number of rows in resultsets.
+   * Gets the maximum number of rows in result sets.
    *
    * @return the max rows, 0 = no limit
    */
@@ -2840,9 +3379,9 @@ public class Db implements Session, Cloneable {
   }
 
   /**
-   * sets the maximum number of rows in resultsets.
-   * @param maxRows the max rows, 0 = no limit (default)
+   * Sets the maximum number of rows in result sets.
    *
+   * @param maxRows the max rows, 0 = no limit (default)
    */
   public void setMaxRows(int maxRows) {
     this.maxRows = maxRows;
@@ -3036,15 +3575,15 @@ public class Db implements Session, Cloneable {
    * {@link #popModificationLogsOfTransaction()}.
    * The state will be handed over to the remote session as well.
    * <p>
-   * Note: the deferred state will be reset to false after each begin/commit/rollback.
+   * Note: the deferred state is reset to false after each commit or rollback.
    * <p>
-   * Important: if the deferred state is changed within a transaction and there are
-   * already modifications made, i.e., modlogs were created, the deferred state will
-   * *not* be changed! Furthermore, if the deferred state is changed to false.
-   * The modlogs are removed from the database (but kept in memory).
-   * As a consequence, the in-memory modlogs will always contain the whole transaction
-   * or nothing. Only {@link #popModificationLogsOfTransaction()} removes the logs
-   * collected so far or the end of the transaction.
+   * Important: if the deferred state is changed within a transaction after modlogs have
+   * already been created, switching to deferred removes the modlogs written so far from the
+   * database (but keeps them in memory), whereas switching back to non-deferred is ignored
+   * until the end of the transaction.
+   * As a consequence, the in-memory modlogs always contain the whole transaction
+   * or nothing. Only {@link #popModificationLogsOfTransaction()} or the end of the transaction
+   * removes the logs collected so far.
    *
    * @param logModificationDeferred true to defer logs for the rest of the current transaction, false to "un-defer"
    */
@@ -3081,6 +3620,48 @@ public class Db implements Session, Cloneable {
    */
   public boolean isLogModificationDeferred() {
     return logModificationDeferred;
+  }
+
+
+  @Override
+  public void setConstraintsDeferred(boolean deferred) {
+    assertOpen();
+    assertTxRunning();
+    if (isRemote()) {
+      constraintsDeferred = resources.rdel.setConstraintsDeferred(deferred);
+    }
+    else {
+      Backend backend = getBackend();
+      if (!backend.isSetConstraintsDeferredSupported()) {
+        throw new PersistenceException(this, backend + " does not support deferred constraints");
+      }
+      if (constraintsDeferred != deferred) {
+        try (StatementWrapper stmt = createStatement()) {
+          stmt.executeUpdate(backend.sqlSetConstraintsDeferred(deferred));
+        }
+        constraintsDeferred = deferred;
+      }
+    }
+  }
+
+  @Override
+  public boolean isConstraintsDeferred() {
+    return constraintsDeferred;
+  }
+
+  @Override
+  public void setStatementHistoryLimit(int limit) {
+    assertOpen();
+    assertTxRunning();
+    if (isRemote()) {
+      resources.rdel.setStatementHistoryLimit(limit);
+    }
+    statementHistoryLimit = limit;
+  }
+
+  @Override
+  public int getStatementHistoryLimit() {
+    return statementHistoryLimit;
   }
 
 
@@ -3134,21 +3715,20 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Set the default {@link IdSource}.<br>
+   * Sets the default {@link IdSource}.<br>
    * This is the source used to generate unique object IDs
    * if classes did not configure their own source.
    *
-   * @param idSource New value of property idSource.
+   * @param idSource the id source
    */
   public void setDefaultIdSource(IdSource idSource) {
     this.defaultIdSource = idSource;
   }
 
 
-
   /**
    * Returns the current transaction id from the last BEGIN modification log.
-   * The tx-ID is only available if logModificationTx is true.
+   * The tx-ID is only available if transaction logging is enabled, see {@link #setLogModificationTxEnabled(boolean)}.
    *
    * @return the tx ID, 0 if no transaction is pending.
    */

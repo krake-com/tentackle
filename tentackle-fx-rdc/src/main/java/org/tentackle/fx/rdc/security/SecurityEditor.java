@@ -48,7 +48,12 @@ import java.util.Set;
 import java.util.TreeMap;
 
 /**
- * Security permissions editor.
+ * Security permissions editor.<br>
+ * Edits a single security rule: the grantee, the optional domain context object, whether the
+ * permissions are allowed or denied, the permissions, and the message.
+ * For each permission applying to the securable class, the editor shows whether it is
+ * effectively granted or denied, including the permissions implied by others.
+ * Permissions implied by other selected permissions are not stored in the rule.
  *
  * @author harald
  */
@@ -193,7 +198,7 @@ public class SecurityEditor extends PdoEditor<Security> {
 
   /**
    * Sets the securable class.<br>
-   * Adds all applying permissions to the view.
+   * Adds all permissions applying to the class to the view.
    *
    * @param clazz the securable class
    */

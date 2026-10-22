@@ -41,6 +41,7 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.expectThrows;
 import static org.testng.Assert.fail;
 
 /**
@@ -206,6 +207,8 @@ public class ReflectionHelperTest {
     assertEquals(ReflectionHelper.makeDeclareString("[S"), "short[]");
     // non-array names are returned unchanged
     assertEquals(ReflectionHelper.makeDeclareString("java.lang.String"), "java.lang.String");
+    assertEquals(ReflectionHelper.makeDeclareString(String[].class.getName()), "java.lang.String[]");
+    assertEquals(ReflectionHelper.makeDeclareString(String[][].class.getName()), "java.lang.String[][]");
   }
 
 
@@ -518,9 +521,9 @@ public class ReflectionHelperTest {
 
   @Test
   public void testGetFieldName() {
-    assertEquals(ReflectionHelper.getFieldName(String.class, "getName"), "name");
-    assertEquals(ReflectionHelper.getFieldName(boolean.class, "isActive"), "active");
-    assertEquals(ReflectionHelper.getFieldName(int.class, "compute"), "compute");
+    assertEquals(ReflectionHelper.getFieldName("getName"), "name");
+    assertEquals(ReflectionHelper.getFieldName("isActive"), "active");
+    assertEquals(ReflectionHelper.getFieldName("compute"), "compute");
   }
 
   @Test
@@ -642,9 +645,53 @@ public class ReflectionHelperTest {
     assertEquals(ReflectionHelper.getStaticValueByPath(Bean.class, "create.name"), "created");
   }
 
+  @SuppressWarnings("unused")
+  public static class StaticHolder {
+    public static final Bean BEAN = Bean.create();
+    private StaticHolder() {}
+  }
+
+  @Test
+  public void testGetStaticValueByPathField() {
+    assertSame(ReflectionHelper.getStaticValueByPath(StaticHolder.class, "BEAN"), StaticHolder.BEAN);
+    assertEquals(ReflectionHelper.getStaticValueByPath(StaticHolder.class, "BEAN.name"), "created");
+  }
+
+  @Test
+  public void testGetStaticValueByPathNoSuchMember() {
+    TentackleRuntimeException ex = expectThrows(TentackleRuntimeException.class,
+        () -> ReflectionHelper.getStaticValueByPath(Bean.class, "doesNotExist"));
+    assertTrue(ex.getMessage().contains("doesNotExist"), ex.getMessage());
+  }
+
   @Test
   public void testGetStaticValueByPathNull() {
     assertThrows(TentackleRuntimeException.class, () -> ReflectionHelper.getStaticValueByPath(Bean.class, null));
+  }
+
+  @SuppressWarnings({"missing-explicit-ctor", "unused"})
+  public static class OtherBean {
+    public String name = "field";   // same element name as Bean#getName, but resolved to a field
+    public boolean isActive() { return true; }
+  }
+
+  @Test
+  public void testGetValueByPathRepeated() {
+    // the resolved members are cached per class and element: repeated evaluation must yield the
+    // current value, and the same element name must not be confused between classes
+    Bean bean = new Bean();
+    OtherBean otherBean = new OtherBean();
+    for (int i = 0; i < 3; i++) {
+      bean.setName("name" + i);
+      bean.setActive(i % 2 == 0);
+      assertEquals(ReflectionHelper.getValueByPath(bean, "name"), "name" + i);
+      assertEquals(ReflectionHelper.getValueByPath(bean, "active"), i % 2 == 0);
+      assertEquals(ReflectionHelper.getValueByPath(otherBean, "name"), "field");
+      assertEquals(ReflectionHelper.getValueByPath(otherBean, "active"), true);
+      // unknown elements are cached as well, but must still fail every time
+      assertThrows(TentackleRuntimeException.class, () -> ReflectionHelper.getValueByPath(bean, "doesNotExist"));
+      assertEquals(ReflectionHelper.getStaticValueByPath(StaticHolder.class, "BEAN.name"), "created");
+    }
   }
 
 

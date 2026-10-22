@@ -28,7 +28,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation to for {@link GraphicProvider}s.
+ * Annotation for {@link GraphicProvider}s.
  * <p>
  * The annotated providers are picked up by the {@link FxFactory} and an instance
  * is created for each realm. If more than one provider is found for the same realm,
@@ -42,7 +42,7 @@ public @interface GraphicProviderService {
 
   /**
    * The realm.<br>
-   * Default is empty string which refers to the tentackle realm.
+   * The default is the empty string, which refers to the framework's default realm.
    *
    * @return the realm
    */

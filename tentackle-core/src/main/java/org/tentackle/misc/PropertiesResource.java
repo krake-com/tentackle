@@ -21,7 +21,7 @@ package org.tentackle.misc;
 import java.util.Properties;
 
 /**
- * Loads properties from some resource and applies it to a {@link java.util.Properties} object.<br>
+ * Loads properties from some resource and applies them to a {@link java.util.Properties} object.<br>
  * Implementations must be annotated with &#64;{@link PropertiesResourceService}.
  * @see PropertiesUtilities
  */
@@ -31,11 +31,11 @@ public interface PropertiesResource {
    * Applies the loaded properties.<br>
    * The method must not throw an exception if the resource is not found,
    * but just return false.
-   * Exceptions must be thrown, however, if resources were found, but could not be loaded for
+   * Exceptions must be thrown, however, if the resource was found but could not be loaded for
    * whatever reason.
    *
    * @param name the resource name
-   * @param properties the properties object
+   * @param properties the properties object to apply the loaded properties to
    * @return true if properties loaded, false if no such resource found
    */
   boolean apply(String name, Properties properties);

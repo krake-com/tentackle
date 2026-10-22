@@ -55,6 +55,7 @@ public abstract class AbstractValidationResult implements ValidationResult {
    * @param validationContext the validation context
    * @param message the message
    * @param errorCode the error code, null to take it from the validator (default)
+   * @throws NullPointerException if validator or validationContext is null
    */
   public AbstractValidationResult(Validator validator, ValidationContext validationContext, String message, String errorCode) {
     this.validator = Objects.requireNonNull(validator, "validator");
@@ -157,16 +158,21 @@ public abstract class AbstractValidationResult implements ValidationResult {
       ndx = validationPath.indexOf('[', ndx + 1);
       if (ndx > 0) {
         String pathPrefix = validationPath.substring(0, ndx);
-        int ndx2 = validationPath.indexOf("].", ndx);
+        int ndx2 = validationPath.indexOf(']', ndx);
         if (ndx2 < 0) {
           throw new ValidationRuntimeException(
                   "no closing bracket after '" + pathPrefix + "' in validation path '" + validationPath + "'");
         }
-        String pathPostfix = validationPath.substring(ndx2 + 2);
+        // the path may end with an index, for example if an object validator failed for a collection element
+        int postfixStart = ndx2 + 1;
+        if (postfixStart < validationPath.length() && validationPath.charAt(postfixStart) == '.') {
+          postfixStart++;
+        }
+        String pathPostfix = validationPath.substring(postfixStart);
         int index;
         try {
           index = Integer.parseInt(validationPath.substring(ndx + 1, ndx2));
-          ndx = ndx2 + 2;
+          ndx = ndx2;
         }
         catch (RuntimeException ex) {
           throw new ValidationRuntimeException(

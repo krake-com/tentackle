@@ -32,7 +32,7 @@ import java.io.Serializable;
 public interface ValidationResult extends Serializable {
 
   /**
-   * Indicates that this result must be treated as failed.<br>
+   * Indicates that this result must be treated as failed.
    *
    * @return true if failed
    */
@@ -43,12 +43,12 @@ public interface ValidationResult extends Serializable {
    * The error code is optional and provided to identify
    * an error by a unique code rather than some text message.
    *
-   * @return the error code
+   * @return the error code, null if none
    */
   String getErrorCode();
 
   /**
-   * Indicates that this result provides a message.<br>
+   * Indicates that this result provides a message.
    *
    * @return true if there is a message
    */
@@ -102,11 +102,11 @@ public interface ValidationResult extends Serializable {
 
 
   /**
-   * A collection index within a validation path
+   * A collection index within a validation path.
    *
    * @param index the index within the collection
    * @param pathPrefix the leading part of the path
-   * @param pathPostfix the trailing part
+   * @param pathPostfix the trailing part, empty if the path ends with the index
    */
   record CollectionIndex(int index, String pathPrefix, String pathPostfix) implements Serializable {}
 
@@ -114,18 +114,19 @@ public interface ValidationResult extends Serializable {
   /**
    * Gets all {@link CollectionIndex}es for this validation result.
    * <p>
-   * Throws ValidationRuntimeException if the decoding the path failed.
-   * <p>
    * Example:
    * <pre>
    * "invoice.invoiceLineList[3].referenceList[0].text"
    * </pre>
-   * would return 2 for indexes with the following contents:
+   * would return 2 indexes with the following contents:
    * <pre>
    *   { 3, "invoice.invoiceLineList", "referenceList[0].text" },
    *   { 0, "invoice.invoiceLineList[3].referenceList", "text" }
    * </pre>
+   * If the path ends with an index, the postfix of the last index is the empty string.
+   *
    * @return the indexes, empty array if validation path without indexes
+   * @throws ValidationRuntimeException if decoding the path failed
    */
   CollectionIndex[] getValidationCollectionIndexes();
 

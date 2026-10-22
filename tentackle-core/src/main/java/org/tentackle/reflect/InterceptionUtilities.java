@@ -39,6 +39,8 @@ interface InterceptionUtilitiesHolder {
 
 /**
  * Utility methods for interception handling.
+ * <p>
+ * Replaceable via &#64;{@link Service}.
  *
  * @author harald
  */
@@ -48,7 +50,7 @@ public class InterceptionUtilities {
   private static final Logger LOGGER = Logger.get(InterceptionUtilities.class);
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */
@@ -65,12 +67,16 @@ public class InterceptionUtilities {
   }
 
   /**
-   * Finds all interceptors of a method.
+   * Finds all interceptors of a method.<br>
+   * The public interceptors annotated at the interface method come first,
+   * followed by the hidden interceptors annotated at the implementing method.
+   * The interceptors are chained in that order.
    *
-   * @param clazz the interface which the interface the method is declared in extends
+   * @param clazz the interface the declaring classes of the methods must extend, usually {@link Interceptable}
    * @param method the interface method
    * @param implMethod the implementing class method
    * @return the head of interceptors, null if not intercepted
+   * @throws TentackleRuntimeException if an interceptor could not be created
    */
   public Interceptor findInterceptors(Class<?> clazz, Method method, Method implMethod) {
 
@@ -158,7 +164,7 @@ public class InterceptionUtilities {
       return interceptor;
     }
     catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
-           NoSuchMethodException | SecurityException | InvocationTargetException ex) {
+           NoSuchMethodException | InvocationTargetException ex) {
       throw new TentackleRuntimeException("interceptor @" + annotation + " could not be created", ex);
     }
   }
@@ -173,6 +179,7 @@ public class InterceptionUtilities {
    * @param delegateClazz the delegate's class to invoke the method on
    * @param method the interface's method to invoke
    * @return the interceptable method
+   * @throws TentackleRuntimeException if the delegate does not implement the method
    */
   public InterceptableMethod createInterceptableMethod(Class<? extends Interceptable> clazz,
                                                        Class<? extends Interceptable> delegateClazz,

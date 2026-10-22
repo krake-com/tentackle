@@ -33,15 +33,16 @@ import java.util.List;
  * Generates code and meta-information prior to wurbeling and compiling the sources.
  * <p>
  * Processes all annotations annotated with {@code @Analyze}, such as {@code @Service}.<br>
- * Processing results are either written to files in {@code analyzeDir} or placed on heap
- * for being picked up by wurblets, depending on the handler implementation for
- * each annotation.
+ * Depending on the handler of each annotation, the results are either written as service
+ * descriptors to {@code servicesDir}, as analyze info to {@code analyzeDir}, or placed on heap
+ * to be picked up by the wurblets.
  *
  * @author harald
  */
 @Mojo(name = "analyze",
       defaultPhase = LifecyclePhase.GENERATE_SOURCES,
-      requiresDependencyResolution = ResolutionScope.COMPILE)
+      requiresDependencyResolution = ResolutionScope.COMPILE,
+      threadSafe = true)
 public class AnalyzeAnnotationProcessingMojo extends AbstractAnalyzeAnnotationProcessingMojo {
 
   /**
@@ -55,7 +56,7 @@ public class AnalyzeAnnotationProcessingMojo extends AbstractAnalyzeAnnotationPr
   protected File sourceDir;   // same as in wurbelizer's WurbelMojo
 
   /**
-   * Project classpath.
+   * The project's compile classpath.
    */
   @Parameter(defaultValue = "${project.compileClasspathElements}",
              readonly = true,
@@ -71,7 +72,8 @@ public class AnalyzeAnnotationProcessingMojo extends AbstractAnalyzeAnnotationPr
   protected File analyzeDir;    // same as in wurbelizer's WurbelMojo
 
   /**
-   * Directory for the generated services.
+   * Directory for the generated services.<br>
+   * Must be registered as a resource directory to end up in the artifact.
    */
   @Parameter(defaultValue = "${project.build.directory}/generated-resources/services",
              property = "tentackle.serviceDir",

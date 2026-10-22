@@ -101,6 +101,6 @@ Tentackle is a multi-module reactor. Modules fall into a few layers (see the
 ## Resources
 
 - **Documentation:** <https://tentackle.org/>
-- **Source:** <https://bitbucket.org/krake-oss/tentackle/>
+- **Source:** <https://github.com/krake-com/tentackle>
 - **Artifacts:** [Maven Central](https://search.maven.org/search?q=org.tentackle)
 - **Published by:** [Krake Softwaretechnik](https://krake.de/)

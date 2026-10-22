@@ -33,6 +33,8 @@ import java.util.List;
 
 /**
  * Annotation processor for the {@code @FxControllerService} annotation.<br>
+ * Enforces the implementation of {@code FxController} and a no-args constructor or, if the controller
+ * is instantiated without FXML and with a resource bundle, a constructor taking the {@link java.util.ResourceBundle}.
  *
  * @author harald
  */

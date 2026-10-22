@@ -60,7 +60,7 @@ public class TableMigrator {
    * @param renameColumns    explicit column rename hints, null or empty if none
    * @param tableSql         the SQL code to migrate the table
    * @param foreignKeySql    the SQL code to migrate the foreign keys
-   * @param warningSql       generated SQL as comments
+   * @param warningSql       migration statements that need manual review, commented out (e.g. lossy type changes)
    */
   public record Result(Collection<Pattern> hints,
                        Collection<ColumnMigration> columnMigrations,
@@ -81,7 +81,7 @@ public class TableMigrator {
    * @param entity the model's entity
    * @param foreignKeys the foreign keys related to the given entity
    * @param backend the backend
-   * @param table the database's table metadata
+   * @param table the database's table metadata, null if the table does not exist yet
    */
   public TableMigrator(Entity entity, Collection<ForeignKey> foreignKeys, Backend backend, TableMetaData table) {
     this.entity = entity;
@@ -111,7 +111,7 @@ public class TableMigrator {
   /**
    * Gets the database's table metadata.
    *
-   * @return the database's table metadata
+   * @return the database's table metadata, null if the table does not exist yet
    */
   public TableMetaData getTable() {
     return table;
@@ -134,10 +134,11 @@ public class TableMigrator {
 
 
   /**
-   * Create SQL code to migrate the table.
+   * Creates the SQL code to migrate the table.
    *
    * @param hints hints to control the created output, null or empty if none
-   * @param columnMigrations explicit column migrations, null or empty if none
+   * @param columnMigrations explicit column migrations, null or empty if none.
+   *                         Migrations of columns that did not change are removed from this collection!
    * @param renameColumns  explicit column rename hints, null or empty if none
    * @return the migration result
    * @throws ModelException if migration failed
@@ -178,6 +179,7 @@ public class TableMigrator {
    * Creates the table.
    *
    * @return the SQL code
+   * @throws ModelException if the model is inconsistent
    */
   private String createTable() throws ModelException {
     StringBuilder buf = new StringBuilder();
@@ -205,14 +207,14 @@ public class TableMigrator {
   /**
    * Gets the migration for an existing (old) column.
    *
-   * @param columName the old column name
+   * @param columnName the old column name
    * @param columnMigrations the migrations
    * @return the migration, null if no explicit migration
    */
-  private ColumnMigration getColumnMigrationForColumn(String columName, Collection<ColumnMigration> columnMigrations) {
-    if (columnMigrations != null && columName != null) {
+  private ColumnMigration getColumnMigrationForColumn(String columnName, Collection<ColumnMigration> columnMigrations) {
+    if (columnMigrations != null && columnName != null) {
       for (ColumnMigration migration: columnMigrations) {
-        if (StringHelper.equalsIgnoreCase(columName, migration.getColumnName())) {
+        if (StringHelper.equalsIgnoreCase(columnName, migration.getColumnName())) {
           return migration;
         }
       }
@@ -223,14 +225,14 @@ public class TableMigrator {
   /**
    * Gets the migration for a new (renamed) column.
    *
-   * @param newColumName the new column name
+   * @param newColumnName the new column name
    * @param columnMigrations the migrations
    * @return the migration, null if no explicit migration
    */
-  private ColumnMigration getColumnMigrationForNewColumn(String newColumName, Collection<ColumnMigration> columnMigrations) {
-    if (columnMigrations != null && newColumName != null) {
+  private ColumnMigration getColumnMigrationForNewColumn(String newColumnName, Collection<ColumnMigration> columnMigrations) {
+    if (columnMigrations != null && newColumnName != null) {
       for (ColumnMigration migration: columnMigrations) {
-        if (StringHelper.equalsIgnoreCase(newColumName, migration.getNewColumnName())) {
+        if (StringHelper.equalsIgnoreCase(newColumnName, migration.getNewColumnName())) {
           return migration;
         }
       }
@@ -263,7 +265,7 @@ public class TableMigrator {
    * @param hints the migration hints, null if none
    * @param columnMigrations explicit column migrations, null if none
    * @param renameColumns  explicit column rename hints, null if none
-   * @return the SQL code
+   * @return the table SQL and the warning SQL
    * @throws ModelException if failed
    */
   private ColumnsResult migrateColumns(Collection<Pattern> hints, Collection<ColumnMigration> columnMigrations, Map<String, String> renameColumns)
@@ -326,7 +328,7 @@ public class TableMigrator {
 
     /*
      * attributesToAdd and columnsToDrop may contain columns that just need to be renamed.
-     * rule: if a column is to drop and there is _one_ _exact_ type match in attributes to add,
+     * rule: if an attribute to add has exactly one type-matching column among the columns to drop,
      * this column is probably just renamed. Generate the rename-statement, but keep the drop- or add-
      * statements as comments (so they can be used if guess was wrong)
      */
@@ -556,7 +558,7 @@ public class TableMigrator {
 
 
   /**
-   * Check whether a hint applies to SQL code.
+   * Checks whether a hint applies to SQL code.
    *
    * @param sql the SQL statement
    * @param hints the hints, null if none
@@ -579,7 +581,7 @@ public class TableMigrator {
   /**
    * Migrates the indexes.
    *
-   * @return the SQL code
+   * @return the drop and create SQL
    */
   private IndexMigrator.Result migrateIndexes() {
     IndexMigrator.Result result = new IndexMigrator.Result("", "");
@@ -650,9 +652,10 @@ public class TableMigrator {
 
 
   /**
-   * Creates the SQL code to add foreign keys constraints.
+   * Creates the SQL code to add foreign key constraints.
    *
    * @return the SQL code
+   * @throws ModelException if the model is inconsistent
    */
   private String migrateForeignKeysToAdd() throws ModelException {
     StringBuilder buf = new StringBuilder();
@@ -675,9 +678,10 @@ public class TableMigrator {
   }
 
   /**
-   * Creates the SQL code to drop foreign keys constraints.
+   * Creates the SQL code to drop foreign key constraints.
    *
    * @return the SQL code
+   * @throws ModelException if the model is inconsistent
    */
   private String migrateForeignKeysToDrop() throws ModelException {
     StringBuilder buf = new StringBuilder();
@@ -701,10 +705,10 @@ public class TableMigrator {
 
 
   /**
-   * Returns whether foreign keys from model matches with the database.
+   * Returns whether a model foreign key matches a database foreign key.
    *
-   * @param foreignKey the foreign key
-   * @param existingForeignKey the meta data
+   * @param foreignKey the foreign key from the model
+   * @param existingForeignKey the foreign key metadata from the database
    * @return true if match
    */
   private boolean foreignKeysMatch(ForeignKey foreignKey, ForeignKeyMetaData existingForeignKey) {
@@ -714,10 +718,14 @@ public class TableMigrator {
 
     boolean mapSchemas = entity.getModel().isSchemaNameMapped();
 
+    // multi-column foreign keys never match: the model only creates single-column keys on object-ID columns
     return existingForeignKey.getForeignKeyColumns().size() == 1 &&
-           // the TT-model uses only foreign keys on object-ID columns -> cannot match
 
+           // composite keys are created with ON DELETE CASCADE
            (existingForeignKey.getDeleteRule() == ForeignKeyAction.CASCADE) == foreignKey.isComposite() &&
+
+           foreignKey.getDeferrability().name().equals(existingForeignKey.getDeferrability() != null ?
+               existingForeignKey.getDeferrability().name() : "NOT_DEFERRABLE") &&
 
            foreignKey.getReferencingAttribute().getColumnName().equalsIgnoreCase(existingForeignKey.getForeignKeyColumns().get(0).getForeignKeyColumn()) &&
            (mapSchemas || StringHelper.equalsIgnoreCase(referencingTableProvidingEntity.getSchemaName(), existingForeignKey.getForeignKeySchema())) &&

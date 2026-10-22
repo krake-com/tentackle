@@ -127,7 +127,8 @@ Table child  = CUSTOMER.as("k");
 ```
 
 For columns without a registered datatype there is `field(String)`, which yields an untyped, single-column
-field usable in the projection, in `GROUP BY` and in `COUNT`.
+field usable in the projection, in `GROUP BY` and in `COUNT`. Compared to a value, it takes the datatype of the
+value's class, which must span a single column as well.
 
 ---
 
@@ -141,7 +142,7 @@ where(NAME.eq(userInput))         //  ... WHERE c.name=?   with userInput bound 
 
 Table-, column-, function- and alias names, on the other hand, do end up in the SQL-code verbatim. They are
 therefore verified syntactically as soon as they enter the DSL — an identifier consisting of letters, digits,
-underscores and optional schema qualification is accepted, anything else is rejected:
+underscores (and `$` after the first character) and optional schema qualification is accepted, anything else is rejected:
 
 ```java
 table("customer; DROP TABLE customer")      // throws PersistenceException
@@ -209,7 +210,7 @@ member of such a type is filled from all of its columns.
 
 | Clause | Method |
 |---|---|
-| `SELECT` | `select(...)`, `selectDistinct(...)`, no arguments for `SELECT *` |
+| `SELECT` | `select(...)`, `selectDistinct(...)`, no arguments for `SELECT *`; `asterisk()` and `table.asterisk()` for `*` / `c.*` among other expressions |
 | `FROM` | `from(table...)`, `table(select, alias)` for a derived table |
 | `JOIN` | `join(t).on(c)`, `leftJoin`, `rightJoin`, `fullJoin`, `join(JoinType, t)` |
 | `WHERE` | `where(condition...)` |
@@ -257,6 +258,7 @@ Expression<Integer> length = function("length", Integer.class, NAME);
 
 ```java
 where(exists(select(ORDER_CUSTOMER_ID).from(ORDER).where(ORDER_CUSTOMER_ID.eq(ID))))
+where(notExists(select(ORDER_CUSTOMER_ID).from(ORDER).where(ORDER_CUSTOMER_ID.eq(ID))))
 where(ID.in(select(ORDER_CUSTOMER_ID).from(ORDER)))
 Expression<Long> orders = subSelect(select(count()).from(ORDER).where(ORDER_CUSTOMER_ID.eq(ID)), Long.class);
 Table recent = table(select(NAME, ORDERED).from(ORDER).where(ORDERED.ge(firstOfYear)), "r");

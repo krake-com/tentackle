@@ -34,6 +34,14 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * A property map.<br>
  * Provides the functionality of a map for the properties of a bean.
+ * <p>
+ * The properties are determined by the public non-static methods of the bean type (except those of {@link Object}):
+ * {@code getXxx()} and {@code isXxx()} (for booleans) map to the property {@code xxx}, which is writable if there is
+ * a matching {@code setXxx(...)}. Any other method without parameters returning a value is a readonly property named
+ * after the method.<br>
+ * The mappings are evaluated once per bean type and cached.
+ * <p>
+ * Properties can be read and written, but not added or removed.
  *
  * @param <T> the bean type
  */
@@ -49,6 +57,7 @@ public class PropertyMap<T> extends AbstractMap<String, Object> {
    *
    * @param bean the bean
    * @param beanType the bean's type
+   * @throws NullPointerException if bean or beanType is null
    */
   public PropertyMap(T bean, Class<T> beanType) {
     this.bean = Objects.requireNonNull(bean);
@@ -107,6 +116,8 @@ public class PropertyMap<T> extends AbstractMap<String, Object> {
    * @param key key with which the specified value is to be associated
    * @param value value to be associated with the specified key
    * @return always null
+   * @throws IllegalArgumentException if there is no such property or the value cannot be converted
+   * @throws ImmutableException if the property is readonly
    */
   @Override
   public Object put(String key, Object value) {
@@ -118,6 +129,13 @@ public class PropertyMap<T> extends AbstractMap<String, Object> {
     return null;    // null to avoid unnecessary get, makes no sense in this context at all
   }
 
+  /**
+   * Properties cannot be removed.
+   *
+   * @param key the property name
+   * @return never
+   * @throws ImmutableException always
+   */
   @Override
   public Object remove(Object key) {
     throw new ImmutableException("properties cannot be removed");
@@ -155,7 +173,8 @@ public class PropertyMap<T> extends AbstractMap<String, Object> {
 
 
   /**
-   * Creates a property mapping.
+   * Creates a property mapping.<br>
+   * Notice that the mappings are cached per bean type for all property maps.
    *
    * @param name the name of the property
    * @param getter the getter
@@ -240,30 +259,30 @@ public class PropertyMap<T> extends AbstractMap<String, Object> {
             getters.add(method);
           }
         }
+      }
 
-        for (Method getter : getters) {
-          String propertyName;
-          Method setter = null;
-          String getterName = getter.getName();
-          if (getterName.startsWith("get") && getterName.length() > 3 && Character.isUpperCase(getterName.charAt(3))) {
-            String suffix = getterName.substring(3);
-            propertyName = StringHelper.firstToLower(suffix);
-            setter = setters.get("set" + suffix);
-          }
-          else if ((getter.getReturnType() == Boolean.class || getter.getReturnType() == Boolean.TYPE) &&
-                   getterName.startsWith("is") && getterName.length() > 2 && Character.isUpperCase(getterName.charAt(2))) {
-            String suffix = getterName.substring(2);
-            propertyName = StringHelper.firstToLower(suffix);
-            setter = setters.get("set" + suffix);
-          }
-          else {
-            propertyName = getterName;
-          }
-          if (setter != null && !setter.getParameterTypes()[0].isAssignableFrom(getter.getReturnType())) {
-            setter = null;    // types do not match -> readonly
-          }
-          propertyMap.put(propertyName, createMapping(propertyName, getter, setter));
+      for (Method getter : getters) {
+        String propertyName;
+        Method setter = null;
+        String getterName = getter.getName();
+        if (getterName.startsWith("get") && getterName.length() > 3 && Character.isUpperCase(getterName.charAt(3))) {
+          String suffix = getterName.substring(3);
+          propertyName = StringHelper.firstToLower(suffix);
+          setter = setters.get("set" + suffix);
         }
+        else if ((getter.getReturnType() == Boolean.class || getter.getReturnType() == Boolean.TYPE) &&
+                 getterName.startsWith("is") && getterName.length() > 2 && Character.isUpperCase(getterName.charAt(2))) {
+          String suffix = getterName.substring(2);
+          propertyName = StringHelper.firstToLower(suffix);
+          setter = setters.get("set" + suffix);
+        }
+        else {
+          propertyName = getterName;
+        }
+        if (setter != null && !setter.getParameterTypes()[0].isAssignableFrom(getter.getReturnType())) {
+          setter = null;    // types do not match -> readonly
+        }
+        propertyMap.put(propertyName, createMapping(propertyName, getter, setter));
       }
       return propertyMap;
     });

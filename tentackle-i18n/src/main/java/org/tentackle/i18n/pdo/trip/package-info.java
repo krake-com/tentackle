@@ -17,6 +17,6 @@
  */
 
 /**
- * Remoting for resource bundles.
+ * TRIP remote delegates for the stored bundle PDOs.
  */
 package org.tentackle.i18n.pdo.trip;

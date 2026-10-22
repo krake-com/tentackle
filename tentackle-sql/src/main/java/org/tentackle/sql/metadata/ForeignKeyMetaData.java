@@ -31,7 +31,7 @@ import java.util.TreeSet;
 /**
  * Metadata for foreign keys.
  * <p>
- * Tentackle uses foreign keys only for simple columns (ID).
+ * Tentackle's foreign keys usually refer to a single column (ID), but composite keys are supported as well.
  *
  * @author harald
  */
@@ -45,11 +45,12 @@ public class ForeignKeyMetaData {
   private String primaryKeyTable;                             // the table of the pk
   private ForeignKeyAction updateRule;                        // the update-rule
   private ForeignKeyAction deleteRule;                        // the delete-rule
+  private Deferrability deferrability;                        // the deferrability
   private final Set<ForeignKeyColumnMetaData> columns;        // fk columns
 
 
   /**
-   * Creates foreign key meta data.
+   * Creates foreign key metadata.
    *
    * @param tableMetaData the table this foreign key belongs to
    */
@@ -97,7 +98,7 @@ public class ForeignKeyMetaData {
   }
 
   /**
-   * Gets the schema of the referencing column.
+   * Gets the schema of the referencing table.
    *
    * @return the referencing schema, null if default
    */
@@ -115,9 +116,9 @@ public class ForeignKeyMetaData {
   }
 
   /**
-   * Gets the full foreign key tablename including optional schema.
+   * Gets the full foreign key table name including optional schema.
    *
-   * @return the full tablename
+   * @return the full table name
    */
   public String getFullForeignKeyTableName() {
     StringBuilder buf = new StringBuilder();
@@ -130,7 +131,7 @@ public class ForeignKeyMetaData {
   }
 
   /**
-   * Gets the schema of the referenced column.
+   * Gets the schema of the referenced table.
    *
    * @return the referenced schema, null if default
    */
@@ -148,9 +149,9 @@ public class ForeignKeyMetaData {
   }
 
   /**
-   * Gets the full primary key tablename including optional schema.
+   * Gets the full primary key table name including optional schema.
    *
-   * @return the full tablename
+   * @return the full table name
    */
   public String getFullPrimaryKeyTableName() {
     StringBuilder buf = new StringBuilder();
@@ -180,6 +181,15 @@ public class ForeignKeyMetaData {
     return deleteRule;
   }
 
+  /**
+   * Gets the deferrability.
+   *
+   * @return the deferrability, null if not read from metadata
+   */
+  public Deferrability getDeferrability() {
+    return deferrability;
+  }
+
 
   /**
    * Extracts the foreign key name from a row of the database metadata result.<br>
@@ -190,7 +200,7 @@ public class ForeignKeyMetaData {
    *
    * @param resultSet the foreign key column result set
    * @return the foreign key name, null if the backend does not provide one
-   * @throws SQLException the processing the result set failed
+   * @throws SQLException if processing the result set failed
    */
   public static String extractForeignKeyName(ResultSet resultSet) throws SQLException {
     String foreignKeyName = StringHelper.toLower(resultSet.getString("FK_NAME"));
@@ -209,7 +219,7 @@ public class ForeignKeyMetaData {
    * Sets up the foreign key from the database metadata result.
    *
    * @param resultSet the foreign key column result set
-   * @throws SQLException the processing the result set failed
+   * @throws SQLException if processing the result set failed
    */
   public void setupForeignKeyFromMetaData(ResultSet resultSet) throws SQLException {
     foreignKeySchema = StringHelper.toLower(resultSet.getString("FKTABLE_SCHEM"));
@@ -219,6 +229,7 @@ public class ForeignKeyMetaData {
     primaryKeyTable = StringHelper.toLower(resultSet.getString("PKTABLE_NAME"));
     updateRule = ForeignKeyAction.createFromAction(resultSet.getShort("UPDATE_RULE"));
     deleteRule = ForeignKeyAction.createFromAction(resultSet.getShort("DELETE_RULE"));
+    deferrability = Deferrability.createFromAction(resultSet.getShort("DEFERRABILITY"));
 
     validate();
   }
@@ -226,8 +237,8 @@ public class ForeignKeyMetaData {
 
   /**
    * Updates the primary table name.<br>
-   * This is necessary, if a table was renamed. The metadata then still holds
-   * the old tablename. However, after a RENAME TABLE the foreign keys will be
+   * This is necessary if a table was renamed. The metadata then still holds
+   * the old table name. However, after a RENAME TABLE the foreign keys will be
    * updated by the database automatically, so there's no need to drop and re-create
    * the FK.
    *
@@ -240,8 +251,8 @@ public class ForeignKeyMetaData {
 
   /**
    * Updates the foreign table name.<br>
-   * This is necessary, if a table was renamed. The metadata then still holds
-   * the old tablename. However, after a RENAME TABLE the foreign keys will be
+   * This is necessary if a table was renamed. The metadata then still holds
+   * the old table name. However, after a RENAME TABLE the foreign keys will be
    * updated by the database automatically, so there's no need to drop and re-create
    * the FK.
    *

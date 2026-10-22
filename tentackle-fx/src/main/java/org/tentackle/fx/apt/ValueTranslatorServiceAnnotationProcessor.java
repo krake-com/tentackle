@@ -33,7 +33,7 @@ import java.util.List;
 
 /**
  * Annotation processor for the {@code @ValueTranslatorService} annotation.<br>
- * Enforces the implementation of the following constructors:
+ * Enforces the implementation of {@code ValueTranslator} and one of the following constructors:
  *
  * <ul>
  *   <li>({@link FxComponent})</li>

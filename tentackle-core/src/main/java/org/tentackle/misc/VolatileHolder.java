@@ -22,7 +22,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * A {@link Holder} with a volatile object reference.
+ * Same as {@link Holder}, but with a volatile object reference.<br>
+ * Useful if the object is set and retrieved by different threads.
  *
  * @author harald
  * @param <T> the object type

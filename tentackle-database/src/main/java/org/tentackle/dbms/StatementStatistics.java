@@ -35,6 +35,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Statement statistics collector.
+ * <p>
+ * Collects the number of executions and durations per SQL statement and transaction name,
+ * optionally separated by the statement parameters.
+ * Enabled via {@link ManagedConnection#setCollectingStatistics(boolean)}.
  *
  * @author harald
  */
@@ -72,7 +76,7 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
   /**
    * Returns whether statistics should be separated according to the statement parameters.
    *
-   * @return rue if with parameter stats
+   * @return true if with parameter stats
    */
   public static boolean isWithParameters() {
     return withParameters;
@@ -158,7 +162,7 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
 
 
   /**
-   * Logs the statics.
+   * Logs the statistics.
    *
    * @param level the logging level
    * @param clear true if clear after log
@@ -194,7 +198,7 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
 
 
   /**
-   * Create a statistics collector.
+   * Creates a statistics collector.
    *
    * @param sql the SQL statement
    * @param txName the transaction name
@@ -210,10 +214,10 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
 
 
   /**
-   * Count invocations and duration of a statement.
+   * Counts invocations and duration of a statement.
    *
+   * @param duration the total execution duration of all invocations
    * @param count the number of invocations
-   * @param duration the execution time in milliseconds
    */
   public void countInvocation(TimeKeeper duration, int count) {
     if (duration != null && duration.isValid()) {
@@ -222,7 +226,7 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
   }
 
   /**
-   * Count a statement execution duration.
+   * Counts a statement execution duration.
    *
    * @param duration the statement duration
    */
@@ -235,7 +239,7 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
   /**
    * Counts an invocation with optional fetch statistics.
    *
-   * @param history the statement
+   * @param history the statement history
    */
   public void countInvocation(StatementHistory history) {
     TimeKeeper duration = history.getExecutionDuration();
@@ -321,8 +325,8 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
     int rv = Compare.compare(sql, o.sql);
     if (rv == 0) {
       /*
-       * Because statistics are only created for unequal parameters.
-       * It is sufficient to compare the instanceNumber
+       * Statistics are only created for unequal parameters or transaction names,
+       * so it is sufficient to compare the instanceNumber.
        */
       rv = Integer.compare(instanceNumber, o.instanceNumber);
     }

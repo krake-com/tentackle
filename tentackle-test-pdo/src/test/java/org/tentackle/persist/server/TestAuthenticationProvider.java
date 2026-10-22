@@ -35,9 +35,9 @@ import java.util.Arrays;
  * check both the accepted and the refused login. Since it knows the user, no {@code UserResolver}
  * is needed.
  * <p>
- * The {@code @Service} annotation only documents the intent here: the analyze mojo does not scan
- * this module's test sources, so the service is registered by hand in
- * {@code src/test/resources/META-INF/services}.
+ * Registered via {@code @Service}: the {@code test-analyze} goal of the tentackle-maven-plugin
+ * generates the service descriptor into {@code target/generated-test-resources}, which is
+ * a test resource directory of this module.
  *
  * @author harald
  */

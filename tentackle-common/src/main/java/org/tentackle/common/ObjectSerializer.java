@@ -30,9 +30,10 @@ interface ObjectSerializerHolder {
 /**
  * Generic object serializer.
  * <p>
- * The default implementation uses the Java serialization mechanism,
+ * The default implementation {@link DefaultObjectSerializer} uses the Java serialization mechanism,
  * but it can be replaced by a custom implementation which is used
- * by generic serializers such as {@link TBinary}.
+ * by generic serializers such as {@link TBinary}. If tentackle-core is present, the
+ * TRIP-based {@code org.tentackle.trip.impl.TripObjectSerializer} replaces the default.
  */
 public interface ObjectSerializer {
 
@@ -47,18 +48,22 @@ public interface ObjectSerializer {
 
 
   /**
-   * Serialize the given object to an output stream.
+   * Serializes the given object to an output stream.<br>
+   * The stream is closed afterward.
    *
    * @param object the object to serialize
    * @param out the output stream to write to
+   * @throws TentackleRuntimeException if serialization failed
    */
   void serialize(Object object, OutputStream out);
 
   /**
-   * Deserialize an object from an input stream.
+   * Deserializes an object from an input stream.<br>
+   * The stream is closed afterward.
    *
    * @param in the input stream to read from
    * @return the deserialized object
+   * @throws TentackleRuntimeException if deserialization failed
    */
   Object deserialize(InputStream in);
 
@@ -72,6 +77,7 @@ public interface ObjectSerializer {
    * @param object the object to copy
    * @return the copy
    * @param <T> the object type
+   * @throws TentackleRuntimeException if the object could not be copied
    */
   <T> T copy(T object);
 

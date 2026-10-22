@@ -1,6 +1,8 @@
 # tentackle-pdo is compiled with proc:none due to chicken-egg
 org.tentackle.pdo.Transaction
 org.tentackle.pdo.NoTransaction
+org.tentackle.pdo.PreCommit
+org.tentackle.pdo.PostCommit
 org.tentackle.security.Secured
 org.tentackle.pdo.WithinContext
 org.tentackle.pdo.NotWithinContext

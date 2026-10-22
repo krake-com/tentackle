@@ -24,7 +24,8 @@ import org.tentackle.fx.FxComponent;
 import java.util.function.Function;
 
 /**
- * The identity translator base class.
+ * The identity translator base class.<br>
+ * Model and view share the same type, and the values are passed unchanged.
  *
  * @author harald
  * @param <T> the type
@@ -32,7 +33,7 @@ import java.util.function.Function;
 public abstract class IdentityTranslator<T> extends AbstractValueTranslator<T,T> {
 
   /**
-   * Creates a dummy translator.
+   * Creates an identity translator.
    *
    * @param component the component
    */

@@ -31,6 +31,8 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation for a script converter for validator messages.
+ *
+ * @see AbstractScriptValidationMessageConverter
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

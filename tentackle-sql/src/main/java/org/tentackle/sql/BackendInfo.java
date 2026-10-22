@@ -26,13 +26,26 @@ import org.tentackle.common.StringHelper;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
+import javax.sql.XAConnection;
+import javax.sql.XADataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.StringTokenizer;
 
 /**
- * Configuration info for a backend.
+ * Configuration info for a backend.<br>
+ * Describes a concrete connection target, as opposed to the {@link Backend}, which describes a kind of database.
+ * <p>
+ * The URL determines how the database is reached:
+ * <ul>
+ *   <li>{@code jdbc:...}: a JDBC URL, the backend is determined via {@link Backend#isMatchingUrl(String)}</li>
+ *   <li>{@code jndi:...}: the name of a JNDI {@link DataSource}, the backend is determined via the
+ *   metadata of the data source</li>
+ *   <li>anything else: a remote connection via TRIP, there is no local backend (see {@link #isRemote()})</li>
+ * </ul>
+ * The backend can be pinned explicitly by appending {@code |<backend-name>} to the URL, for example
+ * {@code jdbc:oracle:thin:@//localhost:1521/xe|Oracle8}.
  *
  * @author harald
  */
@@ -45,6 +58,7 @@ public class BackendInfo {
   private final char[] password;                // the password
   private final String[] schemas;               // schemas (only for migration)
 
+  private int backendIdentity;                  // optional backend identity number to link different urls of the same backend
   private int backendTimeout;                   // optional database idle session timeout in minutes, 0 if default or remote
   private boolean backendKeepAliveEnabled;      // if backendTimeout set: send a keep alive SELECT every backendTimeout interval,
                                                 // otherwise the SELECT will only be sent before an idle connection is used again
@@ -70,6 +84,7 @@ public class BackendInfo {
    * The info cannot be used to connect.
    *
    * @param backendName the backend name
+   * @throws BackendException if there is no such backend
    */
   public BackendInfo(String backendName) {
     this(BackendFactory.getInstance().getBackendByName(backendName));
@@ -78,11 +93,17 @@ public class BackendInfo {
   /**
    * Creates a backend-info.<br>
    * This info is able to create a connection.
+   * <p>
+   * Encrypted remote URLs ({@code http:}, {@code https:} and {@code rmi:}) are decrypted via the {@link Cryptor}, if configured.
+   * An optional {@code |<backend-name>} suffix selects the backend by name instead of by URL.
+   * For {@code jndi:} URLs, the data source is looked up, and the backend is derived from its metadata,
+   * unless given explicitly. Any URL other than {@code jdbc:} or {@code jndi:} denotes a remote connection.
    *
    * @param url the backend url
    * @param user the username
    * @param password the password
    * @param schemas the optional schemas, null if no schema check
+   * @throws BackendException if the url is missing, the JNDI lookup failed or no matching backend was found
    */
   public BackendInfo(String url, String user, char[] password, String[] schemas) {
     if (url == null || url.isEmpty()) {
@@ -143,8 +164,17 @@ public class BackendInfo {
   /**
    * Creates a backend-info from backend properties.<br>
    * The info is able to create a connection.
+   * <p>
+   * Besides {@code url}, {@code user}, {@code password} and {@code schemas}, the following optional keys
+   * are evaluated:
+   * <ul>
+   *   <li>{@code driver}: a JDBC driver to be loaded via {@link DynamicDriver#load(String)}</li>
+   *   <li>{@code jdbcIdleTimeout}: the idle timeout in minutes (see {@link #setBackendTimeout(int)})</li>
+   *   <li>{@code jdbcKeepAlive}: whether to keep idle connections alive (see {@link #setBackendKeepAliveEnabled(boolean)})</li>
+   * </ul>
    *
    * @param backendProperties the properties
+   * @throws BackendException if the configuration is invalid
    */
   public BackendInfo(EncryptedProperties backendProperties) {
     this(backendProperties.getPropertyIgnoreCase(Constants.BACKEND_URL),
@@ -164,10 +194,15 @@ public class BackendInfo {
     if (propVal != null) {
       backendKeepAliveEnabled = Boolean.parseBoolean(propVal);
     }
+    propVal = backendProperties.getPropertyIgnoreCase(Constants.BACKEND_IDENTITY);
+    if (propVal != null) {
+      backendIdentity = Integer.parseInt(propVal);
+    }
   }
 
   /**
-   * Creates a backend-info from another one with a different user and password.
+   * Creates a backend-info from another one with a different user and password.<br>
+   * All other settings, including the keep-alive configuration, are copied.
    *
    * @param backendInfo the original backend info
    * @param user the username
@@ -180,13 +215,15 @@ public class BackendInfo {
     this.password = password;
     this.jndiDataSource = backendInfo.jndiDataSource;
     this.schemas = backendInfo.schemas;
+    this.backendTimeout = backendInfo.backendTimeout;
+    this.backendKeepAliveEnabled = backendInfo.backendKeepAliveEnabled;
   }
 
 
   /**
    * Gets the backend.
    *
-   * @return the backend
+   * @return the backend, null if remote
    */
   public Backend getBackend() {
     return backend;
@@ -204,7 +241,7 @@ public class BackendInfo {
   /**
    * Gets the JNDI source.
    *
-   * @return the JNDI datasource if this a JNDI connection
+   * @return the JNDI datasource, null if not a JNDI connection
    */
   public DataSource getJndiDataSource() {
     return jndiDataSource;
@@ -238,8 +275,8 @@ public class BackendInfo {
   }
 
   /**
-   * Clears all passwords (stored in char[]-arrays) so
-   * that they are no more visible in memory.
+   * Clears the password (stored in a char[]-array) so
+   * that it is no longer visible in memory.
    */
   public void clearPassword() {
     StringHelper.blank(password);
@@ -303,14 +340,33 @@ public class BackendInfo {
    * Otherwise, the dummy select will be sent when the connection is re-used after at least
    * <code>backendTimeout</code> minutes to test if the connection is still alive.
    *
-   * @param backendKeepAliveEnabled true to keep alive periodically, false only before usage after
+   * @param backendKeepAliveEnabled true to keep alive periodically, false to test only before reusing an idle connection
    */
   public void setBackendKeepAliveEnabled(boolean backendKeepAliveEnabled) {
     this.backendKeepAliveEnabled = backendKeepAliveEnabled;
   }
 
   /**
-   * Creates a connection.
+   * Gets the optional fixed identity to link different URLs to the same physical backend.
+   *
+   * @return the backend identity, or 0 if not set
+   */
+  public int getBackendIdentity() {
+    return backendIdentity;
+  }
+
+  /**
+   * Sets the optional fixed identity to link different URLs to the same physical backend.
+   *
+   * @param backendIdentity the backend identity, or 0 to unset
+   */
+  public void setBackendIdentity(int backendIdentity) {
+    this.backendIdentity = backendIdentity;
+  }
+
+  /**
+   * Creates a connection.<br>
+   * Must not be invoked for remote infos.
    *
    * @return the connection in autocommit mode
    * @throws SQLException if the connection could not be created
@@ -328,6 +384,33 @@ public class BackendInfo {
       throw sqx;
     }
     return connection;
+  }
+
+  /**
+   * Creates an XA connection.<br>
+   * XA connections take part in global transactions coordinated by a transaction manager.
+   * <p>
+   * For JNDI urls, the bound data source must implement {@link XADataSource}.
+   * Otherwise, the data source is created by the backend (see {@link Backend#createXADataSource}).
+   * Must not be invoked for remote infos.
+   *
+   * @return the XA connection
+   * @throws SQLException if the connection could not be created or XA is not supported
+   */
+  public XAConnection connectXA() throws SQLException {
+    XADataSource xaDataSource;
+    if (jndiDataSource != null) {
+      if (jndiDataSource instanceof XADataSource xds) {
+        xaDataSource = xds;
+      }
+      else {
+        throw new SQLException("JNDI data source " + url + " is not an XADataSource");
+      }
+    }
+    else {
+      xaDataSource = backend.createXADataSource(url, user, password);
+    }
+    return xaDataSource.getXAConnection();
   }
 
 

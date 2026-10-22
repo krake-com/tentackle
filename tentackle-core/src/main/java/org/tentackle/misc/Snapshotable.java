@@ -18,6 +18,8 @@
 
 package org.tentackle.misc;
 
+import org.tentackle.reflect.NotInterceptable;
+
 import java.util.List;
 
 /**
@@ -29,7 +31,7 @@ import java.util.List;
  * <p>
  * Important: snapshots cannot be used as copies of an object at a given time. They just
  * contain the information to revert to the object's state when the snapshot was taken!<br>
- * However, Snapshotables can be copied using the copy() method.
+ * However, {@code Snapshotable}s can be copied using the {@link #copy()} method.
  *
  * @param <T> the type
  * @author harald
@@ -41,13 +43,16 @@ public interface Snapshotable<T> {
    *
    * @return the snapshot
    */
+  @NotInterceptable
   T createSnapshot();
 
   /**
-   * Reverts the state of this object to the given snapshot.
+   * Reverts the state of this object to the given snapshot.<br>
+   * The snapshot itself and all snapshots taken after it are discarded.
    *
    * @param snapshot the snapshot to revert to
    */
+  @NotInterceptable
   void revertToSnapshot(T snapshot);
 
   /**
@@ -77,7 +82,8 @@ public interface Snapshotable<T> {
   void discardSnapshot(T snapshot);
 
   /**
-   * Discards all snapshots.<br>
+   * Discards all snapshots.
+   *
    * @see #discardSnapshot(Object)
    */
   void discardSnapshots();
@@ -108,6 +114,7 @@ public interface Snapshotable<T> {
    *
    * @param copy true if change to a copy, else change to the non-copied object
    */
+  @NotInterceptable
   void setCopy(boolean copy);
 
 }

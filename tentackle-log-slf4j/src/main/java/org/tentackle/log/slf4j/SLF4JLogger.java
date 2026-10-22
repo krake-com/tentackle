@@ -30,22 +30,31 @@ import java.util.HashMap;
 import java.util.function.Supplier;
 
 /**
- * Pluggable logger using <code>org.slf4j</code>.
+ * Tentackle {@link Logger} backed by SLF4J ({@code org.slf4j}).
+ * <p>
+ * Registered as {@code @Service(Logger.class)}, so it is picked up by the {@code DefaultLoggerFactory}
+ * as soon as this module is on the class- or module path.<br>
+ * Messages are formatted with {@link MessageFormat} (not SLF4J's {@code {}} placeholders). If the bound
+ * SLF4J logger is a {@link org.slf4j.spi.LocationAwareLogger}, the messages are logged on behalf of the
+ * caller, i.e. the backend reports the caller's location, not this wrapper's.
  *
  * @author harald
  */
 @Service(Logger.class)
 public class SLF4JLogger implements Logger {
 
-  // classname to exclude from stacktrace
+  // the wrapper's classname: the backend skips it when determining the caller's location
   private static final String EXCLUDE_CLASSNAME = SLF4JLogger.class.getName();
 
-  // cached loggers
+  // cached loggers, one per name (never evicted)
   private static final HashMap<String,SLF4JLogger> LOGGERS = new HashMap<>();
 
   /**
-   * Gets the Log4JLogger for given name.
-   * If a logger with that name already exists, it will be re-used.
+   * Gets the SLF4JLogger for the given name.<br>
+   * If a logger with that name already exists, it will be reused.
+   * <p>
+   * This is the method {@code DefaultLoggerFactory} prefers over the constructor.
+   * The cache is thread-safe and holds the loggers for the lifetime of the JVM.
    *
    * @param name the name of the logger
    * @return the logger
@@ -57,12 +66,13 @@ public class SLF4JLogger implements Logger {
   }
 
 
-  private final org.slf4j.Logger logger;    // the SLF4J logger
-  private final boolean locationAware;      // true if instanceof LocationAwareLogger
+  private final org.slf4j.Logger logger;    // the wrapped SLF4J logger
+  private final boolean locationAware;      // true if logger is a LocationAwareLogger
 
 
   /**
-   * Creates a logger.
+   * Creates a logger.<br>
+   * Applications should use {@link #getLogger(String)} instead, which reuses existing instances.
    *
    * @param name the name of the logger
    */
@@ -72,6 +82,11 @@ public class SLF4JLogger implements Logger {
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Returns the {@code org.slf4j.Logger} obtained from the {@code org.slf4j.LoggerFactory}.
+   */
   @Override
   public Object getLoggerImpl() {
     return logger;
@@ -288,7 +303,8 @@ public class SLF4JLogger implements Logger {
   }
 
   /**
-   * Logs the stacktrace of a throwable.
+   * Logs the stacktrace of a throwable.<br>
+   * The stacktrace is logged line by line via a {@link LoggerOutputStream}.
    *
    * @param level   the logging level
    * @param cause   the Throwable to log the stacktrace for
@@ -319,10 +335,10 @@ public class SLF4JLogger implements Logger {
 
 
   /**
-   * Translate the tentackle logging level to the SLF4J level.
+   * Translates the Tentackle logging level to the SLF4J level.
    *
-   * @param level the tt level
-   * @return one of org.slf4j.spi.LocationAwareLogger.XXX_INT
+   * @param level the Tentackle level
+   * @return one of {@code org.slf4j.spi.LocationAwareLogger.*_INT} ({@code ERROR_INT} for {@code SEVERE})
    */
   protected int translateLevel(Level level) {
     return switch (level) {
@@ -336,7 +352,7 @@ public class SLF4JLogger implements Logger {
 
 
   /**
-   * Returns whether this is a location aware logger.
+   * Returns whether the wrapped SLF4J logger is a {@link org.slf4j.spi.LocationAwareLogger}.
    *
    * @return true if location aware
    */
@@ -345,25 +361,31 @@ public class SLF4JLogger implements Logger {
   }
 
   /**
-   * Logging workhorse.
+   * Logs a message with optional parameters.
+   * <p>
+   * If there are parameters, the message is formatted with {@link MessageFormat}.
+   * Otherwise, it is logged verbatim, i.e. quotes are not unescaped and placeholders stay as they are.
    *
    * @param level the log level
    * @param message the message
-   * @param cause the cause
+   * @param cause the cause, null if none
    * @param params optional parameters
    */
   protected void doLog(Level level, String message, Throwable cause, Object... params) {
-    // SLF4J parameter strings are incompatible with {@link MessageFormat}
+    // SLF4J's {} placeholders differ from MessageFormat: format here and hand SLF4J the finished message
     doLog(level, cause, null, () -> params != null && params.length > 0 ? MessageFormat.format(message, params) : message);
   }
 
   /**
-   * Logging workhorse.
+   * Logs a message with lazily evaluated parameters.
+   * <p>
+   * The suppliers are evaluated only if the level is enabled. The message is always formatted
+   * with {@link MessageFormat}, even if there are no suppliers.
    *
    * @param level the log level
-   * @param cause the cause
+   * @param cause the cause, null if none
    * @param message the message
-   * @param paramSuppliers parameter suppliers
+   * @param paramSuppliers parameter suppliers, null elements yield null parameters
    */
   protected void doLog(Level level, Throwable cause, String message, Supplier<?>... paramSuppliers) {
     doLog(level, cause, null, () -> {
@@ -372,18 +394,23 @@ public class SLF4JLogger implements Logger {
         Supplier<?> supplier = paramSuppliers[i];
         params[i] = supplier == null ? null : supplier.get();
       }
-      // SLF4J parameter strings are incompatible with {@link MessageFormat}
+      // SLF4J's {} placeholders differ from MessageFormat: format here and hand SLF4J the finished message
       return MessageFormat.format(message, params);
     });
   }
 
   /**
-   * Logging workhorse.
+   * Logs a message or the result of a message supplier.<br>
+   * All other logging methods end up here.
+   * <p>
+   * The message supplier is invoked only if the level is enabled. If the SLF4J logger is location aware,
+   * the backend determines the caller's location relative to this class. Otherwise, the plain
+   * level methods ({@code trace}, {@code debug}, ...) are used.
    *
    * @param level the log level
    * @param cause the cause, null if none
-   * @param message the message, null if messageSupplier
-   * @param messageSupplier the message supplier, null if message
+   * @param message the message, ignored if messageSupplier is not null
+   * @param messageSupplier the message supplier, null to log message
    */
   protected void doLog(Level level, Throwable cause, String message, Supplier<String> messageSupplier) {
     if (messageSupplier != null) {
@@ -397,7 +424,7 @@ public class SLF4JLogger implements Logger {
               log(null, EXCLUDE_CLASSNAME, translateLevel(level), message, null, cause);
     }
     else  {
-      // probably the SimpleLogger...
+      // binding without location support, e.g. slf4j-simple
       switch (level) {
         case FINER:
           logger.trace(message, cause);

@@ -66,7 +66,7 @@ public abstract class AbstractValidateableFxController extends AbstractFxControl
   }
 
   /**
-   * Gets the validation mapper for controller-local bindables.
+   * Gets the validation mappers for controller-local bindables.
    *
    * @return the validation mappers
    */

@@ -20,8 +20,7 @@ package org.tentackle.fx.rdc.junit;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.platform.commons.logging.Logger;
-import org.junit.platform.commons.logging.LoggerFactory;
+import org.junit.jupiter.api.TestReporter;
 
 import org.tentackle.common.Version;
 import org.tentackle.fx.table.TableConfigurationProvider;
@@ -30,24 +29,24 @@ import org.tentackle.fx.table.TableConfigurationProviderService;
 import org.tentackle.reflect.ClassMapper;
 
 /**
- * Junit5 test to verify that all {@link TableConfigurationProvider}s can be loaded and bound.<br>
+ * JUnit 5 test to verify that all {@link TableConfigurationProvider}s can create their table configuration.<br>
  * Opens a session in case some providers need it.<br>
  * Simply extend this class and put that in a test source folder.
  * <p>
+ * Providers annotated with {@code test = false} are skipped.
+ * <p>
  * Example:
  * <pre>
-  public class TestTableConfigurationProviders extends TableConfigurationProviderTest {
-    TestTableConfigurationProviders() {
-      super("my.package.name");
-    }
-  }
- </pre>
+ *  public class TestTableConfigurationProviders extends TableConfigurationProviderTest {
+ *    public TestTableConfigurationProviders() {
+ *      super("my.package.name");
+ *    }
+ *  }
+ * </pre>
  *
  * @author harald
  */
 public abstract class TableConfigurationProviderTest extends FxRdcTestApplication {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(TableConfigurationProviderTest.class);
 
   private final String packagePrefix;
   private final ClassMapper classMapper;
@@ -55,7 +54,7 @@ public abstract class TableConfigurationProviderTest extends FxRdcTestApplicatio
   /**
    * Creates the table configuration provider test.
    *
-   * @param packagePrefix optional package prefix, null or empty if all
+   * @param packagePrefix optional prefix of the provider class names, null or empty if all
    */
   public TableConfigurationProviderTest(String packagePrefix) {
     super("fx-rdc-table-config-provider-test", Version.RELEASE);
@@ -70,8 +69,13 @@ public abstract class TableConfigurationProviderTest extends FxRdcTestApplicatio
     this(null);
   }
 
+  /**
+   * Creates the table configurations of all table configuration providers.
+   *
+   * @param reporter the test reporter
+   */
   @Test
-  public void testTableConfigurationProviders() {
+  public void testTableConfigurationProviders(TestReporter reporter) {
     for (String servicedClassName : classMapper.getMap().keySet()) {
       try {
         Class<?> servicedClass = Class.forName(servicedClassName);
@@ -84,12 +88,12 @@ public abstract class TableConfigurationProviderTest extends FxRdcTestApplicatio
           TableConfigurationProviderService anno = provider.getClass().getAnnotation(TableConfigurationProviderService.class);
           if (anno == null || anno.test()) {
             runFx(provider.getClass().getName(), () -> {
-              LOGGER.info(() -> "testing table configuration provider " + provider.getClass().getName());
+              reporter.publishEntry("testing table configuration provider " + provider.getClass().getName());
               provider.createTableConfiguration();
             });
           }
           else {
-            LOGGER.info(() -> "table configuration provider " + provider.getClass().getName() + " not tested");
+            reporter.publishEntry("table configuration provider " + provider.getClass().getName() + " not tested!");
           }
         }
       }

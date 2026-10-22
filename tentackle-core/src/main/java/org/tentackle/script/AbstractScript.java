@@ -50,6 +50,7 @@ public abstract class AbstractScript implements Script {
    * @param code the scripting code
    * @param cached true to use caching, if possible
    * @param threadSafe true if thread-safety is required
+   * @throws NullPointerException if language or code is null
    */
   public AbstractScript(ScriptingLanguage language, String code, boolean cached, boolean threadSafe) {
     this.language = Objects.requireNonNull(language, "language");

@@ -116,4 +116,14 @@ public class ParameterStringTest {
     assertEquals(ps.getParameterNames().length, 0);
   }
 
+  @Test
+  public void testCommaAfterNameWithoutValue() throws ParseException {
+    ParameterString ps = new ParameterString("flag,other='x',last");
+    assertEquals(ps.getParameterNames(), new String[] { "flag", "other", "last" });
+    assertEquals(ps.getParameter("flag"), "");
+    assertEquals(ps.getParameter("other"), "x");
+    assertEquals(ps.getParameter("last"), "");
+    assertEquals(ps.toString(), "flag, other='x', last");
+  }
+
 }

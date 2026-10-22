@@ -14,6 +14,9 @@ import org.tentackle.persist.trip.AbstractPersistentObjectRemoteDelegate;
 
 /**
  * Base interface for master data remote delegates.
+ *
+ * @param <T> the PDO type
+ * @param <P> the persistence implementation type
  */
 public interface AbstractPersistentMasterDataRemoteDelegate<T extends MasterData<T>,
                                                             P extends AbstractPersistentMasterData<T,P>>

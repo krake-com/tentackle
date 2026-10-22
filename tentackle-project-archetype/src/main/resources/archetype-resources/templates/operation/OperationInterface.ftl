@@ -4,6 +4,9 @@
 
 package ${operationPackage};
 
+<#if superOperationInterfacePackage != "" && superOperationInterfacePackage != operationPackage>
+import ${superOperationInterfacePackage}.${superOperationInterface};
+</#if>
 <#if domainInterface != "">
 import ${domainPackage}.${domainInterface};
 </#if>
@@ -30,7 +33,7 @@ public interface ${operationInterface}
 <#elseif domainInterface != "">
   <#if abstractOperation == "true">
 public interface ${operationInterface}<T extends ${operationInterface}<T>>
-       extends ${superOperationInterface}<T> ${domainInterface}<T> {
+       extends ${superOperationInterface}<T>, ${domainInterface}<T> {
   <#else>
 public interface ${operationInterface}
        extends ${superOperationInterface}<${operationInterface}>, ${domainInterface} {

@@ -37,7 +37,7 @@ import static org.testng.Assert.assertNull;
 /**
  * Unit tests for the default (CSV) spreadsheet export of {@link TableUtilities}.
  * <p>
- * No JavaFX toolkit is needed: table- and treetable columns are created lazily by the column
+ * No JavaFX toolkit is needed: table and tree table columns are created lazily by the column
  * configurations, but no {@code Control} is ever instantiated.
  */
 @SuppressWarnings({"exports", "missing-explicit-ctor"})

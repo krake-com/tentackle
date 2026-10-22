@@ -1,6 +1,6 @@
 @{include $currentDir/header.incl}@
 @{comment
-<strong>({\@code \@wurblet})</strong> Generate code to check whether a low-level persistent object is referenced.
+<strong>({\@code \@wurblet})</strong> Generate code to check whether an entity is referenced.
 <p>
 usage:<br>
 &#064;wurblet &lt;tag&gt; PdoIsReferencing [--private] [--append=&lt;sqltext&gt;] [--classvar=&lt;classvariables&gt;] &lt;expression&gt;

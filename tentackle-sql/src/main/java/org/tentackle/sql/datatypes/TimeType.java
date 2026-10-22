@@ -101,7 +101,13 @@ public class TimeType extends AbstractDateTimeType<Time> {
     return time == null ? null : org.tentackle.common.Time.createFrozen(time.getTime());    // upgrade to org.tentackle.common.Time
   }
 
-
+  /**
+   * Parses a string in the format {@code HH:mm:ss}.
+   *
+   * @param str the string, optionally enclosed in double quotes
+   * @return the time
+   * @throws BackendException if parsing failed
+   */
   protected Time parse(String str) throws BackendException {
     try {
       return Time.valueOf(TIME_FORMAT.parse(StringHelper.parseString(str), LocalTime::from));
@@ -111,6 +117,12 @@ public class TimeType extends AbstractDateTimeType<Time> {
     }
   }
 
+  /**
+   * Formats a time as {@code HH:mm:ss}.
+   *
+   * @param time the time
+   * @return the formatted string
+   */
   protected String format(Time time) {
     return TIME_FORMAT.format(time.toLocalTime());
   }

@@ -21,7 +21,8 @@ import org.tentackle.fx.table.DefaultTableConfiguration;
 import org.tentackle.fx.table.TableColumnConfiguration;
 
 /**
- * PDO-aware table configuration.
+ * PDO-aware table configuration.<br>
+ * Creates {@link RdcTableColumnConfiguration}s.
  *
  * @param <S> type of the objects contained within the table's items list
  */

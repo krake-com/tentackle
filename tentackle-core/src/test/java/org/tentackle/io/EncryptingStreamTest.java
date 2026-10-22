@@ -54,6 +54,42 @@ public class EncryptingStreamTest {
     }
   }
 
+  /**
+   * A full buffer of the maximum size grows beyond the maximum packet size when encrypted.
+   * This must fail instead of writing a corrupt packet header.
+   */
+  @Test
+  public void testEncryptedPacketTooLarge() {
+    byte[] data = new byte[65535];
+    assertThrows(IOException.class, () -> roundTrip(data, 65535));
+  }
+
+  /**
+   * The header and the data of a packet must reach the underlying stream in a single write.<br>
+   * Written separately, a socket sends the header on its own and, with Nagle's algorithm, holds back
+   * the data until the peer acknowledges it.
+   */
+  @Test
+  public void testEachPacketIsWrittenAtOnce() throws IOException {
+    WriteCountingOutputStream sink = new WriteCountingOutputStream();
+    byte[] small = "secret message".getBytes(StandardCharsets.US_ASCII);
+    byte[] large = new byte[300];
+    new Random(4711).nextBytes(large);
+    try (EncryptingOutputStream out = new EncryptingOutputStream(sink, 128, CRYPTOR)) {
+      out.write(small);
+      out.flush();
+      assertEquals(sink.getWrites(), 1);
+      out.write(large);   // 128 + 128 + 44 bytes
+      out.flush();
+      assertEquals(sink.getWrites(), 4);
+    }
+    try (DecryptingInputStream in = new DecryptingInputStream(new ByteArrayInputStream(sink.toByteArray()), CRYPTOR)) {
+      assertEquals(in.readNBytes(small.length), small);
+      assertEquals(in.readNBytes(large.length), large);
+      assertEquals(in.read(), -1);
+    }
+  }
+
   @Test
   public void testShortPayloadRoundTrip() throws IOException {
     byte[] data = "secret message".getBytes(StandardCharsets.US_ASCII);

@@ -31,8 +31,8 @@ import org.tentackle.quiche.ffm.Quiche;
  * <p>
  * Installing is worth it only when {@code FINE} is actually enabled, because quiche formats every message
  * before handing it over regardless of what this side does with it. {@link #install()} therefore checks
- * first, which means the messages are unavailable if logging is turned up only after the first connection
- * has been made.
+ * first. It is invoked whenever a server transport starts accepting or a client connection pool is created,
+ * so turning the logging up takes effect with the next of these, not for those that already exist.
  */
 public final class QuicheLogger {
 
@@ -67,8 +67,8 @@ public final class QuicheLogger {
   /**
    * Logs a single line coming from the native library.
    * <p>
-   * Invoked on whatever thread happens to be inside quiche, so it must not throw: an exception crossing
-   * back into native code would take the JVM down.
+   * Invoked on whatever thread happens to be inside quiche, so it must not throw: an exception escaping
+   * an upcall terminates the JVM.
    *
    * @param line the log line
    */
@@ -76,7 +76,7 @@ public final class QuicheLogger {
     try {
       LOGGER.fine(line);
     }
-    catch (RuntimeException e) {    // NOSONAR: nothing may escape into the native caller
+    catch (Throwable t) {    // NOSONAR: nothing may escape into the native caller
       // there is nowhere left to report this to
     }
   }

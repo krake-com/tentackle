@@ -29,7 +29,9 @@ interface PersistentClassVariablesFactoryHolder {
 }
 
 /**
- * Factory for class variables.
+ * Factory for class variables.<br>
+ * Replaces and extends the {@link DbClassVariablesFactory} of the database layer
+ * to create the class variables for PDOs and operations as well.
  */
 @Service(DbClassVariablesFactory.class)   // replaces and extends DbClassVariablesFactory
 public class PersistentClassVariablesFactory extends DbClassVariablesFactory {
@@ -52,15 +54,16 @@ public class PersistentClassVariablesFactory extends DbClassVariablesFactory {
   }
 
   /**
-   * Creates a PDO classvariable.
+   * Creates PDO class variables.
    *
-   * @param pdoClass the PDO's class (i.e. interface)
+   * @param pdoClass the PDO's class (i.e., interface)
    * @param poClass the class of the persistence implementation
    * @param tableAlias the table alias to be used in joined selects
    * @param superClassVariables the class variables of the superclass, null if not inherited
-   * @param eagerJoins the optional eager joins, null of empty if none
+   * @param eagerJoins the optional eager joins, null or empty if none
    * @param <T> the PDO class type
    * @param <P> the persistence class type
+   * @return the class variables
    */
   public <T extends PersistentDomainObject<T>, P extends AbstractPersistentObject<T,P>> PersistentObjectClassVariables<T,P> pdoCv(
       Class<T> pdoClass, Class<P> poClass, String tableAlias,
@@ -71,13 +74,14 @@ public class PersistentClassVariablesFactory extends DbClassVariablesFactory {
   }
 
   /**
-   * Creates a PDO classvariable.
+   * Creates PDO class variables.
    *
-   * @param pdoClass the PDO's class (i.e. interface)
+   * @param pdoClass the PDO's class (i.e., interface)
    * @param poClass the class of the persistence implementation
    * @param tableAlias the table alias to be used in joined selects
    * @param <T> the PDO class type
    * @param <P> the persistence class type
+   * @return the class variables
    */
   public <T extends PersistentDomainObject<T>, P extends AbstractPersistentObject<T,P>>  PersistentObjectClassVariables<T,P> pdoCv(
       Class<T> pdoClass, Class<P> poClass, String tableAlias)  {
@@ -85,12 +89,13 @@ public class PersistentClassVariablesFactory extends DbClassVariablesFactory {
   }
 
   /**
-   * Creates an operation classvariable.
+   * Creates operation class variables.
    *
-   * @param operationClass the operation's class (i.e. interface)
+   * @param operationClass the operation's class (i.e., interface)
    * @param clazz the class of the derived operation
    * @param <T> the operation class type
    * @param <P> the persistence class type
+   * @return the class variables
    */
   public <T extends Operation<T>, P extends AbstractPersistentOperation<T,P>> PersistentOperationClassVariables<T,P> opCv(
       Class<T> operationClass, Class<P> clazz)  {

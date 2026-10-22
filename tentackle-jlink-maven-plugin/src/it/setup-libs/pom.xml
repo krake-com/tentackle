@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Setup project for the layered-app fixture (see there): builds and installs two versions of the
+  same groupId:artifactId, "org.tentackle.it:it-lib", each providing a module named "it.lib".
+  Run as a maven-invoker-plugin "setup" project, i.e. always before layered-app, regardless of
+  directory ordering - see the <setupIncludes> configuration on tentackle-jlink-maven-plugin's
+  invoker-it profile.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.tentackle.it</groupId>
+  <artifactId>setup-libs-it</artifactId>
+  <version>1.0</version>
+  <packaging>pom</packaging>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>25</maven.compiler.release>
+  </properties>
+
+  <modules>
+    <module>lib-v1</module>
+    <module>lib-v2</module>
+  </modules>
+
+</project>

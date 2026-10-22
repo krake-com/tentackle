@@ -129,7 +129,7 @@ public final class NotEmptyImpl extends AbstractValidator<NotEmpty> implements M
     else if (object instanceof Map) {
       empty = ((Map) object).isEmpty();
     }
-    else if (object instanceof Array) {
+    else if (object.getClass().isArray()) {
       empty = Array.getLength(object) == 0;
     }
     else  {

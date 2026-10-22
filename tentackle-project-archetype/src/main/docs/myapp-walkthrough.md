@@ -30,7 +30,7 @@ MyApp is a small but complete multi-tier business application. Out of the box it
 - a headless **console daemon** that listens for new `Message`s and logs them;
 - **jlink/jpackage** packaging for all three runnables;
 - full **JPMS** module declarations, **i18n** in English and German, role-based **security**, and a **TestNG** test
-  suite running against an in-memory H2 database.
+  suite that needs no database server (persistence mocks, an in-memory H2 database).
 
 It demonstrates the framework's central idea — the **Persistent Domain Object (PDO)** — together with the code
 generation, remoting, UI, and build machinery that surround it.
@@ -122,8 +122,8 @@ For each entity there are (at least) five Java types, plus generated SQL. Take *
 | **Domain facet**            | `myapp-pdo/.../pdo/td/domain/MessageDomain.java`                    |     yes — extra business methods      |
 | **Persistence impl**        | `myapp-persistence/.../persist/td/MessagePersistenceImpl.java`      |        yes + generated regions        |
 | **Domain impl**             | `myapp-domain/.../domain/td/MessageDomainImpl.java`                 |                  yes                  |
-| **Remote delegate (+impl)** | `myapp-persistence/.../persist/td/trip/MessageRemoteDelegate*.java` |               generated               |
-| **SQL/DDL & mapping**       | under `target/wurbel/model`                                         |               generated               |
+| **Remote delegate (+impl)** | `myapp-persistence/.../persist/td/trip/MessageRemoteDelegate*.java` |   skeleton + generated method region  |
+| **Model & DDL**             | `target/wurbel/model` (`.map` files), `target/wurbel/sql` (DDL)     |               generated               |
 
 The PDO interface is where you, the developer, *live*. It extends its persistence facet, its domain facet, and a shared
 base interface:
@@ -242,11 +242,16 @@ There are two kinds of block, both visible at the top of `OrgUnit.java`:
 
 Things to note for a newcomer:
 
-- **`attributes`** are declared as `JavaType(size) attributeName column_name description [modifiers]`. Modifiers in
-  brackets drive generation: `key` (part of the domain key), `uc`/`normtext` (uppercase / normalized search text),
-  `cached`, `tableserial`, `trimwrite`, `@NotNull` (a constraint of Tentackle's
-  [validation layer](../../../../tentackle-core/src/main/docs/validation.md)), `[MUTE]` (excluded from the PDO —
+- **`attributes`** are declared as `JavaType(size) attributeName column_name description [options]`. The options in
+  brackets drive generation: `key` (part of the domain key), `uc` (uppercase), `normtext` (part of the normalized
+  search text), `trimwrite`, `@NotNull` (a constraint of Tentackle's
+  [validation layer](../../../../tentackle-core/src/main/docs/validation.md)), `MUTE` (excluded from the PDO —
   see the password below), etc.
+- The bracketed line right below `## attributes`, such as `[cached, tokenlock | +name]` in `OrgUnit` or
+  `[tableserial]` in `Message`, holds the **entity options**: `cached` (PDO cache), `tokenlock` (token locking),
+  `tableserial` (table-wide serial), and after the `|` the default sort order (`+name`: ascending by name).
+  Further options, such as `remote` or `tracked`, come from the project-wide `tentackle.modelDefaults` in the root
+  `pom.xml`.
 - **`validations`** attach further [validation annotations](../../../../tentackle-core/src/main/docs/validation.md)
   to attributes; the `{ @('please enter the name') }` syntax pulls the localized message from the module's resource
   bundle, so validation failures speak the user's language.
@@ -336,27 +341,17 @@ code between regions untouched. In `MessagePersistenceImpl.java` you can see the
 ```
 
 Each `// @wurblet <name> <Wurblet>` invokes a named generator. So `MessagePersistence` (the facet interface) gets its
-typed `getXxx/setXxx` and `AN_*`/`CN_*` constant names from `AttributeNames`/`Methods`/`ColumnLengths` wurblets, while
-`MessagePersistenceImpl` gets the JDBC column plumbing — and you fill in the rest (`nextMessageNumber()`, `findBy(...)`)
-by hand, using framework helpers like `Query`, `NormText` and `NumberSourceFactory`.
+typed `getXxx/setXxx` from `Methods`, the `AN_*` attribute-name constants from `AttributeNames` and the column lengths
+from `ColumnLengths`, while `MessagePersistenceImpl` gets the `CN_*` column-name constants from `ColumnNames` and the
+JDBC plumbing from `ClassVariables`, `Declare`, `MethodsImpl` and `PdoRelations` — and you fill in the rest
+(`nextMessageNumber()`, `findBy(...)`) by hand, using framework helpers like `Query`, `NormText` and
+`NumberSourceFactory`. Inside those hand-written methods, a `// @wurblet <method> RemoteMethod` region generates the
+delegation to the server when the method runs in a remote client.
 
-The generators are selected per file-type by the `<filesets>` in the root `pom.xml`'s
-`wurbelizer-maven-plugin` configuration: entity interfaces, facet interfaces, implementations, and `trip` delegates each
-get their appropriate wurblets. The build order that makes this work is:
-
-1. **tentackle-maven-plugin** `analyze`/`test-analyze` — emit service descriptors and analysis metadata.
-2. **wurbelizer-maven-plugin** `wurbel`/`test-wurbel` — run the wurblets, weave the guarded regions, and emit the model
-   under `target/wurbel/model`.
-3. **tentackle-sql-maven-plugin** — turn the model into DDL for the `td` and `md` schemas (with migration hints).
-4. **tentackle-check-maven-plugin** `bundles`/`validations` — verify i18n completeness (`en_US, de_DE`) and Groovy
-   validation scripts.
-5. **tentackle-i18n-maven-plugin** — i18n resource handling.
-6. **maven-compiler-plugin** — compile with the framework annotation processors
-   (`tentackle-core`, `tentackle-pdo`, `tentackle-fx`, `tentackle-fx-rdc`) on the processor path.
-7. **tentackle-jlink-maven-plugin** — build native images under the `jlink` profile.
-
-The same pipeline, with each step's own document, is summarized in
-[`tentackle-project-archetype.md` §"The Generated Build Pipeline"](tentackle-project-archetype.md).
+The files are selected by the `<filesets>` in the root `pom.xml`'s `wurbelizer-maven-plugin` configuration (entity
+interfaces, facet interfaces, implementations, and `trip` delegates); the wurblets to run are named in the files
+themselves. The wurbelizer runs in the pdo, domain and persistence modules, before compilation — the complete build
+order is described in [The Generated Build Pipeline](tentackle-project-archetype.md#the-generated-build-pipeline).
 
 ---
 
@@ -427,6 +422,10 @@ lifecycle and shutdown hooks. The startup sequence (`register → initialize →
 and the three application shapes — console, server, desktop — are dissected in
 [Application Bootstrap](../../../../tentackle-pdo/src/main/docs/application.md).
 
+Besides the application modules, the runnables' POMs add a few runtime-only providers: `tentackle-script-groovy`
+(the Groovy validation scripts), `tentackle-log-log4j2v` (logging), and in the client `tentackle-fx-rdc-poi`
+([XLS export](../../../../tentackle-fx-rdc-poi/src/main/docs/poi.md) of tables and trees instead of CSV).
+
 ### 8.1 Desktop client — `MyAppFxClient`
 
 `myapp-client/.../client/MyAppFxClient.java` extends `UpdatableDesktopApplication<MainController>`. It declares:
@@ -447,6 +446,10 @@ server's update service on startup.
 `Rdc.displayCrudStage(on(clazz), …)`, search dialogs via `Rdc.displaySearchStage(...)`, the preferences dialog, theme
 switcher, password change, the security-administration dialog, and a server-sessions view. `on(clazz)` is the controller
 helper that creates a PDO bound to the controller's domain context.
+
+The theme switcher also toggles the visual and audible
+[input alerts](../../../../tentackle-fx/src/main/docs/fx.md#input-alerts). `GuiHelper` keeps both flags in the local
+Java user preferences, next to the theme, and `MyAppLoginApplication` applies them at startup.
 
 ### 8.2 Middle-tier server — `MyAppServer`
 
@@ -485,9 +488,10 @@ new messages. It illustrates that PDO change events, like PDO methods, cross the
 
 The `trip` packages contain the connection/session classes that make remoting concrete:
 
-- `myapp-pdo/.../pdo/MyAppRemoteSession` — a marker interface for the app's remote session type.
-- `myapp-persistence/.../persist/trip/MyAppConnection`, `MyAppRemoteSession`, `MyAppRemoteSessionAdapter`,
-  `MyAppRemoteSessionFactory` — the client-side remote-session machinery.
+- `myapp-pdo/.../pdo/MyAppRemoteSession` — the application's client-side remote session interface.
+- `myapp-persistence/.../persist/trip/MyAppConnection` and `MyAppRemoteDbSession` — the remote interfaces of the
+  server's connection and session; `MyAppRemoteSessionAdapter` (implementing `MyAppRemoteSession`) and the
+  `MyAppRemoteSessionFactory` service creating it — the client-side remote-session machinery.
 - `myapp-server/.../server/trip/MyAppRemoteDbConnectionImpl` and `MyAppRemoteDbSessionImpl` — the **server-side**
   endpoint.
 
@@ -508,7 +512,8 @@ authentication happens — split along the line between *verifying credentials* 
   what belongs to the **session**: it sets the locale, rejects duplicate logins of the same main session
   (`AlreadyLoggedInException`), and **logs a `LOGIN` message**.
 - `closeDb(...)` mirrors that on logout / crash, writing a `LOGOUT` message (annotated as `crashed …` if the session
-  died). This is the producer side of the events the daemon listens for in §8.3.
+  died) — or a "bad login attempt" message if the session never got a valid user. This is the producer side of the
+  events the daemon listens for in §8.3.
 
 Notice how login/logout auditing reuses the very same `Message.log(...)` PDO that the rest of the app uses — the
 framework's pieces compose.
@@ -530,7 +535,8 @@ out class by class in [Single Sign-On with Google](../../../../src/main/docs/goo
    returns `TokenCredentials`, selected with `authentication=oidc` in `backend.properties` (§12). The RDC
    [login view](../../../../tentackle-fx-rdc/src/main/docs/rdc.md#application-lifecycle-app-login) then replaces the
    username and password fields of `MyAppLoginApplication` by a single sign-in button, and retries once on a
-   `CredentialsExpiredException`.
+   `CredentialsExpiredException`. To skip the browser on the next start, the provider keeps the tokens in the
+   [keyring](../../../../tentackle-core/src/main/docs/keyring.md), which [tentackle-keyring](../../../../tentackle-keyring/src/main/docs/platform-keyring.md) backs with the credential store of the OS.
 
 Nothing in `MyAppSessionInfo`, `MyAppRemoteDbSessionImpl` or the security layer changes: the `userId`/`userClassId`
 pair `verifySessionInfo` copies onto the session info is the same either way, so `DomainContext`, the
@@ -565,13 +571,21 @@ repeatable trio of artifacts (look at the `user`, `usergroup` and `message` sub-
 builds the editor or finder, and manages the stage. Theming (light/dark via `org.tentackle.fx.atlanta`), the about box,
 preferences dialog, and password-change view round out the shell.
 
+A few smaller services complete the picture:
+
+- `MyAppGraphicProvider` (`@GraphicProviderService`) maps the application's icon names (`user`, `usergroup`,
+  `message`) onto Ikonli icons in its own realm, used via `Fx.createGraphic(MyAppGraphicProvider.REALM, …)`.
+- `RemoveUserGroupItem` and `RemoveUserItem` (`@PdoTreeContextMenuItemService`) add "remove from user/group" entries
+  to the context menu of the PDO trees.
+- `MyAppSecurityDialogFactory` (`@Service(SecurityDialogFactory.class)`) lets the security-administration dialog
+  pick the grantee by asking "User or Group?" and opening the matching search dialog.
+
 ---
 
 ## 11. Internationalization
 
 > Reference: [i18n](../../../../tentackle-i18n/src/main/docs/i18n.md),
-> [bundles](../../../../tentackle-common/src/main/docs/bundle.md),
-> [internationalization](../../../../tentackle-common/src/main/docs/internationalization.md).
+> [bundles and internationalization](../../../../tentackle-common/src/main/docs/bundle.md).
 
 Every module that emits user-facing text ships a `*Bundle.java` accessor and `*Bundle.properties` /
 `*Bundle_de.properties` pairs (`PdoBundle`, `DomainBundle`, `PersistenceBundle`, `ServerBundle`, `GuiBundle`, plus the
@@ -586,10 +600,9 @@ would trip the i18n checker (see the comment in `Version.java`).
 
 ## 12. Configuration and properties
 
-The runnables are configured by **`.properties` files resolved as resources**, selected with a `--backend=<name>`
-(client/daemon) or `--backend`/service argument (server) — how the command line is parsed into a `SessionInfo` is
-part of the [application startup sequence](../../../../tentackle-pdo/src/main/docs/application.md). Two patterns
-appear:
+The runnables are configured by **`.properties` files resolved as resources**, `backend.properties` by default or
+another one selected with `--backend=<name>` — how the command line is parsed into a `SessionInfo` is part of the
+[application startup sequence](../../../../tentackle-pdo/src/main/docs/application.md). Two patterns appear:
 
 - **`backend.properties`** (client/daemon) points the JVM at a data source. In the *test* resources the client uses
   `url=${dbService}` (a `trip://…` server URL) and the daemon an H2 in-memory URL; the *packaged images* get their
@@ -598,8 +611,10 @@ appear:
   auto-login / view-only setups. The optional `authentication` key selects the client-side credentials provider and
   defaults to `password`; see [Backend Properties](../../../../tentackle-session/src/main/docs/backend-properties.md)
   for the full key list.
-- **`server.properties`** gives the server its JDBC `url`/`user`/`password`, the TRIP `service` URL to publish, and a
-  `timeout`.
+- **`server.properties`** (test resources, selected by `RunServer` with `--backend=server`, also used by
+  `FillDatabase`) gives the server its JDBC `url`/`user`/`password`, the TRIP `service` URL to publish, and a
+  `timeout`. The server image carries the same keys in its `backend.properties`, plus `updateService`/`updateURL`
+  for the update service and the TLS keystore.
 
 The `${…}` placeholders are **Maven-filtered** at build time from properties defined in the root `pom.xml`
 (`dbUrl`, `dbUser`, `dbPasswd`, `dbService`, `updateService`, `updateURL`). Filtered resources live under
@@ -617,19 +632,28 @@ Secrets are never stored in clear text in the packaged images: the jlink build e
 > base classes used here), [tentackle-test-fx-rdc](../../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md)
 > (UI testing), and [persistence](../../../../tentackle-persistence/src/main/docs/persistence.md).
 
-The project demonstrates three distinct testing styles:
+The project demonstrates several distinct testing styles:
 
 - **Pure domain unit test, no database** — `myapp-domain/.../domain/td/MessageTest.java`. `Pdo.create(Message.class)`
-  with *no context* gives a PDO backed by a persistence **mock**, so you can exercise domain logic
-  (`toDiagnosticString()`) in isolation. The test's comments also show the Mockito alternative.
+  with *no context* gives a PDO backed by a persistence **mock** — the test-scoped `MessagePersistenceMock`, registered
+  with `@PersistentObjectService(Message.class)` — so you can exercise domain logic (`toDiagnosticString()`) in
+  isolation. The test's comments also show the Mockito alternative.
+- **Generic checks** — `EnumI18nTest` and `PdoUtilitiesTest` (`myapp-pdo`) verify that every enum constant and every
+  `@Singular`/`@Plural` name has a translation; `TestControllers`, `TestGuiProviders` and
+  `TestTableConfigurationProviders` (`myapp-gui`) inherit from `tentackle-test-fx-rdc` and load every FX controller,
+  GUI provider and table configuration against an in-memory **H2** database.
 - **In-memory integration test** — `myapp-server/.../server/MyAppTestBase.java` extends `AbstractPdoTest`, which spins
-  up an **H2** database, runs the generated DDL, and lets `populateDatabase()` seed a number pool. Subclass it to test
-  against a real (in-memory) schema.
-- **Runnable harnesses** — `RunServer`, `RunClient` and `FillDatabase` are `@Test`-annotated launchers used during
-  development: `RunServer` boots the actual server inside the test container (overriding
+  up an **H2** database, creates the schema from the model, and lets `populateDatabase()` seed a number pool. It has
+  no subclasses yet: extend it to test against a real (in-memory) schema.
+- **Runnable harnesses** — `RunServer`, `RunClient`, `RunDaemon` and `FillDatabase` are `@Test`-annotated launchers
+  used during development. Their names don't match surefire's default includes, so a normal build skips them; run
+  them from the IDE or with `-Dtest=…`. `RunServer` boots the actual server inside the test container (overriding
   `isSystemExitNecessaryToStop()` so it doesn't kill the JVM); `RunClient` launches the FX client (also in a German
-  locale variant); `FillDatabase` (group `initdb`, via `initdb-testng.xml`, run with `mvn -Pinitdb test`) creates the
-  number pool and seed users `GONZO`/`KERMIT`/`DAEMON` with hashed passwords.
+  locale variant); `RunDaemon` launches the daemon — note that its test `backend.properties` points to an empty
+  in-memory H2 database, so repoint it to the server before use. `FillDatabase` (TestNG group `initdb`, run with
+  `mvn -Pinitdb test` in `myapp-server`, whose `initdb` profile selects that group and includes the class) writes to
+  the database of `server.properties` and commits: it creates the number pool, the `ADMINS` group and the seed users
+  `GONZO`/`KERMIT`/`DAEMON` with hashed passwords.
 
 Tests run with the locale forced to US English (`-Duser.language=en -Duser.region=US` in the surefire config) so that
 locale-sensitive assertions are stable.
@@ -650,6 +674,9 @@ profile** (`mvn -Pjlink …`). Highlights:
 - Each leaf (`jlink/client`, `jlink/server`, `jlink/daemon`) has `<packaging>jlink</packaging>` — switch a leaf to
   `jpackage` to produce a native installer instead. The client declares its `mainModule`/`mainClass`
   (`com.example.myapp.client` / `MyAppFxClient`), bundles `withUpdater`, and adds JDK modules like `jdk.localedata`.
+  It also moves Apache POI and commons-io to the classpath (`classpathDependencies`), because POI is modular but
+  requires automatic modules. The server image additionally generates the complete DDL, including the framework's
+  own tables, into `jlink/server/target/sql`.
 - The aggregator's `tentackle-maven-plugin:properties` goal **encrypts** the DB, certificate and daemon passwords with
   `@org.tentackle.common.Cryptor` (i.e. `MyAppCryptor`) into the filtered resources, so no clear-text secrets are
   shipped.
@@ -661,20 +688,23 @@ profile** (`mvn -Pjlink …`). Highlights:
 ## 15. Build & run cheat-sheet
 
 ```bash
-# full build (analyze → wurbel → sql → check/i18n → compile → test)
+# full build (analyze → wurbel → sql → compile → check → test)
 mvn clean install
 
-# build the native images too
+# build the runtime images too
 mvn -Pjlink clean install
 
 # initialize a CI/dev database with the seed data (FillDatabase, group "initdb")
-mvn -Pinitdb test
+mvn -pl myapp-server -Pinitdb test
 
-# run a single test / launcher
-mvn -Dtest=RunServer test            # boot the server
-mvn -Dtest=RunClient#runClient test  # boot the FX client
-mvn -Dtest=MessageTest test          # the no-DB domain unit test
+# run a single test / launcher (after mvn install)
+mvn -pl myapp-server -Dtest=RunServer test            # boot the server (needs the PostgreSQL database)
+mvn -pl myapp-client -Dtest=RunClient#runClient test  # boot the FX client (needs the server)
+mvn -pl myapp-domain -Dtest=MessageTest test          # the no-DB domain unit test
 ```
+
+Restrict a `-Dtest=…` run to the module holding the test (`-pl`): the other modules would fail with "No tests
+matching pattern".
 
 A typical **first run** is: build with `mvn -Pjlink clean install`, create the PostgreSQL database and apply the
 generated DDL (`jlink/server/target/sql/PostgreSQL/createmodel.sql`), seed it (`mvn -Pinitdb test` in
@@ -689,9 +719,12 @@ step by step.
 - **Add an entity.** The [wizard plugin](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md)
   is pre-configured in the root POM with `masterdata` / `transactiondata` / `operation` profiles (package conventions
   and class-id ranges) and FreeMarker templates under `templates/`. It scaffolds the PDO interface, facets, and
-  implementations consistently with the examples. Then author the model block, run `mvn install` — which is also
+  implementations consistently with the examples. Then author the model block, add the entity's `@Singular`/`@Plural`
+  keys to `PdoBundle.properties` (and `PdoBundle_de.properties`), run `mvn install` — which is also
   when the wurblets generate the remote delegate pair from the `Remote*.ftl` templates — and add a
-  `GuiProvider`/`Editor` if it needs UI.
+  `GuiProvider` with its `.properties` bundle and an `Editor` if it needs UI. See
+  [What Is Left to Do](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#what-is-left-to-do)
+  for why the tests fail without these bundles.
 - **Add a business operation** that isn't tied to one entity: use the **operation** profile and the
   [operation pattern](../../../../tentackle-pdo/src/main/docs/operation.md). The *first* one costs a
   little setup: the profile's three packages (`…pdo.operation`, `…domain.operation`,

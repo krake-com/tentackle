@@ -54,13 +54,14 @@ public class PdoMemberTest {
     Method g = getter();
     Method s = setter();
     PdoMember member = new PdoMember(PdoMember.Type.ATTRIBUTE, "name", g, s,
-                                     true, false, true, "a comment", 7);
+                                     true, false, false, true, "a comment", 7);
     assertEquals(member.getType(), PdoMember.Type.ATTRIBUTE);
     assertEquals(member.getName(), "name");
     assertSame(member.getGetter(), g);
     assertSame(member.getSetter(), s);
     assertTrue(member.isComponent());
     assertFalse(member.isParent());
+    assertFalse(member.isEmbedded());
     assertTrue(member.isDomainKey());
     assertEquals(member.getComment(), "a comment");
     assertEquals(member.getOrdinal(), 7);
@@ -69,15 +70,15 @@ public class PdoMemberTest {
   @Test
   public void testEqualsAndHashCodeByNameOnly() {
     PdoMember a = new PdoMember(PdoMember.Type.ATTRIBUTE, "shared", null, null,
-                                false, false, false, "first", 1);
+                                false, false, false, false, "first", 1);
     // identical name but every other field differs -> still equal
     PdoMember b = new PdoMember(PdoMember.Type.RELATION, "shared", null, null,
-                                true, true, true, "second", 99);
+                                true, true, false, true, "second", 99);
     assertEquals(a, b);
     assertEquals(a.hashCode(), b.hashCode());
 
     PdoMember c = new PdoMember(PdoMember.Type.ATTRIBUTE, "other", null, null,
-                                false, false, false, null, 1);
+                                false, false, false, false, null, 1);
     assertNotEquals(a, c);
     assertNotEquals(a, null);
     assertNotEquals(a, "shared");
@@ -86,21 +87,31 @@ public class PdoMemberTest {
   @Test
   public void testToStringAttribute() {
     PdoMember member = new PdoMember(PdoMember.Type.ATTRIBUTE, "id", null, null,
-                                     false, false, false, null, 0);
+                                     false, false, false,false, null, 0);
     assertEquals(member.toString(), "attribute id");
   }
 
   @Test
   public void testToStringAttributeWithComment() {
     PdoMember member = new PdoMember(PdoMember.Type.ATTRIBUTE, "id", null, null,
-                                     false, false, false, "the id", 0);
+                                     false, false, false, false, "the id", 0);
     assertEquals(member.toString(), "attribute id \"the id\"");
+  }
+
+  /**
+   * {@code @Persistent.comment()} defaults to the empty string, which is no comment.
+   */
+  @Test
+  public void testToStringAttributeWithEmptyComment() {
+    PdoMember member = new PdoMember(PdoMember.Type.ATTRIBUTE, "id", null, null,
+                                     false, false, false, false, "", 0);
+    assertEquals(member.toString(), "attribute id");
   }
 
   @Test
   public void testToStringComponentParentRelation() {
     PdoMember member = new PdoMember(PdoMember.Type.RELATION, "children", null, null,
-                                     true, true, false, null, 0);
+                                     true, true, false, false, null, 0);
     // component and parent prefixes only apply to relations
     assertEquals(member.toString(), "component parent relation children");
   }
@@ -109,14 +120,14 @@ public class PdoMemberTest {
   public void testComponentAndParentPrefixesIgnoredForAttributes() {
     // even if the flags are set, an attribute must not print the relation-only prefixes
     PdoMember member = new PdoMember(PdoMember.Type.ATTRIBUTE, "x", null, null,
-                                     true, true, false, null, 0);
+                                     true, true, false,false, null, 0);
     assertEquals(member.toString(), "attribute x");
   }
 
   @Test
   public void testNullMethodsAllowed() {
     PdoMember member = new PdoMember(PdoMember.Type.ATTRIBUTE, "x", null, null,
-                                     false, false, false, null, 0);
+                                     false, false, false, false, null, 0);
     assertNull(member.getGetter());
     assertNull(member.getSetter());
     assertNull(member.getComment());

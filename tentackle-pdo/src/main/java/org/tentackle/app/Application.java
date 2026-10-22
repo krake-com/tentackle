@@ -76,7 +76,7 @@ public interface Application extends SessionProvider, DomainContextProvider {
         if (running == null) {
           throw new TentackleRuntimeException("no application registered at all");
         }
-        throw new TentackleRuntimeException("application '" + this + "' cannot override already registered application '" + running + "'");
+        throw new TentackleRuntimeException("application '" + this + "' cannot unregister application '" + running + "'");
       }
       ApplicationHolder.HOLDER.accept(null);
     }
@@ -99,7 +99,7 @@ public interface Application extends SessionProvider, DomainContextProvider {
   String getVersion();
 
   /**
-   * Gets the creation time in epochal milliseconds.
+   * Gets the creation time in epoch milliseconds.
    *
    * @return the creation time of this application
    */

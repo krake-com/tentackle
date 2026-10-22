@@ -20,6 +20,11 @@ package org.tentackle.common;
 
 import org.testng.annotations.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 
 import static org.testng.Assert.assertEquals;
@@ -107,6 +112,96 @@ public class I18NTextTest {
     catch (TentackleRuntimeException rx) {
       // expected exception!
       assertEquals(i18NText.get(italy), SOME_GERMAN);
+    }
+  }
+
+  @Test
+  public void testDefaultLocaleFromParameterStringIsNarrowed() throws java.text.ParseException {
+    // the default locale must be stored the same way as the translation keys
+    I18NText text = new I18NText(new ParameterString("default='de_DE', de_DE='Bockwurst'"));
+    assertEquals(text.getDefaultLocale(), Locale.GERMAN);
+    assertEquals(text.getTranslations().keySet(), java.util.Set.of(Locale.GERMAN));
+    assertEquals(text.get(Locale.FRANCE), "Bockwurst");
+  }
+
+  /**
+   * Counts the resolutions of a locale.
+   */
+  private static class CountingI18NText extends I18NText {
+
+    @java.io.Serial
+    private static final long serialVersionUID = 1L;
+
+    private int narrowCount;
+
+    CountingI18NText(I18NText text) {
+      super(new LinkedHashMap<>(text.getTranslations()), text.getDefaultLocale());
+    }
+
+    @Override
+    protected Locale narrowLocale(Locale locale) {
+      narrowCount++;
+      return super.narrowLocale(locale);
+    }
+  }
+
+  @Test
+  public void testResolvedTranslationIsCached() {
+    I18NText text = new I18NText(Locale.ENGLISH, SOME_ENGLISH).with(Locale.GERMAN, SOME_GERMAN);
+    CountingI18NText counting = new CountingI18NText(text);
+
+    // a CharSequence consumer accessing each character resolves the locale only once
+    assertEquals(new StringBuilder().append(counting, 0, counting.length()).toString(), SOME_ENGLISH);
+    assertEquals(counting.narrowCount, 1);
+
+    // another locale is resolved again, and still yields the correct translation
+    assertEquals(counting.get(Locale.GERMANY), SOME_GERMAN);
+    assertEquals(counting.narrowCount, 2);
+    assertEquals(counting.get(Locale.GERMANY), SOME_GERMAN);
+    assertEquals(counting.narrowCount, 2);
+    assertEquals(counting.get(Locale.ENGLISH), SOME_ENGLISH);
+    assertEquals(counting.get(Locale.FRANCE), SOME_ENGLISH);    // fallback
+    assertEquals(counting.get(Locale.GERMAN), SOME_GERMAN);
+    assertEquals(counting.narrowCount, 5);
+  }
+
+  @Test
+  public void testCurrentLocaleChangeIsHonored() {
+    LocaleProvider provider = LocaleProvider.getInstance();
+    Locale oldLocale = provider.getCurrentLocale();
+    try {
+      I18NText text = new I18NText(Locale.ENGLISH, SOME_ENGLISH).with(Locale.GERMAN, SOME_GERMAN);
+      provider.setCurrentLocale(Locale.GERMANY);
+      assertEquals(text.toString(), SOME_GERMAN);
+      assertEquals(text.length(), SOME_GERMAN.length());
+      provider.setCurrentLocale(Locale.ENGLISH);
+      assertEquals(text.toString(), SOME_ENGLISH);
+      assertEquals(text.charAt(0), SOME_ENGLISH.charAt(0));
+    }
+    finally {
+      provider.setCurrentLocale(oldLocale);
+    }
+  }
+
+  @Test
+  public void testCacheDoesNotAffectEqualityAndSerialization() throws Exception {
+    I18NText text = new I18NText(Locale.ENGLISH, SOME_ENGLISH).with(Locale.GERMAN, SOME_GERMAN);
+    I18NText fresh = new I18NText(Locale.ENGLISH, SOME_ENGLISH).with(Locale.GERMAN, SOME_GERMAN);
+    int hash = text.hashCode();
+    assertEquals(text.get(Locale.GERMAN), SOME_GERMAN);   // fills the cache
+    assertEquals(text, fresh);
+    assertEquals(fresh, text);
+    assertEquals(text.hashCode(), hash);
+
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
+      oos.writeObject(text);
+    }
+    try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()))) {
+      I18NText copy = (I18NText) ois.readObject();
+      assertEquals(copy, text);
+      assertEquals(copy.get(Locale.ENGLISH), SOME_ENGLISH);
+      assertEquals(copy.get(Locale.GERMAN), SOME_GERMAN);
     }
   }
 

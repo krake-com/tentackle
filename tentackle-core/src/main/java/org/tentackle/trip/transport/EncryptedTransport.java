@@ -80,20 +80,20 @@ public class EncryptedTransport extends TcpTransport {
 
 
   /**
-   * Creates the encrypted output stream.
+   * Creates the encrypting output stream.
    *
-   * @param outputStream the unencrypted output stream from the socket
-   * @return the encrypted output stream
+   * @param outputStream the output stream from the socket
+   * @return the encrypting output stream
    */
   protected OutputStream createEncryptingOutputStream(OutputStream outputStream) {
     return new EncryptingOutputStream(outputStream, getCryptor());
   }
 
   /**
-   * Creates the encrypted input stream.
+   * Creates the decrypting input stream.
    *
-   * @param inputStream the unencrypted input stream from the socket
-   * @return the encrypted input stream
+   * @param inputStream the encrypted input stream from the socket
+   * @return the decrypting input stream
    */
   protected InputStream createDecryptingInputStream(InputStream inputStream) {
     return new DecryptingInputStream(inputStream, getCryptor());
@@ -101,7 +101,8 @@ public class EncryptedTransport extends TcpTransport {
 
 
   /**
-   * Gets the cryptor instance.
+   * Gets the cryptor instance.<br>
+   * Defaults to the application's {@link Cryptor}.
    *
    * @return the cryptor
    */

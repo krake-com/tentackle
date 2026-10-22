@@ -46,15 +46,16 @@ public interface MessagePersistence extends PersistentObject<Message> {
 
 
   /**
-   * Finds messages.
+   * Finds messages.<br>
+   * Each criterion is optional: null means "don't care".
    *
    * @param messageNumber the message number
-   * @param from timestamp from
-   * @param until timestamp until
-   * @param type the message category
-   * @param orgUnit the orgunit
-   * @param pattern the normtext pattern
-   * @return the messages
+   * @param from the earliest timestamp
+   * @param until the latest timestamp
+   * @param type the message type
+   * @param orgUnit the responsible organizational unit
+   * @param pattern the normtext search pattern, a leading {@code !} or {@code -} negates it
+   * @return the messages ordered by ID
    */
   TrackedList<Message> findBy(String messageNumber, Timestamp from, Timestamp until, MessageType type, OrgUnit<?> orgUnit, String pattern);
 

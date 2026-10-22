@@ -38,7 +38,9 @@ import java.lang.annotation.Target;
 public @interface RepeatableValidation {
 
   /**
-   * @return the repeated annotation.
+   * The repeated validation annotation.
+   *
+   * @return the repeated annotation
    */
   Class<? extends Annotation> value();
 

@@ -23,6 +23,7 @@ import org.tentackle.common.TentackleRuntimeException;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.InvocationHandler;
@@ -42,9 +43,11 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Methods related to the reflection API.
@@ -85,22 +88,12 @@ public final class ReflectionHelper {
     WRAPPERS.put(Float.class, Float.TYPE);
   }
 
-
-  /**
-   * Gets the basename of a classname(-like) string.
-   * The basename is the last name of a pathname with dots.
-   *
-   * @param str the classname
-   * @return the basename
-   */
-  public static String getClassBaseName(String str)  {
-    return StringHelper.lastAfter(str, '.');
-  }
-
   /**
    * Gets the serializable classname of a class.<br>
-   * Appends ".TYPE" for primitive types to the classname of their non-primitive wrapper class.
+   * Appends "#TYPE" for primitive types to the classname of their non-primitive wrapper class.
    * Replaces "java.lang.Class" with "@C" and "java.lang.Object" with "@O".
+   *
+   * @see #loadClass(String)
    *
    * @param clazz the class to get the serializable classname for
    * @return the serializable classname, never null
@@ -120,7 +113,8 @@ public final class ReflectionHelper {
 
   /**
    * Same as {@link Class#forName(String)}, but also handles primitive types.<br>
-   * Expands "@O" and "@C" to "java.lang.Object" and "java.lang.Class" respectively.<br>
+   * Expands "@O" and "@C" to "java.lang.Object" and "java.lang.Class" respectively.
+   * This is the counterpart of {@link #getSerializableClassName(Class)}.
    *
    * @param className the classname to load, e.g. "java.lang.String" or "java.lang.Integer#TYPE"
    * @return the loaded class, never null
@@ -162,24 +156,49 @@ public final class ReflectionHelper {
 
   /**
    * Gets the package name of a classname(-like) string.<br>
-   * Works also for inner classes.
+   * Works also for inner classes, provided the class names start with an uppercase letter
+   * and the package names don't.
    *
-   * @param str the classname
+   * @param str the classname (null is allowed)
    * @return the package name, "" if no package, str if str already is a package name
+   * @see Class#getPackageName()
    */
   public static String getPackageName(String str) {
-    int ndx;
-    if (str.isEmpty() || Character.isUpperCase(str.charAt(0))) {
-      return "";
+    if (str != null) {
+      int ndx;
+      if (str.isEmpty() || Character.isUpperCase(str.charAt(0))) {
+        return "";
+      }
+      while ((ndx = str.lastIndexOf('.')) >= 0 && ndx < str.length() - 1 && Character.isUpperCase(str.charAt(ndx + 1))) {
+        str = str.substring(0, ndx);
+      }
+      return str;
     }
-    while ((ndx = str.lastIndexOf('.')) >= 0 && ndx < str.length() - 1 && Character.isUpperCase(str.charAt(ndx + 1))) {
-      str = str.substring(0, ndx);
-    }
-    return str;
+    return "";
   }
 
   /**
-   * Get outer class name.
+   * Gets the class basename of a classname(-like) string.<br>
+   * The basename is the last name of a pathname with dots.
+   *
+   * @param str the classname (null is allowed)
+   * @return the simple classname, "" if this is not a classname (package name or something else)
+   * @see Class#getSimpleName()
+   */
+  public static String getClassBaseName(String str)  {
+    if (str != null) {
+      String packageName = getPackageName(str);
+      if (packageName.isEmpty()) {
+        return str;
+      }
+      return str.substring(packageName.length() + 1);
+    }
+    return "";
+  }
+
+  /**
+   * Gets the outermost class name.<br>
+   * Cuts inner classes, lambdas, and anonymous classes.
    *
    * @param name the probably inner classname
    * @return the outermost classname
@@ -232,8 +251,10 @@ public final class ReflectionHelper {
   }
 
   /**
-   * create a source-usable string from clazz.getName().
-   * e.g. "[[[B" will be transformed to "byte[][][]"
+   * Creates a source-usable string from {@code clazz.getName()}.<br>
+   * For example, {@code "[[[B"} will be transformed to {@code "byte[][][]"} and
+   * {@code "[Ljava.lang.String;"} to {@code "java.lang.String[]"}.
+   * Non-array class names are returned unchanged.
    *
    * @param classname the classname
    * @return the converted string
@@ -255,9 +276,9 @@ public final class ReflectionHelper {
       }
 
       String type = classname.substring(i);
-      if (type.endsWith(";")) {
-        // object
-        type = type.substring(0, len - 1);
+      if (type.startsWith("L") && type.endsWith(";")) {
+        // object: Lclassname;
+        type = type.substring(1, type.length() - 1);
       }
       else if ("Z".equals(type)) {
         type = "boolean";
@@ -323,9 +344,11 @@ public final class ReflectionHelper {
 
   /**
    * Tests if a given class implements or extends a set of interfaces or classes.
+   * <p>
+   * Notice: if the clazz or the superClasses is null, true will be returned.
    *
-   * @param superClasses the interfaces or classes
    * @param clazz the class to test
+   * @param superClasses the interfaces or classes
    * @param all true if all must match (logically and), false if at least one (logically or)
    * @return true if match
    */
@@ -435,7 +458,8 @@ public final class ReflectionHelper {
   }
 
   /**
-   * Gets all declared fields of the given class and its superclasses.
+   * Gets all declared fields of the given class and its superclasses.<br>
+   * The superclasses are scanned as long as they match the bounding classes and annotations.
    *
    * @param clazz the class to get all declared and inherited fields
    * @param boundingClasses bounding classes that all classes must implement or extend, null if all
@@ -462,7 +486,9 @@ public final class ReflectionHelper {
   }
 
   /**
-   * Gets all declared methods of the given class and its superclasses.
+   * Gets all declared methods of the given class and its superclasses.<br>
+   * The superclasses are scanned as long as they match the bounding classes and annotations.
+   * For interfaces, all public methods, including the inherited ones, are returned.
    *
    * @param clazz the class to get all declared and inherited methods
    * @param boundingClasses bounding classes that all classes must implement or extend, null if all
@@ -500,7 +526,7 @@ public final class ReflectionHelper {
   }
 
   /**
-   * Returns whether a class is an immutable list, set or map.<br>
+   * Returns whether a class is an immutable list, set, or map of the JDK.
    *
    * @param clazz the class to check
    * @return true if the class is an immutable list, set or map
@@ -549,11 +575,12 @@ public final class ReflectionHelper {
    * <p>
    * Since records always provide a canonical constructor, this method will never
    * return null for record classes.
-   * Throws {@link TentackleRuntimeException} if the class is not a record and
-   * more than one constructor is annotated with {@link CanonicalConstructor}.
    *
    * @param clazz the class
+   * @param <T> the class type
    * @return the canonical constructor, null for none
+   * @throws TentackleRuntimeException if the class is not a record and
+   *         more than one constructor is annotated with {@link CanonicalConstructor}
    */
   @SuppressWarnings("unchecked")
   public static <T> Constructor<T> getCanonicalConstructor(Class<T> clazz) {
@@ -608,12 +635,12 @@ public final class ReflectionHelper {
 
   /**
    * Gets the canonical builder info of a class
-   * with its constructor annotated with {@link CanonicalBuilder}.
-   * Throws {@link TentackleRuntimeException} if more than one constructor is
-   * annotated with {@link CanonicalBuilder}.
+   * with the class or one of its constructors annotated with {@link CanonicalBuilder}.
    *
    * @param clazz the class
    * @return the builder info, null for none
+   * @throws TentackleRuntimeException if there is more than one {@link CanonicalBuilder} annotation,
+   *         or the builder provides no no-args constructor
    */
   public static CanonicalBuilderInfo getCanonicalBuilderInfo(Class<?> clazz) {
     CanonicalBuilder annotation = clazz.getAnnotation(CanonicalBuilder.class);
@@ -664,30 +691,9 @@ public final class ReflectionHelper {
    * @return the parameter names, empty array for no parameters
    */
   public static String[] getCanonicalNames(Constructor<?> constructor) {
-    Annotation[][] parameterAnnotations = constructor.getParameterAnnotations();
-    String[] canonicalNames = new String[parameterAnnotations.length];
-    for (int i = 0; i < parameterAnnotations.length; i++) {
-      Annotation[] annotations = parameterAnnotations[i];
-      for (Annotation annotation : annotations) {
-        if (annotation.annotationType().equals(CanonicalName.class)) {
-          canonicalNames[i] = ((CanonicalName) annotation).value();
-          break;
-        }
-      }
-    }
+    String[] canonicalNames = getCanonicalNamesImpl(constructor);
     if (isNonStaticInnerClass(constructor.getDeclaringClass())) {
       canonicalNames[0] = SYNTHETIC_THIS_PARAMETER;
-    }
-    Parameter[] parameters = constructor.getParameters();
-    if (parameters.length == canonicalNames.length) {   // must be the same, but one never knows...
-      for (int i = 0; i < canonicalNames.length; i++) {
-        if (canonicalNames[i] == null) {
-          String name = parameters[i].getName();
-          if (!(name.startsWith("arg") && Character.isDigit(name.charAt(3)))) {
-            canonicalNames[i] = parameters[i].getName();
-          }
-        }
-      }
     }
     return canonicalNames;
   }
@@ -703,29 +709,7 @@ public final class ReflectionHelper {
    * @return the parameter names, empty array for no parameters
    */
   public static String[] getCanonicalNames(Method method) {
-    Annotation[][] parameterAnnotations = method.getParameterAnnotations();
-    String[] canonicalNames = new String[parameterAnnotations.length];
-    for (int i = 0; i < parameterAnnotations.length; i++) {
-      Annotation[] annotations = parameterAnnotations[i];
-      for (Annotation annotation : annotations) {
-        if (annotation.annotationType().equals(CanonicalName.class)) {
-          canonicalNames[i] = ((CanonicalName) annotation).value();
-          break;
-        }
-      }
-    }
-    Parameter[] parameters = method.getParameters();
-    if (parameters.length == canonicalNames.length) {   // must be the same, but one never knows...
-      for (int i = 0; i < canonicalNames.length; i++) {
-        if (canonicalNames[i] == null) {
-          String name = parameters[i].getName();
-          if (!(name.startsWith("arg") && Character.isDigit(name.charAt(3)))) {
-            canonicalNames[i] = parameters[i].getName();
-          }
-        }
-      }
-    }
-    return canonicalNames;
+    return getCanonicalNamesImpl(method);
   }
 
   /**
@@ -790,7 +774,7 @@ public final class ReflectionHelper {
    *
    * @param clazz the field's type
    * @param fieldName the field's name
-   * @return the getter name, e.g. "getBlah" or "isBlah" for a boolean field,
+   * @return the getter name, e.g. "getBlah" or "isBlah" for a primitive boolean field
    */
   public static String getGetterName(Class<?> clazz, String fieldName) {
     return (clazz == Boolean.TYPE ? "is" : "get") +
@@ -801,20 +785,20 @@ public final class ReflectionHelper {
    * Returns the name of the corresponding getter for a field.
    *
    * @param field the field
-   * @return the getter name, e.g. "getBlah" or "isBlah" for a boolean field,
+   * @return the getter name, e.g. "getBlah" or "isBlah" for a primitive boolean field
    */
   public static String getGetterName(Field field) {
     return getGetterName(field.getType(), field.getName());
   }
 
   /**
-   * Gets the field name from a clazz and method name.
+   * Gets the field name from a clazz and method name.<br>
+   * Skips the prefix "get" or "is", if any.
    *
-   * @param clazz the return type of the method
    * @param methodName the method name
    * @return the field name
    */
-  public static String getFieldName(Class<?> clazz, String methodName) {
+  public static String getFieldName(String methodName) {
     String fieldName = skipMethodNamePrefix(methodName, "get");
     if (fieldName == null) {
       fieldName = skipMethodNamePrefix(methodName, "is");
@@ -829,7 +813,7 @@ public final class ReflectionHelper {
    * @return the field name
    */
   public static String getFieldName(Method method) {
-    return getFieldName(method.getReturnType(), method.getName());
+    return getFieldName(method.getName());
   }
 
   /**
@@ -888,6 +872,7 @@ public final class ReflectionHelper {
   /**
    * Checks whether a method is a setter.<br>
    * All void non-static methods with a single parameter are considered as setters.
+   *
    * @param method the method
    * @return true if the method is a setter
    */
@@ -939,7 +924,7 @@ public final class ReflectionHelper {
    * Examples:<br>
    * <pre>
    * getBlah -&gt; blah
-   * isValid -&gt; valid (if boolean)
+   * isValid -&gt; valid
    * computeThisAndThat -&gt; computeThisAndThat
    * gettingWorse -&gt; gettingWorse
    * isselDussel -&gt; isselDussel
@@ -973,7 +958,7 @@ public final class ReflectionHelper {
    * </pre>
    *
    * @param method the method
-   * @return the method's reduced name, null if this is not an attribute getter
+   * @return the method's reduced name, null if this is not an attribute setter
    */
   public static String getSetterPathName(Method method) {
     if (isSetter(method)) {
@@ -1018,7 +1003,10 @@ public final class ReflectionHelper {
    * Gets the value of an attribute along a member path.
    * <p>
    * The attribute is accessible by either a getter-method
-   * or a field, which must be public.
+   * or a field, which must be public. Each path element is resolved by a method named like the element,
+   * then with an "is" or "get" prefix, and finally by a field. A trailing {@code "()"} is ignored.
+   * If the declaring class is not accessible, {@code setAccessible(true)} is tried,
+   * which requires the package to be opened to {@code org.tentackle.core}.
    * <p>
    * Example:<br>
    * <pre>
@@ -1036,14 +1024,12 @@ public final class ReflectionHelper {
    * if invoice or invoiceLine is null.
    *
    * <p>
-   * Notice: if {@code path} is null or empty the root object will be returned.
-   * <p>
-   * Throws TentackleRuntimeException if the value cannot be retrieved
+   * Notice: if {@code path} is null or empty, the root object will be returned.
    *
    * @param root the root object the path refers to
    * @param path the member path in dot-notation relative to the given object
    * @return the evaluated object
-   *
+   * @throws TentackleRuntimeException if the value cannot be retrieved
    */
   public static Object getValueByPath(Object root, String path) {
 
@@ -1150,21 +1136,23 @@ public final class ReflectionHelper {
    * Gets the static value of an attribute along a member path starting
    * at a class.
    * <p>
-   * The attribute is accessible by either a getter-method
-   * or a field, which must be public.
+   * Only the first element of the path is static. It is resolved by a public static method
+   * (named like the element, or with an "is" or "get" prefix) or a public static field.
+   * The rest of the path is evaluated against the returned object by {@link #getValueByPath(Object, String)}.
    * <p>
    * Example:<br>
    * <pre>
-   * "org.tentackle.misc.StringHelper.now"
+   * DateHelper.class, "now"
    * </pre>
-   * may correspond to the java path:
+   * corresponds to the java path:
    * <pre>
-   * SqlHelper.now()
+   * DateHelper.now()
    * </pre>
    *
    * @param clazz the class where the path starts
    * @param path the member path in dot-notation relative to the given class
    * @return the object
+   * @throws TentackleRuntimeException if the path is null, there is no such static member, or the value cannot be retrieved
    */
   public static Object getStaticValueByPath(Class<?> clazz, String path) {
 
@@ -1197,6 +1185,25 @@ public final class ReflectionHelper {
                                               clazz.getName() + " by method " + method.getName(), ex);
         }
       }
+
+      Field field = getFieldForElement(clazz, element);
+      if (field != null && Modifier.isStatic(field.getModifiers())) {
+        try {
+          try {
+            return getValueByPath(field.get(null), path);
+          }
+          catch (IllegalAccessException ex) {
+            field.setAccessible(true);
+            return getValueByPath(field.get(null), path);
+          }
+        }
+        catch (IllegalAccessException | RuntimeException ex) {
+          throw new TentackleRuntimeException("cannot retrieve '" + path + "' in " +
+                                              clazz.getName() + " by field " + field.getName(), ex);
+        }
+      }
+
+      throw new TentackleRuntimeException("no static method or field '" + element + "' in " + clazz.getName());
     }
 
     throw new TentackleRuntimeException("path is null");
@@ -1261,7 +1268,7 @@ public final class ReflectionHelper {
    * @return the proxy class
    * @param <T> the type of the proxy class
    */
-  @SuppressWarnings({ "unchecked", "rawtypes" })
+  @SuppressWarnings("unchecked")
   public static <T> Class<T> createProxyClass(Class<?>[] interfaces) {
     if (interfaces == null || interfaces.length == 0) {
       throw new TentackleRuntimeException("no interfaces given");
@@ -1271,7 +1278,7 @@ public final class ReflectionHelper {
 
   private static class FakeInvocationHandler implements InvocationHandler {
     @Override
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    public Object invoke(Object proxy, Method method, Object[] args) {
       return null;
     }
   }
@@ -1279,7 +1286,39 @@ public final class ReflectionHelper {
   private static final InvocationHandler FAKE_INVOCATION_HANDLER = new FakeInvocationHandler();
 
 
+  /**
+   * Cache of the methods found by {@link #getMethodForElement(Class, String)} per class and path element.<br>
+   * Resolving an element throws up to two {@link NoSuchMethodException}s before the getter is found,
+   * which is way too expensive for path expressions evaluated over and over again, such as
+   * the references in validation annotations. Furthermore, the cached methods keep their accessibility.
+   */
+  private static final ClassValue<Map<String, Optional<Method>>> METHOD_FOR_ELEMENT = new ClassValue<>() {
+    @Override
+    protected Map<String, Optional<Method>> computeValue(Class<?> type) {
+      return new ConcurrentHashMap<>();
+    }
+  };
+
+  /**
+   * Cache of the fields found by {@link #getFieldForElement(Class, String)} per class and path element.
+   */
+  private static final ClassValue<Map<String, Optional<Field>>> FIELD_FOR_ELEMENT = new ClassValue<>() {
+    @Override
+    protected Map<String, Optional<Field>> computeValue(Class<?> type) {
+      return new ConcurrentHashMap<>();
+    }
+  };
+
   private static Method getMethodForElement(Class<?> clazz, String element) {
+    Map<String, Optional<Method>> methods = METHOD_FOR_ELEMENT.get(clazz);
+    Optional<Method> method = methods.get(element);
+    if (method == null) {
+      method = methods.computeIfAbsent(element, e -> Optional.ofNullable(findMethodForElement(clazz, e)));
+    }
+    return method.orElse(null);
+  }
+
+  private static Method findMethodForElement(Class<?> clazz, String element) {
     Method method = null;
     String camelName = StringHelper.firstToUpper(element);   // camelcase name part
     try {
@@ -1304,6 +1343,15 @@ public final class ReflectionHelper {
   }
 
   private static Field getFieldForElement(Class<?> clazz, String element) {
+    Map<String, Optional<Field>> fields = FIELD_FOR_ELEMENT.get(clazz);
+    Optional<Field> field = fields.get(element);
+    if (field == null) {
+      field = fields.computeIfAbsent(element, e -> Optional.ofNullable(findFieldForElement(clazz, e)));
+    }
+    return field.orElse(null);
+  }
+
+  private static Field findFieldForElement(Class<?> clazz, String element) {
     Field field = null;
     try {
       field = clazz.getField(element);
@@ -1312,6 +1360,32 @@ public final class ReflectionHelper {
       // return null below
     }
     return field;
+  }
+
+  private static String[] getCanonicalNamesImpl(Executable executable) {
+    Annotation[][] parameterAnnotations = executable.getParameterAnnotations();
+    String[] canonicalNames = new String[parameterAnnotations.length];
+    for (int i = 0; i < parameterAnnotations.length; i++) {
+      Annotation[] annotations = parameterAnnotations[i];
+      for (Annotation annotation : annotations) {
+        if (annotation.annotationType().equals(CanonicalName.class)) {
+          canonicalNames[i] = ((CanonicalName) annotation).value();
+          break;
+        }
+      }
+    }
+    Parameter[] parameters = executable.getParameters();
+    // parameters.length == canonicalNames.length is guaranteed
+    for (int i = 0; i < canonicalNames.length; i++) {
+      if (canonicalNames[i] == null) {
+        String name = parameters[i].getName();
+        // "argN" if compiled with no '-parameters'
+        if (!(name.startsWith("arg") && name.length() > 3 && Character.isDigit(name.charAt(3)))) {
+          canonicalNames[i] = parameters[i].getName();
+        }
+      }
+    }
+    return canonicalNames;
   }
 
 

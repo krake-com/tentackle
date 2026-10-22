@@ -51,12 +51,17 @@ import java.util.function.Supplier;
  *   <li>The list of {@link Shortcut}s is applied, one after another. Shortcuts modify the current date- or time value
  *   according to the patterns found in the input string. Applied patterns are usually removed from the input string.</li>
  *   <li>If at least one shortcut was applied, the current value is returned. Otherwise, the remaining input string is passed
- *   to the appropriate {@link DateTimeFormatter}.
- *   <li>If parsing fails with an exception, optional exception handlers will be invoked to fix the input.</li>
+ *   to the appropriate {@link DateTimeFormatter}.</li>
+ *   <li>If parsing fails with an exception, optional {@link ErrorHandler}s will be invoked to fix the input.
+ *   Each handler is applied at most once.</li>
  * </ol>
  *
- * A predefined list of {@link TextFilter}s and {@link Shortcut}s is already provided by the framework.
- * However, the application may provide their own, of course.
+ * Shortcuts are applied to the first whitespace-separated token only. If a shortcut was applied, an optional second token
+ * denotes the zone offset or timezone. If it starts with {@code =}, the value is converted to the given offset or zone
+ * (same instant), otherwise the offset or zone is just replaced (same local time).
+ * <p>
+ * A predefined list of {@link TextFilter}s, {@link Shortcut}s and {@link ErrorHandler}s is already provided by the framework
+ * (see {@link DateTimeUtilities}). However, the application may provide its own, of course.
  * <p>
  * Example for a combination of filters and shortcuts:<br>
  * {@code ".+1d15h =paris"} -&gt; <em>tomorrow 3pm local time converted to the timezone of Europe/Paris</em>.
@@ -68,7 +73,7 @@ public class SmartDateTimeParser<T extends Temporal> {
 
   /**
    * Filter applied to the input.<br>
-   * Returns the probably modified text.
+   * Returns the possibly modified text.
    */
   public interface TextFilter {
 
@@ -161,6 +166,7 @@ public class SmartDateTimeParser<T extends Temporal> {
    * @param filters list of filters, null or empty if none
    * @param shortcuts list of shortcut input methods, null or empty if none
    * @param errorHandlers list of error handlers, null or empty if none
+   * @throws NullPointerException if type, temporalQuery, formatter or pattern is null
    */
   public SmartDateTimeParser(Class<T> type,
                              TemporalQuery<T> temporalQuery, BiFunction<T, TemporalUnit, T> truncate,
@@ -294,9 +300,11 @@ public class SmartDateTimeParser<T extends Temporal> {
   /**
    * Converts a string to a temporal value of the given type.
    *
-   * @param currentValueSupplier the supplier of the current value, usually the method reference {@code type::now}
+   * @param currentValueSupplier the supplier of the current value, usually the method reference {@code type::now}.
+   *                             If the supplier returns null, the current time of the parser's type is used.
    * @param text the string to parse
-   * @return the temporal value object
+   * @return the temporal value object, null if text is null
+   * @throws DateTimeParseException if parsing failed
    */
   @SuppressWarnings("unchecked")
   public T parse(Supplier<T> currentValueSupplier, String text) {

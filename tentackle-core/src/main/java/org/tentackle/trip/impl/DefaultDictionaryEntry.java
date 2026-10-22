@@ -31,7 +31,8 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Default implementation of a dictionary entry.
+ * Default implementation of a dictionary entry.<br>
+ * Entries are equal if their ordinals are equal.
  */
 public class DefaultDictionaryEntry implements DictionaryEntry {
 
@@ -44,6 +45,7 @@ public class DefaultDictionaryEntry implements DictionaryEntry {
   private final Class<?>[] proxyInterfaces;               // proxy interfaces, if proxy
   private final TripType<?> tripType;                     // matching trip-type
   private final TripComponent<?, ?>[] tripComponents;     // fast array lookup for the type's components
+  private volatile boolean superseded;                    // true if replaced by another entry for the same class
 
 
   /**
@@ -52,7 +54,8 @@ public class DefaultDictionaryEntry implements DictionaryEntry {
    * @param ordinal    the ordinal, &lt; 0 for temporary
    * @param className  the serializable FQCN
    * @param isProxy    true if this is an entry for a dynamic proxy, false otherwise
-   * @param components the names of the components
+   * @param components the components
+   * @throws TripRuntimeException if a proxy interface or the class cannot be loaded
    * @see ReflectionHelper#getSerializableClassName(Class)
    */
   public DefaultDictionaryEntry(int ordinal, String className, boolean isProxy, DictionaryEntryComponent[] components) {
@@ -109,6 +112,16 @@ public class DefaultDictionaryEntry implements DictionaryEntry {
   @Override
   public boolean isClientOnly() {
     return ordinal < 0;
+  }
+
+  @Override
+  public boolean isSuperseded() {
+    return superseded;
+  }
+
+  @Override
+  public void markSuperseded() {
+    superseded = true;
   }
 
   @Override

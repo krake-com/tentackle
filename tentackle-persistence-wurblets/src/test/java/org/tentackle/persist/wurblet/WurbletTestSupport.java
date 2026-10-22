@@ -75,6 +75,20 @@ public final class WurbletTestSupport {
   }
 
   /**
+   * Creates an entity from a model of its own.
+   * <p>
+   * For the cases that need a type the shared {@link #TEST_MODEL} does not carry. Extending that
+   * model instead would change the column list every generator test asserts on.
+   *
+   * @param model the model definition
+   * @return the entity
+   * @throws ModelException if the model is broken
+   */
+  public static Entity createEntity(String model) throws ModelException {
+    return Model.getInstance().getEntityFactory().createEntity(new Document(model), null);
+  }
+
+  /**
    * Creates a bare model wurblet.
    * <p>
    * A wurblet is normally set up by the {@code Wurbler} before {@code run()} is invoked. The

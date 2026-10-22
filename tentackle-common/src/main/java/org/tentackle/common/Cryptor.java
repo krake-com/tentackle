@@ -45,7 +45,8 @@ interface CryptorHolder {
       return ServiceFactory.createService(Cryptor.class);
     }
     catch (TentackleRuntimeException rx) {
-      // no application-specific cryptor configured! That's ok, although not recommended.
+      // No application-specific cryptor configured! That's ok, although not recommended.
+      // Notice: this also applies if the cryptor is configured, but its constructor failed.
       return null;
     }
   }
@@ -56,9 +57,9 @@ interface CryptorHolder {
 
 /**
  * A simple en- and decryptor.<br>
- * Each application should provide a concrete instance with a confidential salt and passphase
- * and a no-arg constructor. If provided, it is used to encrypt passwords in memory, transmission during client/server login,
- * or decrypt passwords stored in backend.properties for database connections.
+ * Each application should provide a concrete subclass with a confidential salt and passphrase
+ * and a no-arg constructor. If provided, it is used to encrypt passwords in memory and during transmission
+ * at client/server login, or to decrypt passwords stored in backend.properties for database connections.
  * <br>
  * Example:
  * <pre>
@@ -66,10 +67,14 @@ interface CryptorHolder {
  *    public class MyCryptor extends Cryptor {
  *
  *      public MyCryptor() {
- *        // whatever
+ *        super(SALT, PASSPHRASE);   // whatever
  *      }
  *    }
  * </pre>
+ * Notice that if the constructor of the application's cryptor throws a {@link TentackleRuntimeException},
+ * {@link #getInstance()} silently returns null, as if no cryptor were configured.
+ * <p>
+ * Texts, salts and passphrases are converted to bytes via {@link Settings#getEncodingCharset()}.
  *
  * Cryptor also implements a {@link Function}{@code <String,String>} to encrypt strings like passwords to base64
  * and thus can directly be used by the tentackle-maven-plugin to generate properties for filtered resources.
@@ -78,9 +83,10 @@ interface CryptorHolder {
  * should ideally not be part of the application, but provided via some external media, a mounted USB-stick, manual input, PGP keyring, whatever.
  * However, in practice this isn't always doable.
  * <p>
- * Cryptors are threadsafe. Since {@link Cipher} is stateful and <em>not</em> threadsafe, each thread gets
- * its own cipher, created lazily via {@link #getCipher()}. This is essential, because the cryptor is usually
- * a singleton shared by all threads, for example by the encrypted transports of a server.
+ * Cryptors are thread-safe. Since {@link Cipher} is stateful and <em>not</em> thread-safe, each thread gets
+ * its own cipher, created lazily via {@link #getCipher()} (or, for {@link #Cryptor(SecretKey, Cipher)}, from the
+ * given template cipher). This is essential, because the cryptor is usually a singleton shared by all threads,
+ * for example by the encrypted transports of a server.
  */
 public class Cryptor implements Function<String, String> {
 
@@ -94,10 +100,10 @@ public class Cryptor implements Function<String, String> {
   }
 
   /**
-   * Gets the application-specific cryptor singleton.<br>
-   * Throws a {@link TentackleRuntimeException} if no cryptor defined.
+   * Gets the application-specific cryptor singleton.
    *
    * @return the cryptor, never null
+   * @throws TentackleRuntimeException if no cryptor defined
    */
   public static Cryptor getInstanceSafely() {
     Cryptor cryptor = getInstance();
@@ -112,7 +118,7 @@ public class Cryptor implements Function<String, String> {
 
   /**
    * The ciphers, one per thread.<br>
-   * {@link Cipher} is stateful and not threadsafe: sharing one instance would make concurrent
+   * {@link Cipher} is stateful and not thread-safe: sharing one instance would make concurrent
    * en-/decryptions corrupt each other, silently returning wrong data.
    */
   private final ThreadLocal<Cipher> ciphers;
@@ -121,7 +127,7 @@ public class Cryptor implements Function<String, String> {
   /**
    * Creates a cryptor.<br>
    * Notice that the given cipher serves as the template for the per-thread ciphers,
-   * i.e. its algorithm and provider are used to create them.
+   * i.e., its algorithm and provider are used to create them. {@link #getCipher()} is not used.
    *
    * @param key the secret key
    * @param cipher the cipher
@@ -140,6 +146,7 @@ public class Cryptor implements Function<String, String> {
    * @param passphrase the passphrase
    * @param iterations number of iterations for key generation
    * @param keyStrength the key strength
+   * @throws TentackleRuntimeException if the key could not be generated
    */
   public Cryptor(byte[] salt, char[] passphrase, int iterations, int keyStrength) {
     SecretKeyFactory factory = getSecretKeyFactory();
@@ -173,7 +180,8 @@ public class Cryptor implements Function<String, String> {
 
   /**
    * Creates a cryptor with 1024 iterations and a key strength of 256.<br>
-   * This is just a convenience method. Consider using {@link Cryptor#Cryptor(byte[], char[])} instead.
+   * This is just a convenience constructor. Since strings are immutable, salt and passphrase
+   * cannot be scratched. Consider using {@link Cryptor#Cryptor(byte[], char[])} instead.
    *
    * @param salt the salt
    * @param passphrase the passphrase
@@ -189,6 +197,7 @@ public class Cryptor implements Function<String, String> {
    *
    * @param data the byte array to encrypt
    * @return the encrypted byte array
+   * @throws TentackleRuntimeException if encryption failed
    */
   public byte[] encrypt(byte[] data) {
     try {
@@ -208,6 +217,7 @@ public class Cryptor implements Function<String, String> {
    * @param offset the offset in data
    * @param length the number of bytes
    * @return the encrypted byte array
+   * @throws TentackleRuntimeException if encryption failed
    */
   public byte[] encrypt(byte[] data, int offset, int length) {
     try {
@@ -227,6 +237,7 @@ public class Cryptor implements Function<String, String> {
    * @param offset        the offset in the encrypted byte array
    * @param length        the number of bytes to decrypt
    * @return the decrypted data
+   * @throws TentackleRuntimeException if decryption failed
    */
   public byte[] decrypt(byte[] encryptedData, int offset, int length) {
     try {
@@ -244,6 +255,7 @@ public class Cryptor implements Function<String, String> {
    *
    * @param encryptedData the encrypted byte array
    * @return the decrypted data
+   * @throws TentackleRuntimeException if decryption failed
    */
   public byte[] decrypt(byte[] encryptedData) {
     try {
@@ -261,6 +273,7 @@ public class Cryptor implements Function<String, String> {
    *
    * @param data the byte array to encrypt
    * @return the encrypted string in base64 encoding
+   * @throws TentackleRuntimeException if encryption failed
    */
   public String encrypt64(byte[] data) {
     return Base64.getEncoder().encodeToString(encrypt(data));
@@ -272,6 +285,7 @@ public class Cryptor implements Function<String, String> {
    *
    * @param chars the char array to encrypt
    * @return the encrypted bytes
+   * @throws TentackleRuntimeException if encryption failed
    */
   public byte[] encrypt(char[] chars) {
     CharBuffer charBuffer = CharBuffer.wrap(chars);
@@ -289,6 +303,7 @@ public class Cryptor implements Function<String, String> {
    *
    * @param chars the char array to encrypt
    * @return the encrypted string in base64 encoding
+   * @throws TentackleRuntimeException if encryption failed
    */
   public String encrypt64(char[] chars) {
     return Base64.getEncoder().encodeToString(encrypt(chars));
@@ -299,6 +314,7 @@ public class Cryptor implements Function<String, String> {
    *
    * @param text the text to encrypt
    * @return the encrypted string in base64 encoding
+   * @throws TentackleRuntimeException if encryption failed
    */
   public String encrypt64(String text) {
     return encrypt64(text.getBytes(Settings.getEncodingCharset()));
@@ -310,6 +326,7 @@ public class Cryptor implements Function<String, String> {
    *
    * @param encryptedData the encrypted data
    * @return the char array
+   * @throws TentackleRuntimeException if decryption failed
    */
   public char[] decryptToChars(byte[] encryptedData) {
     return toChars( decrypt(encryptedData));
@@ -320,6 +337,7 @@ public class Cryptor implements Function<String, String> {
    *
    * @param encryptedText the encrypted text in base64 encoding
    * @return the decrypted data
+   * @throws TentackleRuntimeException if decryption failed
    */
   public byte[] decrypt64ToBytes(String encryptedText) {
     return decrypt(Base64.getDecoder().decode(encryptedText.getBytes(Settings.getEncodingCharset())));
@@ -331,6 +349,7 @@ public class Cryptor implements Function<String, String> {
    *
    * @param encryptedText the encrypted text in base64 encoding
    * @return the decrypted data
+   * @throws TentackleRuntimeException if decryption failed
    */
   public char[] decrypt64ToChars(String encryptedText) {
     return toChars(decrypt64ToBytes(encryptedText));
@@ -341,6 +360,7 @@ public class Cryptor implements Function<String, String> {
    *
    * @param encryptedText the encrypted text in base64 encoding
    * @return the decrypted text
+   * @throws TentackleRuntimeException if decryption failed
    */
   public String decrypt64(String encryptedText) {
     return new String(decrypt64ToBytes(encryptedText), Settings.getEncodingCharset());
@@ -361,17 +381,18 @@ public class Cryptor implements Function<String, String> {
 
 
   /**
-   * Derive the unencrypted URL.<br>
+   * Derives the unencrypted URL.<br>
    * The URL is considered to be encrypted if started with a fake protocol unsupported by the application in the given context.
-   * The first word after =~ is taken as the encrypted URL. Example:
+   * The text after {@code =~} up to the next {@code &} (or the end) is taken as the encrypted URL. Example:
    * <pre>
    *   {@code https://somehost.somedomain.org/login?id=~GK+AG1QIjpBaD51HP/kw9HzpdKZLt2FrInFxd1jtPWvGzaw5lcLcHy5RB/q9yEKQ&user=100}
    * </pre>
    * Hidden gem... ;)
    *
-   * @param url the probably encrypted URL
+   * @param url the possibly encrypted URL
    * @param protocols the fake protocols not used by the application, such as {@code "http:"} or {@code "https:"}
-   * @return the decrypted URL or the unchanged url, if no encryption pattern found
+   * @return the decrypted URL or the unchanged URL, if no encryption pattern found
+   * @throws TentackleRuntimeException if decryption failed
    */
   public String deriveURL(String url, String... protocols) {
     for (String protocol: protocols) {
@@ -420,8 +441,8 @@ public class Cryptor implements Function<String, String> {
    * Creates a cipher instance.<br>
    * The default implementation returns an {@code AES} cipher.
    * <p>
-   * Invoked once per thread. Implementations must return a new instance each time,
-   * since {@link Cipher} is not threadsafe.
+   * Invoked once per thread, unless the cryptor was created via {@link #Cryptor(SecretKey, Cipher)}.
+   * Implementations must return a new instance each time, since {@link Cipher} is not thread-safe.
    *
    * @return the cipher
    */

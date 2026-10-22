@@ -25,6 +25,10 @@ import java.util.Collection;
 
 /**
  * A dispatcher executing tasks in a serialized manner.
+ * <p>
+ * Tasks are executed one after another by the dispatcher thread, in the order they were added,
+ * unless scheduled for a later time. The dispatcher can be locked by other threads to share resources
+ * with the tasks.
  *
  * @author harald
  */
@@ -97,7 +101,7 @@ public interface TaskDispatcher extends Terminatable {
   /**
    * Gets the running state.
    *
-   * @return true if dispatched has been started and not terminated yet
+   * @return true if dispatcher has been started and not terminated yet
    */
   boolean isAlive();
 
@@ -131,10 +135,13 @@ public interface TaskDispatcher extends Terminatable {
   void removeTaskListener(TaskListener listener);
 
   /**
-   * Adds a task to the queue.
-   * 
+   * Adds a task to the queue.<br>
+   * A task can be added before the dispatcher is started, but not after it has terminated,
+   * for example due to the {@link #setShutdownIdleTimeout(long) idle timeout}.
+   *
    * @param task the task to add
    * @return true if added, false if already in queue
+   * @throws TaskException if the dispatcher has terminated and will never execute the task
    */
   boolean addTask(Task task);
 
@@ -151,21 +158,21 @@ public interface TaskDispatcher extends Terminatable {
    * Gets the task by its id.
    *
    * @param taskId the task id
-   * @return the task, null if completed
+   * @return the task, null if completed or no such task
    */
   Task getTask(long taskId);
 
   /**
    * Gets all tasks.<br>
    * The returned collection is a copy of the internal queue,
-   * so modifications to the collection does not affect the queue.
+   * so modifications to the collection do not affect the queue.
    *
    * @return all tasks, never null
    */
   Collection<Task> getAllTasks();
 
   /**
-   * Returns whether some instance of a task for the given class or any subclass is pending.<br>
+   * Returns whether some instance of a task for the given class or any subclass is pending.
    *
    * @param clazz the task class
    * @return true if at least one instance is pending
@@ -174,19 +181,21 @@ public interface TaskDispatcher extends Terminatable {
 
   /**
    * Waits for a task to get completed.<br>
-   * Throws a {@link TaskException} if the wait times out (see {@link #getDeadInterval()}).
+   * The wait times out if the dispatcher shows no activity for the {@link #getWaitInterval() wait interval}.
+   * A timed out task is removed from the queue.
    *
    * @param task the task to check for completion
+   * @throws TaskException if the wait timed out
    */
   void waitForTask(Task task);
 
   /**
-   * Adds a task to the queue.<br>
-   * Throws a {@link TaskException} if the wait times out.
+   * Adds a task to the queue and waits for its completion.
    *
    * @param task the task to add
-   * @return true if added, false if already in queue
-   * @see #getDeadInterval()
+   * @return true if added, false if already in queue (and not waited for)
+   * @throws TaskException if the wait timed out
+   * @see #waitForTask(Task)
    */
   boolean addTaskAndWait(Task task);
 
@@ -217,7 +226,7 @@ public interface TaskDispatcher extends Terminatable {
 
   /**
    * Unlocks this thread.<br>
-   * Only the lock holding the lock is allowed to unlock.
+   * Only the thread holding the lock is allowed to unlock, for mutex-based locking.
    * <p>
    * Notice that the same thread may invoke unlock more than once for mutex based locking.
    *
@@ -237,7 +246,7 @@ public interface TaskDispatcher extends Terminatable {
   String toDiagnosticString();
 
   /**
-   * Sets a timeout to shut down this thread if idle for a given timeout.
+   * Sets a timeout to shut down this thread if idle for the given time.
    *
    * @param shutdownIdleTimeout idle timeout in milliseconds, 0 if no shutdown
    */

@@ -30,7 +30,7 @@ public class OptionParser {
   private final int max;              // length of text
   private int pos;                    // current offset in text
   private int optionLevel;            // nesting level of [...]
-  private int braceLevel;             // number of () within [...], i.e. braces within option, for example @Annotation(blah=jksf, hsdf=...)
+  private int braceLevel;             // number of () within [...], i.e. parentheses within option, for example @Annotation(blah=jksf, hsdf=...)
 
 
   /**
@@ -50,7 +50,7 @@ public class OptionParser {
   /**
    * Gets the next option as a string.
    *
-   * @return the next option, null if end of text
+   * @return the next option, null at end of text, empty string for an empty option
    */
   public String nextOption() {
     return nextOption(0);
@@ -61,14 +61,14 @@ public class OptionParser {
    * Gets the next option as a string.
    *
    * @param stopAtOptionLevel option level to stop on closing bracket
-   * @return the next option, null if end of text
+   * @return the next option, null at end of text, empty string for an empty option
    */
   public String nextOption(int stopAtOptionLevel) {
     StringBuilder option = new StringBuilder();
     while (pos < max) {
       char c = text.charAt(pos++);
       if (c == '\\' && pos < max) {    // pos already points to the escaped character
-        // escape if next char is not []()
+        // drop the backslash only if it escapes one of []()
         c = text.charAt(pos++);
         if (optionLevel > 0) {
           if (c != '[' && c != ']' && c != '(' && c != ')') {
@@ -108,7 +108,7 @@ public class OptionParser {
             if (braceLevel > 0) {
               braceLevel--;
             }
-            // else: too many closing braces? treat as quoted
+            // else: too many closing parentheses? treat as quoted
           }
           else if (c == '(') {
             braceLevel++;

@@ -22,6 +22,8 @@ import org.testng.annotations.Test;
 
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.fx.table.edit.RowWiseEditHandler;
+import org.tentackle.fx.table.edit.TableEditHandler;
 import org.tentackle.pdo.PersistentDomainObject;
 
 import java.util.Collection;
@@ -64,7 +66,7 @@ public class RdcTableConfigurationTest {
     RdcTableConfiguration<Object> config = newConfig();
     assertFalse(config.isSortingIncluded(), "sorting excluded by default");
     assertTrue(config.isViewSizeIncluded(), "view size included by default");
-    assertEquals(config.getEditMode(), TableConfiguration.EDITMODE.NO);
+    assertNull(config.getEditHandler(), "no edit handler by default");
     assertEquals(config.getBindingType(), TableConfiguration.BINDING.YES);
     assertNull(config.getBaseBundleName());
   }
@@ -83,12 +85,13 @@ public class RdcTableConfigurationTest {
   }
 
   @Test
-  public void testEditModeNullFallsBackToNo() {
+  public void testEditHandler() {
     RdcTableConfiguration<Object> config = newConfig();
-    config.setEditMode(TableConfiguration.EDITMODE.ROW);
-    assertEquals(config.getEditMode(), TableConfiguration.EDITMODE.ROW);
-    config.setEditMode(null);
-    assertEquals(config.getEditMode(), TableConfiguration.EDITMODE.NO, "null edit mode must fall back to NO");
+    TableEditHandler<Object> handler = new RowWiseEditHandler<>();
+    config.setEditHandler(handler);
+    assertSame(config.getEditHandler(), handler);
+    config.setEditHandler(null);
+    assertNull(config.getEditHandler());
   }
 
   @Test

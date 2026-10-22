@@ -39,14 +39,22 @@ The button that triggers it is in a JavaFX client three tiers away from the data
 In Tentackle it is a method on the entity, written once in the domain layer:
 
 ```java
+// InvoiceDomain — the domain interface declares the transactional contract
+public interface InvoiceDomain extends DomainObject<Invoice> {
+  @Transaction
+  void approve();
+}
+```
+
+```java
 // InvoiceDomainImpl — the domain layer, with no remoting in sight
-@Transaction
+@Override
 public void approve() {
-  Customer customer = getCustomer();                       // fetched on demand, locally or over TRIP
+  Customer customer = me().getCustomer();                       // fetched on demand, locally or over TRIP
   if (customer.getCreditLimit().compareTo(customer.openAmount()) < 0) {
     throw new DomainException("credit limit exceeded for " + customer.getName());
   }
-  setState(InvoiceState.APPROVED);
+  me().setState(InvoiceState.APPROVED);
   me().persist();                                          // whole aggregate validated, then written
 }
 ```
@@ -56,7 +64,7 @@ public void approve() {
 invoice.approve();
 ```
 
-That is the whole feature: one domain method and one call site. The
+That is the whole feature: one declared and implemented domain method, and one call site. The
 [`@Transaction`](../../../tentackle-pdo/src/main/docs/transaction.md) opens a real database
 transaction on the tier that owns the connection, however far away that is. Keep those lines in
 view; the next two sections are about what the other approaches require to reach the same place.

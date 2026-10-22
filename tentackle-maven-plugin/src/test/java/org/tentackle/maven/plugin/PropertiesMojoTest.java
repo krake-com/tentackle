@@ -71,7 +71,7 @@ public class PropertiesMojoTest {
     project = createProject(basedir);
     log = new RecordingLog();
     mojo = new PropertiesMojo();
-    mojo.setLog(log);
+    mojo.setLogger(log);
     setField(mojo, "mavenProject", project);
     UpperCaseConverter.instanceCount = 0;
   }
@@ -183,6 +183,17 @@ public class PropertiesMojoTest {
                                              () -> execute(descriptor("secret", null, "encryptedPasswd")));
 
     assertEquals(ex.getMessage(), "missing converter in property descriptor");
+  }
+
+  /**
+   * A maven property cannot hold null.
+   */
+  @Test
+  public void failsIfTheConverterReturnsNull() {
+    MojoExecutionException ex = expectThrows(MojoExecutionException.class,
+                                             () -> execute(descriptor("secret", NullConverter.class.getName(), "x")));
+
+    assertEquals(ex.getMessage(), "converter " + NullConverter.class.getName() + " returned null for property x");
   }
 
   @Test
@@ -331,6 +342,19 @@ public class PropertiesMojoTest {
     @Override
     public Integer apply(String input) {
       return input.length();
+    }
+  }
+
+  /** A converter that returns null. */
+  public static class NullConverter implements Function<String, String> {
+
+    /** Creates the converter. */
+    public NullConverter() {
+    }
+
+    @Override
+    public String apply(String input) {
+      return null;
     }
   }
 

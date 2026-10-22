@@ -22,8 +22,9 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * Key for an Identifiable.<br>
- * Can be used for hashing or as a comparable.
+ * Key for an {@link Identifiable}.<br>
+ * Composed of the class and the ID.
+ * Can be used for hashing or as a comparable, sorted by class name and ID.
  *
  * @param <T> the identifiable type
  * @author harald
@@ -63,6 +64,7 @@ public class IdentifiableKey<T extends Identifiable> implements Comparable<Ident
    * @param identifiableClassName the classname
    * @param identifiableId the id
    * @throws ClassNotFoundException if no such class
+   * @throws ClassCastException if the class is not an Identifiable
    */
   @SuppressWarnings("unchecked")
   public IdentifiableKey(String identifiableClassName, long identifiableId) throws ClassNotFoundException {

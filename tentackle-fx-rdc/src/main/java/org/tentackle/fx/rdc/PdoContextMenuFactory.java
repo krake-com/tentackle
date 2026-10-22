@@ -31,7 +31,8 @@ interface PdoContextMenuFactoryHolder {
 
 /**
  * A factory for PDO context menus.<br>
- * The context menus are used as popups.
+ * The context menus are used as popups of the PDO tree, table, and tree table cells.
+ * They are assembled from the menu items registered for the PDO's class and its superclasses.
  *
  * @author harald
  */
@@ -59,7 +60,7 @@ public interface PdoContextMenuFactory {
    * Creates a context menu for a table cell.
    *
    * @param <S> the table row's type
-   * @param <T> the table cell's pdo type
+   * @param <T> the table cell's PDO type
    * @param cell the table cell
    * @return the context menu, null if no menu items
    */
@@ -69,7 +70,7 @@ public interface PdoContextMenuFactory {
    * Creates a context menu for a tree table cell.
    *
    * @param <S> the table row's type
-   * @param <T> the table cell's pdo type
+   * @param <T> the table cell's PDO type
    * @param cell the table cell
    * @return the context menu, null if no menu items
    */

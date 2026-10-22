@@ -29,7 +29,7 @@ import org.tentackle.fx.component.config.ComponentConfigurator;
  * Configures a {@link Calendar}.
  *
  * @author harald
- * @param <T> the toggle switch type
+ * @param <T> the calendar type
  */
 @ConfiguratorService(Calendar.class)
 public class CalendarConfigurator<T extends Calendar> extends ComponentConfigurator<T> {

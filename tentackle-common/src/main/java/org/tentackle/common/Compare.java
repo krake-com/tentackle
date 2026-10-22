@@ -23,7 +23,7 @@ package org.tentackle.common;
  *
  * @author harald
  */
-public class Compare {
+public final class Compare {
 
   /**
    * Compares two objects.<br>

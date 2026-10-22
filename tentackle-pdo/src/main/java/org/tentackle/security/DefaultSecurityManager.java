@@ -45,9 +45,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * The rules themselves are PDOs ({@link Security}) and thus are stored in the database.
  * <p>
  * The list of rules is interpreted as an ACL (access control list).
- * Whenever a permission is checked, the list is processed
+ * Whenever a permission is checked, the rules are processed
  * until a rule fires. If no rule fires, the default result is returned,
  * which is either granted or denied.
+ * <p>
+ * The rules are processed per grantee in the order given by {@link #determineGranteesToCheck},
+ * i.e., by default first the rules for the user, then the rules for all grantees.
+ * Within a grantee, the rules are processed by priority (lowest first).
+ * For PDOs, the rules for the object are checked before the rules for its class.
  *
  * @author harald
  */
@@ -96,6 +101,7 @@ public class DefaultSecurityManager implements SecurityManager {
     private final long granteeId;
     private final String className;
     private final int priority;
+    private final long ruleId;
 
     // construct the entry
     public ClassKey(Security sec)  {
@@ -103,14 +109,16 @@ public class DefaultSecurityManager implements SecurityManager {
       this.granteeId = sec.getGranteeId();
       this.className = sec.getObjectClassName();
       this.priority  = sec.getPriority();
+      this.ruleId = sec.getId();
     }
 
     // to get the first/last key
-    public ClassKey(GranteeDescriptor grantee, String className, int priority) {
+    public ClassKey(GranteeDescriptor grantee, String className, int priority, long ruleId) {
       this.granteeClassId = grantee.getGranteeClassId();
       this.granteeId = grantee.getGranteeId();
       this.className = className;
       this.priority  = priority;
+      this.ruleId = ruleId;
     }
 
     @Override
@@ -122,6 +130,9 @@ public class DefaultSecurityManager implements SecurityManager {
           rv = className.compareTo(k.className);
           if (rv == 0)  {
             rv = Integer.compare(priority, k.priority);
+            if (rv == 0) {
+              rv = Long.compare(ruleId, k.ruleId);
+            }
           }
         }
       }
@@ -135,6 +146,7 @@ public class DefaultSecurityManager implements SecurityManager {
       hash = 67 * hash + Long.hashCode(granteeId);
       hash = 67 * hash + Objects.hashCode(className);
       hash = 67 * hash + priority;
+      hash = 67 * hash + Long.hashCode(ruleId);
       return hash;
     }
 
@@ -159,6 +171,9 @@ public class DefaultSecurityManager implements SecurityManager {
       if (this.priority != other.priority) {
         return false;
       }
+      if (this.ruleId != other.ruleId) {
+        return false;
+      }
       return Objects.equals(this.className, other.className);
     }
 
@@ -175,6 +190,7 @@ public class DefaultSecurityManager implements SecurityManager {
     private final int objectClassId;
     private final long objectId;
     private final int priority;
+    private final long ruleId;
 
     // construct the entry
     public PdoKey(Security sec)  {
@@ -183,15 +199,17 @@ public class DefaultSecurityManager implements SecurityManager {
       this.objectClassId = sec.getObjectClassId();
       this.objectId = sec.getObjectId();
       this.priority = sec.getPriority();
+      this.ruleId = sec.getId();
     }
 
     // to get the first/last key
-    public PdoKey(GranteeDescriptor grantee, int objectClassId, long objectId, int priority) {
+    public PdoKey(GranteeDescriptor grantee, int objectClassId, long objectId, int priority, long ruleId) {
       this.granteeClassId = grantee.getGranteeClassId();
       this.granteeId = grantee.getGranteeId();
       this.objectClassId = objectClassId;
       this.objectId = objectId;
       this.priority  = priority;
+      this.ruleId = ruleId;
     }
 
     @Override
@@ -205,6 +223,9 @@ public class DefaultSecurityManager implements SecurityManager {
             rv = Long.compare(objectId, k.objectId);
             if (rv == 0) {
               rv = Integer.compare(priority, k.priority);
+              if (rv == 0) {
+                rv = Long.compare(ruleId, k.ruleId);
+              }
             }
           }
         }
@@ -220,6 +241,7 @@ public class DefaultSecurityManager implements SecurityManager {
       hash = 73 * hash + objectClassId;
       hash = 73 * hash + Long.hashCode(objectId);
       hash = 73 * hash + priority;
+      hash = 73 * hash + Long.hashCode(ruleId);
       return hash;
     }
 
@@ -247,7 +269,7 @@ public class DefaultSecurityManager implements SecurityManager {
       if (this.objectId != other.objectId) {
         return false;
       }
-      return this.priority == other.priority;
+      return this.priority == other.priority && this.ruleId == other.ruleId;
     }
 
   }
@@ -262,6 +284,7 @@ public class DefaultSecurityManager implements SecurityManager {
     private final long granteeId;
     private final int objectClassId;
     private final int priority;
+    private final long ruleId;
 
     // construct the entry
     public PdoClassKey(Security sec)  {
@@ -269,14 +292,16 @@ public class DefaultSecurityManager implements SecurityManager {
       this.granteeId = sec.getGranteeId();
       this.objectClassId = sec.getObjectClassId();
       this.priority = sec.getPriority();
+      this.ruleId = sec.getId();
     }
 
     // to get the first/last key
-    public PdoClassKey(GranteeDescriptor grantee, int objectClassId, int priority) {
+    public PdoClassKey(GranteeDescriptor grantee, int objectClassId, int priority, long ruleId) {
       this.granteeClassId = grantee.getGranteeClassId();
       this.granteeId = grantee.getGranteeId();
       this.objectClassId = objectClassId;
       this.priority  = priority;
+      this.ruleId = ruleId;
     }
 
     @Override
@@ -288,6 +313,9 @@ public class DefaultSecurityManager implements SecurityManager {
           rv = Integer.compare(objectClassId, k.objectClassId);
           if (rv == 0) {
             rv = Integer.compare(priority, k.priority);
+            if (rv == 0) {
+              rv = Long.compare(ruleId, k.ruleId);
+            }
           }
         }
       }
@@ -301,6 +329,7 @@ public class DefaultSecurityManager implements SecurityManager {
       hash = 37 * hash + Long.hashCode(granteeId);
       hash = 37 * hash + objectClassId;
       hash = 37 * hash + priority;
+      hash = 37 * hash + Long.hashCode(ruleId);
       return hash;
     }
 
@@ -325,7 +354,7 @@ public class DefaultSecurityManager implements SecurityManager {
       if (this.objectClassId != other.objectClassId) {
         return false;
       }
-      return this.priority == other.priority;
+      return this.priority == other.priority && this.ruleId == other.ruleId;
     }
 
   }
@@ -344,8 +373,8 @@ public class DefaultSecurityManager implements SecurityManager {
   private volatile TreeMap<PdoClassKey,Rule> pdoClassMap;     // pdo class-only rules (immutable map once created)
 
   private volatile boolean invalid;                           // true if cache needs initialization
-  private boolean enabled;                                    // true if security manager is enabled
-  private boolean acceptByDefault;                            // true if isAccepted() by default
+  private volatile boolean enabled;                           // true if security manager is enabled
+  private volatile boolean acceptByDefault;                   // true if isAccepted() by default
   private ModificationListener securityListener;              // the listener to invalidate the security manager
 
   private final SecurityResult disabledResult;                // accept result if sec manager is disabled -> grants all
@@ -472,6 +501,12 @@ public class DefaultSecurityManager implements SecurityManager {
   /**
    * Determines the grantees to check.<p>
    * Override this method to implement user groups, for example.
+   * The grantees are checked in the order of the returned collection.
+   * <p>
+   * The result is cached per session grantee.
+   * Since the method is invoked while a permission is being evaluated, it must not trigger
+   * a security check for the same user, for example, by selecting PDOs with a domain context
+   * of that user. Use a system context instead.
    *
    * @param context the domain context
    * @param grantee the session's grantee
@@ -515,7 +550,7 @@ public class DefaultSecurityManager implements SecurityManager {
    * @param permission the requested permission
    * @param objectClassId the class id, 0 if non-pdo class rule
    * @param objectId the object id, 0 for all objects of given class
-   * @param clazz the non-pdo class, null pdo rule
+   * @param clazz the non-pdo class, null if PDO rule
    * @return the SecurityResult, null if no matching rule found
    */
   protected SecurityResult evaluateImpl(DomainContext context, Permission permission,
@@ -596,21 +631,22 @@ public class DefaultSecurityManager implements SecurityManager {
         // the map of applicable security rules
         SortedMap<?, Rule> map;
 
+        // all rules of the grantee for the target, whatever their priority
         if (localClassMap != null) {
-          map = localClassMap.subMap(new ClassKey(grantee, clazz.getName(), 0),
-                                     new ClassKey(grantee, clazz.getName(), Integer.MAX_VALUE));
+          map = localClassMap.subMap(new ClassKey(grantee, clazz.getName(), Integer.MIN_VALUE, Long.MIN_VALUE), true,
+                                     new ClassKey(grantee, clazz.getName(), Integer.MAX_VALUE, Long.MAX_VALUE), true);
         }
         else if (localPdoClassMap != null) {
-          map = localPdoClassMap.subMap(new PdoClassKey(grantee, objectClassId, 0),
-                                        new PdoClassKey(grantee, objectClassId, Integer.MAX_VALUE));
+          map = localPdoClassMap.subMap(new PdoClassKey(grantee, objectClassId, Integer.MIN_VALUE, Long.MIN_VALUE), true,
+                                        new PdoClassKey(grantee, objectClassId, Integer.MAX_VALUE, Long.MAX_VALUE), true);
         }
         else {
-          map = localPdoMap.subMap(new PdoKey(grantee, objectClassId, objectId, 0),
-                                   new PdoKey(grantee, objectClassId, objectId, Integer.MAX_VALUE));
+          map = localPdoMap.subMap(new PdoKey(grantee, objectClassId, objectId, Integer.MIN_VALUE, Long.MIN_VALUE), true,
+                                   new PdoKey(grantee, objectClassId, objectId, Integer.MAX_VALUE, Long.MAX_VALUE), true);
         }
 
         // walk through the security settings of the map
-        // they are sorted by priority!
+        // they are sorted by priority (rules with the same priority by their ID)!
         for (Rule rule : map.values()) {
           Security sec = rule.security;
           if (fineLoggable) {
@@ -672,6 +708,7 @@ public class DefaultSecurityManager implements SecurityManager {
       classMap = newClassMap;
       pdoMap = newPdoMap;
       pdoClassMap = newPdoClassMap;
+      granteeMap.clear();
 
       invalid = false;
 

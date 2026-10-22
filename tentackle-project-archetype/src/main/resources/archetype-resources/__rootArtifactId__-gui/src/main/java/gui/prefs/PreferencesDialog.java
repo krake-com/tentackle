@@ -29,7 +29,7 @@ import java.util.ResourceBundle;
 import java.util.prefs.BackingStoreException;
 
 /**
- * Preferences controller with stage,
+ * Preferences dialog with one tab per preferences group.
  */
 @FxControllerService
 public class PreferencesDialog extends AbstractFxController {

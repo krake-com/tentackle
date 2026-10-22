@@ -139,7 +139,9 @@ public class AttributeOptionsPrinter {
 
 
   /**
-   * Prints the bind options.
+   * Prints the bind options.<br>
+   * Options already defined for the entity are omitted, as well as MAXCOLS and SCALE
+   * if they correspond to the attribute's size and scale.
    *
    * @return the bind option string
    */
@@ -201,7 +203,7 @@ public class AttributeOptionsPrinter {
   }
 
   /**
-   * Prints a boolean option with np global pendant.
+   * Prints a boolean option that has no entity-level counterpart.
    *
    * @param buf the builder
    * @param name the option's name

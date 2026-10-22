@@ -61,6 +61,14 @@ public @interface Persistent {
   boolean parent() default false;
 
   /**
+   * Returns whether this is the relation to an embedded entity.<br>
+   * The columns of an embedded entity live in the owner's table.
+   *
+   * @return true if this is an embedded entity
+   */
+  boolean embedded() default false;
+
+  /**
    * Gets the ordinal according to the model.<br>
    * Used to order the attributes and relations when analyzed via reflection.
    *

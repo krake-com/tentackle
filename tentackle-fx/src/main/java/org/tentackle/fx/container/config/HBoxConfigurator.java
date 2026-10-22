@@ -24,7 +24,7 @@ import javafx.scene.layout.HBox;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a {@link HBox}.
+ * Configures an {@link HBox}.
  *
  * @author harald
  * @param <T> the container type
@@ -33,7 +33,7 @@ import org.tentackle.fx.ConfiguratorService;
 public class HBoxConfigurator<T extends HBox> extends PaneConfigurator<T> {
 
   /**
-   * Creates the configurator for a {@link HBox}.
+   * Creates the configurator for an {@link HBox}.
    */
   public HBoxConfigurator() {
     // see -Xlint:missing-explicit-ctor since Java 16

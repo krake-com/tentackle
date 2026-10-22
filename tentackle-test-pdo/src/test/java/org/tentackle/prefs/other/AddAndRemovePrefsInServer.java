@@ -47,6 +47,9 @@ import java.io.Serial;
 import java.util.prefs.BackingStoreException;
 
 /**
+ * Server for {@link RemotePreferencesTest} that adds and removes preferences on the client's commands.
+ * <p>
+ * Runs in its own JVM and is driven via its standard input and output, see {@link ServerProcessWrapper}.
  *
  * @author harald
  */
@@ -174,7 +177,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
       @Override
       public void run() {
         try {
-          // always stop because we're not running within a transaction (there is no DbPreNode/Key.deleteAll)
+          // delete plain, node by node: there is no deleteAll for nodes and keys, and no transaction is running
           for (DbPreferencesNode node : new DbPreferencesNode((Db) getSession()).selectAllObjects()) {
             node.deletePlain();     // don't trigger modification counts
             for (DbPreferencesKey key : new DbPreferencesKey((Db) getSession()).selectByNodeId(node.getId())) {

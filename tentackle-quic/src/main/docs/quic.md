@@ -19,8 +19,9 @@ to assemble from several layers:
   model, where each pooled connection is one QUIC stream.
 - **Faster connection establishment** — the TLS handshake is folded into the
   transport handshake, saving round-trips compared to TCP+TLS.
-- **Connection migration** — a QUIC connection survives the client changing its
-  IP address or port (e.g., switching networks).
+- **Connection migration** — the protocol allows a connection to survive the
+  client changing its IP address or port (e.g., switching networks). This module
+  never initiates a migration (yet); though `tentackle-quiche` does, see below.
 
 The module is a thin adapter: it wires the [KWIK](https://github.com/ptrd/kwik)
 QUIC library (`tech.kwik.core`) into TRIP's pluggable transport SPI. No
@@ -40,15 +41,18 @@ is this module's sibling: the same transport, but built on
 the JDK's FFM API instead of on KWIK. Both speak RFC-9000 and **interoperate**: a KWIK client can call
 a quiche server and vice versa, which `QuicheKwikInteropTest` verifies on every build.
 
-|                 | `tentackle-quic` (KWIK) | `tentackle-quiche` (Cloudflare quiche)    |
-|-----------------|-------------------------|-------------------------------------------|
-| Implementation  | pure Java               | Rust, called through FFM                  |
-| Platforms       | anywhere a JVM runs     | linux/macOS/Windows on x86-64 and aarch64 |
-| Extra JVM flags | none                    | `--enable-native-access`                  |
-| Schemes         | `tripq`, `tripcq`       | `tripj`, `tripcj`                         |
+|                 | `tentackle-quic` (KWIK)    | `tentackle-quiche` (Cloudflare quiche)                                                                                               |
+|-----------------|----------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+| Implementation  | pure Java                  | Rust, called through FFM                                                                                                             |
+| Platforms       | anywhere a JVM runs        | Linux and macOS on x86-64 and aarch64, Windows on x86-64                                                                             |
+| Extra JVM flags | none                       | `--enable-native-access`                                                                                                             |
+| Schemes         | `tripq`, `tripcq`          | `tripj`, `tripcj`                                                                                                                    |
+| Stalled paths   | waits for the idle timeout | migrates to a new source port, see [Connection migration](../../../../tentackle-quiche/src/main/docs/quiche.md#connection-migration) |
 
-Start here. Reach for `tentackle-quiche` when you want the reference implementation's congestion control
-and packet processing, or when you are already shipping native code anyway. The two register different
+Prefer [`tentackle-quiche`](../../../../tentackle-quiche/src/main/docs/quiche.md): it migrates a stalled
+connection to a fresh source port, whereas this module waits for the idle timeout. Use this module when
+you need a pure-Java stack — for example, when the platform is not among those quiche ships binaries for,
+or the operating system is too old to run them and cannot be upgraded. The two register different
 schemes, so nothing stops an application from deploying both and letting each client pick.
 
 ---
@@ -136,8 +140,9 @@ contract. Server and client responsibilities are clearly separated.
    keystore alias auto-selection apply to QUIC too (see below).
 2. **Connection config** — `maxOpenPeerInitiatedBidirectionalStreams` is set from
    the `maxstreams` parameter (default 128), capping how many concurrent streams
-   a single client may open. The flow control windows are set from `streamwindow`
-   (see [Flow control](#flow-control)).
+   a single client may open. The max idle timeout is set from `quicidle` (see
+   [Idle timeout and keep-alive](#idle-timeout-and-keep-alive)), and the flow
+   control windows from `streamwindow` (see [Flow control](#flow-control)).
 3. **Bind address** — the host/port come from the URI. A host of `"0"` binds all
    interfaces (IPv4 and IPv6) via `withPort(port)`; any other host binds a
    specific `DatagramSocket`.
@@ -161,19 +166,35 @@ bidirectional streams (`Integer.MAX_VALUE`), with the real cap enforced by the
 
 ### Client side
 
-`QuicTripConnectionPool` is created lazily by `AbstractTransport` on first use:
+`QuicTripConnectionPool` is created lazily by `AbstractTransport` on first use, and
+establishes its QUIC connection right away:
 
 1. It opens a single `QuicClientConnection` to the URI's host and port, using the
-   ALPN id (`alpnid`, default = scheme).
-2. By default, server-certificate checking is **disabled**
-   (`noServerCertificateCheck()`), matching TRIP's design assumption that the
-   transport runs on a trusted, non-public network. Set `certcheck=true` to
-   enforce certificate validation.
+   ALPN id (`alpnid`, default = scheme). The URI must specify a port > 0.
+2. By default, server-certificate checking is **enabled**, against the
+   truststore named by `tsfile`/`tspass` (resolved the same way as the TCP/SSL
+   transports, see
+   [`SslParameters`](../../../../tentackle-core/src/main/docs/trip.md#ssltls-configuration)),
+   or the JVM's default cacerts if none is configured. A rejected certificate
+   fails the connection with a `TripRuntimeException` whose cause is an
+   `SSLHandshakeException` wrapping the original `CertificateException` —
+   exactly like the TCP/SSL transports report the same failure, so code
+   reacting to it (such as the client auto-update's
+   `LoginFailedWithUpdateHandler`) does not need to know which transport is
+   in use. The certificate must also be issued for the host name of the URI,
+   which KWIK always verifies — unlike the other transports, `tripq` does not
+   support `hostcheck=false` yet; it will with the next KWIK release. Set
+   `certcheck=false` to disable validation altogether
+   (`noServerCertificateCheck()`) — for a client that runs on a trusted,
+   non-public network against a server presenting a self-signed certificate
+   without a matching truststore.
 3. Establishing that connection is bounded by `connecttimeout` (default 10
    seconds). Since QUIC runs over UDP, an unreachable or unresponsive server
    produces no answer at all, so the client waits for the full timeout before
    failing with a `TripRuntimeException`. Lower it when a client should fail
-   over quickly rather than wait.
+   over quickly rather than wait. KWIK applies the timeout itself; the pool only
+   adds an outer bound of `CONNECT_TIMEOUT_GRACE` (5) seconds in case KWIK's wait
+   does not return at all.
 4. Each pool slot (`createSlot`) opens a new **bidirectional** QUIC stream
    (`connection.createStream(true)`) and wraps it in a `QuicTripConnection`.
 
@@ -193,26 +214,29 @@ The single integration point with TRIP serialization is `createStream`:
 
 ```java
 public TripStream createStream(Dictionary dictionary, QuicStream quicStream) {
-    TripFactory factory = TripFactory.getInstance();
-    return factory.createStream(dictionary,
-        factory.createSerializer(quicStream.getOutputStream()),
-        factory.createDeserializer(quicStream.getInputStream()));
+  TripFactory factory = TripFactory.getInstance();
+  return factory.createStream(dictionary,
+                              factory.createSerializer(outputStream(quicStream)),
+                              factory.createDeserializer(inputStream(quicStream)));
 }
 ```
 
 A `QuicStream` exposes ordinary `InputStream`/`OutputStream` objects; wrapping
 them in a TRIP `Serializer`/`Deserializer` is all that is needed to run the full
 TRIP protocol — dictionary compression, back-references, deduplication, and remote
-proxying — over QUIC. The streams handed to TRIP are the KWIK ones wrapped by
-`inputStream`/`outputStream`, see [Interrupts](#interrupts).
+proxying — over QUIC. `inputStream` and `outputStream` wrap KWIK's streams so that
+the interrupt status of the calling thread does not reach KWIK, see
+[Interrupts](#interrupts).
 
 ### Interrupts
 
-Everything a remote invocation blocks on here — the handshake, opening a pooled
-stream, and the stream reads and writes — is **interrupt-agnostic**, exactly like
-the blocking socket streams of the TCP transports: an interrupt of the calling
-thread neither aborts the operation nor gets lost. It is withheld for the duration
-of the call and re-asserted before returning.
+Everything a client's remote invocation blocks on — the handshake, opening a pooled
+stream, and the stream reads and writes — is meant to be **interrupt-agnostic**,
+exactly like the blocking socket streams of the TCP transports: an interrupt of the
+calling thread should neither abort the operation nor get lost. For the handshake and
+for opening a stream that holds without exception, and for the stream writes as well.
+For the stream reads it holds only for an interrupt that is pending when the read
+starts, see [the remaining gap](#the-remaining-gap).
 
 This is not a detail. Tentackle's [task dispatchers](../../../../tentackle-core/src/main/docs/tasks-daemon.md)
 interrupt their own thread whenever work is queued, to cut a pending sleep
@@ -223,19 +247,49 @@ down a perfectly healthy TRIP connection.
 
 KWIK itself does not cooperate: its `connect()` aborts the handshake and throws a
 bare `RuntimeException`, `createStream` reports a `TimeoutException`, a write waiting
-for flow control credits fails with an `InterruptedIOException`, and a blocked read
-consumes the interrupt without restoring it. Hence
+for room in the stream's send buffer fails with an `InterruptedIOException`, and a
+read clears the interrupt status without restoring it. Hence
 
 - `connect()` runs KWIK's handshake on a thread of its own and waits for it with an
   absolute deadline (`connecttimeout` plus `CONNECT_TIMEOUT_GRACE`),
 - `createQuicStream` does the same for `createStream` (which it has to do anyway to
   bound the wait for stream credits, see [Stream limit](#stream-limit)),
 - and `InterruptAgnosticStreams` keeps the interrupt status away from KWIK's stream
-  operations, restoring it once they return.
+  operations, restoring it once they return, and repeats a write that KWIK gave up on
+  because of an interrupt.
 
-An interrupt that arrives *while* KWIK is already blocked is still KWIK's to handle,
-which no wrapper can change. The [`tentackle-quiche`](../../../../tentackle-quiche/src/main/docs/quiche.md)
-transport does not have that limitation because it implements the blocking streams itself.
+The first two are complete: KWIK runs on another thread and never sees the caller's
+interrupt, which is remembered and re-asserted before returning.
+
+#### The remaining gap
+
+`InterruptAgnosticStreams` runs KWIK's stream operations on the calling thread. It
+can withhold an interrupt that is already pending, but not one that arrives *while*
+the thread is inside KWIK (as of KWIK 0.12):
+
+| Operation | Interrupt arriving during the operation | Consequence |
+|-----------|------------------------------------------|-------------|
+| write that does not have to wait | Left alone by KWIK. | None, the interrupt stays pending. |
+| write waiting for room in the send buffer | KWIK fails the write with an `InterruptedIOException`. The wrapper repeats it. | None, the interrupt is re-asserted when the write returns. |
+| read      | Swallowed by KWIK: the read goes on and returns normally, the interrupt status is cleared. | The call succeeds, but the interrupt is **lost**. A dispatcher misses its wakeup and notices the queued work only when its sleep interval ends. |
+
+Repeating a write is safe because KWIK takes its data all or nothing as long as it
+fits into the stream's send buffer of 50 kB: the interrupted wait for room in that
+buffer ends before anything is queued. A larger write would be split by KWIK itself
+and could fail halfway, so the wrapper hands the data over in chunks of 16 kB. KWIK
+also interrupts a waiting writer on its own when the stream is reset or the
+connection is gone; it marks the stream first, so the repeated write fails right away
+for that reason instead of being repeated forever.
+
+The lost interrupt of a read is the one gap left, and it is the common case: a remote
+invocation spends nearly all of its time waiting for the response. The wrappers cannot
+close it. Once KWIK has cleared the interrupt status, nothing tells that there ever
+was an interrupt. Threads that depend on their interrupts are better served by the
+[`tentackle-quiche`](../../../../tentackle-quiche/src/main/docs/quiche.md) transport,
+which implements the blocking streams itself and has no such gap.
+
+The server's connection handlers work on KWIK's streams directly: nothing interrupts
+them but the shutdown of the transport.
 
 ---
 
@@ -265,35 +319,41 @@ shape is used on both client and server (with host `0` / `0.0.0.0` selecting the
 server bind-all case).
 
 ```
-tripq://<host>:<port>?ksfile=...&kspass=...&ksalias=...[&kstype=...][&alpnid=...][&maxstreams=...][&streamwindow=...][&certcheck=...][&connecttimeout=...][&streamtimeout=...][&quicidle=...][&keepalive=...]
+tripq://<host>:<port>?ksfile=...&kspass=...&ksalias=...[&kstype=...][&kmpass=...][&tsfile=...][&tspass=...][&tstype=...][&alpnid=...][&maxstreams=...][&streamwindow=...][&certcheck=...][&connecttimeout=...][&streamtimeout=...][&quicidle=...][&keepalive=...]
 tripcq://<host>:<port>?...same as tripq...&mincompress=1024
 ```
 
-The keystore parameters (`ksfile`, `kspass`, `ksalias`, `kstype`) are resolved by the shared
+The keystore/truststore parameters (`ksfile`, `kspass`, `ksalias`, `kstype`, `kmpass`, `tsfile`, `tspass`, `tstype`) are
+resolved by the shared
 [`SslParameters`](../../../../tentackle-core/src/main/docs/trip.md#ssltls-configuration), so each
 also honors a `tentackle.ssl.<name>` system property and, as a fallback, the standard
 `javax.net.ssl.<name>` property. See that table for the full precedence rules.
 
-| Parameter        | Side            | Default                                                                   | Description                                                                                       |
-|------------------|-----------------|---------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
-| `ksfile`         | server          | `tentackle.ssl.keyStore` / `javax.net.ssl.keyStore`                       | Path to the TLS keystore file. **Required** (here or via a system property).                      |
-| `kspass`         | server          | `tentackle.ssl.keyStorePassword` / `javax.net.ssl.keyStorePassword`       | Keystore password; also used as the key password unless `kmpass` is set.                          |
-| `ksalias`        | server          | the sole key entry, if the keystore has exactly one                       | Alias of the server certificate within the keystore. Required only for multi-entry keystores.     |
-| `kstype`         | server          | `tentackle.ssl.keyStoreType` / `javax.net.ssl.keyStoreType` / JDK default | Keystore type, e.g. `PKCS12` or `JKS`.                                                            |
-| `kmpass`         | server          | the keystore password (`kspass`)                                          | Private key password, if it differs from the keystore password.                                   |
-| `alpnid`         | both            | the URI scheme (`tripq` / `tripcq`)                                       | ALPN application-protocol identifier. Client and server must match.                               |
-| `maxstreams`     | server          | `128`                                                                     | Maximum concurrent peer-initiated bidirectional streams per connection.                           |
-| `streamwindow`   | both            | `250000`                                                                  | Flow control window per stream in bytes; must be >= 1500. See below.                              |
-| `certcheck`      | client          | `false`                                                                   | When `true`, the client validates the server certificate. When `false`, validation is skipped.    |
-| `connecttimeout` | client          | `10`                                                                      | Seconds to wait for the QUIC handshake before giving up. Must be > 0.                             |
-| `streamtimeout`  | client          | `10`                                                                      | Seconds to wait for the peer to grant the credits to open another stream. Must be > 0. See below. |
-| `quicidle`       | both            | `30`                                                                      | QUIC max idle timeout in **seconds**. See below.                                                  |
-| `keepalive`      | client          | unlimited                                                                 | Seconds to keep the QUIC connection alive. `0` disables the keep-alive. See below.                |
-| `mincompress`    | both (`tripcq`) | `1024`                                                                    | Minimum block size in bytes before deflate compression is applied.                                |
+| Parameter        | Side            | Default                                                                       | Description                                                                                                                                                                        |
+|------------------|-----------------|-------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `ksfile`         | server          | `tentackle.ssl.keyStore` / `javax.net.ssl.keyStore`                           | Path to the TLS keystore file. **Required** (here or via a system property).                                                                                                       |
+| `kspass`         | server          | `tentackle.ssl.keyStorePassword` / `javax.net.ssl.keyStorePassword`           | Keystore password; also used as the key password unless `kmpass` is set.                                                                                                           |
+| `ksalias`        | server          | the sole key entry, if the keystore has exactly one                           | Alias of the server certificate within the keystore. Required only for multi-entry keystores.                                                                                      |
+| `kstype`         | server          | `tentackle.ssl.keyStoreType` / `javax.net.ssl.keyStoreType` / JDK default     | Keystore type, e.g. `PKCS12` or `JKS`.                                                                                                                                             |
+| `kmpass`         | server          | the keystore password (`kspass`)                                              | Private key password, if it differs from the keystore password.                                                                                                                    |
+| `tsfile`         | client          | `tentackle.ssl.trustStore` / `javax.net.ssl.trustStore` / JVM cacerts         | Truststore verifying the server certificate, used when `certcheck=true`.                                                                                                           |
+| `tspass`         | client          | `tentackle.ssl.trustStorePassword` / `javax.net.ssl.trustStorePassword`       | Truststore password.                                                                                                                                                               |
+| `tstype`         | client          | `tentackle.ssl.trustStoreType` / `javax.net.ssl.trustStoreType` / JDK default | Truststore type.                                                                                                                                                                   |
+| `alpnid`         | both            | the URI scheme (`tripq` / `tripcq`)                                           | ALPN application-protocol identifier. Client and server must match.                                                                                                                |
+| `maxstreams`     | both            | `128`                                                                         | Maximum concurrent peer-initiated bidirectional streams per connection; must be >= 1. On the client, it is the default of the pool's `maximum`, see [Stream limit](#stream-limit). |
+| `streamwindow`   | both            | `250000`                                                                      | Flow control window per stream in bytes; must be >= 1500. See below.                                                                                                               |
+| `certcheck`      | client          | `true`                                                                        | When `true`, the client validates the server certificate against `tsfile`. Any other value skips validation.                                                                       |
+| `connecttimeout` | client          | `10`                                                                          | Seconds to wait for the QUIC handshake before giving up. Must be > 0.                                                                                                              |
+| `streamtimeout`  | client          | `10`                                                                          | Seconds to wait for the peer to grant the credits to open another stream. Must be > 0. See below.                                                                                  |
+| `quicidle`       | both            | `30`                                                                          | QUIC max idle timeout in **seconds**. See below.                                                                                                                                   |
+| `keepalive`      | client          | unlimited                                                                     | How many seconds to keep the QUIC connection alive. `0` disables the keep-alive. See below.                                                                                        |
+| `mincompress`    | both (`tripcq`) | `1024`                                                                        | Minimum block size in bytes before deflate compression is applied.                                                                                                                 |
 
 > On the server, if the keystore file (`ksfile`) or the certificate alias (`ksalias`, unless the
 > keystore holds a single key entry) cannot be resolved, `accept()` throws a
-> `TripRuntimeException`. The port must be in the range `0..65535`.
+> `TripRuntimeException`. The port must be in the range `0..65535`. On the client, a port that is
+> not > 0, or a `connecttimeout` or `streamtimeout` that is not > 0, fails the creation of the
+> connection pool with an `IllegalArgumentException`.
 
 ### Idle timeout and keep-alive
 
@@ -309,12 +369,17 @@ Note that this has nothing to do with the connection pool's `idle` parameter, wh
 QUIC connection, so the pool would keep handing out connections belonging to a QUIC connection that
 is long gone. To prevent that, the client keeps the QUIC connection alive by sending PING frames,
 for as long as the pool exists. Set `keepalive=0` to disable this, for example, when the connection
-is short-lived anyway, or `keepalive=<seconds>` to limit it. Should the QUIC connection be lost
+is short-lived anyway, or `keepalive=<seconds>` to limit it. Note that `keepalive` is a *duration*
+here, handed to KWIK's `keepAlive(seconds)`, whereas `tentackle-quiche` interprets the same parameter
+as the *interval* between keep-alive packets. Should the QUIC connection be lost
 nevertheless (network loss, peer restart, `keepalive=0`), the pool drops the dead connections and
-re-establishes the QUIC connection on the next request. The connection it replaces is closed
-explicitly: KWIK stops a connection's keep-alive actor when the connection is closed, but not when it
-is terminated silently, and that actor runs on a non-daemon thread that would otherwise keep the JVM
-from terminating.
+re-establishes the QUIC connection on the next request. Only then: the periodic monitoring of the
+pool removes the dead connections, but does not bring the pool back to its `minimum` size while the
+QUIC connection is gone. Doing so would block the thread that monitors all pools for up to
+`connecttimeout`, round after round, for as long as the server is unreachable. The connection it
+replaces is closed explicitly: KWIK stops a connection's keep-alive actor when the connection is
+closed, but not when it is terminated silently, and that actor runs on a non-daemon thread that
+would otherwise keep the JVM from terminating.
 
 The corresponding pool parameters (`initial`, `increment`, `minimum`, `maximum`, `idle`, `usage`)
 are described in [trip.md](../../../../tentackle-core/src/main/docs/trip.md).
@@ -326,12 +391,12 @@ A peer may only open as many concurrent streams as the other end grants it
 `maxstreams` configures that limit. Fresh credits are granted only when a stream is *closed* — but
 every pooled connection holds its stream for as long as it sits in the pool, so a busy client walks
 straight into the limit. KWIK's `createStream` does not fail there, it waits, and it waits with the
-connection pool's *and* the transport's monitor held. No other thread could return a connection to
+connection pool's monitor held. No other thread could return a connection to
 free a stream, so the wait would never end, and the whole client transport would be stuck.
 
 Two things prevent this. The pool's `maximum` defaults to `maxstreams` instead of *unlimited*, so the
 pool stops enlarging itself before it reaches the limit and requests fail with a *temporary*
-`TripRuntimeException` ("max. pool size reached") — the caller can retry, and the transport stays
+`TripRuntimeException` ("max. pool size … reached") — the caller can retry, and the transport stays
 usable. And should the peer nevertheless grant fewer streams than configured here — the client cannot
 detect a `maxstreams` mismatch — `streamtimeout` bounds the wait, again with a temporary exception.
 
@@ -402,10 +467,10 @@ scheme.
 
 ## Choosing a QUIC scheme
 
-| Scheme   | Transport  | Encryption         | Compression | When to use                                                                                   |
-|----------|------------|--------------------|-------------|-----------------------------------------------------------------------------------------------|
-| `tripq`  | UDP / QUIC | TLS 1.3 (built in) | no          | Lossy or high-latency networks; many concurrent streams; mobile clients that change networks. |
-| `tripcq` | UDP / QUIC | TLS 1.3 (built in) | deflate     | As `tripq`, when payloads are large and bandwidth-bound.                                      |
+| Scheme   | Transport  | Encryption         | Compression | When to use                                               |
+|----------|------------|--------------------|-------------|-----------------------------------------------------------|
+| `tripq`  | UDP / QUIC | TLS 1.3 (built in) | no          | Lossy or high-latency networks; many concurrent streams.  |
+| `tripcq` | UDP / QUIC | TLS 1.3 (built in) | deflate     | As `tripq`, when payloads are large and bandwidth-bound.  |
 
 Compared with the TCP-based schemes (`trip`, `trips`, `tripe`, `tripc`, …), QUIC
 provides TLS without a separate handshake layer and avoids TCP head-of-line
@@ -417,6 +482,8 @@ The `tripj` and `tripcj` schemes of
 [`tentackle-quiche`](../../../../tentackle-quiche/src/main/docs/quiche.md) are the same two choices on
 the quiche stack, and they talk to `tripq`/`tripcq` peers — the scheme selects the local implementation,
 not the wire protocol. The compression of `tripcq`/`tripcj`, on the other hand, must match on both ends.
+For clients that change networks or sit behind NATs that rebind, prefer `tripj`/`tripcj`: only quiche
+migrates a connection whose path has stalled.
 
 ---
 

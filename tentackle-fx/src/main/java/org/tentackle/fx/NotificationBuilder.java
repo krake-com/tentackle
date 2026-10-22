@@ -27,9 +27,8 @@ import java.net.URL;
  * Builder for notifications.<br>
  * Notifications are a lightweight alternative to {@link javafx.scene.control.Alert}s.
  * While the latter are {@link javafx.scene.control.Dialog}s, tentackle notifications
- * come as {@link javafx.scene.Parent} nodes, that can be used in any container,
- * i.e. a {@link javafx.stage.Popup}, {@link javafx.scene.control.Dialog}, part of scenegraph
- * or whatever.
+ * come as {@link javafx.scene.Parent} nodes that can be used in any container,
+ * e.g. a {@link javafx.stage.Popup}, a {@link javafx.scene.control.Dialog}, or as part of a scene graph.
  * <p>
  * Not to be mixed up with {@link org.tentackle.fx.component.Note}s.
  */
@@ -62,7 +61,7 @@ public interface NotificationBuilder {
     ERROR,
 
     /**
-     * Displays some information that the user must commit.
+     * Displays some information that the user must confirm.
      */
     CONFIRMATION,
 
@@ -244,7 +243,8 @@ public interface NotificationBuilder {
   NotificationBuilder closeButton(CloseButtonMode closeButtonMode);
 
   /**
-   * Sets the hide action when a button is pressed.
+   * Sets the hide action.<br>
+   * Invoked when a button is pressed, the close button is clicked, or the duration (including the fadeout) has elapsed.
    *
    * @param hide the action to close or hide the notification
    * @return the builder

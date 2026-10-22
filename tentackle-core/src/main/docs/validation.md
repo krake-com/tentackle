@@ -154,8 +154,11 @@ carrying all per-validation information:
 
 `DefaultValidationContext` is the default implementation (replaceable through
 `ValidationContextFactory`). It supports a **lazy object supplier**: the element's
-value is fetched only if the constraint actually runs, so a failing pre-condition
-can spare an expensive getter (e.g., a lazily loaded list relation).
+value is fetched only when a validator asks for it, so a failing pre-condition
+can spare an expensive getter (e.g., a lazily loaded list relation). This holds
+for constant and `$reference` conditions; a *script* condition receives the element
+as its `value` variable and therefore fetches it. The supplier is invoked on every
+`getObject()`, i.e. the value is not cached by the context.
 
 The context also names the variables exposed to scripts: `context`, `scope`,
 `path`, `object` (= parent object), `value` (= the element) and `clazz`.
@@ -212,10 +215,16 @@ Most annotations default to `scope = {DefaultScope.class}`. `DefaultScope` has n
 implementation; it is a placeholder meaning *"ask the object"*. When a constraint
 is configured with only the default scope and the parent object implements
 [`ScopeConfigurator`](#defaultscope-and-scopeconfigurator), the object's `getDefaultScopes()`
-supplies the effective scopes (`AbstractValidator.getConfiguredScopes`). Objects
-that don't implement `ScopeConfigurator` fall back to `AllScope` — i.e., the
-constraint applies always. This lets an entity declare, once, the scopes its
-default-scoped constraints should use.
+supplies the effective scopes (`AbstractValidator.getConfiguredScopes`). This lets
+an entity declare, once, the scopes its default-scoped constraints should use —
+PDOs, for example, default to `PersistenceScope`, `MandatoryScope` and `ChangeableScope`.
+
+For objects that don't implement `ScopeConfigurator`, the configured scope stays
+`DefaultScope`. Since no scope implements it, such constraints run **only** when
+validating with the `AllScope` — as `ValidationUtilities.validate(object)` does for
+simple objects such as DTOs. Validating such an object with, say, the
+`PersistenceScope` skips all its default-scoped constraints; give them an explicit
+`scope` if they must run in other scopes as well.
 
 ### `ValidationSeverity` — how bad is it
 
@@ -242,8 +251,8 @@ Two constraints do double duty as **binding evaluators**, feeding the
 component without an extra mechanism:
 
 - a validator implementing `MandatoryBindingEvaluator` (`NotNullImpl`,
-  `MandatoryImpl`, `NotZeroImpl`) answers `isMandatory(ctx)` — should the bound
-  field be marked required?
+  `NotEmptyImpl`, `NotZeroImpl`, `MandatoryImpl`) answers `isMandatory(ctx)` —
+  should the bound field be marked required?
 - a validator implementing `ChangeableBindingEvaluator` (`ChangeableImpl`)
   answers `isChangeable(ctx)` — should the bound field be editable?
 
@@ -259,8 +268,8 @@ included by the binder when it evaluates these states.
 
 Three annotation parameters are not plain strings but
 [`CompoundValue`](compound-value.md)s — they may be a **constant**, a **method
-reference**, or a **script expression** (Groovy by default; Ruby and JSR-223
-languages are also supported):
+reference**, or a **script expression** (in the default scripting language, usually
+Groovy; Ruby and JSR-223 languages are also supported, see [scripting](scripting.md)):
 
 - **`condition`** — a boolean expression gating whether the constraint applies at
   all. `@NotNull(condition = "$isClassIdNecessary")` only requires the value when
@@ -306,8 +315,8 @@ typical call is `validate(object, validationPath, scope)`:
    such as PDOs).
 2. **Field validators** — `ValidatorCache.getFieldValidators(clazz)` returns the
    cached, sorted validators for all annotated fields and getters. (If a member
-   is annotated on *both* field and getter, the getter wins —
-   `ValidatorKey` deduplicates.) `validateFields` builds one
+   is annotated on *both* field and getter, the constraints of both apply — they
+   share the validation context of that member.) `validateFields` builds one
    `ValidationContext` per field (shared by all its validators), then for each
    validator checks `condition` **and** `scope`, and runs it if both apply.
 3. **Object validators** — `getObjectValidators(clazz)` returns the type-level
@@ -355,14 +364,15 @@ validation path), as opposed to a logical validation failure.
 ### Validating collections and nested objects
 
 `validateCollection(coll, path, scope)` validates each element, appending
-`[index]` to the path. Elements implementing
+`[index]` to the path (`null` elements are skipped and not counted). Elements implementing
 `Validateable` are validated
 through their own `validate` method (honoring any override); other elements go
 through the annotation-driven `validate`. The `@Validate` constraint ties this
 into the field/object flow: annotated on a member, it descends into a
-`Validateable` value or a `Collection`, letting an application-specific datatype
-or a PDO component be validated in place — and letting `priority`/`condition`
-control *when* in the parent's validation that descent happens.
+`Validateable` value (through its own `validate` method) or a `Collection`, letting
+an application-specific datatype or a PDO component be validated in place — and
+letting `priority`/`condition` control *when* in the parent's validation that
+descent happens. Any other non-null value is a `ValidationRuntimeException`.
 
 ---
 
@@ -378,9 +388,9 @@ where stated.
 |----------------------------------------|----------------------------------------------------------------------------------------------------|
 | `@NotNull`                             | element is not `null` (also a *mandatory* evaluator)                                               |
 | `@Null`                                | element is `null`                                                                                  |
-| `@NotZero`                             | element ≠ 0; implies mandatory (like `@NotNull` + `@NotEqual("0")`)                                |
-| `@Zero`                                | element == 0; `null` is **invalid**                                                                |
-| `@NotEmpty`                            | `String`/`Collection`/`Map`/array is not empty                                                     |
+| `@NotZero`                             | `Number` element ≠ 0 (scale-insensitive); implies mandatory                                        |
+| `@Zero`                                | `Number` element == 0 (scale-insensitive)                                                          |
+| `@NotEmpty`                            | `String`/`Collection`/`Map`/array is not empty; `null` is **invalid**; implies mandatory           |
 | `@Size(min=, max=)`                    | length/size of `String`/`Collection`/`Map`/array within bounds                                     |
 | `@Pattern(value, flag=, ignoreNulls=)` | `String` matches a regular expression                                                              |
 | `@Greater` / `@GreaterOrEqual`         | `Comparable` element > / ≥ `value`                                                                 |
@@ -392,8 +402,11 @@ where stated.
 | `@Validate`                            | descends into a `Validateable` component or `Collection`; reorders/guards component validation     |
 | `@Fail`                                | aborts validation with a `ValidationFailedException` based on results so far                       |
 
-The comparison validators (`@Greater`, `@Equal`, …) carry an `ignoreNulls` flag
-controlling how `null` operands compare. Example from a real model:
+Most validators carry an `ignoreNulls` flag (default `true`). Set to `false`, a `null`
+element becomes invalid for `@Zero`, `@NotZero`, `@Pattern`, `@Size`, `@True` and
+`@False`. For the comparison validators it controls how `null` operands compare:
+`null` is then smaller than any other value (`@Greater`, `@Less`, …) and equals
+only `null` (`@Equal`, `@NotEqual`). Example from a real model:
 
 ```java
 @NotNull(message = "missing class ID", condition = "$isClassIdNecessary")
@@ -430,7 +443,7 @@ service). Each has a stable `NAME`.
 
 | Scope                              | Purpose                                                                                   |
 |------------------------------------|-------------------------------------------------------------------------------------------|
-| `AllScope` (`ALL`)                 | matches every scope — a wildcard; used as the default when no `ScopeConfigurator` applies |
+| `AllScope` (`ALL`)                 | matches every scope — a wildcard; the only scope applying `DefaultScope` constraints of objects without a `ScopeConfigurator` |
 | `PersistenceScope` (`PERSISTENCE`) | constraints enforced before an object is persisted                                        |
 | `InteractiveScope` (`INTERACTIVE`) | constraints relevant only during interactive editing                                      |
 | `MandatoryScope` (`MANDATORY`)     | drives the *mandatory* state of bound components                                          |
@@ -458,9 +471,10 @@ public @interface NotEmptyContainer {
 When the scanner meets a container, it unwraps it via
 `getAnnotationsByType` and creates one validator per repeated element, each with
 its own `validationIndex`. This lets the same member carry, say, two `@Greater`
-constraints with different scopes or conditions. `ValidatorList` /
-`AbstractRepeatableValidator` provide the generic machinery for validators that
-themselves wrap a list of sub-annotations.
+constraints with different scopes or conditions. The interfaces `ValidatorList`
+and `RepeatableValidator` (with `AbstractRepeatableValidator`) describe validators
+that wrap a list of sub-annotations; the scanner itself does not use them, but
+unwraps the containers on its own.
 
 ---
 
@@ -482,7 +496,8 @@ The default simply delegates, but an implementor may override it to add custom
 steps, reorder, or short-circuit. Implementing the interface (even without
 overriding) also signals intent and lets `validateCollection` and `@Validate`
 route through the object's own method. The persistence layer's
-`PersistentObject.validate()` is the canonical example. Note that
+`PersistentObject.validate()` is the canonical example: it presets virgin objects
+and validates the components of the aggregate as well. Note that
 `ValidationUtilities` itself does **not** check for `Validateable` (except inside
 `validateCollection`) — such objects must be entered through their own `validate`
 method.
@@ -566,7 +581,7 @@ they work in both modular and non-modular deployments. The module exports
 | `Validation`                                               | meta-annotation linking a constraint annotation to its `Validator` |
 | `RepeatableValidation`                                     | meta-annotation marking a `@Repeatable` container                  |
 | `Validator` / `AbstractValidator`                          | the constraint contract and base implementation                    |
-| `ValidatorList`                                            | a validator wrapping a list of sub-annotations                     |
+| `ValidatorList` / `RepeatableValidator`                    | validators wrapping a list of sub-annotations (not used by the scanner) |
 | `ValidationContext` / `DefaultValidationContext`           | per-validation runtime state                                       |
 | `ValidationResult`                                         | the (serializable) outcome of a check                              |
 | `ValidationScope` / `DefaultScope`                         | when a constraint applies; the per-object default placeholder      |

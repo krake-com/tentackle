@@ -27,13 +27,15 @@ interface ModelManagerHolder {
 
 
 /**
- * Creates and maintains models.<br>
- *
+ * Creates and maintains models.
+ * <p>
  * While there is usually only one model instance per build process (the default model),
  * it is possible to create multiple models for different purposes, for example,
  * to create PDOs from the model of another project.<br>
  * Models are distinguished by their unique name.<br>
  * The default model is always called "default".
+ *
+ * @author harald
  */
 public interface ModelManager {
 
@@ -63,12 +65,11 @@ public interface ModelManager {
   Model getModel(String name);
 
   /**
-   * Removes the given model.
+   * Removes the given model.<br>
    * The default model cannot be removed.
-   * If the model is the default model or unknown to the ModelManager,
-   * a {@link org.tentackle.common.TentackleRuntimeException} is thrown.
    *
    * @param model the model to remove
+   * @throws org.tentackle.common.TentackleRuntimeException if the model is the default model or unknown
    */
   void removeModel(Model model);
 

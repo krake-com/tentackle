@@ -103,7 +103,10 @@ public final class MandatoryImpl extends AbstractValidator<Mandatory> implements
   /**
    * {@inheritDoc}
    * <p>
-   * @return true if no condition or condition is valid
+   * The element is mandatory if the value is empty or evaluates to {@code true}, and the condition,
+   * if any, is met.
+   *
+   * @return true if mandatory
    */
   @Override
   public boolean isMandatory(ValidationContext validationContext) {

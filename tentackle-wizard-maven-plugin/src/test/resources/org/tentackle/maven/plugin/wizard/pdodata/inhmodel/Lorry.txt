@@ -1,0 +1,8 @@
+## a lorry
+name := Lorry
+id := 24
+extends := Truck
+
+## attributes
+
+Integer         axles           axles           the number of axles

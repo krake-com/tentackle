@@ -31,13 +31,21 @@ interface ScriptFactoryHolder {
 
 /**
  * A factory for scripts.
+ * <p>
+ * The scripting languages are provided by modules such as tentackle-script-groovy and are
+ * referenced by their abbreviations. There is no default language unless set via
+ * {@link #setDefaultLanguage(String)} (the application sets it from its {@code scripting} property,
+ * or if there is exactly one language available).
+ * <p>
+ * Replaceable via &#64;{@link org.tentackle.common.Service}.
+ * The default implementation is {@link DefaultScriptFactory}.
  *
  * @author harald
  */
 public interface ScriptFactory {
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */
@@ -48,10 +56,9 @@ public interface ScriptFactory {
 
   /**
    * Sets the default language.
-   * <p>
-   * Throws ScriptRuntimeException if no such language.
    *
    * @param abbreviation the abbreviation for the default language
+   * @throws ScriptRuntimeException if no such language
    */
   void setDefaultLanguage(String abbreviation);
 
@@ -73,12 +80,12 @@ public interface ScriptFactory {
 
 
   /**
-   * Gets the scripting language.
-   * <p>
-   * Throws  ScriptRuntimeException if no such language.
+   * Gets the scripting language.<br>
+   * The abbreviation is case-insensitive.
    *
    * @param abbreviation one of the abbreviations for that language, null or empty string if default language
    * @return the language, never null
+   * @throws ScriptRuntimeException if no such language or no default language
    */
   ScriptingLanguage getLanguage(String abbreviation);
 
@@ -109,15 +116,13 @@ public interface ScriptFactory {
    * Caching should not be used for scripts that are executed only once.
    * <p>
    * If there are chances that scripts are invoked from different threads at a time, <em>all</em> scripts must be executed
-   * in a thread-safe manner. Although some languages are threadsafe by design, others may need some extra synchronization.
-   * If in doubt, set <code>threadSafe</code> to <code>true</code>
+   * in a thread-safe manner. Although some languages are thread-safe by design, others may need some extra synchronization.
+   * If in doubt, set <code>threadSafe</code> to <code>true</code>.
    * <p>
    * An optional function provides a {@link ScriptConverter} for the given scripting language to translate the
    * code before being compiled.
    * <p>
    * Notice that the script will be compiled when first used. To compile it without execution, invoke {@link Script#validate()}.
-   * <p>
-   * Throws {@link ScriptRuntimeException} if creating the script failed.
    *
    * @param abbreviation the scripting language abbreviation, null or empty for default language
    * @param code the scripting code
@@ -125,6 +130,7 @@ public interface ScriptFactory {
    * @param threadSafe true if script may be used by more than one thread in parallel
    * @param converterProvider the optional script converter provider
    * @return the script, never null
+   * @throws ScriptRuntimeException if creating the script failed, for example due to an unknown language
    */
   Script createScript(String abbreviation, String code, boolean cached, boolean threadSafe, Function<String, ScriptConverter> converterProvider);
 

@@ -21,7 +21,7 @@ package org.tentackle.trip.types;
 import org.tentackle.trip.TripTypeService;
 
 /**
- * Trip type for float primitive.
+ * Trip type for the {@code float} primitive.
  */
 @TripTypeService(float.class)
 public final class FloatPrimitiveTripType extends FloatTripType {

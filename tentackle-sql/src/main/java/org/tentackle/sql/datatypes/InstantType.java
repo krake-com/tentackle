@@ -40,7 +40,7 @@ import java.util.Optional;
  * <p>
  * Stored as 2 columns:
  * <ol>
- *   <li>the epochal seconds since 1970-01-01 00:00:00 GMT</li>
+ *   <li>the epoch seconds since 1970-01-01 00:00:00 GMT</li>
  *   <li>the nanoseconds</li>
  * </ol>
  * The {@code [MAPNULL]} option maps null values to {@code 0s/0ns}.<br>
@@ -255,7 +255,8 @@ public final class InstantType extends AbstractDateTimeType<Instant> {
   }
 
   /**
-   * Converts a string to an instant.
+   * Converts a string to an instant.<br>
+   * The format is {@code yyyy-MM-dd HH:mm:ss[.SSS|.nnnnnnnnn]} in the system's default timezone.
    *
    * @param str the formatted string
    * @return the instant
@@ -290,7 +291,8 @@ public final class InstantType extends AbstractDateTimeType<Instant> {
   }
 
   /**
-   * Converts an instant to a string.
+   * Converts an instant to a string.<br>
+   * The format is {@code yyyy-MM-dd HH:mm:ss[.SSS|.nnnnnnnnn]} in the system's default timezone.
    *
    * @param instant the instant
    * @return the formatted instant

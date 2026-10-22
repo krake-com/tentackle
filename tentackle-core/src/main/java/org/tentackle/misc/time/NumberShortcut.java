@@ -29,15 +29,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Shortcut to derive a Temporal from a numeric input.<br>
+ * Shortcut to derive a {@link Temporal} from a numeric input.<br>
  * The corresponding part is updated and the remaining parts (to the right) are set to their minimum value.
  * <p>
  * Examples:<br>
  * {@code 5h} will set the time to 05:00:00.000.<br>
  * {@code 7M} will set the month to July, day of month to the 1st and the time to midnight (if the type contains a time component).
  * <p>
- * If the type is missing (e.g. {@code "10"}), it defaults to {@code d} (days) for types containing a date
- * or to {@code h} (hours) otherwise.
+ * If the unit is missing (e.g. {@code "10"}), it defaults to {@code d} (days) for types containing a date
+ * or to {@code h} (hours) otherwise. The units are the same as for the {@link AddShortcut}.
+ * <p>
+ * Numbers with 4 or 6 digits are interpreted according to the order of the fields in the pattern,
+ * for example as {@code ddMM}, {@code MMdd}, {@code ddMMyy} or {@code HHmm}, {@code HHmmss}.
  * <p>
  * For the year, month and day of month a sliding window can be provided (see {@link WindowProvider}) to
  * automatically adjust the values. For example, entering 010120 will be expanded to 2020-01-01, whereas
@@ -114,12 +117,14 @@ public class NumberShortcut implements SmartDateTimeParser.Shortcut {
   }
 
   /**
-   * Gets tumber of years after the current year to automatically determine the century.<br>
+   * Gets the number of years after the current year to automatically determine the century.<br>
    * If the {@link WindowProvider} is missing, the value 50 is used. Supposed we're in 2020 and the user enters 99,
    * then the year would be expanded to 1999 and 30 would be expanded to 2030, accordingly.<br>
    * For special date fields, for example dates of birth, the value should be 0,
    * since it's rather unlikely to know the date in advance.<br>
    * A negative value disables this feature.
+   *
+   * @return the year window
    */
   public int getYearWindow() {
     return windowProvider == null ? 50 : windowProvider.getYearWindow();
@@ -132,6 +137,8 @@ public class NumberShortcut implements SmartDateTimeParser.Shortcut {
    * Again, for special date fields, for example the booking part of a financial accounting system, values of 1 or 2 may be
    * appropriate.<br>
    * A negative value disables this feature, which is the default if there is no {@link WindowProvider}.
+   *
+   * @return the month window
    */
   public int getMonthWindow() {
     return windowProvider == null ? -1 : windowProvider.getMonthWindow();
@@ -141,6 +148,8 @@ public class NumberShortcut implements SmartDateTimeParser.Shortcut {
    * Same as {@link #getYearWindow()}, but for days.<br>
    * Valid values are 0 - 30.<br>
    * A negative value disables this feature, which is the default if there is no {@link WindowProvider}.
+   *
+   * @return the day window
    */
   public int getDayWindow() {
     return windowProvider == null ? -1 : windowProvider.getDayWindow();
@@ -172,7 +181,7 @@ public class NumberShortcut implements SmartDateTimeParser.Shortcut {
    * Derives the month from a day input.
    *
    * @param day the day (1-31)
-   * @return the closest month (0-11 for current year, -1 for december of last year, 12 for january of next year)
+   * @return the closest month (0-11 for current year, -1 for December of last year, 12 for January of next year)
    * @see #getDayWindow()
    */
   public int deriveMonthFromDay(int day) {

@@ -26,10 +26,11 @@ package org.tentackle.validate;
  * Annotations for objects implementing {@link ScopeConfigurator} will get the scopes
  * defined by {@link ScopeConfigurator#getDefaultScopes()}.
  * <p>
- * Annotations of all other objects will get the {@link org.tentackle.validate.scope.AllScope}.
+ * Annotations of all other objects keep the {@code DefaultScope}. Since there is no implementation
+ * of the {@code DefaultScope}, those validators are only applied if the validation runs with the
+ * {@link org.tentackle.validate.scope.AllScope} (for example, via {@link ValidationUtilities#validate(Object)}).
  * <p>
- * There is no implementation of the DefaultScope.
- * It's just used to map to the effective scopes.
+ * The {@code DefaultScope} is just used to map to the effective scopes.
  *
  * @author harald
  */

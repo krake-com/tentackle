@@ -1,0 +1,9 @@
+## a vehicle (single table)
+name := Vehicle
+table := vehicle
+inheritance := single
+
+## attributes
+[root]
+
+String(20)      plate           plate           the license plate

@@ -30,7 +30,10 @@ import java.lang.annotation.Target;
 
 
 /**
- * Annotation to express that the annotated method should be logged.
+ * Annotation to express that the annotated method should be logged.<br>
+ * The method's execution time is logged after it returns, if the logging level is loggable.
+ *
+ * @see LogInterceptor
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

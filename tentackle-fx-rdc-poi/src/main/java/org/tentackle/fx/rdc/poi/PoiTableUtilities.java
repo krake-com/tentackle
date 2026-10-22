@@ -61,12 +61,16 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Table-related utility methods with POI extension to create XLS files.
+ * Table-related utility methods exporting spreadsheets as Excel {@code .xls} workbooks via Apache POI.
+ * <p>
+ * Replaces the default {@link TableUtilities}, which exports CSV files, without any change to the
+ * application code. The cells keep their native type (numbers, booleans, dates and times) instead
+ * of being exported as text.
  *
  * @author harald
  */
 @Service(TableUtilities.class)
-@ClasspathFirst(TableUtilities.class)   // POI isn't modularized yet, but fx-rdc is
+@ClasspathFirst(TableUtilities.class)   // this module is no JPMS module (POI requires a filename-based automatic module), but fx-rdc is
 public class PoiTableUtilities extends TableUtilities {
 
   private static final String SPREADSHEET_EXTENSION = ".xls";
@@ -80,6 +84,12 @@ public class PoiTableUtilities extends TableUtilities {
   private static final int SECONDS_PER_DAY = 24 * 60 * 60;
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Asks for an {@code .xls} file. The last file is remembered per table in the preferences node
+   * {@code lastXlsNames/<tableName>}.
+   */
   @Override
   public File selectSpreadsheetFile(String tableName, Stage owner) {
     return RdcUtilities.getInstance().selectFile(
@@ -88,6 +98,19 @@ public class PoiTableUtilities extends TableUtilities {
         RdcFxRdcBundle.getString("SPREADSHEET FILE"), owner);
   }
 
+  /**
+   * Exports the items to an {@code .xls} workbook with a single sheet.<br>
+   * The first row holds the displayed names of the visible columns in a bold, italic and centered font.
+   * Each item is written to one row, with a cell per visible column. Booleans, numbers, dates and times
+   * become typed cells, money values get a number format matching their scale, and all other values
+   * are exported as the text displayed in the table. Null values and unbound columns leave the cell empty.
+   *
+   * @param columnConfigurations the column configurations
+   * @param file the output file
+   * @param items the items to export
+   * @param <S> the row type
+   * @throws RdcRuntimeException if the data exceeds the limits of the format or the file could not be written
+   */
   @Override
   protected <S> void toSpreadsheet(Collection<TableColumnConfiguration<S,?>> columnConfigurations, File file, List<S> items) {
 
@@ -164,6 +187,16 @@ public class PoiTableUtilities extends TableUtilities {
             else if (value instanceof Number) {
               cell.setCellValue(((Number) value).doubleValue());
             }
+            else if (value instanceof java.sql.Time time) {
+              // extends Date, but holds the time of day only
+              cell.setCellValue(toDayFraction(time.toLocalTime()));
+              cell.setCellStyle(timeStyle);
+            }
+            else if (value instanceof java.sql.Timestamp timestamp) {
+              // extends Date as well, but the time must not be hidden by a date-only format
+              cell.setCellValue(timestamp);
+              cell.setCellStyle(dateTimeStyle);
+            }
             else if (value instanceof Date) {
               cell.setCellValue((Date) value);
               cell.setCellStyle(dateStyle);
@@ -201,7 +234,7 @@ public class PoiTableUtilities extends TableUtilities {
               cell.setCellStyle(timeStyle);
             }
             else if (value != null) {
-              cell.setCellValue(new HSSFRichTextString(value.toString()));
+              cell.setCellValue(new HSSFRichTextString(getText(tc, value)));
             }
           }
           columnIndex++;

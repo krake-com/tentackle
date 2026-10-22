@@ -23,11 +23,20 @@ import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.common.Timestamp;
 import org.tentackle.log.Logger;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
  * Base implementation of a pool managing {@link Poolable} resources.<br>
- * It allows min/max sizes, fixed increments, and timeouts for unused instances.
+ * It allows min/max sizes, fixed increments, and timeouts for unused and long-used instances.
+ * <p>
+ * The resources are created lazily on the first {@link #get()}, which also registers the pool
+ * with the {@link PoolTimeoutThread}.
+ *
+ * @param <T> the type of poolable resources
  */
 public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
 
@@ -45,6 +54,7 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
   private long usageMinutes;                    // usage timeout in [minutes]
 
   private long shutdownTimeout;                 // shutdown timeout in milliseconds
+  private boolean shutdownPending;              // true if monitor() decided to shut down this pool (guarded by this)
   private boolean initialized;                  // true if the pool is initialized
   private PoolSlot<T>[] slots;                  // the pooled resource slots
   private int[] freeList;                       // indexes of free slots in 'slots'
@@ -59,10 +69,12 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
    * @param name the name of the pool
    * @param initialSize the initial pool size
    * @param incrementSize the number of resource instances to enlarge the pool if all in use
-   * @param minimumSize the minimum number of resource instances to keep in pool, &lt; 0 if auto shutdown pool if all resources timed out
+   * @param minimumSize the minimum number of resource instances to keep in the pool, &lt; 0 if auto shutdown pool if all resources timed out
    * @param maximumSize the maximum number of resource instances, 0 = unlimited
    * @param idleMinutes the idle timeout in minutes to close unused resource instances, 0 = unlimited
    * @param usageMinutes the max. used time in minutes, 0 = unlimited
+   * @throws IllegalArgumentException if the size parameters are inconsistent
+   * @throws NullPointerException if name is null
    */
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public AbstractPool(String name, int initialSize, int incrementSize, int minimumSize, int maximumSize, long idleMinutes, long usageMinutes) {
@@ -119,6 +131,7 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
    * Sets the minimum increment to enlarge the pool.
    *
    * @param incrementSize the minimum increment (at least 1)
+   * @throws IllegalArgumentException if incrementSize &lt; 1
    */
   public synchronized void setIncrementSize(int incrementSize) {
     if (incrementSize < 1) {
@@ -152,6 +165,7 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
    * Sets the maximum size.
    *
    * @param maximumSize the maximum size, 0 = unlimited
+   * @throws IllegalArgumentException if maximumSize is lower than the minimum size
    */
   public synchronized void setMaximumSize(int maximumSize) {
     if (maximumSize > 0 && maximumSize < minimumSize) {
@@ -182,7 +196,8 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
 
   /**
    * Sets the maximum usage minutes.<br>
-   * Resources are closed if used since the given timeout.
+   * Resources are closed when the given time has elapsed since their first use,
+   * regardless of whether they were idle or not.
    *
    * @param usageMinutes the usage timeout, 0 if unlimited
    */
@@ -190,6 +205,7 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
     this.usageMinutes = usageMinutes;
   }
 
+  @Override
   public long getShutdownTimeout() {
     return shutdownTimeout;
   }
@@ -209,7 +225,9 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
     PoolSlot<T>[] slotsToClose;
     long timeout;
     synchronized (this) {
-      assertNotShutdown();
+      if (slots == null) {    // not isShutdown(): the shutdown may be pending, see monitor()
+        throw createException("pool '" + this + "' already shut down");
+      }
       LOGGER.info("shutting down pool {0}", this);
       slotsToClose = slots;
       timeout = shutdownTimeout;
@@ -234,7 +252,7 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
 
   @Override
   public synchronized boolean isShutdown() {
-    return slots == null;
+    return slots == null || shutdownPending;
   }
 
   @Override
@@ -243,7 +261,55 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
   }
 
   @Override
-  public synchronized T get() {
+  public T get() {
+    if (!isCreatingSlotsConcurrently()) {
+      synchronized (this) {
+        return lendUnused(true);
+      }
+    }
+
+    int[] reserved;
+    synchronized (this) {
+      T poolable = lendUnused(false);
+      if (poolable != null) {
+        return poolable;
+      }
+      reserved = reserveSlots(incrementSize);
+    }
+
+    // Create the new resources without holding the monitor: opening a resource may take a while
+    // (TCP connect, TLS handshake, ...), and the other threads must be able to get and put meanwhile.
+    // The first new resource is lent to the current thread, the others are added to the unused ones.
+    PoolSlot<T>[] created = createReservedSlots(reserved);
+
+    synchronized (this) {
+      return installReservedSlots(reserved, created);
+    }
+  }
+
+  /**
+   * Determines whether new slots are created without holding the pool's monitor.
+   * <p>
+   * If false (the default), {@link #createSlot(int)} is invoked with the monitor held, and no other
+   * thread can get or put a resource while a new one is opened. Pools whose {@link #createSlot(int)}
+   * is thread-safe, i.e. does not depend on the pool's monitor, should override this method and
+   * return true. Notice that the initial slots and the slots to restore the minimum size are
+   * always created with the monitor held.
+   *
+   * @return true if {@link #createSlot(int)} may be invoked concurrently and without the monitor
+   */
+  protected boolean isCreatingSlotsConcurrently() {
+    return false;
+  }
+
+  /**
+   * Lends an unused resource.<br>
+   * Must be invoked with the pool's monitor held.
+   *
+   * @param createIfNone true to create new slots if there are no unused ones, false to return null
+   * @return the resource, null if none unused and createIfNone is false
+   */
+  private T lendUnused(boolean createIfNone) {
     assertNotShutdown();
     if (!initialized) {
       // the pool is empty at the beginning: create instances
@@ -259,6 +325,9 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
     int staleLimit = slots.length + 1;
     for (int stale = 0; ; stale++) {
       if (unusedCount == 0) {
+        if (!createIfNone) {
+          return null;
+        }
         createSlots(incrementSize); // enlarge the pool (will throw Exception if the pool is exhausted)
       }
       int poolId = unusedList[--unusedCount];
@@ -279,10 +348,125 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
         removePoolable(poolable, poolId);
         continue;   // try the next unused resource, create a new one if there is none left
       }
-      poolSlot.use(Thread.currentThread());
-      poolable.setPoolId(poolId + 1);   // starting at 1
-      LOGGER.fine("{0}: poolable {1} assigned to pool id {2}", this, poolable, poolId);
-      return poolable;
+      return lendSlot(poolSlot, poolable, poolId);
+    }
+  }
+
+  /**
+   * Lends the resource of a slot.<br>
+   * Must be invoked with the pool's monitor held.
+   *
+   * @param poolSlot the slot
+   * @param poolable the slot's resource
+   * @param poolId the slot index
+   * @return the resource
+   */
+  private T lendSlot(PoolSlot<T> poolSlot, T poolable, int poolId) {
+    poolSlot.use(Thread.currentThread());
+    poolable.setPoolId(poolId + 1);   // starting at 1
+    LOGGER.fine("{0}: poolable {1} assigned to pool id {2}", this, poolable, poolId);
+    return poolable;
+  }
+
+  /**
+   * Reserves free slot indexes for slots to be created without holding the monitor.<br>
+   * The reserved indexes are neither free nor unused: their slots are null until
+   * {@link #installReservedSlots(int[], PoolSlot[])} is invoked.
+   * Must be invoked with the pool's monitor held.
+   *
+   * @param num the number of slots to reserve
+   * @return the reserved slot indexes, at least one
+   * @throws TentackleRuntimeException if the pool is exhausted and the maximum pool size is reached
+   */
+  private int[] reserveSlots(int num) {
+    ensureFreeSlots(num);
+    int[] reserved = new int[Math.min(num, freeCount)];
+    for (int i = 0; i < reserved.length; i++) {
+      reserved[i] = freeList[--freeCount];
+    }
+    return reserved;
+  }
+
+  /**
+   * Creates the slots for the reserved indexes.<br>
+   * Invoked without holding the pool's monitor.
+   *
+   * @param reserved the reserved slot indexes
+   * @return the created slots, null elements if their creation failed or was skipped
+   */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private PoolSlot<T>[] createReservedSlots(int[] reserved) {
+    PoolSlot<T>[] created = new PoolSlot[reserved.length];
+    Throwable failure = null;
+    for (int i = 0; i < reserved.length; i++) {
+      try {
+        created[i] = createSlot(reserved[i]);
+      }
+      catch (RuntimeException | Error e) {
+        failure = e;
+        break;    // don't try again, it will most likely fail as well
+      }
+    }
+    if (created[0] == null) {
+      // nothing created: release the reservation and report the failure
+      synchronized (this) {
+        releaseReservedSlots(reserved, 0);
+      }
+      if (failure instanceof Error error) {
+        throw error;
+      }
+      throw (RuntimeException) failure;
+    }
+    if (failure != null) {
+      LOGGER.warning("pool " + this + ": creating additional resources failed", failure);
+    }
+    return created;
+  }
+
+  /**
+   * Installs the slots created for the reserved indexes and lends the first one.<br>
+   * Must be invoked with the pool's monitor held.
+   *
+   * @param reserved the reserved slot indexes
+   * @param created the created slots, at least the first one
+   * @return the lent resource of the first slot
+   * @throws TentackleRuntimeException if the pool was shut down meanwhile
+   */
+  private T installReservedSlots(int[] reserved, PoolSlot<T>[] created) {
+    if (slots == null) {
+      // shut down while the slots were created: close them since shutdown() didn't see them
+      for (PoolSlot<T> slot : created) {
+        if (slot != null) {
+          slot.close(0);   // non-blocking
+        }
+      }
+      throw createException("pool '" + this + "' already shut down");
+    }
+    int i = 0;
+    for (; i < reserved.length && created[i] != null; i++) {
+      slots[reserved[i]] = created[i];
+      if (i > 0) {
+        unusedList[unusedCount++] = reserved[i];
+      }
+    }
+    releaseReservedSlots(reserved, i);    // those that couldn't be created
+    assertNotShutdown();   // pending shutdown: shutdown() will close the installed slots
+    PoolSlot<T> poolSlot = created[0];
+    return lendSlot(poolSlot, poolSlot.getPoolable(), reserved[0]);
+  }
+
+  /**
+   * Returns reserved slot indexes to the free list.<br>
+   * Must be invoked with the pool's monitor held.
+   *
+   * @param reserved the reserved slot indexes
+   * @param from the index within reserved to start at
+   */
+  private void releaseReservedSlots(int[] reserved, int from) {
+    if (freeList != null) {   // else: shut down
+      for (int i = from; i < reserved.length; i++) {
+        freeList[freeCount++] = reserved[i];
+      }
     }
   }
 
@@ -316,6 +500,70 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
     }
   }
 
+  @Override
+  public void monitor() {
+    boolean shutdownPool;
+
+    synchronized (this) {
+      if (isShutdown()) {
+        return;   // shut down concurrently: nothing left to monitor
+      }
+      shutdownPool = monitorSlots();
+      if (shutdownPool) {
+        // Decided with the monitor held: from now on, the pool is treated as shut down, i.e., get() lends
+        // no more resources. Otherwise, a resource lent before shutdown() below would be closed under the
+        // borrower's hands.
+        shutdownPending = true;
+      }
+    }
+
+    if (shutdownPool) {
+      // outside the monitor: shutdown() waits for the resources to be closed
+      shutdown();
+    }
+  }
+
+  /**
+   * Logs a summary of the used slots per thread.<br>
+   * Provided primarily for debugging purposes and in case of resource leaks.
+   *
+   * @param level the log level to use
+   */
+  public void logSlotCountPerThread(Logger.Level level) {
+    StringBuilder buf = new StringBuilder();
+    buf.append("pool ").append(this).append(", used slots:");
+    for (Map.Entry<String, Integer> entry : getSlotCountPerThread()) {
+      buf.append('\n').append(entry.getKey()).append(": ").append(entry.getValue());
+    }
+    LOGGER.log(level, buf.toString(), (Throwable) null);
+  }
+
+  /**
+   * Gets the number of used slots per thread.<br>
+   * Provided primarily for debugging purposes and in case of resource leaks.
+   *
+   * @return the sorted list of the number of used slots per thread, highest slot count first,
+   *         empty if no slot is in use or the pool is shut down
+   */
+  public List<Map.Entry<String, Integer>> getSlotCountPerThread() {
+    Map<String, Integer> slotCounts = new HashMap<>();  // slots used per thread
+    synchronized (this) {
+      if (slots != null) {    // null if shut down
+        for (PoolSlot<T> slot : slots) {
+          String threadName = slot == null ? null : slot.getUsingThreadStr();
+          if (threadName != null) {   // null if in pool
+            slotCounts.merge(threadName, 1, Integer::sum);
+          }
+        }
+      }
+    }
+    // sort by count (highest first)
+    List<Map.Entry<String, Integer>> sorted = new ArrayList<>(slotCounts.entrySet());
+    sorted.sort((o1, o2) -> Integer.compare(o2.getValue(), o1.getValue()));
+    return sorted;
+  }
+
+
   /**
    * Determines whether the given slot can be removed from the pool.<br>
    * By default, a slot can be removed if its resource is not in use.
@@ -327,43 +575,17 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
     return slot.getPoolable() != null;   // must not be lent!
   }
 
-
   /**
    * Creates new slots of resources.<br>
-   * The number of created slots is at least 1.
-   * <p>
-   * Throws a {@link TentackleRuntimeException} if pool is exhausted and maximum pool size reached.
+   * The number of created slots is at least 1, but may be less than requested if the maximum
+   * pool size is reached.
    *
    * @param num the number of slots to add to the pool
+   * @return the number of slots created
+   * @throws TentackleRuntimeException if the pool is exhausted and the maximum pool size is reached
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
   protected int createSlots(int num) {
-    if (num > freeCount) {
-      // enlarge arrays
-      int nSize = slots.length + num - freeCount;
-      if (maximumSize > 0 && nSize > maximumSize) {
-        nSize = maximumSize;
-      }
-      if (nSize <= slots.length) {
-        TentackleRuntimeException pex = createException("cannot create more resource instances, max. pool size " + maximumSize + " reached");
-        pex.setTemporary(true);
-        throw pex;
-      }
-      PoolSlot<T>[] nPool  = new PoolSlot[nSize];
-      int[] nFreeList   = new int[nSize];
-      int[] nUnusedList = new int[nSize];
-      System.arraycopy(slots, 0, nPool, 0, slots.length);
-      System.arraycopy(freeList, 0, nFreeList, 0, slots.length);
-      System.arraycopy(unusedList, 0, nUnusedList, 0, slots.length);
-      for (int i = slots.length; i < nSize; i++) {
-        nPool[i] = null;
-        nFreeList[freeCount++] = i;
-        nUnusedList[i] = -1;
-      }
-      slots = nPool;
-      freeList = nFreeList;
-      unusedList = nUnusedList;
-    }
+    ensureFreeSlots(num);
 
     // freeCount is at least 1: get from freelist
     int created = 0;
@@ -381,13 +603,70 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
   }
 
   /**
+   * Enlarges the slot arrays, if necessary, to provide the given number of free slots.<br>
+   * If the maximum pool size is reached, there may be fewer free slots, but at least one.
+   *
+   * @param num the number of free slots wanted
+   * @throws TentackleRuntimeException if there is no free slot and the maximum pool size is reached
+   */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private void ensureFreeSlots(int num) {
+    if (num > freeCount) {
+      // enlarge arrays
+      int nSize = slots.length + num - freeCount;
+      if (maximumSize > 0 && nSize > maximumSize) {
+        nSize = maximumSize;
+      }
+      if (nSize <= slots.length) {
+        if (freeCount > 0) {
+          return;   // maximum size reached, but there are still some free slots left
+        }
+        TentackleRuntimeException pex = createException("cannot create more resource instances, max. pool size " + maximumSize + " reached");
+        pex.setTemporary(true);   // may go away if just a misconfiguration, hence temporary
+        logSlotCountPerThread(Logger.Level.WARNING);   // could be a sign of a resource leak as well, hence log it
+        throw pex;
+      }
+      PoolSlot<T>[] nPool  = new PoolSlot[nSize];
+      int[] nFreeList   = new int[nSize];
+      int[] nUnusedList = new int[nSize];
+      System.arraycopy(slots, 0, nPool, 0, slots.length);
+      System.arraycopy(freeList, 0, nFreeList, 0, slots.length);
+      System.arraycopy(unusedList, 0, nUnusedList, 0, slots.length);
+      for (int i = slots.length; i < nSize; i++) {
+        nPool[i] = null;
+        nFreeList[freeCount++] = i;
+        nUnusedList[i] = -1;
+      }
+      slots = nPool;
+      freeList = nFreeList;
+      unusedList = nUnusedList;
+    }
+  }
+
+  /**
+   * Brings the pool back to its minimum size.
+   * <p>
+   * Invoked by {@link #monitor()} with the pool's monitor held, i.e., usually from the
+   * {@link PoolTimeoutThread} all pools share. The default implementation creates the missing slots.
+   * A pool whose resources cannot be created without blocking for long &mdash; because they depend on
+   * something that is gone and has to be re-established first &mdash; should override this and leave the
+   * pool below its minimum size instead: {@link #get()} creates the resources as soon as they are needed.
+   *
+   * @param num the number of slots missing
+   */
+  protected void restoreMinimumSize(int num) {
+    createSlots(num);
+  }
+
+  /**
    * Closes a poolable and removes it from the pool.<br>
    * Since the closing operation is executed asynchronously,
    * there is no guarantee that the resource is really closed.
    * But more importantly, this does not block the caller.
    *
-   * @param poolable the poolable to remove
+   * @param poolable the poolable to remove, null to remove whatever the slot holds
    * @param slotIndex the slot index
+   * @throws TentackleRuntimeException if the poolable does not match the one in the slot
    */
   protected void removePoolable(T poolable, int slotIndex) {
     PoolSlot<T> slot = slots[slotIndex];
@@ -423,22 +702,6 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
     }
   }
 
-  @Override
-  public void monitor() {
-    boolean shutdownPool;
-
-    synchronized (this) {
-      if (isShutdown()) {
-        return;   // shut down concurrently: nothing left to monitor
-      }
-      shutdownPool = monitorSlots();
-    }
-
-    if (shutdownPool && !isShutdown()) {
-      // outside the monitor: shutdown() waits for the resources to be closed
-      shutdown();
-    }
-  }
 
   /**
    * Closes timed out resources and re-establishes the minimum pool size.<br>
@@ -506,7 +769,7 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
     // check if we need to bring up some resources to keep the minimum size
     int size = getSize();
     if (minimumSize > 0 && size < minimumSize) {
-      createSlots(minimumSize - size);
+      restoreMinimumSize(minimumSize - size);
       return false;
     }
     // minimum size < 0, and all resources closed -> shut down pool
@@ -557,11 +820,11 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
 
 
   /**
-   * Asserts that this pool wasn't shutdown.
+   * Asserts that this pool wasn't shut down.
    */
   private void assertNotShutdown() {
     if (isShutdown()) {
-      throw createException("pool '" + this + "' already shutdown");
+      throw createException("pool '" + this + "' already shut down");
     }
   }
 

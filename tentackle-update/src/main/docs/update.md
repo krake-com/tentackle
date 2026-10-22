@@ -30,7 +30,7 @@ through **SD-WANs** or **company-managed VPNs** — links that are typically ban
 is essential: the lightweight `UpdateService` call still travels over the secured TRIP transport, while the bulk
 download is steered onto whatever fast, geographically close, cacheable HTTP(S) endpoint the operator chooses.
 
-The module deliberately contains **only the transport-neutral mechanics** (service contract, the data records, the
+The module deliberately contains **only the UI-neutral mechanics** (service contract, the data records, the
 download/verification helpers, and the server-side service registration). The actual user-facing orchestration — the
 "a new version is available, install it?" dialog, the unzip, and the process hand-off — lives one layer up in
 [`tentackle-fx-rdc-update`](../../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md), which is where the JavaFX desktop application
@@ -47,9 +47,10 @@ plugs everything together.
   is connected directly or through a middle-tier server. The reply (`UpdateInfo`) implements
   `ClientTransportCloseRequest` so the transport is closed gracefully after the answer — the client is about to
   terminate and restart, and this avoids socket-reset noise on the server.
-- **No secrets in the payload.** `UpdateInfo` is *not* encrypted; the recommendation is to fetch updates over the
-  "tripe" (PSK (pre-shared key), not TLS, since the server's certificate might have changed) transport instead of encrypting the record by hand. The download itself is plain HTTP(S) and is
-  protected by a **SHA-256 checksum** rather than by transport encryption.
+- **No secrets in the payload.** `UpdateInfo` is *not* encrypted by itself. To protect it in transit, publish the
+  service over the PSK-encrypted (pre-shared key) `tripe` transport rather than over TLS: a new server version may
+  come with a new certificate that the outdated client does not trust yet. The download itself is plain HTTP(S)
+  and is protected by a **SHA-256 checksum** rather than by transport encryption.
 - **Convention-based artifact layout.** The server derives the download URLs purely from a naming convention
   (`<artifact>-<version>-<platform>-<arch>[-pkg].zip` plus a matching `.sha256` file) under a configurable base
   URL, so adding a new platform/architecture is a matter of publishing the right files — no server code changes.
@@ -84,13 +85,16 @@ precisely so TRIP can serialize the records that cross the wire.
 |--------------------|-----------------------------------------------------------------------------|
 | `application`      | the client application name                                                 |
 | `version`          | the currently installed client version                                      |
-| `platform`         | the operating system (e.g. `win`, `mac`, `linux`)                           |
+| `platform`         | the operating system (e.g. `windows`, `macosx`, `linux`)                    |
 | `architecture`     | the hardware architecture (e.g. `amd64`, `aarch64`)                         |
 | `installationType` | [`JLINK`](../java/org/tentackle/update/InstallationType.java) or `JPACKAGE` |
 
 A convenience constructor fills `platform` and `architecture` from the running JVM via
 `StringHelper.getPlatform()`/`getArchitecture()`, so callers normally only pass application, version, and
-installation type. The record is annotated `@TripReferencable(NEVER)`/`@TripDeduplicatable(NEVER)` — it is a tiny
+installation type. `getPlatform()` keeps only the letters of the lowercased `os.name` (cut off at the version on
+Windows), and `getArchitecture()` is the lowercased `os.arch`. These are the same values the
+[jlink plugin](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md) uses for the classifier of the
+ZIP files it creates, so the URL convention below matches the published artifacts. The record is annotated `@TripReferencable(NEVER)`/`@TripDeduplicatable(NEVER)` — it is a tiny
 one-shot value, so TRIP serializes it directly without reference bookkeeping.
 
 ### UpdateInfo — what the server answers
@@ -103,7 +107,7 @@ one-shot value, so TRIP serializes it directly without reference bookkeeping.
 | `urlStr`         | the URL of the downloadable ZIP (stored as a string, exposed via `getUrl()`)                             |
 | `checksum`       | the SHA-256 hash used to verify the download                                                             |
 | `size`           | the expected ZIP size in bytes (`-1` if the server could not determine it), used to drive a progress bar |
-| `updateExecutor` | the file name of the script to run to perform the swap (`update.sh` / `update.cmd`)                      |
+| `updateExecutor` | the file name of the script in the update's `bin` directory that performs the swap (`update.sh` / `update.cmd`) |
 
 Every field here is the server's decision, not the client's. The `urlStr` in particular need not point at the
 application server at all — it can name any HTTP(S) endpoint (CDN, mirror, local cache), so the heavy download is
@@ -132,15 +136,16 @@ probing on the client (the runtime lives in a different sub-path per OS) have to
 
 ```java
 ServerUpdateUtilities.getInstance().startUpdateService(
-    "tripe://0.0.0.0/Update:33001",          // TRIP URL the service is registered under
+    "tripe://0.0.0.0:33001/Update",          // TRIP URL the service is registered under
     "https://somehost/myapp/downloads",      // base URL holding the ZIPs and checksums
     UpdateServiceImpl.class);                // your AbstractUpdateServiceImpl subclass
 ```
 
 It requests (or reuses) the [`Transport`](../../../../tentackle-core/src/main/docs/trip.md) for the given URI,
-makes sure it is `accepting`, instantiates the service implementation (via its `String`-argument constructor,
-passing the download base URL) and registers it under the URI path. Failures are wrapped in a
-`TripRuntimeException`.
+makes sure it is `accepting`, instantiates the service implementation and registers it under the URI's path.
+The implementation class must provide a public constructor with a single `String` argument, which receives the
+download base URL. Transport failures are wrapped in a `TripRuntimeException`, while a class that cannot be
+instantiated raises a `TentackleRuntimeException`.
 
 ### AbstractUpdateServiceImpl — the default implementation
 
@@ -164,18 +169,25 @@ Given a `ClientInfo`, the base implementation builds the download artifact name 
 <updateURL>/<artifactName>-<version>-<platform>-<architecture>[-pkg].zip
 ```
 
-with a sibling `.sha256` file. (`-pkg` is appended for `JPACKAGE` installations.) It then:
+with a sibling `.sha256` file. (`-pkg` is appended for `JPACKAGE` installations.) A missing trailing slash of the
+base URL is added automatically. It then:
 
-1. **resolves the checksum** by downloading the `.sha256` file (`FileHelper.download`) and taking its first token;
-2. **resolves the size** by issuing an HTTP `HEAD` request (via `java.net.http.HttpClient`) and reading
-   `content-length`;
-3. **chooses the executor** — `update.cmd` on Windows, `update.sh` elsewhere;
+1. **resolves the checksum** by downloading the `.sha256` file (`FileHelper.download`) and taking its first
+   whitespace-delimited token, so the output of `sha256sum` can be published as is;
+2. **resolves the size** by issuing an HTTP `HEAD` request (via `java.net.http.HttpClient`, following redirects)
+   and reading `content-length`. Any status other than 2xx fails the request, so that the length of an error page
+   is never taken for the size of the ZIP;
+3. **chooses the executor** — `update.cmd` if the platform contains `win`, `update.sh` elsewhere;
 4. returns the assembled `UpdateInfo` (always reporting `getVersion()` as the new version).
 
-Both the checksum hashes and download sizes are cached in `ConcurrentHashMap`s keyed by URL, so repeated client
-requests for the same artifact do not re-fetch the metadata. Every URL-building, executor-naming, and
-`UpdateInfo`-construction step is a `protected` method, so subclasses can customize the layout (different file
-extensions, per-customer artifacts, signed executors, …) without rewriting the flow.
+If the checksum or the size cannot be determined — typically because the artifact is not published — the call
+fails with a `TentackleRuntimeException`, which TRIP passes on to the client.
+
+The checksum hashes and the download sizes are cached in `ConcurrentHashMap`s keyed by URL, so repeated client
+requests for the same artifact do not re-fetch the metadata. Only a known size is cached, though: a response
+without `content-length` yields `-1` and is queried again on the next request. Every URL-building,
+executor-naming, and `UpdateInfo`-construction step is a `protected` method, so subclasses can customize the
+layout (different file extensions, per-customer artifacts, signed executors, …) without rewriting the flow.
 
 ---
 
@@ -187,27 +199,61 @@ extensions, per-customer artifacts, signed executors, …) without rewriting the
 gathering everything the client needs:
 
 - **Detecting an updatable image.** `isUpdateableJlinkApplication()`, `isUpdatableJPackageApplication()` and the
-  combined `determineInstallationType()` probe the file system to decide whether the running application sits in a
-  writable jlink/jpackage layout (returning `null` if not — meaning "this build cannot self-update"). The jlink
-  check verifies the standard sub-directories (`bin`, `conf`, `include`, `legal`, `lib`) exist and are writable;
-  the jpackage check first locates the package root (`determineJPackageRoot()`, OS-specific) and then checks the
-  embedded runtime.
+  combined `determineInstallationType()` (jlink first) probe the file system to decide whether the running
+  application sits in a writable jlink/jpackage layout (returning `null` if not — meaning "this build cannot
+  self-update"). The jlink check, `isUpdatableJlinkDirectory(File)`, verifies that the image directory and its
+  standard subdirectories (`bin`, `conf`, `include`, `legal`, `lib`) exist and are writable; for the application
+  itself, it checks the current working directory, since a jlink image is started from its root. The jpackage
+  check first locates the package root (`determineJPackageRoot()`, derived from the path of the running
+  executable) and then applies the jlink check to the embedded runtime:
+
+  | OS      | Package root                         | Embedded runtime                   |
+  |---------|--------------------------------------|------------------------------------|
+  | Windows | the executable's directory (`app/`)  | `runtime`                          |
+  | macOS   | two levels above `Contents/MacOS`    | `Contents/runtime/Contents/Home`   |
+  | Linux   | the parent of `bin` (`lib/app/`)     | `lib/runtime`                      |
+
 - **Looking up the service.** `getUpdateService(serviceName)` requests the TRIP transport for the URL and returns
   the remote `UpdateService` proxy. If a [`Cryptor`](../../../../tentackle-common/src/main/docs/common.md) is
-  configured, the service URL is first run through `deriveURL(...)` so a fake (honeypot) `http:`/`https:`/`rmi` form can be
-  rewritten to the secured transport.
-- **Downloading and verifying.** `downloadZip(updateInfo, updateDir, progressConsumer)` (re)creates an empty
-  update directory, streams the ZIP into it through a
-  [`CallbackReadableByteChannel`](../java/org/tentackle/update/CallbackReadableByteChannel.java) (so progress can
-  be reported), then recomputes the **SHA-256** digest, and compares it against `updateInfo.checksum()`, throwing if
-  they differ. Only a verified file is returned.
+  configured, the service URL may be given in encrypted form, disguised as an `http:`, `https:` or `rmi:` URL;
+  `Cryptor.deriveURL(...)` decrypts it before the transport is requested. This keeps the real address out of
+  plain-text configuration files.
+- **Downloading and verifying.** `downloadZip(updateInfo, updateDir, progressConsumer)` creates the update
+  directory (removing and recreating it if it already exists, so it is always empty), streams the ZIP into it
+  through a [`CallbackReadableByteChannel`](../java/org/tentackle/update/CallbackReadableByteChannel.java) (so
+  progress can be reported), then recomputes the **SHA-256** digest and compares it case-insensitively against
+  `updateInfo.checksum()` (`sha256sum` writes lowercase, `certutil` uppercase). A missing checksum or a mismatch
+  fails with a `TentackleRuntimeException`; only a verified file is returned.
 
 ### CallbackReadableByteChannel
 
 [`CallbackReadableByteChannel`](../java/org/tentackle/update/CallbackReadableByteChannel.java) is a thin
-`ReadableByteChannel` wrapper that, on every read, feeds a `Consumer<Double>` the fraction `bytesRead /
-expectedSize` (0.0–1.0). This is what drives the download progress bar; with a negative expected size, it simply
-reports indefinite progress.
+`ReadableByteChannel` wrapper that, after every read returning data, feeds a `Consumer<Double>` the fraction
+`bytesRead / expectedSize` (0.0–1.0). This is what drives the download progress bar. With a negative (unknown)
+expected size, the reported value is negative as well, which a JavaFX progress bar displays as indeterminate.
+The byte count is a `long`, so images larger than 2 GB are fine.
+
+---
+
+## Publishing an Update
+
+The module does not create the downloadable artifacts — they come from the build and the operator:
+
+- **The ZIP and the update script.** The [jlink plugin](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md#auto-update-feature)
+  configured with `<withUpdater>true</withUpdater>` adds the platform-specific `update.sh`/`update.cmd`
+  (from the templates `update.ftl` or `package-update.ftl`) to the image's `bin` directory and attaches the image
+  as a ZIP with the classifier `<platform>-<architecture>` (plus `-pkg` for the jpackage goal). Deployed to a Maven
+  repository, the ZIP is therefore named `<artifactId>-<version>-<platform>-<architecture>[-pkg].zip` — exactly the
+  convention `AbstractUpdateServiceImpl` expects, with `getArtifactName()` returning the `artifactId` of the client
+  image module. An `extraClassifier` breaks this convention and requires overriding `createBaseUrlName()`.
+- **The checksum file.** The `.sha256` file is *not* generated by the build. Create it next to each ZIP, for example
+  with `sha256sum myapp-jlink-client-1.2.0-linux-amd64.zip > myapp-jlink-client-1.2.0-linux-amd64.sha256`. Only the
+  first token is read, and the case of the hex digits does not matter.
+- **The location.** Publish both files below the server's `updateURL`. It may be any HTTP(S) server, CDN or
+  mirror; redirects are followed.
+
+The server caches the checksum and the size per URL. Republishing a *different* ZIP under the same version
+therefore requires a server restart — or, better, a new version.
 
 ---
 
@@ -215,16 +261,19 @@ reports indefinite progress.
 
 The end-to-end flow, as wired up by [`tentackle-fx-rdc-update`](../../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md):
 
-1. **Server startup.** The application server reads its `updateService` and `updateURL` properties and calls
+1. **Server startup.** The application server reads its `updateService` and `updateURL`
+   [backend properties](../../../../tentackle-session/src/main/docs/backend-properties.md) and calls
    `ServerUpdateUtilities.getInstance().startUpdateService(...)`, registering its `AbstractUpdateServiceImpl`
-   subclass on a TRIP transport.
+   subclass on a TRIP transport. The framework itself does not read these properties; the server generated by the
+   [archetype](../../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md) does.
 2. **Single-instance guard.** On launch, an `UpdatableDesktopApplication` detects via
    `ClientUpdateUtilities.determineInstallationType()` whether it runs from an updatable image and, if so, takes an
    exclusive PID lockfile — an in-place update must not race a second running instance.
 3. **Trigger.** The update check is wired into login failure handling
    ([`LoginFailedWithUpdateHandler`](../../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)). When the client gets a
    `VersionIncompatibleException` (or an SSL handshake error caused by a server upgrade) *and* it runs from an
-   updatable image, it builds a `ClientInfo` and calls `UpdateService.getUpdateInfo(...)`.
+   updatable image, it builds a `ClientInfo` and calls `UpdateService.getUpdateInfo(...)` on the service named by
+   its own `updateService` property.
 4. **Decision.** If `updateInfo.version()` differs from the running version, the user is asked whether to install
    (with an optional countdown for unattended/kiosk setups). Applications may override this to update silently.
 5. **Download & verify.** `ClientUpdateUtilities.downloadZip(...)` fetches the ZIP into an `update` directory
@@ -255,13 +304,16 @@ The end-to-end flow, as wired up by [`tentackle-fx-rdc-update`](../../../../tent
   [`tentackle-common`](../../../../tentackle-common/src/main/docs/common.md)) for TRIP remoting, the `Cryptor`,
   `FileHelper`/`StringHelper` and the `@Service`/`ServiceFactory` SPI. The dependency is declared `optional` in the
   POM to avoid leaking it transitively onto downstream artifacts.
-- It **requires** `java.net.http` for the HTTP `HEAD`/download calls.
+- It **requires** `java.net.http` for the server's HTTP `HEAD` request. The checksum file and the ZIP are
+  downloaded via plain `java.net.URL` connections.
 - It **opens** `org.tentackle.update` to `org.tentackle.core` so TRIP can serialize `ClientInfo`/`UpdateInfo`.
-- It **provides** a `ModuleHook` service (`org.tentackle.update.service.Hook`) for i18n bundle resolution.
+- It **provides** a `ModuleHook` service (`org.tentackle.update.service.Hook`), which loads resource bundles within
+  the context of this module.
 
 ## Related Documentation
 
 - [TRIP](../../../../tentackle-core/src/main/docs/trip.md) — the remote invocation protocol carrying the update service calls.
 - [tentackle-fx-rdc-update](../../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md) — the JavaFX desktop layer that orchestrates the update UI, download, and restart.
+- [Jlink/Jpackage plugin](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md#auto-update-feature) — creates the update scripts and the ZIP files.
 - [Common](../../../../tentackle-common/src/main/docs/common.md) — `Cryptor`, `FileHelper`, `StringHelper` and the `ModuleHook` mechanism.
 - [Services / ServiceFinder](../../../../tentackle-common/src/main/docs/services.md) — the SPI behind the `ServerUpdateUtilities`/`ClientUpdateUtilities` singletons.

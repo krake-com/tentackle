@@ -34,7 +34,11 @@ interface ReconnectorHolder {
 }
 
 /**
- * A simple reconnector.
+ * A simple reconnector.<br>
+ * Reconnects resources according to their {@link ReconnectionPolicy}, either in the
+ * current thread (blocking) or in a background thread.
+ * <p>
+ * Replaceable via &#64;{@link Service}.
  *
  * @author harald
  */
@@ -42,7 +46,7 @@ interface ReconnectorHolder {
 public class Reconnector {
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */
@@ -61,6 +65,9 @@ public class Reconnector {
   private final ExecutorService executorService;                    // thread executor service
 
 
+  /**
+   * Creates the reconnector.
+   */
   public Reconnector() {
     this.executorService = createExecutorService();
   }
@@ -73,6 +80,8 @@ public class Reconnector {
    *
    * @param <T> the resource type
    * @param policy the reconnection policy
+   * @param resource the resource to reconnect
+   * @throws org.tentackle.common.TentackleRuntimeException if blocking and the reconnection was aborted by the policy
    */
   public <T> void submit(ReconnectionPolicy<T> policy, T resource) {
     if (policy.isBlocking()) {
@@ -89,10 +98,13 @@ public class Reconnector {
    * Does not return before the resource is reconnected successfully
    * or {@link ReconnectionPolicy#timeToReconnect()} returned a value &le; 0
    * or {@link ReconnectionPolicy#timeToReconnect()} throws a runtime exception.
+   * Failed attempts are logged every 1000 attempts.
    *
    * @param <T> the resource type
    * @param policy the reconnection policy
    * @param resource the resource to reconnect
+   * @throws TentackleRuntimeException if {@link ReconnectionPolicy#timeToReconnect()} returned a value &le; 0
+   * @throws InterruptedRuntimeException if interrupted while waiting for the next attempt
    */
   protected <T> void reconnect(ReconnectionPolicy<T> policy, T resource) {
     for (int count=0; ; count++) {    // until successfully reconnected
@@ -108,7 +120,7 @@ public class Reconnector {
         }
         catch (RuntimeException rx) {
           if (count % LOG_MODULO == 0) {
-            LOGGER.severe("reconnection for " + policy + ", attempt " + (count == 0 ? 1 : count) + " failed, keep on trying...", rx);
+            LOGGER.severe("reconnection for " + policy + ", attempt " + (count + 1) + " failed, keep on trying...", rx);
           }
         }
       }

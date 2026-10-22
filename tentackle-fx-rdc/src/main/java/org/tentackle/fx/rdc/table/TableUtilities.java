@@ -68,7 +68,12 @@ interface TableUtilitiesHolder {
 
 
 /**
- * Table-related utility methods.
+ * Table-related utility methods.<br>
+ * Creates the default table configuration of a PDO class, exports tables and tree tables
+ * to CSV or XML files, and prints them.
+ * <p>
+ * Replaceable via {@code @Service(TableUtilities.class)}. The module {@code tentackle-fx-rdc-poi},
+ * for example, replaces the CSV export with an Excel export.
  *
  * @author harald
  */
@@ -77,7 +82,7 @@ public class TableUtilities {
 
   /*
    * TableView and TreeTableView don't inherit from each other and thus
-   * each spawn their own related types such as TableColum, TreeTableColumn, etc...
+   * each spawn their own related types such as TableColumn, TreeTableColumn, etc...
    * As a result, since TableUtilities apply to both tables and tree tables,
    * a lot of semantically identical code is necessary.
    * However, it is not really duplicate code. There's not much we can do to reduce it.
@@ -111,14 +116,17 @@ public class TableUtilities {
 
   /**
    * Creates a default table configuration for a given PDO class.<br>
-   * Each attribute getter (annotated with {@link org.tentackle.session.Persistent}) gets its own column,
-   * except the default attributes from {@link PersistentObject} and object ids for object relations.
+   * Each attribute with a getter annotated with {@link Bindable} gets its own column,
+   * except the default attributes from {@link PersistentObject} and the object IDs of object relations.
+   * The column name is the attribute name, which is also the binding path.
+   * If there are no such attributes at all, the ID and serial columns are added instead.
    *
    * @param pdoClass the PDO class
-   * @param bundle optional bundle to determine the displayed column names, null if name is attribute name
+   * @param bundle optional bundle to determine the displayed column names, null to use the capitalized attribute names
    * @param <T> the PDO type
    * @return the table configuration
    */
+  @SuppressWarnings("bundle")
   public <T extends PersistentDomainObject<T>> TableConfiguration<T> createTableConfiguration(Class<T> pdoClass, ResourceBundle bundle) {
 
     TableConfiguration<T> config = FxFactory.getInstance().createTableConfiguration(pdoClass, null);
@@ -143,7 +151,8 @@ public class TableUtilities {
 
 
   /**
-   * Selects the spreadsheet file.
+   * Selects the spreadsheet file.<br>
+   * The last selected file is remembered per table in the user preferences.
    *
    * @param tableName the configured table name
    * @param owner the window owner for the selection dialog, null if none
@@ -158,7 +167,8 @@ public class TableUtilities {
 
 
   /**
-   * Selects the XML file.
+   * Selects the XML file.<br>
+   * The last selected file is remembered per table in the user preferences.
    *
    * @param tableName the configured table name
    * @param owner the window owner for the selection dialog, null if none
@@ -173,7 +183,8 @@ public class TableUtilities {
 
 
   /**
-   * Converts the table to a spreadsheet file.
+   * Exports the table to a spreadsheet file.<br>
+   * Only the visible columns are exported.
    *
    * @param <S> the row type
    * @param table the table view
@@ -186,10 +197,11 @@ public class TableUtilities {
   }
 
   /**
-   * Converts the treetable to a spreadsheet file.
+   * Exports the tree table to a spreadsheet file.<br>
+   * Only the visible columns are exported.
    *
    * @param <S> the row type
-   * @param treeTable the table view
+   * @param treeTable the tree table view
    * @param file the output file
    * @param onlySelected true if export only selected rows
    */
@@ -200,7 +212,9 @@ public class TableUtilities {
 
 
   /**
-   * Converts the column configurations to a spreadsheet file.
+   * Exports the items to a spreadsheet file.<br>
+   * The default implementation creates a CSV file according to RFC 4180, with a header line
+   * of the displayed column names and the values formatted as in the table.
    *
    * @param columnConfigurations the column configurations
    * @param file the output file
@@ -274,7 +288,8 @@ public class TableUtilities {
   }
 
   /**
-   * Returns whether a column is visible.
+   * Returns whether a column is visible.<br>
+   * Applies to both the table and the tree table column.
    *
    * @param columnConfiguration the column configuration
    * @return true if visible
@@ -284,7 +299,9 @@ public class TableUtilities {
   }
 
   /**
-   * Exports a table to an XML file.
+   * Exports a table to an XML file.<br>
+   * Only the visible columns are exported. Each row becomes an element named after the table,
+   * and each column an element named after the column.
    *
    * @param <S> the row type
    * @param table the table view
@@ -297,10 +314,10 @@ public class TableUtilities {
   }
 
   /**
-   * Exports a treetable to an XML file.
+   * Exports a tree table to an XML file.
    *
    * @param <S> the row type
-   * @param treeTable the treetable view
+   * @param treeTable the tree table view
    * @param file the output file
    * @param onlySelected true if export only selected rows
    */
@@ -360,10 +377,10 @@ public class TableUtilities {
 
   /**
    * Prints a table view.<br>
-   * Tables need a special handling for multiple pages.
+   * Tables need a special handling for multiple pages, see {@link TablePrinter}.
    *
    * @param table the table to print
-   * @param title the optional title, null to take from table's configuration
+   * @param title the optional title, null to take from the table's configuration
    */
   public void print(FxTableView<?> table, String title) {
     PrinterJob job = PrinterJob.createPrinterJob();
@@ -380,10 +397,10 @@ public class TableUtilities {
 
   /**
    * Prints a tree table view.<br>
-   * Tables need a special handling for multiple pages.
+   * Tables need a special handling for multiple pages, see {@link TablePrinter}.
    *
-   * @param treeTable the treetable to print
-   * @param title the optional title, null to take from treetable's configuration
+   * @param treeTable the tree table to print
+   * @param title the optional title, null to take from the tree table's configuration
    */
   public void print(FxTreeTableView<?> treeTable, String title) {
     PrinterJob job = PrinterJob.createPrinterJob();

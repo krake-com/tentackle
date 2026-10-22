@@ -37,6 +37,7 @@ public class DbOperationClassVariables<P extends AbstractDbOperation<P>> {
    *
    * @param clazz is the class of the derived AbstractDbOperation
    * @param <P> the persistent operation class
+   * @return the class variables
    */
   public static <P extends AbstractDbOperation<P>> DbOperationClassVariables<P> create(Class<P> clazz) {
     return DbClassVariablesFactory.getInstance().dbOpCv(clazz);
@@ -61,11 +62,11 @@ public class DbOperationClassVariables<P extends AbstractDbOperation<P>> {
 
 
   /**
-   * Gets the delegateId of the class, i.e., subclass of AbstractDbOperation.
-   * If the remoteDelegateId is 0, it will be prepared
+   * Gets the delegateId of the class, i.e., subclass of AbstractDbOperation.<br>
+   * If the remoteDelegateId is 0, it will be prepared.
    * The delegateId is unique for each class. It is valid only in remote connections and
    * is the same for all remote Db's.
-   * The TRIP-server creates a delegate for each subclass of AbstractDbOperation (DbOperationRemoteDelegateImpl resp.)
+   * The TRIP-server creates a delegate for each subclass of AbstractDbOperation (AbstractDbOperationRemoteDelegateImpl resp.)
    *
    * @return the delegate id
    */
@@ -85,6 +86,7 @@ public class DbOperationClassVariables<P extends AbstractDbOperation<P>> {
 
   /**
    * Gets the RemoteDelegate for the class and db.
+   *
    * @param db the session
    * @return the delegate
    */
@@ -95,8 +97,7 @@ public class DbOperationClassVariables<P extends AbstractDbOperation<P>> {
 
 
   /**
-   * Constructs a class variable.<br>
-   * Throws IllegalStateException if already constructed.
+   * Constructs a class variable.
    *
    * @param clazz is the class of the derived AbstractDbOperation
    */

@@ -27,20 +27,19 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Default implementation of {@link DataTypeFactory}.
+ */
 @Service(DataTypeFactory.class)
 public class DefaultDataTypeFactory implements DataTypeFactory {
 
   private static class Key {
-    private final String javaType;
+    private final String type;
     private final String variant;
 
-    private Key(String javaType, String variant) {
-      this.javaType = Objects.requireNonNull(javaType);
+    private Key(String type, String variant) {
+      this.type = Objects.requireNonNull(type);
       this.variant = Objects.requireNonNull(variant);
-    }
-
-    private Key(DataType<?> dataType) {
-      this(dataType.getJavaType(), dataType.getVariant());
     }
 
     @Override
@@ -50,13 +49,13 @@ public class DefaultDataTypeFactory implements DataTypeFactory {
 
       Key key = (Key) o;
 
-      if (!javaType.equals(key.javaType)) return false;
+      if (!type.equals(key.type)) return false;
       return variant.equals(key.variant);
     }
 
     @Override
     public int hashCode() {
-      int result = javaType.hashCode();
+      int result = type.hashCode();
       result = 31 * result + variant.hashCode();
       return result;
     }
@@ -67,7 +66,7 @@ public class DefaultDataTypeFactory implements DataTypeFactory {
       if (!variant.isEmpty()) {
         buf.append(variant).append(' ');
       }
-      buf.append(javaType);
+      buf.append(type);
       return buf.toString();
     }
   }
@@ -75,22 +74,33 @@ public class DefaultDataTypeFactory implements DataTypeFactory {
 
 
 
-  private final Map<Key, DataType<?>> dataTypeMap;
+  private final Map<Key, DataType<?>> javaTypeMap;      // java type + variant
+  private final Map<Key, DataType<?>> modelTypeMap;     // model type w/o variant (e.g., to look up JSON, XML)
   private final ConvertibleType convertibleType;
 
 
   /**
-   * Creates the datatype factory.
+   * Creates the datatype factory.<br>
+   * If more than one datatype is registered for the same type and variant, the first one found wins,
+   * which allows the application to override the predefined types.
+   *
+   * @throws BackendException if the datatypes could not be loaded
    */
   @SuppressWarnings("rawtypes")
   public DefaultDataTypeFactory() {
-    dataTypeMap = new HashMap<>();
+    javaTypeMap = new HashMap<>();
+    modelTypeMap = new HashMap<>();
     try {
       for (Class<DataType> dataTypeClass: ServiceFactory.getServiceFinder().findServiceProviders(DataType.class)) {
         DataType<?> dataType = dataTypeClass.getDeclaredConstructor().newInstance();
-        dataTypeMap.putIfAbsent(new Key(dataType), dataType);   // allows overriding by application (comes first in META-INF)
+        // allows overriding by application (comes first in META-INF)
+        javaTypeMap.putIfAbsent(new Key(dataType.getJavaType(), dataType.getVariant()), dataType);
+        modelTypeMap.putIfAbsent(new Key(dataType.getModelType(), ""), dataType);
       }
-      convertibleType = (ConvertibleType) get(CONVERTIBLE_TYPE);
+      convertibleType = (ConvertibleType) get(ConvertibleType.TYPE); // speeds lookup
+      if (convertibleType == null) {
+        throw new BackendException("Convertible type could not be determined");
+      }
     }
     catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
         InvocationTargetException | NoSuchMethodException nfe) {
@@ -100,7 +110,11 @@ public class DefaultDataTypeFactory implements DataTypeFactory {
 
   @Override
   public DataType<?> get(String name, String variant) {
-    return dataTypeMap.get(new Key(name, variant));
+    DataType<?> dataType = javaTypeMap.get(new Key(name, variant));
+    if (dataType == null && variant.isEmpty()) {
+      dataType = modelTypeMap.get(new Key(name, ""));
+    }
+    return dataType;
   }
 
   @Override

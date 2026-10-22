@@ -26,6 +26,8 @@ import org.tentackle.session.ModificationListenerAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -48,6 +50,7 @@ public class ModificationTrackerConcurrencyTest extends AbstractDbTest {
 
   private static final String TRACKED_NAME = "mttest";
   private static final String OTHER_NAME = "mttest2";
+  private static final String SERIAL_NAME = "mttest3";
   private static final int LISTENER_COUNT = 3000;   // the more listeners, the longer poll() iterates them
   private static final long RUN_MILLIS = 5000;
 
@@ -202,6 +205,72 @@ public class ModificationTrackerConcurrencyTest extends AbstractDbTest {
     }
     finally {
       tracker.terminate();
+    }
+  }
+
+
+  /**
+   * Concurrent modifications of the same name must get distinct serials.
+   * <p>
+   * The serial is the tableserial of the modified object. Duplicates collapse in the
+   * {@link TableSerialHistory} and the {@link TableSerialExpirationBacklog}, which are keyed by tableserial,
+   * so that caches would miss the expiration of one of the objects.
+   */
+  @Test
+  public void testConcurrentCountsGetDistinctSerials() throws Exception {
+    Db db = getSession();
+
+    DbModificationTracker tracker = new DbModificationTracker("test serial tracker");
+    tracker.setSession(db.clone(null));
+    tracker.setSleepInterval(10);   // flush the pending counts concurrently as well
+    tracker.start();
+
+    int threadCount = 4;
+    int countsPerThread = 500;
+    List<Db> sessions = new ArrayList<>();
+    try {
+      tracker.countModification(db, SERIAL_NAME);   // configure the counter before the race starts
+
+      Set<Long> serials = ConcurrentHashMap.newKeySet();
+      Set<Long> duplicates = ConcurrentHashMap.newKeySet();
+      List<Thread> threads = new ArrayList<>();
+      CountDownLatch startSignal = new CountDownLatch(1);
+      AtomicReference<Throwable> failure = new AtomicReference<>();
+
+      for (int i = 0; i < threadCount; i++) {
+        Db session = db.clone(null);    // sessions are not thread-safe: one per thread
+        sessions.add(session);
+        Thread thread = new Thread(() -> {
+          try {
+            startSignal.await();
+            for (int n = 0; n < countsPerThread; n++) {
+              long serial = session.transaction("countModification",
+                                                () -> tracker.countModification(session, SERIAL_NAME));
+              if (!serials.add(serial)) {
+                duplicates.add(serial);
+              }
+            }
+          }
+          catch (Throwable t) {
+            failure.set(t);
+          }
+        }, "counter " + i);
+        threads.add(thread);
+        thread.start();
+      }
+
+      startSignal.countDown();
+      for (Thread thread : threads) {
+        thread.join(60000);
+      }
+
+      assertNull(failure.get(), "counting modifications failed: " + failure.get());
+      assertTrue(duplicates.isEmpty(), duplicates.size() + " serials were assigned more than once: " + duplicates);
+      assertEquals(serials.size(), threadCount * countsPerThread);
+    }
+    finally {
+      tracker.terminate();
+      sessions.forEach(Db::close);
     }
   }
 

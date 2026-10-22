@@ -26,18 +26,18 @@ import java.util.Set;
  * A copy-on-write wrapper for sets.<br>
  * The first modifying operation creates a clone to leave the original set untouched.
  * <p>
- * With iteratorModifying=false, all operations are supported except {@link java.util.Iterator#remove()},
+ * With {@code iteratorModifying=false}, all operations are supported except {@link java.util.Iterator#remove()},
  * which will throw an {@link UnsupportedOperationException}.<br>
- * With iteratorModifying=true, iterator() will create a copy of the set
+ * With {@code iteratorModifying=true}, {@code iterator()} will create a copy of the set
  * to allow modifications by the iterator.
  * <p>
- * Not to be mixed up with {@link java.util.concurrent.CopyOnWriteArraySet} which
- * is threadsafe and creates a copy for each modification. {@link CopyOnWriteSet}
- * is not threadsafe and creates a copy only once before the first modification
+ * Not to be mixed up with {@link java.util.concurrent.CopyOnWriteArraySet}, which
+ * is thread-safe and creates a copy for each modification. {@link CopyOnWriteSet}
+ * is not thread-safe and creates a copy only once before the first modification
  * is performed.
  *
  * @author harald
- * @param <E> the type of elements in this list
+ * @param <E> the type of elements in this set
  */
 public class CopyOnWriteSet<E> extends CopyOnWriteCollection<E> implements Set<E> {
 

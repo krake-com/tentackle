@@ -24,7 +24,8 @@ import org.tentackle.log.Logger;
 import java.io.File;
 
 /**
- * The user's home cache.
+ * The tentackle directory within the user's home.<br>
+ * Used to cache files, such as preferences, keyrings or downloaded updates.
  *
  * @author harald
  */
@@ -36,13 +37,14 @@ public class UserHomeJavaDir {
 
 
   /**
-   * Gets the directory tentackle files in the user's home directory.<br>
+   * Gets the directory for tentackle files in the user's home directory.<br>
    * Defaults to {@code ${user.home}/.java/tentackle}.<br>
-   * May be configured by the system property {@code "tentackle.user.home.java.dir"}.
-   * <p>
-   * Throws {@link TentackleRuntimeException} if failed.
+   * The base directory {@code ${user.home}} may be replaced by the system property
+   * {@code "tentackle.user.home.java.dir"}, i.e. {@code .java/tentackle} is appended to it.<br>
+   * The directory is created if it does not exist.
    *
    * @return the directory, never null
+   * @throws TentackleRuntimeException if the directory could not be created or is not writable
    */
   public static File getDirectory() {
     File localDir = cacheDir;
@@ -62,13 +64,13 @@ public class UserHomeJavaDir {
 
 
   /**
-   * Gets a subdirectory of the cache dir.<br>
-   * The directories are created if it does not exist.
-   * <p>
-   * Throws {@link TentackleRuntimeException} if failed.
+   * Gets a subdirectory of the tentackle directory.<br>
+   * The directories are created if they do not exist.
    *
    * @param subDirNames the chain of subdirectories
    * @return the directory, never null
+   * @throws TentackleRuntimeException if the directory could not be created or is not writable
+   * @see #getDirectory()
    */
   public static File getDirectory(String... subDirNames) {
     File subDir = getDirectory();

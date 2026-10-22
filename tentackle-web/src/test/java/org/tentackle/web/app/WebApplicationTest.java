@@ -108,7 +108,7 @@ public class WebApplicationTest {
    * as the node is up.
    */
   @Test
-  public void createsTheKeyCacheOnStartup() {
+  public void acceptsWebSessionsOnceStarted() {
     startDbConnectedNode();
     SessionInfo alice = sessionInfo("alice");
     application.addWebSession(WEB_KEY, alice);
@@ -305,9 +305,9 @@ public class WebApplicationTest {
    * A node that never came up - an unreachable database, a wrong backend password - still has to
    * release everything it did acquire.
    * <p>
-   * {@code startup()} is what creates the key cache, but its eviction thread is only started at
-   * the very end, in {@code finishStartup()}. A failing login therefore leaves an unstarted cache
-   * behind, and terminating one of those is an error. The cleanup must not trip over that: it is
+   * The key cache exists from construction on, but its eviction thread is only started at the
+   * very end of {@code startup()}, in {@code finishStartup()}. A failing login therefore leaves an
+   * unstarted cache behind, and terminating one of those is an error. The cleanup must not trip over that: it is
    * invoked from {@code stop()}, which swallows what it throws, so an exception here would
    * silently skip closing the session, shutting down the pools and deregistering the JDBC drivers
    * - and inside a container there is no {@code System.exit()} to clean up after it.

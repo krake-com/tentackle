@@ -26,9 +26,15 @@ import org.tentackle.script.ScriptFactory;
 
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
+import java.util.Locale;
 
 /**
- * Implementation of a script factory using JSR223.
+ * Script factory supporting all JSR-223 engines.
+ * <p>
+ * Replaces the {@link DefaultScriptFactory}. Registers a {@link JSR223Language} for each engine
+ * found by the {@link ScriptEngineManager} first, then the native {@code @Service} languages,
+ * such as the ones of tentackle-script-groovy or tentackle-script-ruby.
+ * Since the first registration of an abbreviation wins, the JSR-223 engines take precedence.
  *
  * @author bei, harald
  */
@@ -50,9 +56,12 @@ public class JSR223ScriptFactory extends DefaultScriptFactory {
     for (ScriptEngineFactory engineFactory : new ScriptEngineManager().getEngineFactories()) {
       if (engineFactory != null) {
         JSR223Language language = new JSR223Language(engineFactory);
-        for (String abbrv : language.getAbbreviations()) {
-          if (abbrv != null && languages.putIfAbsent(abbrv, language) == null) {
-            LOGGER.info("added scripting language {0} as {1}", language, abbrv);
+        for (String abbreviation : language.getAbbreviations()) {
+          if (abbreviation != null) {
+            String abbrvLC = abbreviation.toLowerCase(Locale.ROOT);   // same as DefaultScriptFactory
+            if (languages.putIfAbsent(abbrvLC, language) == null) {
+              LOGGER.info("added scripting language {0} as {1}", language, abbrvLC);
+            }
           }
         }
       }

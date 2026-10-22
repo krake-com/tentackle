@@ -28,6 +28,7 @@ import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.maven.plugin.wizard.pdodata.DataDiff;
 import org.tentackle.maven.plugin.wizard.pdodata.DataNode;
+import org.tentackle.pdo.PersistentDomainObject;
 
 import javafx.beans.value.ChangeListener;
 import javafx.event.ActionEvent;
@@ -40,22 +41,25 @@ import javafx.scene.control.TreeTableView;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.WindowEvent;
 
+import java.util.function.Consumer;
+
 /**
- * Shows the contents of a PDO with optional diff to a savepoint.
+ * Shows the contents of a PDO with an optional diff to a memorized state of the PDO.
  */
 @FxControllerService(url = FxControllerService.FXML_NONE,
                      resources = FxControllerService.RESOURCES_NONE,
                      cssDarkAware = true)
 public class PdoView extends AbstractFxController {
 
-  private static final String STYLE_MISMATCH = "diff-mismatch";     // CSS style for differences
+  private static final String STYLE_MISMATCH = "diff-mismatch";     // CSS style class for rows with differences
 
   @Bindable
   private DataDiff diff;
 
   private final FxTreeTableView<DataDiff> diffNode;
   private TablePopup<DataDiff> diffNodePopup;
-  private boolean diffOnly;   // true if show differences only
+  private boolean diffOnly;   // true if only differences are shown
+  private Consumer<PersistentDomainObject<?>> browseHandler;   // opens a PDO in a new tab, null if none
 
 
   /**
@@ -85,6 +89,25 @@ public class PdoView extends AbstractFxController {
    */
   public void addSelectedItemListener(ChangeListener<TreeItem<DataDiff>> listener) {
     diffNode.getSelectionModel().selectedItemProperty().addListener(listener);
+  }
+
+  /**
+   * Adds a listener for the focus of the tree.
+   *
+   * @param listener the change listener
+   */
+  public void addFocusedListener(ChangeListener<Boolean> listener) {
+    diffNode.focusedProperty().addListener(listener);
+  }
+
+  /**
+   * Sets the handler to browse a PDO in a new tab.<br>
+   * Enables the context menu item <em>browse in new tab</em>.
+   *
+   * @param browseHandler the handler, null to disable
+   */
+  public void setBrowseHandler(Consumer<PersistentDomainObject<?>> browseHandler) {
+    this.browseHandler = browseHandler;
   }
 
   @Override
@@ -117,19 +140,24 @@ public class PdoView extends AbstractFxController {
    * Sets the comparison object and column titles.
    *
    * @param diff the comparison
-   * @param leftSiteName the name of the left site
-   * @param rightSiteName the name of the right site
+   * @param leftSideName the title of the left (current) value column
+   * @param rightSideName the title of the right (memorized) value column
    */
-  public void setDiff(DataDiff diff, String leftSiteName, String rightSiteName) {
+  public void setDiff(DataDiff diff, String leftSideName, String rightSideName) {
     this.diff = diff;
     if (diff == null || !diff.isRightPresent()) {
       diffOnly = false;
       ((DataNodeTableConfiguration<?>) diffNode.getConfiguration()).setPredicate(null);
     }
     diffNode.updateView();
-    diffNode.getColumns().get(2).setText(leftSiteName);   // columns are fixed!
-    diffNode.getColumns().get(3).setText(rightSiteName);
-    diffNode.getRoot().setExpanded(true);
+    diffNode.getColumns().get(2).setText(leftSideName);   // columns are fixed!
+    diffNode.getColumns().get(3).setText(rightSideName);
+    if (diffOnly) {
+      diffNode.expandAll();   // like updateDiffOnly
+    }
+    else {
+      diffNode.getRoot().setExpanded(true);
+    }
   }
 
 
@@ -146,6 +174,15 @@ public class PdoView extends AbstractFxController {
                                     e -> PdoBrowserUtils.copyReferencingSql(getSelectedDataNode()));
     MenuItem copyClassIdItem = Fx.create(MenuItem.class);
     copyClassIdItem.setOnAction(e -> PdoBrowserUtils.copyClassId(getSelectedDataNode()));
+    MenuItem browseItem = Fx.create(MenuItem.class);
+    browseItem.setText("browse in new tab");
+    browseItem.setOnAction(e -> {
+      PersistentDomainObject<?> pdo = PdoBrowserUtils.getBrowsablePdo(getSelectedDataNode());
+      if (pdo != null && browseHandler != null) {
+        browseHandler.accept(pdo);
+      }
+    });
+    contextMenu.getItems().addFirst(browseItem);
     contextMenu.getItems().addFirst(copyClassIdItem);
     contextMenu.getItems().addFirst(findReferencesItem);
     contextMenu.getItems().addFirst(copySqlItem);
@@ -155,6 +192,7 @@ public class PdoView extends AbstractFxController {
     contextMenu.addEventHandler(WindowEvent.WINDOW_SHOWING, event -> {
       diffOnlyItem.setVisible(diff != null && diff.isRightPresent());
       diffOnlyItem.setText(diffOnly ? "show all lines" : "show differences only");
+      browseItem.setVisible(browseHandler != null && PdoBrowserUtils.getBrowsablePdo(getSelectedDataNode()) != null);
       PdoBrowserUtils.configureContextMenu(getSelectedDataNode(), copyFQCNItem, copyTableItem, copyClassIdItem,
                                            copySqlItem, findReferencesItem);
     });
@@ -183,7 +221,13 @@ public class PdoView extends AbstractFxController {
     }
   }
 
-  private DataNode getSelectedDataNode() {
+  /**
+   * Gets the data node selected in the tree.<br>
+   * Returns the current (left) node, or the memorized (right) node if there is no current one.
+   *
+   * @return the selected data node, null if none
+   */
+  public DataNode getSelectedDataNode() {
     DataNode node = null;
     TreeItem<DataDiff> selectedItem = diffNode.getSelectionModel().getSelectedItem();
     if (selectedItem != null) {

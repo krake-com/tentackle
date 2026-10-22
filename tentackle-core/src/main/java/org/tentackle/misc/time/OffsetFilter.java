@@ -24,12 +24,12 @@ import java.util.regex.Pattern;
 /**
  * Filter to process a zone offset.
  * <p>
- * Allows missing digits, for example {@code +2:30} is converted to {@code +02:30}.
+ * Allows missing digits, for example {@code +2:30} is converted to {@code +02:30} and {@code +2} to {@code +02:00}.
  */
 public class OffsetFilter implements SmartDateTimeParser.TextFilter {
 
   /**
-   * A zone offset like string prepended with + or - and following at least one non-whitespace string.
+   * A zone offset like string at the end of the text, starting with + or - and preceded by at least one non-whitespace string.
    */
   private static final Pattern pattern = Pattern.compile("\\S+\\s+([+-][0-9]{1,2}[:]?[\\d]{0,2}$)");
 

@@ -17,7 +17,7 @@
  */
 
 /**
- * tentackle-fx-atlanta module.
+ * AtlantaFX themes and AtlantaFX-based components and containers for Tentackle FX clients.
  */
 open module org.tentackle.fx.atlanta {
 
@@ -30,6 +30,7 @@ open module org.tentackle.fx.atlanta {
   exports org.tentackle.fx.atlanta.container.build;
   exports org.tentackle.fx.atlanta.container.config;
   exports org.tentackle.fx.atlanta.container.delegate;
+  exports org.tentackle.fx.atlanta.translate;
 
   requires transitive org.tentackle.fx.rdc;
   requires transitive atlantafx.base;

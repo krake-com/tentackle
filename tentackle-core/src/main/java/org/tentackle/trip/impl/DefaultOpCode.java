@@ -461,7 +461,14 @@ public enum DefaultOpCode implements OpCode {
     if (!isPredefinedArray()) {
       throw new TripRuntimeException(this + " is not a predefined array");
     }
-    return TripFactory.getInstance().getType(arrayType.getArrayClass());
+    // looked up for every predefined array read: cached, since the factory's types never change.
+    // Unsynchronized, since a concurrent lookup at worst stores the same type twice.
+    TripType<?> type = PREDEFINED_ARRAY_TYPES[arrayType.ordinal()];
+    if (type == null) {
+      type = TripFactory.getInstance().getType(arrayType.getArrayClass());
+      PREDEFINED_ARRAY_TYPES[arrayType.ordinal()] = type;
+    }
+    return type;
   }
 
   @Override
@@ -479,11 +486,10 @@ public enum DefaultOpCode implements OpCode {
 
   /**
    * Gets the OpCode from its byte value.
-   * <p>
-   * Throws {@link TripRuntimeException} if invalid code.
    *
    * @param code the op code
    * @return the OpCode, never null
+   * @throws TripRuntimeException if invalid code
    */
   public static DefaultOpCode valueOf(int code) {
     DefaultOpCode opCode = CODES[code];
@@ -496,6 +502,9 @@ public enum DefaultOpCode implements OpCode {
 
 
   private static final DefaultOpCode[] CODES = createArray();
+
+  /** the trip types of the predefined arrays, indexed by the ordinal of {@link PredefinedArrayType}. */
+  private static final TripType<?>[] PREDEFINED_ARRAY_TYPES = new TripType<?>[PredefinedArrayType.values().length];
 
   private static DefaultOpCode[] createArray() {
     DefaultOpCode[] codes = new DefaultOpCode[256];

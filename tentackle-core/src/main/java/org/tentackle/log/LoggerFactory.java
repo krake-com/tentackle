@@ -28,13 +28,16 @@ interface LoggerFactoryHolder {
 
 /**
  * Factory for pluggable loggers.
+ * <p>
+ * Replaceable via &#64;{@link org.tentackle.common.Service}.
+ * The default implementation is {@link DefaultLoggerFactory}.
  *
  * @author harald
  */
 public interface LoggerFactory {
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */
@@ -76,7 +79,7 @@ public interface LoggerFactory {
    * If there is no such method, <code>"new clazz(name)"</code> will be invoked.
    * If all else fails, it returns a new {@link DefaultLogger} for the given <code>name</code>.
    * <p>
-   * If <code>clazz</code> is <code>null</code> the default logger will be used.
+   * If <code>loggerClass</code> is <code>null</code>, the configured logger class will be used.
    *
    * @param name the logger name
    * @param loggerClass the class implementing {@link Logger},

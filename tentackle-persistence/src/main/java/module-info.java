@@ -17,7 +17,10 @@
  */
 
 /**
- * tentackle-persistence module.
+ * The PDO-aware persistence layer.<br>
+ * Implements the persistence side of the PDOs and operations defined in {@code org.tentackle.pdo}
+ * on top of {@code org.tentackle.database}, both locally via JDBC and remotely via TRIP.
+ * Furthermore, provides the token lock manager and the base classes for application servers.
  */
 module org.tentackle.persistence {
 

@@ -53,6 +53,11 @@ import java.util.Objects;
 
 /**
  * Base class for server applications.
+ * <p>
+ * A server application is either connected directly to the database (and serves the client sessions
+ * from a {@link SessionPool} via its own {@link ConnectionManager}), or is itself a client of another server
+ * (and serves the client sessions from a {@link MultiUserSessionPool} of remote sessions).
+ * Server applications may also run within a container, such as a servlet engine.
  *
  * @author harald
  */
@@ -64,7 +69,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
   private SessionPool sessionPool;                    // the session pool for local sessions
   private MultiUserSessionPool remoteSessionPool;     // the session pool for remote sessions
   private ConnectionManager connectionManager;        // the connection manager
-  private boolean runsInContainer;                    // true if the application is running within a container (tomcat, EE)
+  private boolean runsInContainer;                    // true if the application is running within a container (servlet engine, EE)
 
 
   /**
@@ -78,11 +83,25 @@ public abstract class AbstractServerApplication extends AbstractApplication
     detectContainer();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The pool is created by {@link #finishStartup()} if the server is connected directly to the database.
+   *
+   * @return the session pool, null if the server's session is remote or not started yet
+   */
   @Override
   public SessionPool getSessionPool() {
     return sessionPool;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The pool is created by {@link #finishStartup()} if the server is a client of another server.
+   *
+   * @return the remote session pool, null if the server's session is local or not started yet
+   */
   @Override
   public MultiUserSessionPool getRemoteSessionPool() {
     return remoteSessionPool;
@@ -97,6 +116,9 @@ public abstract class AbstractServerApplication extends AbstractApplication
    * {@inheritDoc}
    * <p>
    * Overridden to protect the SessionInfo once it is set.
+   * The session info is made immutable.
+   *
+   * @throws PersistenceException if the session info is already set
    */
   @Override
   protected void setSessionInfo(SessionInfo sessionInfo) {
@@ -108,18 +130,35 @@ public abstract class AbstractServerApplication extends AbstractApplication
     super.setSessionInfo(sessionInfo);
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to restrict the server to system preferences.
+   */
   @Override
   protected void configurePreferences() {
     super.configurePreferences();
     PersistedPreferencesFactory.getInstance().setSystemOnly(true);
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to set the tracker's sleep interval to 1 second.
+   */
   @Override
   protected void configureModificationTracker() {
     super.configureModificationTracker();
     ModificationTracker.getInstance().setSleepInterval(1000);
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to validate the validators afterward.
+   *
+   * @see #validateValidators()
+   */
   @Override
   protected void initializeScripting() {
     super.initializeScripting();
@@ -128,20 +167,30 @@ public abstract class AbstractServerApplication extends AbstractApplication
 
   /**
    * Validates the validators.<br>
-   * The default implementation loads all {@link Validator}s of all PDO classes and
+   * The default implementation loads all field- and object-{@link Validator}s of all PDO classes and
    * invokes {@link Validator#validate()}. This will load all {@link org.tentackle.misc.CompoundValue}s
-   * and compiles the scripts, if any.
+   * and compile the scripts, if any. Thus, configuration errors are detected at server startup.
    */
   protected void validateValidators() {
     LOGGER.info("validating validators");
+    ValidatorCache validatorCache = ValidatorCache.getInstance();
     for (String pdoName: PdoFactory.getInstance().getPersistenceMapper().getMap().keySet()) {
       Class<?> pdoClass = PdoFactory.getInstance().create(pdoName).getEffectiveClass();
-      for (Validator validator: ValidatorCache.getInstance().getFieldValidators(pdoClass)) {
+      for (Validator validator: validatorCache.getFieldValidators(pdoClass)) {
+        validator.validate();
+      }
+      for (Validator validator: validatorCache.getObjectValidators(pdoClass)) {
         validator.validate();
       }
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to create the session pool and connection manager for local sessions, or
+   * the remote session pool if this server is a client of another server.
+   */
   @Override
   protected void finishStartup() {
     super.finishStartup();
@@ -182,12 +231,15 @@ public abstract class AbstractServerApplication extends AbstractApplication
   }
 
   /**
-   * Creates the remote session pool to serve the client sessions.
+   * Creates the remote session pool to serve the client sessions.<br>
+   * If the server's main session does not belong to a session group yet,
+   * a new group is created with the main session, so that all pooled sessions
+   * are closed if the main session dies.
    *
    * @return the session pool
    */
   public MultiUserSessionPool createRemoteSessionPool() {
-    // 100 remote sessions should be ok for most proxy TRIP servers. Should be smaller than the local server's pool maxSize anyway.
+    // 100 remote sessions should be OK for most proxy TRIP servers. Should be smaller than the local server's pool maxSize anyway.
     // Timeouts make no sense at all for pooling of remote client sessions ("get" when logged in and "close with put" on logout,
     // i.e., there are no idle sessions and the session must remain open until logout).
     if (getSession().getSessionGroupId() == 0) {
@@ -205,8 +257,9 @@ public abstract class AbstractServerApplication extends AbstractApplication
   }
 
   /**
-   * Creates the connection manager for the client sessions.
-   * The default creates an MpxConnectionManager.
+   * Creates the connection manager for the client sessions.<br>
+   * The default creates an {@link MpxConnectionManager} with session IDs following those of the
+   * server's own connection manager.
    *
    * @return the connection manager
    */
@@ -224,7 +277,9 @@ public abstract class AbstractServerApplication extends AbstractApplication
 
 
   /**
-   * Configures the session info.
+   * Configures the session info of the server's main session.<br>
+   * Loads the session properties and merges the application properties into them.
+   * Application properties override those from a file or the classpath.
    *
    * @param sessionInfo the session info
    */
@@ -255,6 +310,12 @@ public abstract class AbstractServerApplication extends AbstractApplication
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Registers and initializes the server, logs into the backend, configures the server and
+   * finishes the startup.
+   */
   @Override
   protected void startup() {
     LOGGER.fine("register application server");
@@ -274,13 +335,15 @@ public abstract class AbstractServerApplication extends AbstractApplication
     configure();
 
     LOGGER.fine("finish startup");
-    // finish startup and start the TRIP service
+    // finish startup
     finishStartup();
   }
 
 
   /**
-   * Connects the server to the database backend or another remote server.
+   * Connects the server to the database backend or another remote server.<br>
+   * Creates the server's main session, makes it the current session and sets the
+   * application's session info and domain context.
    */
   protected void login() {
     String username = getPropertyIgnoreCase(Constants.BACKEND_USER);
@@ -300,6 +363,12 @@ public abstract class AbstractServerApplication extends AbstractApplication
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to shut down the session pools and the connection manager.
+   * If running in a container, the JDBC drivers loaded by the application are deregistered.
+   */
   @Override
   protected void cleanup() {
     super.cleanup();
@@ -349,7 +418,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
     runsInContainer = false;
     try {
       new InitialContext().lookup("java:comp/env");
-      // the lookup worked, we're in a web container
+      // the lookup worked, we're in a container
       runsInContainer = true;
       LOGGER.info("container detected");
     }
@@ -360,7 +429,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
 
 
   /**
-   * De-registers all JDBC-Drivers loaded by the app's classloader.<br>
+   * Deregisters all JDBC drivers loaded by the app's classloader.<br>
    * Necessary in containers only (in case connected directly via JDBC and not via JNDI).
    * Avoids memory leaks.
    *
@@ -372,7 +441,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
       Driver driver = drivers.nextElement();
       if (driver.getClass().getClassLoader() == cl) {
         try {
-          LOGGER.info("de-registering JDBC driver {0}", driver);
+          LOGGER.info("deregistering JDBC driver {0}", driver);
           DriverManager.deregisterDriver(driver);
         }
         catch (SQLException sx) {
@@ -385,6 +454,11 @@ public abstract class AbstractServerApplication extends AbstractApplication
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to collect the statistics of remote invocations, connections and transactions as well.
+   */
   @Override
   protected void activateStatistics() {
     super.activateStatistics();
@@ -396,8 +470,10 @@ public abstract class AbstractServerApplication extends AbstractApplication
   }
 
   /**
-   * Logs and clears the statistics.
+   * Logs and clears the statistics.<br>
+   * Overridden to log the statement and transaction statistics as well.
    */
+  @Override
   public void logStatistics() {
     super.logStatistics();
     StatementStatistics.log(Logger.Level.INFO, true);

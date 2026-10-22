@@ -45,7 +45,7 @@ public interface SecurityResult {
    * The default explanation will be returned unchanged if there is no message in the rule.
    *
    * @param defaultMessage the default message if not changed by this result
-   * @return the formatted localized message or defaultMessage unchanged
+   * @return the formatted message or defaultMessage unchanged
    */
   String explain(String defaultMessage);
 

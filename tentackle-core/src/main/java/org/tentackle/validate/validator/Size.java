@@ -38,7 +38,7 @@ import java.lang.annotation.Target;
  * <li><code>String</code> (string length is evaluated)</li>
  * <li><code>Collection</code> (collection size is evaluated)</li>
  * <li><code>Map</code> (map size is evaluated)</li>
- * <li>Array (array length is evaluated)</li>
+ * <li><code>Array</code> (array length is evaluated)</li>
  * </ul>
  * 
  * <code>null</code> elements are considered valid.
@@ -98,12 +98,16 @@ public @interface Size {
   String condition() default "";
 
   /**
-   * @return size of the element must be higher or equal to
+   * The minimum size (inclusive).
+   *
+   * @return the minimum size
    */
   int min() default 0;
 
   /**
-   * @return size of the element must be less or equal to
+   * The maximum size (inclusive).
+   *
+   * @return the maximum size
    */
   int max() default Integer.MAX_VALUE;
 

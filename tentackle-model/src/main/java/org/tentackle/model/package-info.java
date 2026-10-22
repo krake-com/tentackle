@@ -17,6 +17,6 @@
  */
 
 /**
- * Entity model.
+ * The public model API: entities, attributes, relations, indexes, and the services to load and validate them.
  */
 package org.tentackle.model;

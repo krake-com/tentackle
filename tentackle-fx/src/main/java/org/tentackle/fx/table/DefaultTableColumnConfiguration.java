@@ -184,7 +184,7 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
 
 
   /**
-   * Create a column config.
+   * Creates a column config.
    *
    * @param tableConfiguration the table config
    * @param name the column's binding path
@@ -222,6 +222,9 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
     this.displayedName = displayedName;
     if (tableColumn != null) {
       tableColumn.setText(displayedName);
+    }
+    if (treeTableColumn != null) {
+      treeTableColumn.setText(displayedName);
     }
     return this;
   }
@@ -451,7 +454,7 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   @Override
   public boolean isEditable() {
     return Boolean.TRUE.equals(editable) ||
-           tableConfiguration != null && tableConfiguration.getEditMode() != TableConfiguration.EDITMODE.NO;
+           editable == null && tableConfiguration != null && tableConfiguration.getEditHandler() != null;
   }
 
   @Override
@@ -592,8 +595,8 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
    * Creates a treetable cell.<br>
    * The method reference can directly be used as a cell factory.
    *
-   * @param column the table column
-   * @return the table cell
+   * @param column the treetable column
+   * @return the treetable cell
    */
   protected TreeTableCell<S,T> createTreeTableCell(TreeTableColumn<S, T> column) {
     return new FxTreeTableCell<>(this);

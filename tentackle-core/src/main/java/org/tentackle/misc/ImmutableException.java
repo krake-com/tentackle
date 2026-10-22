@@ -23,7 +23,7 @@ import org.tentackle.common.TentackleRuntimeException;
 import java.io.Serial;
 
 /**
- * Runtime exception thrown when attempted to modify an immutable object.
+ * Runtime exception thrown on an attempt to modify an immutable object.
  *
  * @author harald
  */
@@ -62,7 +62,7 @@ public class ImmutableException extends TentackleRuntimeException {
   }
 
   /**
-   * Constructs a new immutable with the specified cause and a
+   * Constructs a new immutable exception with the specified cause and a
    * detail message of <code>(cause==null ? null : cause.toString())</code>.
    *
    * @param  cause the cause

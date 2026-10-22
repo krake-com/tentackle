@@ -86,4 +86,19 @@ public class CsvConverterTest {
                  List.of(List.of("100,20", "200\tX", "300\"\";")));
   }
 
+  @Test
+  public void testFromCsvKeepsEmptyValues() {
+    assertEquals(converter.fromCsv(',', List.of("a,b,")), List.of(List.of("a", "b", "")));
+    assertEquals(converter.fromCsv(',', List.of(",a")), List.of(List.of("", "a")));
+    assertEquals(converter.fromCsv(',', List.of("a,\"\"")), List.of(List.of("a", "")));
+    assertEquals(converter.fromCsv(',', List.of(",")), List.of(List.of("", "")));
+    assertEquals(converter.fromCsv(',', List.of("")), List.of(List.of()));
+  }
+
+  @Test
+  public void testRoundTrip() {
+    List<List<String>> lines = List.of(List.of("", "a", ""), List.of("x,y", "\"q\"", ""));
+    assertEquals(converter.fromCsv(',', converter.toCsv(lines)), lines);
+  }
+
 }

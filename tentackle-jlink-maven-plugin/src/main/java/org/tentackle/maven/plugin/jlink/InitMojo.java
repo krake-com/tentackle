@@ -27,9 +27,10 @@ import java.io.File;
 
 /**
  * Initializes the templates.<br>
- * Copies the default templates to the project's template directory.
+ * Copies the default templates of the <code>jlink</code> and <code>jpackage</code> goals to the project's
+ * template directory, overwriting existing ones. Needs no jlink, jdeps or jpackage tool.
  */
-@Mojo(name = "init", aggregator = true)
+@Mojo(name = "init", aggregator = true, threadSafe = true)
 public class InitMojo extends AbstractJLinkMojo {
 
   private static final String[] TEMPLATES_ALL = {
@@ -56,6 +57,11 @@ public class InitMojo extends AbstractJLinkMojo {
     installTemplates(true);
   }
 
+  @Override
+  protected boolean isBuildingImage() {
+    return false;     // no tools needed, and the templates are installed by executeImpl only
+  }
+
 
   @Override
   protected void installTemplates(boolean overwrite) throws MojoExecutionException {
@@ -63,7 +69,7 @@ public class InitMojo extends AbstractJLinkMojo {
     if (copyAll) {
       for (String name : TEMPLATES_ALL) {
         installTemplate(name, name, true);
-        getLog().info("template '" + name + "' copied to " + templateDir);
+        getLogger().info("template '{}' copied to {}", name, templateDir);
       }
     }
     else {
@@ -73,11 +79,11 @@ public class InitMojo extends AbstractJLinkMojo {
           File template = new File(templateDir, name);
           if (template.isFile()) {
             try {
-              installTemplate(name, name,true);
-              getLog().info("template '" + name + "' restored to its default");
+              installTemplate(name, name, true);
+              getLogger().info("template '{}' restored to its default", name);
             }
             catch (MojoExecutionException mx) {
-              getLog().warn("no default template for '" + name + "' -> skipped");
+              getLogger().warn("no default template for '{}' -> skipped", name);
             }
           }
         }
@@ -87,6 +93,11 @@ public class InitMojo extends AbstractJLinkMojo {
 
 
   // ------------- unused abstract methods -----------------
+
+  @Override
+  protected void validateTemplates() {
+    // nothing to validate: the goal installs the templates under the names the plugin ships them
+  }
 
   @Override
   protected void createJLinkImage(JLinkResolver.Result result) throws MojoExecutionException, MojoFailureException {

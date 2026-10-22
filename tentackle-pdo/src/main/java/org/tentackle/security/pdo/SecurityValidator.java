@@ -31,7 +31,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Ingot validator annotation.
+ * Security rule validator annotation.
  *
  * @author harald
  */
@@ -43,7 +43,7 @@ public @interface SecurityValidator {
 
   /**
    * An optional validation message.<br>
-   * If missing the validator creates its own message.
+   * If missing, the validator creates its own message.
    *
    * @return the validation message
    */
@@ -69,7 +69,7 @@ public @interface SecurityValidator {
    *
    * @return the validation scopes.
    */
-	Class<? extends ValidationScope>[] scope() default {AllScope.class };
+  Class<? extends ValidationScope>[] scope() default { AllScope.class };
 
   /**
    * The validation severity.

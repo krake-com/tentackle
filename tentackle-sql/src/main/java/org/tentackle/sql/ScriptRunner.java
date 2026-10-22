@@ -25,7 +25,14 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
- * SQL script runner.
+ * SQL script runner.<br>
+ * Splits a script into statements according to the backend's statement separator and comment syntax,
+ * and executes them one by one.
+ * <p>
+ * For each executed statement, a {@link ScriptRunnerResult} is returned. Additional results without SQL code
+ * report warnings not related to a single statement, such as the warnings of the connection.
+ *
+ * @see Backend#createScriptRunner(Connection)
  */
 public interface ScriptRunner {
 

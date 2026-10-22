@@ -24,6 +24,7 @@ import org.tentackle.dbms.prefs.DbPreferencesOperation.RefreshInfo;
 import org.tentackle.dbms.trip.AbstractDbOperationRemoteDelegate;
 
 /**
+ * Remote delegate for {@link org.tentackle.dbms.prefs.DbPreferencesOperation}.
  *
  * @author harald
  */

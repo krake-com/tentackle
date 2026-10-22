@@ -29,6 +29,9 @@ import java.nio.ByteBuffer;
 
 /**
  * Base class of a connection.
+ * <p>
+ * Creating a connection performs the client side of the handshake: the TRIP magic number,
+ * the UUID of the client's transport, and whether the client's dictionary is still empty.
  */
 public abstract class AbstractConnection implements Connection {
 
@@ -38,7 +41,7 @@ public abstract class AbstractConnection implements Connection {
   private int poolId;
 
   /**
-   * Creates a new TCP connection.
+   * Creates a new connection and sends the handshake.
    *
    * @param transport the transport associated with this connection
    * @param stream the stream associated with this connection

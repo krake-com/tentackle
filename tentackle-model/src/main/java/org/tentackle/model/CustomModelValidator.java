@@ -27,7 +27,10 @@ import java.util.Collection;
 
 /**
  * Custom model validator.<br>
- * Applications may enforce extra rules on the model. The validators must
+ * Applications may enforce extra rules on the model.
+ * The validators are invoked at the end of {@link Model#loadFromDirectory(String, boolean)},
+ * whenever the directory was (re)loaded.<br>
+ * The validators must
  * be annotated with the {@link org.tentackle.common.Service}-annotation as follows:
  * <pre>
  *    &#64;Service(CustomModelValidator.class)

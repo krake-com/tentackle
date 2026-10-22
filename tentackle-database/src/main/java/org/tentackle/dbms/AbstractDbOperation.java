@@ -28,7 +28,7 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * A {@code AbstractDbOperation} provides methods that are not part of {@link AbstractDbObject}s
+ * An {@code AbstractDbOperation} provides methods that are not part of {@link AbstractDbObject}s
  * and is associated with a {@link Db}-session. Complex transactions are usually
  * {@code AbstractDbOperation}s. {@code AbstractDbOperation}s are remoting capable.
  *
@@ -99,9 +99,9 @@ public abstract class AbstractDbOperation<P extends AbstractDbOperation<P>>
 
 
   /**
-   * Sets the db to immutable.
+   * Sets the session to immutable.
    *
-   * @param sessionImmutable true if db cannot be changed anymore
+   * @param sessionImmutable true if the session cannot be changed anymore
    */
   @Override
   public void setSessionImmutable(boolean sessionImmutable) {
@@ -109,7 +109,7 @@ public abstract class AbstractDbOperation<P extends AbstractDbOperation<P>>
   }
 
   /**
-   * Returns whether the db is immutable.
+   * Returns whether the session is immutable.
    *
    * @return true if immutable
    */
@@ -145,7 +145,7 @@ public abstract class AbstractDbOperation<P extends AbstractDbOperation<P>>
 
 
   /**
-   * Get the session for this operation.
+   * Gets the session for this operation.
    *
    * @return the session
    */
@@ -163,7 +163,7 @@ public abstract class AbstractDbOperation<P extends AbstractDbOperation<P>>
    * Gets the delegate for remote connections.<br>
    * Each class has its own delegate.
    *
-   * @return the delegate for this object
+   * @return the delegate for this operation
    */
   public AbstractDbOperationRemoteDelegate<P> getRemoteDelegate()  {
     return getClassVariables().getRemoteDelegate(getSession());

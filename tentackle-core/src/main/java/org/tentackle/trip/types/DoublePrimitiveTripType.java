@@ -21,7 +21,7 @@ package org.tentackle.trip.types;
 import org.tentackle.trip.TripTypeService;
 
 /**
- * Trip type for double primitive type.
+ * Trip type for the {@code double} primitive.
  */
 @TripTypeService(double.class)
 public final class DoublePrimitiveTripType extends DoubleTripType {

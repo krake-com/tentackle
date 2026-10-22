@@ -40,7 +40,7 @@ import java.lang.annotation.Target;
 public @interface ValidationScopeService {
 
   /**
-   * Determines the validation scope interface.<br>
+   * Determines the validation scope interface.
    *
    * @return the interface
    */

@@ -37,36 +37,32 @@ interface BundleFactoryHolder {
  * {@code ResourceBundle.getBundle(...)} for 3 reasons:
  * <ol>
  * <li>for modular applications:<br>
- * In Jigsaw, ResourceBundles are only visible from their own module by default. Furthermore, ResourceBundleControlProvider
- * is unavailable, i.e. disabled and throws an exception if used. Loading a bundle from another module, as it is the
- * case for a factory located in a framework module, would not work at all. Since Java 9, a workaround is provided
- * via a service provider interface and corresponding uses/provides entries in module-info. Alternatively, the modules
- * can be declared as "open". Either approach is rather cumbersome and may lead to runtime errors or loss of encapsulation.<br>
- * Thanks to Tentackle's {@link ServiceFactory} and {@link ModuleSorter}, the BundleFactory knows to which
- * module a resource belongs to and loads it from the enclosing module.
+ * In Jigsaw, ResourceBundles are only visible from their own module by default. Furthermore,
+ * {@link ResourceBundle.Control}s and {@link ResourceBundleControlProvider}s are not supported for named modules.
+ * Loading a bundle from another module, as is the case for a factory located in a framework module,
+ * would not work at all. The JDK provides a workaround via a service provider interface and corresponding
+ * uses/provides entries in module-info. Alternatively, the modules can be declared as "open".
+ * Either approach is rather cumbersome and may lead to runtime errors or loss of encapsulation.<br>
+ * Thanks to Tentackle's {@link ServiceFactory} and {@link ModuleSorter}, the BundleFactory knows which
+ * module a resource belongs to and loads it via the {@link ModuleHook} of that module.
  * </li>
  * <li>for non-modular applications:<br>
- * because the use cases of {@link java.util.spi.ResourceBundleControlProvider}
- * are still very limited in Java 8. The major restriction is that the providers
- * are loaded from <em>installed</em> extensions only. This requires either a copy the tentackle-jars in
- * the extensions directory of the JRE installation (which is a bad habit in general, because it applies to all applications)
- * or to set the runtime option -Djava.ext.dirs=... to a directory path containing the jars.
- * The latter may be a workaround for applications started from the shell, but is not feasible for webstart
- * applications or applications running within a container.<br>
- * Tentackle's bundle factory uses the same interface {@link java.util.spi.ResourceBundleControlProvider} and semantics
- * to lookup and install providers as the standard JRE, but scans the application classpath instead
- * of the system classpath.<br>
- * See {@code org.tentackle.locale.StoredBundleControlProvider} in tentackle-i18n for an example.
+ * The bundle factory uses the same interface {@link ResourceBundleControlProvider} and semantics
+ * to look up and install providers as the JDK, but locates the providers via the {@link ServiceFinder}.
+ * The controls are applied to all bundles that are not loaded via a {@link ModuleHook}.<br>
+ * See {@code org.tentackle.i18n.StoredBundleControlProvider} in tentackle-i18n for an example.
  * </li>
  * <li>
  * The classes providing bundles can be annotated with &#64;{@link Bundle} and will automatically
- * become registered resources via META-INF by means of the tentackle:analyze plugin.
- * Same applies to some framework-related annotations auch as &#64;FxControllerService or
- * &#64;GuiProviderService. The tentackle-i18n plugin can then check during the test phase whether
- * the keys used in the java source are really defined in a resource bundle.
+ * become registered resources in {@code META-INF/bundles} by means of the analyze goal of the tentackle-maven-plugin.
+ * The same applies to some framework-related annotations such as &#64;FxControllerService or
+ * &#64;GuiProviderService. The {@code bundles} goal of the tentackle-check-maven-plugin can then check
+ * whether the keys used in the Java source are really defined in a resource bundle.
  * </li>
  * </ol>
- *
+ * <p>
+ * Leading slashes are removed from the base names, i.e., {@code "/org/example/MyBundle"} and
+ * {@code "org/example/MyBundle"} denote the same bundle.
  *
  * @author harald
  */
@@ -82,8 +78,9 @@ public interface BundleFactory {
   }
 
   /**
-   * Gets a resource bundle using the specified base name, the default locale, and the caller's class loader.<br>
+   * Gets a resource bundle using the specified base name and the default locale.<br>
    * Replacement for {@link ResourceBundle#getBundle(java.lang.String)}.
+   * See {@link #findBundle(String, Locale)} for how the bundle is located.
    *
    * @param baseName the base name of the resource bundle, a fully qualified class name
    *
@@ -94,8 +91,9 @@ public interface BundleFactory {
   }
 
   /**
-   * Gets a resource bundle using the specified base name and locale, and the caller's class loader.<br>
+   * Gets a resource bundle using the specified base name and locale.<br>
    * Replacement for {@link ResourceBundle#getBundle(java.lang.String, java.util.Locale) }.
+   * See {@link #findBundle(String, Locale)} for how the bundle is located.
    *
    * @param baseName the base name of the resource bundle, a fully qualified class name
    * @param locale the locale for which a resource bundle is desired
@@ -140,14 +138,16 @@ public interface BundleFactory {
 
   /**
    * Gets the control providers.<br>
-   * Method can be used to add a provider explicitly.
+   * The returned list can be modified to add a provider explicitly, but only if at least one
+   * provider has been found.
    *
    * @return the non-empty list of providers or null, if no providers found
    */
   List<ResourceBundleControlProvider> getProviders();
 
   /**
-   * Gets the control to load the bundle.
+   * Gets the control to load the bundle.<br>
+   * The control is determined by the first provider returning a non-null control for the given basename.
    *
    * @param baseName the bundle basename
    * @return the control, null if delegate to ResourceBundle's default
@@ -155,7 +155,12 @@ public interface BundleFactory {
   ResourceBundle.Control getControl(String baseName);
 
   /**
-   * Finds a resource bundle using the specified base name and locale, and the caller's class loader.<br>
+   * Finds a resource bundle using the specified base name and locale.
+   * <p>
+   * If the bundle is registered for a named module (see {@link Bundle}), it is loaded via the
+   * {@link ModuleHook} of that module. Otherwise, it is loaded via {@link ResourceBundle#getBundle}
+   * with the classloader set by {@link #setClassLoader(ClassLoader)}, if any, and the control
+   * of {@link #getControl(String)}, if any.
    *
    * @param baseName the base name of the resource bundle, a fully qualified class name
    * @param locale the locale for which a resource bundle is desired
@@ -166,6 +171,8 @@ public interface BundleFactory {
 
   /**
    * Finds a resource bundle using the specified base name, locale, and class loader.<br>
+   * Same as {@link #findBundle(String, Locale)}, but uses the given classloader for bundles
+   * not registered for a named module.
    *
    * @param baseName the base name of the resource bundle, a fully qualified class name
    * @param locale   the locale for which a resource bundle is desired
@@ -176,7 +183,9 @@ public interface BundleFactory {
   ResourceBundle findBundle(String baseName, Locale locale, ClassLoader loader);
 
   /**
-   * Clears the bundle cache.
+   * Clears the bundle cache.<br>
+   * The default implementation clears the {@link ResourceBundle} cache for the classloader
+   * that loaded the factory.
    */
   void clearCache();
 }

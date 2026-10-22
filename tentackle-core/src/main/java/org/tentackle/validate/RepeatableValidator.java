@@ -23,6 +23,9 @@ import java.lang.annotation.Annotation;
 
 /**
  * The repeatable container validator.
+ * <p>
+ * Notice that {@link ValidationUtilities} does not use this interface, but unwraps the
+ * &#64;{@link RepeatableValidation} containers itself.
  *
  * @author harald
  */

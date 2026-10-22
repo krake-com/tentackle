@@ -67,7 +67,7 @@ public class ConnectionHandler implements Runnable {
   /**
    * Creates a new handler.
    *
-   * @param transport the transport associated with this accept-loop
+   * @param transport the transport associated with this handler
    * @param connectionName the name of the connection
    * @param inputStream the input stream associated with this connection
    * @param outputStream the output stream associated with this connection
@@ -117,9 +117,9 @@ public class ConnectionHandler implements Runnable {
 
   /**
    * Handles the new connection.
-   * <p>
    * <ul>
-   *   <li>reads the connection request: the TRIP magic followed by the UUID of the client's transport</li>
+   *   <li>reads the connection request: the TRIP magic followed by the UUID of the client's transport
+   *   and whether the client's dictionary is still empty</li>
    *   <li>the UUID is used to determine the dictionary and a TRIP stream is created</li>
    *   <li>reads the remote calls from the stream and dispatches them to the call handler thread pool.</li>
    * </ul>
@@ -133,14 +133,14 @@ public class ConnectionHandler implements Runnable {
         // For an auto-updatable client, this will happen only once per client with the update URL endpoint.
         // The client then updates itself and automatically uses the latest protocol.
         LOGGER.warning("client connection {0} uses an outdated version of TRIP, version skew = {1}",
-                       new TransportClientInfo(transport, connectionName), versionSkew);
+                       new TransportClientInfo(transport, null, connectionName, null), versionSkew);
       }
     }
     catch (TripRuntimeException e) {
       if (ExceptionHelper.extractException(IOException.class, true, e) != null) {
         // SSL handshake exception, peer closed, etc... -> just log the messages, no stacktrace
         LOGGER.warning("connection {0} aborted: {1}",
-                       new TransportClientInfo(transport, connectionName),
+                       new TransportClientInfo(transport, null, connectionName, null),
                        ExceptionHelper.concatenateMessages(e));
         return;
       }
@@ -153,7 +153,7 @@ public class ConnectionHandler implements Runnable {
       clientDictionaryEmpty = readDictionaryFlag();
     }
     TripStream stream = createStream(id, clientDictionaryEmpty);
-    TransportClientInfo transportClientInfo = new TransportClientInfo(transport, connectionName, id);
+    TransportClientInfo transportClientInfo = new TransportClientInfo(transport, stream.getDictionary(), connectionName, id);
     boolean closedByClient = false;
     LOGGER.info("connection " + transportClientInfo + " opened");
 

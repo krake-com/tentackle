@@ -19,7 +19,7 @@ typed a password, so it suspends midway through and resumes on a JavaFX thread. 
 application is a server that hands sessions to a servlet container.
 
 [`Application`](../java/org/tentackle/app/Application.java) captures what all of them
-have in common: it is the **process-wide singleton** that owns the session, the root
+have in common: it is the **process-wide singleton** that owns the session, the initial
 [domain context](domain-context-provider.md), the application's properties and its
 lifecycle. [`AbstractApplication`](../java/org/tentackle/app/AbstractApplication.java)
 implements the steps as overridable template methods; each tier's base class assembles
@@ -149,16 +149,16 @@ guess, because the order is exactly what distinguishes the tiers.
 | Step | Default behavior |
 |------|------------------|
 | `initialize()` | Applies properties, initializes scripting, logs the discovered module hooks. The first step, always. |
-| `login()` | *(subclass)* Creates the `SessionInfo`, obtains the [credentials](../../../../tentackle-session/src/main/docs/authentication.md), opens the session, makes it current, sets the root domain context. |
-| `configure()` | Calls `configureModificationTracker()`, `configurePreferences()`, `configureSecurityManager()`. Runs **after** the connection exists. |
-| `finishStartup()` | Activates statistics if asked, preloads the [PDO caches](cache.md#preloading-caches-at-startup-preloadcache) marked `@PreloadCache`, starts the [modification tracker](../../../../tentackle-session/src/main/docs/session.md), registers its emergency-shutdown hook. |
+| `login()` | *(subclass)* Creates the `SessionInfo`, obtains the [credentials](../../../../tentackle-session/src/main/docs/authentication.md), opens the session, makes it current, sets the application's domain context. |
+| `configure()` | Calls `configureModificationTracker()`, `configurePreferences()`, `configureSecurityManager()` (which enables the security manager unless `nosecurity` is given). Runs **after** the connection exists. |
+| `finishStartup()` | Activates statistics if asked. Unless `notracker` is given, preloads the [PDO caches](cache.md#preloading-caches-at-startup-preloadcache) marked `@PreloadCache`, starts the [modification tracker](../../../../tentackle-session/src/main/docs/modification-tracking.md), registers its emergency-shutdown hook, and — on a server — waits for the preload to finish. With `notracker`, disables all PDO caches instead. |
 | `cleanup()` | Terminates PDO helper threads and closes the session. |
 
 The split between `configure()` and `finishStartup()` matters: `configure()` prepares
 singletons that need a live session, `finishStartup()` starts the threads that use
 them. Subclasses override individual steps rather than the sequence.
 
-`finishStartup()` opens with the overridable `preloadCaches()`, which fills the
+Right before starting the modification tracker, `finishStartup()` invokes the overridable `preloadCaches()`, which fills the
 [read-only `PRELOAD` caches](cache.md#preloading-caches-at-startup-preloadcache) annotated
 with `@PreloadCache` — in one roundtrip when the session is remote, which is what makes an
 interactive client usable over a slow link. It returns a `CountDownLatch`, or `null` if it
@@ -226,7 +226,7 @@ protected void startup() {
 Its `login()` builds a `SessionInfo` from `--user` / `--password` / `--backend`, or
 takes `--url`, `--user` and `--password` directly from the command line when both a
 URL and a user are given, bypassing the properties file. It then opens the session,
-makes it current, and installs the root domain context.
+makes it current, and installs the application's domain context.
 
 Despite the name, `ConsoleApplication` is the base for anything non-interactive:
 daemons, batch jobs, migration tools. The generated project's daemon extends it and
@@ -408,7 +408,9 @@ starts it, `cleanup()` terminates it. The request-scoped `getSession(key)` /
 - JavaFX closes the last window → `FxApplication.stop()` → `Application.stop(...)`;
 - the modification tracker terminates — cleanly (`stop(0, null)`) or unexpectedly,
   which logs `*** emergency shutdown ***` and exits with 2;
-- a server sends a [`LogoutEvent`](../java/org/tentackle/app/LogoutEvent.java), whose
+- a server sends a [`LogoutEvent`](../java/org/tentackle/app/LogoutEvent.java) — requested by an
+  administrator via the `AdminExtension`, see
+  [Session administration](../../../../tentackle-fx-rdc/src/main/docs/rdc.md#session-administration) — whose
   default [`LogoutEventHandler`](../java/org/tentackle/app/LogoutEventHandler.java)
   terminates the modification tracker — and therefore, by the previous rule, the
   application. `LogoutEvent` is a `MasterSerialEvent` marked
@@ -441,7 +443,7 @@ optionally, `getApplicationClass()` and `configureMainStage(...)`.
 | Concern | How the hierarchy handles it |
 |---------|------------------------------|
 | **Singleton** | `register()` / `unregister()` guarantee one application per JVM; `getInstance()` reaches it from anywhere. |
-| **Root context** | `Application` is a `SessionProvider` + `DomainContextProvider`; every context-less PDO inherits from it. |
+| **Initial context** | `Application` is a `SessionProvider` + `DomainContextProvider`; every context-less PDO inherits from it. |
 | **Uniform steps** | `initialize` → `login` → `configure` → `finishStartup`, overridden individually, assembled by `startup()`. |
 | **Configuration** | Command-line options become properties; well-known keys need no code; `SYSTEM_`/`^` set system properties. |
 | **Tier differences** | Servers add pools and TRIP; desktop clients interleave with the FX lifecycle; web applications bridge to a container. |

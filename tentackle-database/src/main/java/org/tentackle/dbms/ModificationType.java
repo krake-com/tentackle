@@ -31,8 +31,8 @@ import java.io.Serializable;
  * <ul>
  *   <li>Create another enum implementing {@link ModificationType}.
  *   Make sure to use other character values than in {@link DbModificationType}!</li>
- *   <li>Create a new {@link ModificationTypeFactory}, annotated with {@link org.tentackle.common.Service}
- *   and override the create method.</li>
+ *   <li>Create a subclass of {@link ModificationTypeFactory}, annotated with
+ *   {@code @Service(ModificationTypeFactory.class)}, and override the create method.</li>
  * </ul>
  */
 public interface ModificationType extends Convertible<Character>, Serializable {
@@ -57,5 +57,13 @@ public interface ModificationType extends Convertible<Character>, Serializable {
   static ModificationType getDefault() {
     throw new PersistenceException("there is no default modification type");
   }
+
+  /**
+   * Returns whether the type refers to an object state that
+   * benefits from serialization via the {@link ModificationLog}'s {@code objectData} field.
+   *
+   * @return true if serializable
+   */
+  boolean isSerializable();
 
 }

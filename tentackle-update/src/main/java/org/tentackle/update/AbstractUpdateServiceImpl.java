@@ -36,6 +36,20 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Server side update service implementation.
+ * <p>
+ * Derives the update info purely from a naming convention below the update base URL:
+ * <pre>
+ *   &lt;updateURL&gt;/&lt;artifactName&gt;-&lt;version&gt;-&lt;platform&gt;-&lt;architecture&gt;[-pkg].zip
+ *   &lt;updateURL&gt;/&lt;artifactName&gt;-&lt;version&gt;-&lt;platform&gt;-&lt;architecture&gt;[-pkg].sha256
+ * </pre>
+ * where {@code -pkg} denotes a jpackage installation. The checksum hashes and the (known) download sizes
+ * are cached per URL, so the HTTP server is contacted only once per artifact.
+ * <p>
+ * The service is invoked by all clients concurrently and is therefore thread-safe.
+ * Applications only implement {@link #getArtifactName()} and {@link #getVersion()} and must provide
+ * a public constructor with a single {@code String} argument, the update base URL,
+ * as required by {@link ServerUpdateUtilities#startUpdateService}.
+ * All other steps are {@code protected} methods that can be overridden to deviate from the convention.
  */
 public abstract class AbstractUpdateServiceImpl implements UpdateService {
 
@@ -47,7 +61,7 @@ public abstract class AbstractUpdateServiceImpl implements UpdateService {
   /**
    * Creates an update service object.
    *
-   * @param updateURL the http url where to download the updates from
+   * @param updateURL the HTTP(S) base URL to download the updates from
    */
   public AbstractUpdateServiceImpl(String updateURL) {
     setUpdateURL(updateURL);
@@ -65,7 +79,8 @@ public abstract class AbstractUpdateServiceImpl implements UpdateService {
   public abstract String getArtifactName();
 
   /**
-   * Gets the server version.
+   * Gets the application version offered to the clients.<br>
+   * Usually the version of the server itself.
    *
    * @return the version
    */
@@ -76,22 +91,31 @@ public abstract class AbstractUpdateServiceImpl implements UpdateService {
   /**
    * Gets the update base URL.
    *
-   * @return the url (with trailing slash!)
+   * @return the URL, always with a trailing slash
    */
   public String getUpdateURL() {
     return updateURL;
   }
 
   /**
-   * Sets the update base URL.
+   * Sets the update base URL.<br>
+   * A trailing slash is appended, if missing.
    *
-   * @param updateURL the url
+   * @param updateURL the URL
    */
   public void setUpdateURL(String updateURL) {
     this.updateURL = updateURL.endsWith("/") ? updateURL : (updateURL + "/");
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The version offered is always {@link #getVersion()}, regardless of the client's version.
+   *
+   * @throws TentackleRuntimeException if the checksum or the download size could not be determined,
+   *         for example because the artifact is not published
+   */
   @Override
   public UpdateInfo getUpdateInfo(ClientInfo clientInfo) {
     try {
@@ -103,7 +127,7 @@ public abstract class AbstractUpdateServiceImpl implements UpdateService {
       return createUpdateInfo(getVersion(), zipURL, checksumHash, size, updateExecutor);
     }
     catch (IOException ex) {
-      throw new RuntimeException("cannot create update info", ex);
+      throw new TentackleRuntimeException("cannot create update info", ex);
     }
   }
 
@@ -112,10 +136,10 @@ public abstract class AbstractUpdateServiceImpl implements UpdateService {
    * Creates the update info to be returned to the client.
    *
    * @param version the new application version
-   * @param zipURL the URL to download the zip file
-   * @param checksumHash the checksum hash
-   * @param size the download size
-   * @param updateExecutor the filename to execute to perform the update
+   * @param zipURL the URL to download the ZIP file
+   * @param checksumHash the SHA-256 checksum hash of the ZIP file
+   * @param size the download size in bytes, -1 if unknown
+   * @param updateExecutor the filename of the script to execute to perform the update
    * @return the update info
    */
   protected UpdateInfo createUpdateInfo(String version, URL zipURL, String checksumHash, long size, String updateExecutor) {
@@ -123,10 +147,11 @@ public abstract class AbstractUpdateServiceImpl implements UpdateService {
   }
 
   /**
-   * Creates the name of the update executor.
+   * Creates the name of the update executor.<br>
+   * The script is located in the {@code bin} directory of the unzipped update.
    *
    * @param clientInfo the client info
-   * @return the executor name
+   * @return the executor name, {@code update.cmd} for Windows, else {@code update.sh}
    */
   protected String createUpdateExecutor(ClientInfo clientInfo) {
     return clientInfo.platform().contains("win") ? "update.cmd" : "update.sh";
@@ -163,7 +188,10 @@ public abstract class AbstractUpdateServiceImpl implements UpdateService {
   }
 
   /**
-   * Creates the base URL name without extension.
+   * Creates the base URL name without extension.<br>
+   * The default implementation returns
+   * {@code <updateURL>/<artifactName>-<version>-<platform>-<architecture>}
+   * with {@code -pkg} appended for jpackage installations.
    *
    * @param clientInfo the client info
    * @return the URL string
@@ -182,24 +210,32 @@ public abstract class AbstractUpdateServiceImpl implements UpdateService {
   }
 
   /**
-   * Determines the checksum hash.
+   * Determines the checksum hash.<br>
+   * The hash is the first whitespace-delimited token of the checksum file,
+   * so the output of {@code sha256sum} can be used as is. The hash is cached.
    *
    * @param checksumURL the URL of the checksum hash file
    * @return the hash value
-   * @throws IOException if failed
+   * @throws IOException if the download failed or the file is empty
    */
   protected String determineChecksumHash(URL checksumURL) throws IOException {
     String checksumUrlStr = checksumURL.toString();
     String shaHash = checksumHashes.get(checksumUrlStr);
     if (shaHash == null) {
-      shaHash = new StringTokenizer(new String(FileHelper.download(checksumURL))).nextToken();
+      StringTokenizer stok = new StringTokenizer(new String(FileHelper.download(checksumURL)));
+      if (!stok.hasMoreTokens()) {
+        throw new IOException("empty checksum file " + checksumUrlStr);
+      }
+      shaHash = stok.nextToken();
       checksumHashes.put(checksumUrlStr, shaHash);
     }
     return shaHash;
   }
 
   /**
-   * Determines the download size of the ZIP file.
+   * Determines the download size of the ZIP file.<br>
+   * Sends an HTTP {@code HEAD} request and takes the {@code content-length} of the response.
+   * Redirects are followed, so the ZIP may be served by a CDN or mirror.
    * <p>
    * Only a determinate size is cached. An unknown size is not, because it would otherwise
    * be answered for this artifact until the server is restarted, even though the very next
@@ -207,13 +243,13 @@ public abstract class AbstractUpdateServiceImpl implements UpdateService {
    *
    * @param zipURL the download URL
    * @return the size in bytes, -1 if no content-length in header response
-   * @throws IOException if failed or the artifact is not available
+   * @throws IOException if failed or the artifact is not available (HTTP status other than 2xx)
    */
   protected long determineDownloadSize(URL zipURL) throws IOException {
     String zipUrlStr = zipURL.toString();
     Long size = downloadSizes.get(zipUrlStr);
     if (size == null) {
-      try (HttpClient client = HttpClient.newHttpClient()) {
+      try (HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build()) {
         HttpRequest request = HttpRequest.newBuilder()
             .uri(zipURL.toURI())
             .method("HEAD", HttpRequest.BodyPublishers.noBody())
@@ -230,6 +266,9 @@ public abstract class AbstractUpdateServiceImpl implements UpdateService {
         }
       }
       catch (InterruptedException | URISyntaxException ex) {
+        if (ex instanceof InterruptedException) {
+          Thread.currentThread().interrupt();   // preserve the interrupt status
+        }
         throw new IOException("cannot determine expected download size of " + zipUrlStr, ex);
       }
     }

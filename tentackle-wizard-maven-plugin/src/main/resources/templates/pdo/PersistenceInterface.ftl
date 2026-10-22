@@ -4,6 +4,12 @@
 
 package ${persistencePackage};
 
+<#if superPersistenceInterfacePackage != "" && superPersistenceInterfacePackage != persistencePackage>
+import ${superPersistenceInterfacePackage}.${superPersistenceInterface};
+</#if>
+<#if validationImports != "">
+${validationImports}<#t>
+</#if>
 import ${pdoPackage}.${pdoInterface};
 import java.util.Collection;
 import java.util.List;

@@ -98,7 +98,7 @@ public class ScriptEditor extends AbstractFxController {
    * @param mojo the script mojo
    * @param session the backend session (made current on the worker thread)
    * @param harnesses the available harnesses
-   * @param harness the harness to select by default, null if none
+   * @param harness the harness to select by default, null if none; ignored if there is only one harness
    */
   public void setup(ScriptMojo mojo, Session session, Collection<ScriptHarness> harnesses, ScriptHarness harness) {
     this.mojo = mojo;
@@ -110,7 +110,7 @@ public class ScriptEditor extends AbstractFxController {
     else if (harness != null) {
       this.harness = harness;
     }
-    fragmentFile = new ScriptFragmentFile(mojo.getPreferences(), mojo.getMavenProject().getBasedir());
+    fragmentFile = new ScriptFragmentFile(mojo.getPreferences(), mojo.getBaseDir());
     File lastFile = fragmentFile.getLastFile();
     if (lastFile != null) {
       // pick up where the last session left off
@@ -120,9 +120,9 @@ public class ScriptEditor extends AbstractFxController {
       updateFileLabel();
     }
     getStage().setOnCloseRequest(event -> {
-      if (modified) {
+      if (modified || workerRef.get() != null) {
         event.consume();   // don't close before the user decided
-        confirmDiscard(this::close);
+        requestClose();
       }
     });
   }
@@ -146,7 +146,7 @@ public class ScriptEditor extends AbstractFxController {
     copyScriptButton.setOnAction(_ -> copy());
     copyScriptButton.setTooltip(new Tooltip("copy the generated script to the clipboard"));
     runButton.setGraphic(Fx.createGraphic("run"));
-    runButton.setTooltip(new Tooltip("run the script fragment woven into the current harness"));
+    runButton.setTooltip(new Tooltip("run the script fragment woven into the selected harness"));
     interruptButton.setDisable(true);
     interruptButton.setGraphic(Fx.createGraphic("stop"));
     interruptButton.setTooltip(new Tooltip("interrupt the currently running script"));
@@ -332,10 +332,19 @@ public class ScriptEditor extends AbstractFxController {
    * Unsaved changes must be confirmed first.
    */
   private void requestClose() {
-    confirmDiscard(this::close);
+    if (workerRef.get() != null) {
+      Fx.yes(getView(), "a script is still running: interrupt it and close?", false, () -> confirmDiscard(this::close));
+    }
+    else {
+      confirmDiscard(this::close);
+    }
   }
 
   private void close() {
+    Thread worker = workerRef.get();
+    if (worker != null) {
+      worker.interrupt();
+    }
     getStage().close();   // does not fire onCloseRequest again
   }
 

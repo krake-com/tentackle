@@ -19,9 +19,9 @@
 package org.tentackle.maven.plugin.wizard.fx;
 
 /**
- * Holds the type info for a datanode.
+ * Holds the type info for a data node.
  *
- * @param fqcn the full qualified classname
+ * @param fqcn the fully qualified class name
  * @param tableName the table name
  * @param classId the class-ID
  */

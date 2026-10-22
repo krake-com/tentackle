@@ -17,7 +17,8 @@
  */
 
 /**
- * tentackle-web module.
+ * Tentackle web module.<br>
+ * Bridges a web framework to a Tentackle tier without depending on any web API.
  */
 module org.tentackle.web {
 

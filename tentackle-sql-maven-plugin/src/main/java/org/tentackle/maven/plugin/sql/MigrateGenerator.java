@@ -30,7 +30,9 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * Generator for the run script.
+ * Renders a migration file generated as a FreeMarker template into the final SQL file.
+ *
+ * @see MigrateTemplateModel
  */
 public class MigrateGenerator extends AbstractGenerator {
 
@@ -44,7 +46,8 @@ public class MigrateGenerator extends AbstractGenerator {
    *
    * @param mojo the migrate mojo
    * @param templateFile the sql template file
-   * @param migratedEntitiesMap set of migrated tables
+   * @param backendInfo the backend info
+   * @param migratedEntitiesMap the processed entity names mapped to whether they need migration
    */
   public MigrateGenerator(MigrateSqlMojo mojo, File templateFile, BackendInfo backendInfo, Map<String, Boolean> migratedEntitiesMap) {
     this.mojo = mojo;
@@ -55,9 +58,9 @@ public class MigrateGenerator extends AbstractGenerator {
   }
 
   /**
-   * Generates the SQL file.
+   * Generates the SQL file and deletes the template file.
    *
-   * @param fileName the filename to generate
+   * @param fileName the filename to generate in the template file's directory
    * @throws MojoExecutionException if I/O or template error
    */
   public void generate(String fileName) throws MojoExecutionException {
@@ -67,7 +70,7 @@ public class MigrateGenerator extends AbstractGenerator {
       File sqlFile = new File(getTemplateDirectory(), fileName);
       GeneratedFile generatedFile = new GeneratedFile(cfg, model, templateFile.getName(), sqlFile);
       generatedFile.generate();
-      mojo.getLog().debug("processed as template " + templateFile + " into " + sqlFile);
+      mojo.getLogger().debug("processed as template {} into {}", templateFile, sqlFile);
       templateFile.delete();
     }
     catch (IOException | TemplateException e) {

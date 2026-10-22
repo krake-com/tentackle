@@ -21,14 +21,24 @@ package org.tentackle.dbms;
 /**
  * Source of ID numbers.
  * <p>
- * IdSources are unique instances per session.
+ * Each persistent class uses the id source configured for it, or the default id source of the
+ * session requesting the id.
+ * <p>
+ * There is usually one id source per configuration. The implementation must
+ * make sure that the ids are unique per physical backend.<br>
+ * While {@link ObjectId} does not maintain any internal state, {@link ObjectSequenceId}
+ * maintains an id range per physical backend (via the backend identifier).
+ *
+ * @see IdSourceConfigurator
+ * @see DbObjectClassVariables#getIdSource(Db)
+ * @see Db#getBackendIdentity()
  *
  * @author harald
  */
 public interface IdSource {
 
   /**
-   * Get the next unique ID.
+   * Gets the next unique ID.
    *
    * @param db the current session
    * @return a free ID.

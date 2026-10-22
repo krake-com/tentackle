@@ -100,7 +100,7 @@ A record is the natural fit: value equality, an ordering that compares member by
 (null-safe via `Compare.compare`), and `Serializable` — so a domain key travels over
 [TRIP](../../../../tentackle-core/src/main/docs/trip.md) like any other value.
 
-**`DomainMethods`** implements the [runtime API](#the-runtime-api) in the domain interface:
+**`DomainMethods`** implements the [runtime API](#the-runtime-api) in the domain implementation:
 `isUniqueDomainKeyProvided()` returning `true`, `getUniqueDomainKeyType()`,
 `getUniqueDomainKey()` / `setUniqueDomainKey()` mapping to the attribute getters/setters, and
 `findByUniqueDomainKey()` delegating to `selectByUniqueDomainKey(...)`.

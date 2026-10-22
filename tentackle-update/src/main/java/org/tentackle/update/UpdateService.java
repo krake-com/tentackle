@@ -22,11 +22,17 @@ import org.tentackle.trip.Remote;
 
 /**
  * TRIP service to provide the update info for an application.
+ * <p>
+ * The server alone decides which version is offered, where it is downloaded from
+ * and which script performs the update. The client only reports who it is.
+ *
+ * @see AbstractUpdateServiceImpl
  */
 public interface UpdateService extends Remote {
 
   /**
-   * Gets the info, how to download and install the update.
+   * Gets the info on how to download and install the update.<br>
+   * The client is expected to update only if the returned version differs from its own.
    *
    * @param info the client application info
    * @return the update info

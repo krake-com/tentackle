@@ -1,0 +1,9 @@
+## a hub
+name := Hub
+table := hub
+extends := Node
+inheritance := multi
+
+## attributes
+
+Integer         capacity        capacity        the capacity

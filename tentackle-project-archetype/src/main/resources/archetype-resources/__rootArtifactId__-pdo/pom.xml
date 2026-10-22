@@ -72,7 +72,7 @@
               <dependency>
                 <groupId>org.tentackle</groupId>
                 <artifactId>tentackle-test-pdo</artifactId>
-                <version>${tentackle.version}</version>
+                <version>${symbol_dollar}{tentackle.version}</version>
               </dependency>
             </dependencies>
           </plugin>

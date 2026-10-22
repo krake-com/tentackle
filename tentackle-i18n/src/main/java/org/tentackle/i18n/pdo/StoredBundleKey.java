@@ -58,8 +58,10 @@ import org.tentackle.session.TableName;
 
 
 /**
- * A bundle key translation stored in the database.
+ * The translation of a single bundle key stored in the database.
  * <p>
+ * A component of {@link StoredBundle}. Don't create or modify bundle keys directly, but use
+ * {@link StoredBundle#setTranslation(String, String)}.
  *
  * @author harald
  */

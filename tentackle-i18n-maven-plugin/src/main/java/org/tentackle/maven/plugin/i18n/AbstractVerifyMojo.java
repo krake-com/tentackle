@@ -40,12 +40,18 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
- * Base class for the "verify"- and "cleanup"-mojos.
+ * Base class for the "verify"- and "cleanup"-mojos.<br>
+ * Compares the property files of the projects against the stored bundles and collects the findings:
+ * obsolete bundles and keys, missing and differing translations, missing stored bundles and missing
+ * property files. The subclasses decide what to do with them.
  *
  * @author harald
  */
-public class AbstractVerifyMojo extends AbstractI18nMojo {
+public abstract class AbstractVerifyMojo extends AbstractI18nMojo {
 
+  /**
+   * A translation of a key in a stored bundle.
+   */
   static class Translation implements Comparable<Translation> {
     final StoredBundle bundle;
     final String key;
@@ -95,8 +101,9 @@ public class AbstractVerifyMojo extends AbstractI18nMojo {
   Set<StoredBundleKey> obsoleteKeys;                // obsolete bundle keys
   Set<Translation> missingTranslations;             // missing bundle keys
   Set<Translation> differingTranslations;           // differing translations
-  Map<String, StoredBundle> resourceBundleMap;      // resource name -> stored bundle
+  Map<String, StoredBundle> resourceBundleMap;      // resource name -> stored bundle (new if not stored)
   Map<String, Properties> propertiesMap;            // bundlename -> default properties for the null-locale
+  Set<String> missingPropertyFiles;                 // resource names of missing property files
 
 
   @Override
@@ -107,6 +114,7 @@ public class AbstractVerifyMojo extends AbstractI18nMojo {
       obsoleteKeys = new HashSet<>();
       resourceBundleMap = new TreeMap<>();
       propertiesMap = new HashMap<>();
+      missingPropertyFiles = new HashSet<>();
       return true;
     }
     return false;
@@ -127,7 +135,8 @@ public class AbstractVerifyMojo extends AbstractI18nMojo {
         findObsoleteKeys(props, bundle);    // we're checking only for obsolete keys, not missing translations
       }
       else {
-        // the whole bundle is obsolete: remove all obsolete keys for that bundle
+        // the whole bundle is obsolete: don't report its keys separately
+        // (defensive only, since keys are collected solely for bundles that are not obsolete)
         obsoleteKeys.removeIf(bundleKey -> bundleKey.getBundleId() == bundle.getId());
       }
     }
@@ -144,12 +153,13 @@ public class AbstractVerifyMojo extends AbstractI18nMojo {
           bundle = verify(bundleName, locale, props);
         }
         else {
-          getLog().warn("no such properties file: " + resName);
+          getLogger().warn("no such properties file: {}", resName);
           warnings++;
+          missingPropertyFiles.add(resName);
         }
       }
       catch (IOException ex) {
-        getLog().error("could not load " + resName, ex);
+        getLogger().error("could not load {}", resName, ex);
         errors++;
       }
       if (bundle == null) {
@@ -160,7 +170,21 @@ public class AbstractVerifyMojo extends AbstractI18nMojo {
   }
 
   /**
-   * Sorts stores bundles by name and locale.
+   * Gets the resource names of the bundles that are missing in the database.<br>
+   * Bundles without a property file are not included, since they are already reported as missing
+   * property files.
+   *
+   * @return the resource names, sorted
+   */
+  List<String> getMissingStoredBundles() {
+    return resourceBundleMap.entrySet().stream()
+                            .filter(entry -> entry.getValue().isNew() && !missingPropertyFiles.contains(entry.getKey()))
+                            .map(Map.Entry::getKey)
+                            .toList();
+  }
+
+  /**
+   * Sorts stored bundles by name and locale.
    *
    * @param bundles the bundles
    * @return the copied sorted bundles
@@ -200,12 +224,13 @@ public class AbstractVerifyMojo extends AbstractI18nMojo {
 
 
   private StoredBundle verify(String bundleName, String locale, Properties props) {
+    if (locale == null) {
+      // the bundle exists in the application, even if not stored yet
+      propertiesMap.put(bundleName, props);
+    }
     StoredBundle bundle = on(StoredBundle.class).findByNameAndLocale(bundleName, locale);
     if (bundle != null) {
       obsoleteBundles.remove(bundle);
-      if (locale == null) {
-        propertiesMap.put(bundle.getName(), props);
-      }
       findDivergingTranslations(props, bundle);
       findObsoleteKeys(props, bundle);
     }

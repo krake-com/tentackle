@@ -36,9 +36,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+/**
+ * Tests the {@link SessionPooledExecutor}.
+ */
 public class SessionPoolExecutorTest extends AbstractPdoTest {
 
-  private static final int POOL_SIZE = 6;     // default conmgr's (local sessions) size is 8, -2 connections for main-thread and modtracker)
+  private static final int POOL_SIZE = 6;     // the default connection manager has 8 connections, minus 2 for the main thread and the modification tracker
   private static final int TASK_NUM = 100;
 
 

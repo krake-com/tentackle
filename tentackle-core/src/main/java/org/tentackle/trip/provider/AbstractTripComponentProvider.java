@@ -23,13 +23,16 @@ import org.tentackle.trip.TripComponent;
 import org.tentackle.trip.TripComponentProvider;
 import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripIgnore;
+import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripType;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 /**
- * Base class for {@link TripComponentProvider} implementations.
+ * Base class for {@link TripComponentProvider} implementations.<br>
+ * Provides the given serializable fields (neither static, transient nor annotated with &#64;{@link TripIgnore})
+ * of the class and its superclasses as components. The ordinals follow the order of declaration.
  *
  * @param <T> the type
  */
@@ -49,6 +52,11 @@ public abstract class AbstractTripComponentProvider<T> implements TripComponentP
     this.fieldNames = fieldNames;
   }
 
+  /**
+   * {@inheritDoc}
+   *
+   * @throws TripRuntimeException if one of the field names does not denote a serializable field
+   */
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public TripComponent<T, ?>[] getComponents(TripType<T> type) {
@@ -65,6 +73,10 @@ public abstract class AbstractTripComponentProvider<T> implements TripComponentP
           }
         }
       }
+    }
+    if (ordinal < components.length) {
+      throw new TripRuntimeException("not all fields " + String.join(", ", fieldNames) +
+                                     " found as serializable fields in " + clazz.getName());
     }
     return components;
   }

@@ -25,9 +25,9 @@ import java.util.Objects;
  */
 public class ColumnMigration {
 
-  private final String columnName;        // the (old) columnname
+  private final String columnName;        // the (old) column name
 
-  private final String newColumnName;     // the new columnname (if renamed)
+  private final String newColumnName;     // the new column name (if renamed)
 
   private final String sql;               // the SQL code
 
@@ -35,7 +35,7 @@ public class ColumnMigration {
    * Creates an explicit migration for a column.
    *
    * @param columnName the column name
-   * @param newColumnName the new column name if renamed
+   * @param newColumnName the new column name if renamed, null if not renamed
    * @param sql the SQL code
    */
   public ColumnMigration(String columnName, String newColumnName, String sql) {
@@ -55,7 +55,7 @@ public class ColumnMigration {
 
   /**
    * Gets the new column name if column is renamed.
-   * <p>
+   *
    * @return the renamed column, null if no rename
    */
   public String getNewColumnName() {
@@ -63,9 +63,9 @@ public class ColumnMigration {
   }
 
   /**
-   * The sql code to migrate this column.
-   * <p>
-   * @return sql code
+   * Gets the SQL code to migrate this column.
+   *
+   * @return the SQL code
    */
   public String getSql() {
     return sql;

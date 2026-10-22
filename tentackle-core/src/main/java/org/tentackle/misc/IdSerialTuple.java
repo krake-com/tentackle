@@ -28,6 +28,8 @@ import java.io.Serial;
 /**
  * A tuple holding the ID and the serial of an object.<br>
  * There is no further logic. Mainly used for serializing.
+ * <p>
+ * Notice that equality and ordering refer to the ID only.
  *
  * @author harald
  */

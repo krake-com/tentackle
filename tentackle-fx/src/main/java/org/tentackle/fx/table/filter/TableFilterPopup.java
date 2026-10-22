@@ -52,8 +52,9 @@ import java.util.Set;
 /**
  * The filter popup of a table column.<p>
  * Opened from the filter button in the column's header, it provides — as known from the autofilter
- * of spreadsheet applications — shortcuts to sort the column, a search field, the list of the
- * column's distinct values with a checkbox each, and a condition editor.
+ * of spreadsheet applications — a search field, the list of the column's distinct values with
+ * a checkbox each, and a condition editor. {@code ENTER} applies the filter, {@code ESCAPE} cancels.
+ * In addition, the column can be sorted programmatically via {@link #sortAscending()} and {@link #sortDescending()}.
  * <p>
  * The filter is modified when the user confirms the popup, not while editing, so that leaving the
  * popup with escape or by clicking somewhere else discards the changes.

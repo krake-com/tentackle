@@ -76,7 +76,7 @@ public class AbstractDbOperationRemoteDelegateImpl<P extends AbstractDbOperation
       return getServicedClass().getDeclaredConstructor(Db.class).newInstance(getSession());
     }
     catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
-           SecurityException | InvocationTargetException e) {
+           InvocationTargetException e) {
       throw new PersistenceException(getSession(), "creating object for class '" + getServicedClass() + "' failed", e);
     }
   }

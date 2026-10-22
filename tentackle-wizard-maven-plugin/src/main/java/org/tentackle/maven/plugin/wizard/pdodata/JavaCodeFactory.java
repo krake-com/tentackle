@@ -35,7 +35,12 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Factory generating Java code that creates PDOs.
+ * Factory generating Java code that creates PDOs.<br>
+ * The code recreates the PDOs from their data object trees: {@code on(...)}, the setters of
+ * all attributes that differ from their defaults, the components and collections, and a final
+ * {@code save()} or {@code persist()} for root entities. Non-composite relations are resolved
+ * via the unique domain key of the related PDO. Hidden components and attributes, i.e. without
+ * a public accessor, are generated as comments.
  */
 public class JavaCodeFactory {
 
@@ -57,7 +62,8 @@ public class JavaCodeFactory {
   /**
    * If {@link #distinctVariables} is true, the variable names are numbered.
    * If {@code variableOffset} is null, the first instance has no number.
-   * Otherwise, it starts with the given offset.
+   * Otherwise, it starts with the given offset.<br>
+   * Ignored if {@link #distinctVariables} is false.
    */
   public static Integer variableOffset;
 
@@ -66,7 +72,7 @@ public class JavaCodeFactory {
   /**
    * Generates code from a data object template.
    *
-   * @param codePaths optional code paths configuration map
+   * @param codePaths optional code paths configuration map, see {@link CodeConfigurationFactory}
    * @param dataObjects the data objects
    * @return the Java code
    */
@@ -91,7 +97,7 @@ public class JavaCodeFactory {
    *
    * @return the code
    */
-  public String generate() {
+  private String generate() {
     StringBuilder buf = new StringBuilder();
     for (DataObject dataObject : dataObjects) {
       if (!buf.isEmpty()) {
@@ -113,7 +119,7 @@ public class JavaCodeFactory {
 
 
   private Holder<Integer> getVariableCount(String varName) {
-    return nameMap.computeIfAbsent(varName, _ -> new Holder<>(variableOffset == null ? 0 : variableOffset));
+    return nameMap.computeIfAbsent(varName, _ -> new Holder<>(distinctVariables && variableOffset != null ? variableOffset : 0));
   }
 
   private String createVarName(String type) {
@@ -142,7 +148,7 @@ public class JavaCodeFactory {
           buf.append(varName).append('.').append(relation.getSetterName()).append('(').append(componentName).append(");\n");
         }
       }
-      code = buf.toString();
+      code = component.isHidden() ? commentOut(buf.toString()) : buf.toString();
     }
     else if (node instanceof DataList list) {
       code = createListCode(varName, list);
@@ -191,7 +197,7 @@ public class JavaCodeFactory {
             }
           }
           else {
-            str = dataType.valueOfLiteralToCode(item.getValue(), null);
+            str = dataType.valueOfLiteralToCode(orgValue.toString(), null);
           }
           buf.append(varName).append('.').append(attribute.getSetterName()).append("(").append(str).append(");\n");
         }
@@ -208,9 +214,6 @@ public class JavaCodeFactory {
     StringBuilder buf = new StringBuilder();
     List<DataNode> nodes = component.getNodes();
     if (nodes != null) {
-      if (component.isHidden()) {
-        buf.append(HIDDEN_COMMENT);
-      }
       if (distinctVariables || getVariableCount(varName).get() == 1) {
         buf.append(component.getType()).append(' ');
       }
@@ -220,7 +223,7 @@ public class JavaCodeFactory {
         buf.append(createNodeCode(varName, node));
       }
     }
-    return buf.toString();
+    return component.isHidden() ? commentOut(buf.toString()) : buf.toString();
   }
 
   private String createListCode(String varName, DataList list) {
@@ -228,25 +231,24 @@ public class JavaCodeFactory {
     if (list.getRelation() != null && isGenerating(!list.getRelation().getStereotypes().contains(NOTEST_STEREOTYPE), list)) {
       List<DataObject> nodes = list.getNodes();
       if (nodes != null) {
-        for (DataObject object : list.getNodes()) {
-          String objectName = createVarName(object.getType());
+        for (DataObject object : nodes) {
+          StringBuilder elementBuf = new StringBuilder();
           NonCompositeRelation listRelation = object.getNmRelation();
-          if (listRelation != null && isGenerating(true, list)) {
+          if (listRelation != null) {
             Relation relation = listRelation.getRelation();
             Relation nmRelation = relation.getNmRelation();
-            buf.append(varName).append(".get").append(relation.getNmMethodName()).append("().add(Objects.requireNonNull(on(")
-               .append(nmRelation.getForeignEntity()).append(".class).selectByUniqueDomainKey(")
-               .append(extractUdkLiteral(listRelation.getRelatedPdo())).append(")));")
-               .append(toIdComment(listRelation.getRelatedPdo())).append('\n');
+            elementBuf.append(varName).append(".get").append(relation.getNmMethodName()).append("().add(Objects.requireNonNull(on(")
+                      .append(nmRelation.getForeignEntity()).append(".class).selectByUniqueDomainKey(")
+                      .append(extractUdkLiteral(listRelation.getRelatedPdo())).append(")));")
+                      .append(toIdComment(listRelation.getRelatedPdo())).append('\n');
           }
           else {
-            buf.append(createComponentCode(objectName, object));
-            if (list.isHidden()) {
-              buf.append(HIDDEN_COMMENT);
-            }
-            buf.append(varName).append('.').append(list.getRelation().getGetterName())
-               .append("().add(").append(objectName).append(");\n");
+            String objectName = createVarName(object.getType());
+            elementBuf.append(createComponentCode(objectName, object));
+            elementBuf.append(varName).append('.').append(list.getRelation().getGetterName())
+                      .append("().add(").append(objectName).append(");\n");
           }
+          buf.append(list.isHidden() && listRelation == null ? commentOut(elementBuf.toString()) : elementBuf);
         }
       }
     }
@@ -281,15 +283,36 @@ public class JavaCodeFactory {
     Class<?> uniqueDomainKeyType = pdo.getUniqueDomainKeyType();
     if (pdo.getUniqueDomainKey() instanceof Convertible<?> convertible) {
       Object external = convertible.toExternal();
-      DataType<?> externalType = DataTypeFactory.getInstance().get(external.getClass());
-      return uniqueDomainKeyType.getSimpleName() + ".toInternal(" + externalType.valueOfLiteralToCode(external.toString(), null) + ")";
+      if (external != null) {
+        DataType<?> externalType = DataTypeFactory.getInstance().get(external.getClass());
+        return uniqueDomainKeyType.getSimpleName() + ".toInternal(" + externalType.valueOfLiteralToCode(external.toString(), null) + ")";
+      }
     }
     DataType<?> dataType = DataTypeFactory.getInstance().get(uniqueDomainKeyType);
     if (dataType != null) {
       return dataType.valueOfLiteralToCode(pdo.getUniqueDomainKey().toString(), null);
     }
     // composite UDK
-    return uniqueDomainKeyType.getSimpleName() + ".valueOf(\"" + pdo.getUniqueDomainKey() + "\")";
+    return uniqueDomainKeyType.getSimpleName() + ".valueOf(" + StringHelper.toDoubleQuotes(String.valueOf(pdo.getUniqueDomainKey())) + ")";
+  }
+
+  /**
+   * Comments out all lines of the given code.
+   *
+   * @param code the code
+   * @return the commented code
+   */
+  private String commentOut(String code) {
+    StringBuilder buf = new StringBuilder();
+    for (String line : code.split("\n")) {
+      if (!line.isEmpty()) {
+        if (!line.startsWith(HIDDEN_COMMENT)) {
+          buf.append(HIDDEN_COMMENT);
+        }
+        buf.append(line).append('\n');
+      }
+    }
+    return buf.toString();
   }
 
   private String toIdComment(PersistentDomainObject<?> pdo) {

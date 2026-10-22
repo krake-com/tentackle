@@ -34,7 +34,7 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionInfo;
 
 /**
- * Tests for persisted preferences.
+ * Tests nested transactions of a remote session that are rolled back by an exception.
  *
  * @author harald
  */

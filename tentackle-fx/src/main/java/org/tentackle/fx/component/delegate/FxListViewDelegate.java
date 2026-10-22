@@ -77,7 +77,7 @@ public class FxListViewDelegate extends FxComponentDelegate {
   @Override
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public void setViewObject(Object viewObject) {
-    if (viewObject != component.getItems()) {   // equals makes sense here: means the same list
+    if (viewObject != component.getItems()) {   // identity is intended here: the same list
       component.setItems((ObservableList) viewObject);
       component.getSelectionModel().clearSelection();
       component.refresh();
@@ -122,6 +122,6 @@ public class FxListViewDelegate extends FxComponentDelegate {
 
   @Override
   public void setContainerChangeable(boolean containerChangeable) {
-    // dto.
+    // ditto.
   }
 }

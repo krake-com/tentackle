@@ -3,7 +3,7 @@
 An entity's table name is declared once, in the model:
 
 ```
-table := md.ingotcategory
+table := md.customer
 ```
 
 The part before the dot is a **schema**. Not every database can serve that name as written, and not every
@@ -14,7 +14,7 @@ Neither of them touches the model.
 Both are declared on [`@TableName`](../java/org/tentackle/session/TableName.java):
 
 ```java
-@TableName(value =/*@*/"md.ingotcategory"/*@*/,   // @wurblet < Inject --string $tablename
+@TableName(value =/*@*/"md.customer"/*@*/,        // @wurblet < Inject --string $tablename
            mapSchema =/*@*/true/*@*/,             // @wurblet < Inject $mapSchema
            prefix =/*@*/""/*@*/)                  // @wurblet < Inject --string $tablePrefix
 ```
@@ -34,8 +34,9 @@ returns `false` for:
 | **MySQL**, **MariaDB**| `CREATE SCHEMA` is a synonym for `CREATE DATABASE` — a schema is a database of its own, not a namespace inside one. `MariaDb` extends `MySql` and inherits this. |
 | **Oracle**            | A schema *is* a user. Putting `md.` and `td.` into schemas means creating two extra users, with their own grants. See [The Oracle Backend](../../../../tentackle-sql/src/main/docs/oracle.md). |
 | **Informix**          | "there is a `CREATE SCHEMA`, but this is a different beast" (`Informix:190`).     |
+| **Firebird**          | Schemas arrive with Firebird 6 only. See [The Firebird Backend](../../../../tentackle-sql/src/main/docs/firebird.md). |
 
-PostgreSQL, H2, SQL Server and DB2 support schemas, so a model using them needs no mapping there. If your
+PostgreSQL, CockroachDB, H2, SQL Server, DB2 and SAP HANA support schemas, so a model using them needs no mapping there. If your
 application must run on *both* kinds of backend, map the schemas — the flattened names work everywhere.
 
 Calling `sqlCreateSchema()` on a backend that does not support schemas throws a `BackendException`, so this is
@@ -47,11 +48,11 @@ not something you can ignore.
 
 With `mapSchema = true`, every dot in the table name becomes an underscore:
 
-| Model               | Physical table    |
-|---------------------|-------------------|
-| `md.ingotcategory`  | `md_ingotcategory`|
-| `td.message`        | `td_message`      |
-| `tokenlock`         | `tokenlock`       |
+| Model          | Physical table |
+|----------------|----------------|
+| `md.customer`  | `md_customer`  |
+| `td.message`   | `td_message`   |
+| `tokenlock`    | `tokenlock`    |
 
 All tables end up in the connecting user's default schema, but master data still starts with `md_` and
 transaction data with `td_`, so the grouping survives.
@@ -69,15 +70,18 @@ Tentackle's own technical tables (`modlog`, `tokenlock`, `prefnode`, `prefkey`, 
 
 `prefix` is prepended to the *whole* name, after the schema has (or has not) been mapped:
 
-| Model         | `prefix="pls"`, `mapSchema=false` | `prefix="pls"`, `mapSchema=true` |
+| Model         | `prefix="app"`, `mapSchema=false` | `prefix="app"`, `mapSchema=true` |
 |---------------|-----------------------------------|-----------------------------------|
-| `md.user`     | `plsmd.user`                      | `plsmd_user`                      |
-| `td.message`  | `plstd.message`                   | `plstd_message`                   |
-| `tokenlock`   | `plstokenlock`                    | `plstokenlock`                    |
+| `md.user`     | `appmd.user`                      | `appmd_user`                      |
+| `td.message`  | `apptd.message`                   | `apptd_message`                   |
+| `invoice`     | `appinvoice`                      | `appinvoice`                      |
 
-The unmapped column is the interesting one on Oracle: the schema *names* get the prefix, so the main user `pls`
-keeps its own name while master data lands in the schema-user `plsmd` and transaction data in `plstd`. That
+The unmapped column is the interesting one on Oracle: the schema *names* get the prefix, so the main user `app`
+keeps its own name while master data lands in the schema-user `appmd` and transaction data in `apptd`. That
 lets several instances of the same application share one Oracle server without colliding.
+
+Tentackle's own technical tables (`tokenlock`, `modlog`, …) are never prefixed: their `@TableName` is generated
+when Tentackle itself is built, without a prefix, so an application's `tablePrefix` does not reach them.
 
 > ### ⚠️ `prefix` has no counterpart on the DDL side
 >
@@ -183,21 +187,21 @@ The wizard plugin gets the same setting, so browsing shows the tables that reall
         ...
 ```
 
-The build then produces, for the model line `table := md.ingotcategory`:
+The build then produces, for the model line `table := md.customer`:
 
 ```java
 // in the PDO interface
-@TableName(value=/*@*/"md.ingotcategory"/*@*/, mapSchema=/*@*/true/*@*/, prefix=/*@*/""/*@*/)
+@TableName(value=/*@*/"md.customer"/*@*/, mapSchema=/*@*/true/*@*/, prefix=/*@*/""/*@*/)
 ```
 
 ```properties
 # in META-INF/mapped-services/org.tentackle.session.TableName
-com.hydro.plsbl.pdo.md.IngotCategory = "md_ingotcategory"
+com.example.myapp.pdo.md.Customer = "md_customer"
 ```
 
 ```sql
 -- in createmodel.sql
-CREATE TABLE md_ingotcategory ( -- ingot category
+CREATE TABLE md_customer ( -- customer
 ```
 
 No `CREATE SCHEMA` is emitted, and the framework's own tables (`modlog`, `tokenlock`, …) keep their plain names.

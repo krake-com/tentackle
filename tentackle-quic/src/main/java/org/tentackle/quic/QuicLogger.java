@@ -25,7 +25,11 @@ import org.tentackle.log.Logger;
 import java.nio.ByteBuffer;
 
 /**
- * KWIK logger proxy for Tentackle.
+ * Bridges KWIK's logging onto Tentackle's {@link Logger}.
+ * <p>
+ * Plain messages are logged at {@code INFO}, messages with an exception at {@code SEVERE}, and hex dumps
+ * of packet data at {@code FINE}. Which categories KWIK produces at all is configured on the instance,
+ * see {@link QuicTripTransport#accept()}.
  */
 public class QuicLogger extends BaseLogger {
 

@@ -27,6 +27,10 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation to express that the annotated class is an annotation processor.
+ * <p>
+ * This is a {@link Service} meta-annotation: the annotated class is registered in
+ * {@code META-INF/services/javax.annotation.processing.Processor} by the analyze goal
+ * of the tentackle-maven-plugin.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

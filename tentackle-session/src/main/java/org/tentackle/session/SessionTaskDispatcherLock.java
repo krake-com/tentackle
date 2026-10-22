@@ -21,7 +21,8 @@ package org.tentackle.session;
 import org.tentackle.task.DefaultTaskDispatcherLock;
 
 /**
- * Lock for the DefaultSessionTaskDispatcher.
+ * Lock for the {@link DefaultSessionTaskDispatcher}.<br>
+ * Provides access to the dispatcher's session while the lock is held.
  *
  * @author harald
  */

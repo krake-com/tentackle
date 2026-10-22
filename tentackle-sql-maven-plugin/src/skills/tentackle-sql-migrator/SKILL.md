@@ -50,8 +50,9 @@ committed is a migration that only ever happened on one machine.
 
 If nothing differs, the script says so and the log reports `database meta data matches object model`.
 
-Use `validate` — or `migrate -Dvalidate=true` — as the cheap question "is this database still in sync
-with the model?". It is the right check after pulling changes, and in CI.
+Use `validate` as the cheap question "is this database still in sync with the model?". It is the right
+check after pulling changes, and in CI. (The `migrate` goal's `<validate>true</validate>` does the same
+from the POM; there is no `-Dvalidate` property.)
 
 ## Renamed columns keep their data
 
@@ -72,7 +73,8 @@ the old table is reported as unexpected and the new one is created empty.
 ## When hints are needed
 
 **Migration hints** are plain text files per backend, supplied through `<migrationHints>` file sets
-inside a `<backend>`. Sections start at the beginning of a line with a keyword and a colon:
+inside a `<backend>` of the POM (backends from `backendProperties` files get no hints). Sections start
+at the beginning of a line with a lowercase keyword and a colon, and run until the next keyword:
 
 ```
 -- rename the customer table, convert a column, and order two migrations
@@ -101,7 +103,10 @@ Reach for a hint when:
   automatic migration entirely. `hint <table>: <regex>` picks one of the alternatives the migrator
   commented out.
 
-Read the plugin documentation for the exact semantics before writing one.
+Read the plugin documentation for the exact semantics before writing one. Two traps: write the SQL in
+uppercase, since a line starting with a lowercase keyword and containing a colon opens a new section;
+and a `--` comment line *inside* a section without a colon is not a comment keyword but part of that
+section's text.
 
 ## Things that will trip you up
 
@@ -120,10 +125,12 @@ Read the plugin documentation for the exact semantics before writing one.
   assume the PostgreSQL one is representative.
 - **Tables that are not in the model** are reported as unexpected. If they legitimately do not belong to
   the model, add them to `<alienTables>` rather than dropping them; `failOnUnexpectedTables` turns the
-  report into an error.
+  report into an error — and lists them in the script as `DROP TABLE` statements, so read before you
+  run it.
 - **Hints can be version-filtered.** With a backend `<minVersion>` (a fixed version, a `SELECT`, or a
-  `DatabaseVersionLoader` class), hints in version-named sub-directories only apply when they are newer
-  than the database's version. If a hint seems to be ignored, check which directory it sits in.
+  `DatabaseVersionLoader` class), hints in version-named sub-directories only apply when they are
+  strictly newer than the database's version; without `<minVersion>`, all of them apply. If a hint seems
+  to be ignored, check which directory it sits in.
 - **`tentackle-sql:create` is not the tool for this.** It emits the DDL of the *whole* schema from
   scratch, for bootstrapping an empty database. Running it against a database that already has data is
   never what a change to the model calls for — that is what `migrate` exists for.

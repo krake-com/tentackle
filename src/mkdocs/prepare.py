@@ -4,14 +4,14 @@
 The page content lives in the repository's real docs — the core docs under
 ``src/main/docs`` and every module's ``<module>/src/main/docs/*.md`` — plus the
 repo README. This script assembles a clean MkDocs ``docs_dir`` from them without
-ever modifying the sources, so Bitbucket rendering keeps working. Run it via
+ever modifying the sources, so GitHub rendering keeps working. Run it via
 ``make prepare`` (automatically invoked by ``make serve`` / ``make build``).
 
 The module docs are spread across the reactor and cross-reference each other
 with deep relative paths. Because every doc's filename is unique across the whole
 reactor, we flatten them into a single directory and rewrite links to bare
 basenames. Links to Java source files (``../java/.../Foo.java``) are rewritten to
-the corresponding Bitbucket source URL.
+the corresponding GitHub source URL.
 
 Standard library only — no third-party dependencies.
 """
@@ -31,7 +31,7 @@ OUT = HERE / "docs"                                     # generated docs_dir (gi
 
 # Absolute source-browse base for links that point at repository files (e.g. the
 # ``../java/.../Foo.java`` API links) which cannot live inside a static doc site.
-BITBUCKET_SRC = "https://bitbucket.org/krake-oss/tentackle/src/master/"
+REPO_SRC = "https://github.com/krake-com/tentackle/blob/release/"
 
 # toc.md is intentionally excluded — Material provides the nav. The alphabetical
 # index (src/main/docs/index.md) is staged as concept-index.md so it does not
@@ -61,7 +61,7 @@ def rewrite_target(target: str, src_file: Path) -> str:
       preserving any ``#anchor``;
     - image/asset links collapse to ``assets/<file>``;
     - any other repo-relative link (Java sources, etc.) becomes an absolute
-      Bitbucket source URL.
+      GitHub source URL.
     """
     # Split off an optional link title:  url "Some title"
     m = re.match(r"(\S+)(\s+.*)?$", target, re.S)
@@ -89,10 +89,10 @@ def rewrite_target(target: str, src_file: Path) -> str:
         return f"assets/{Path(path).name}{anchor}{title}"
 
     # Some other repo file (e.g. a Java source). Resolve it against the source
-    # doc's real location and point at the Bitbucket source browser.
+    # doc's real location and point at the GitHub source browser.
     try:
         resolved = (src_file.parent / path).resolve().relative_to(REPO_ROOT)
-        return f"{BITBUCKET_SRC}{resolved.as_posix()}{anchor}{title}"
+        return f"{REPO_SRC}{resolved.as_posix()}{anchor}{title}"
     except ValueError:
         # Path escapes the repo — leave it untouched.
         return target
@@ -109,11 +109,16 @@ def readme_to_index(text: str, src_file: Path) -> str:
     - promote the leading logo image to the page H1 (so it becomes the hero and
       MkDocs does not inject the nav title "Home" as a heading);
     - drop the "Table of Contents" bullet (Material's nav replaces it);
+    - drop the Maven Central version badge (a third-party image that would be
+      frozen at build time);
     - rewrite all links for the flat layout (the Index bullet then points at
       concept-index.md, feature links at their basenames, the logo at assets/).
     """
-    # Drop the toc.md helper line — the nav supersedes a table of contents.
-    lines = [ln for ln in text.splitlines() if "toc.md" not in ln]
+    # Drop the toc.md helper line — the nav supersedes a table of contents —
+    # and the version badge: it is a third-party image that the privacy plugin
+    # would freeze at build time, so it would show a stale version.
+    lines = [ln for ln in text.splitlines()
+             if "toc.md" not in ln and "img.shields.io" not in ln]
     text = "\n".join(lines)
 
     # Promote the leading logo image to the page H1 (the title).

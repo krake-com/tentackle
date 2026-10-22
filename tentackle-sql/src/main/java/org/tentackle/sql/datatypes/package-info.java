@@ -17,6 +17,17 @@
  */
 
 /**
- * DataType implementations.
+ * The predefined {@link org.tentackle.sql.DataType} implementations.
+ * <p>
+ * Covers the primitives and their wrappers, {@code String} and {@code Character}, the {@code java.time} and
+ * legacy {@code java.sql} date and time types, {@code BigDecimal}, {@code UUID}, raw {@code byte[]},
+ * and the Tentackle types {@code BMoney}, {@code DMoney}, {@code I18NText}, {@code Binary} and {@code TBinary}.
+ * The {@code String} type comes in the variants {@code LargeString} (CLOB), {@code Sqlxml} (XML) and {@code Json}.
+ * Some types map to more than one column, such as the money types and the zoned or offset date and time types.
+ * {@link org.tentackle.sql.datatypes.ConvertibleType} is a pseudo type for application-specific wrapper types
+ * implementing {@code org.tentackle.misc.Convertible}.
+ * <p>
+ * Each type is registered as {@code @Service(DataType.class)} and located via the
+ * {@link org.tentackle.sql.DataTypeFactory}. The abstract base classes help to implement application-specific types.
  */
 package org.tentackle.sql.datatypes;

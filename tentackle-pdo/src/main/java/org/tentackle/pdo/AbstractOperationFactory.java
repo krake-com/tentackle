@@ -39,7 +39,7 @@ public abstract class AbstractOperationFactory implements OperationFactory {
   }
 
   /**
-   * Gets the persistence class mapper associated to this factory.<br>
+   * Gets the persistence class mapper associated with this factory.<br>
    * The classmapper usually maps interfaces (domain + persistence) to
    * the persistence implementation.
    *
@@ -49,7 +49,7 @@ public abstract class AbstractOperationFactory implements OperationFactory {
 
 
   /**
-   * Gets the domain class mapper associated to this factory.<br>
+   * Gets the domain class mapper associated with this factory.<br>
    * The classmapper usually maps interfaces (domain + persistence) to
    * the domain implementation.
    *
@@ -66,7 +66,7 @@ public abstract class AbstractOperationFactory implements OperationFactory {
    * @param clazz the operation interface
    * @return the invocation handler
    * @throws ClassNotFoundException if clazz not found
-   * @see PdoInvocationHandler
+   * @see OperationInvocationHandler
    */
   protected <T extends Operation<T>> OperationInvocationHandler<T> createInvocationHandler(Class<T> clazz)
             throws ClassNotFoundException {
@@ -247,7 +247,8 @@ public abstract class AbstractOperationFactory implements OperationFactory {
       return createOperation((Class<T>) Class.forName(className), persistenceDelegate, domainDelegate);
     }
     catch (ClassNotFoundException e) {
-      throw new PdoRuntimeException("cannot create operation for class " + className + " for domain delegate " + domainDelegate, e);
+      throw new PdoRuntimeException("cannot create operation for class " + className + " for delegates " +
+                                    persistenceDelegate + " : " + domainDelegate, e);
     }
   }
 

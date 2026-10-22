@@ -90,14 +90,14 @@ public @interface Greater {
   /**
    * The <code>String</code> representation of the value.
    *
-   * @return value the upper bound value
+   * @return the lower bound value (exclusive)
    */
   String value();
 
   /**
    * If either the object or the value to compare with is null, the result is valid.
    *
-   * @return true if ignore nulls (default), false to treat nulls as "logically zero"
+   * @return true if ignore nulls (default), false to treat null as smaller than any other value
    */
   boolean ignoreNulls() default true;
 

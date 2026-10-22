@@ -23,6 +23,7 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
+import org.tentackle.sql.BackendVersionInfo;
 import org.tentackle.sql.DefaultScriptRunner;
 import org.tentackle.sql.JoinType;
 import org.tentackle.sql.MigrationStrategy;
@@ -36,6 +37,7 @@ import org.tentackle.sql.metadata.IndexMetaData;
 import org.tentackle.sql.metadata.ModelMetaData;
 import org.tentackle.sql.metadata.TableMetaData;
 
+import java.lang.reflect.Method;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -43,14 +45,17 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLTransactionRollbackException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.StringTokenizer;
+import javax.sql.XADataSource;
 
 /**
  * Abstract parent class for backends.
@@ -60,53 +65,157 @@ import java.util.StringTokenizer;
 public abstract class AbstractBackend implements Backend {
 
   // --------------------- type strings ----------------------------
+  // used by the backends to declare the column types
 
+  /** BIGINT column type. */
   protected static final String TYPE_BIGINT = "BIGINT";
+
+  /** BIT column type. */
   protected static final String TYPE_BIT = "BIT";
+
+  /** BLOB column type. */
   protected static final String TYPE_BLOB = "BLOB";
+
+  /** CLOB column type. */
   protected static final String TYPE_CLOB = "CLOB";
+
+  /** BOOL column type. */
   protected static final String TYPE_BOOL = "BOOL";
+
+  /** BOOLEAN column type. */
   protected static final String TYPE_BOOLEAN = "BOOLEAN";
+
+  /** BYTEA column type. */
   protected static final String TYPE_BYTEA = "BYTEA";
+
+  /** BYTE column type. */
   protected static final String TYPE_BYTE = "BYTE";
+
+  /** CHAR(1) column type. */
   protected static final String TYPE_CHAR_1 = "CHAR(1)";
+
+  /** DATE column type. */
   protected static final String TYPE_DATE = "DATE";
+
+  /** DATETIME column type. */
   protected static final String TYPE_DATETIME = "DATETIME";
+
+  /** DATETIME(6) column type. */
   protected static final String TYPE_DATETIME_6 = "DATETIME(6)";
+
+  /** DATETIME YEAR TO SECOND column type. */
   protected static final String TYPE_DATETIME_YEAR_TO_SECOND = "DATETIME YEAR TO SECOND";
+
+  /** DECIMAL column type. */
   protected static final String TYPE_DECIMAL = "DECIMAL";
+
+  /** DECIMAL(19) column type. */
   protected static final String TYPE_DECIMAL_19 = "DECIMAL(19)";
+
+  /** DOUBLE column type. */
   protected static final String TYPE_DOUBLE = "DOUBLE";
+
+  /** DOUBLE PRECISION column type. */
   protected static final String TYPE_DOUBLE_PRECISION = "DOUBLE PRECISION";
+
+  /** FLOAT column type. */
   protected static final String TYPE_FLOAT = "FLOAT";
+
+  /** FLOAT4 column type. */
   protected static final String TYPE_FLOAT4 = "FLOAT4";
+
+  /** FLOAT8 column type. */
   protected static final String TYPE_FLOAT8 = "FLOAT8";
+
+  /** INT column type. */
   protected static final String TYPE_INT = "INT";
+
+  /** INT2 column type. */
   protected static final String TYPE_INT2 = "INT2";
+
+  /** INT4 column type. */
   protected static final String TYPE_INT4 = "INT4";
+
+  /** INT8 column type. */
   protected static final String TYPE_INT8 = "INT8";
+
+  /** INTEGER column type. */
   protected static final String TYPE_INTEGER = "INTEGER";
+
+  /** LONGBLOB column type. */
   protected static final String TYPE_LONGBLOB = "LONGBLOB";
+
+  /** LONGTEXT column type. */
   protected static final String TYPE_LONGTEXT = "LONGTEXT";
+
+  /** NCHAR(1) column type. */
   protected static final String TYPE_NCHAR_1 = "NCHAR(1)";
+
+  /** NUMBER column type. */
   protected static final String TYPE_NUMBER = "NUMBER";
+
+  /** NUMBER(1) column type. */
   protected static final String TYPE_NUMBER_1 = "NUMBER(1)";
+
+  /** NUMBER(5) column type. */
   protected static final String TYPE_NUMBER_5 = "NUMBER(5)";
+
+  /** NUMBER(10) column type. */
   protected static final String TYPE_NUMBER_10 = "NUMBER(10)";
+
+  /** NUMBER(19) column type. */
   protected static final String TYPE_NUMBER_19 = "NUMBER(19)";
+
+  /** NVARCHAR column type. */
   protected static final String TYPE_NVARCHAR = "NVARCHAR";
+
+  /** NVARCHAR(MAX) column type. */
   protected static final String TYPE_NVARCHAR_MAX = "NVARCHAR(MAX)";
+
+  /** REAL column type. */
   protected static final String TYPE_REAL = "REAL";
+
+  /** TEXT column type. */
   protected static final String TYPE_TEXT = "TEXT";
+
+  /** TIME column type. */
   protected static final String TYPE_TIME = "TIME";
+
+  /** TIME(6) column type. */
   protected static final String TYPE_TIME_6 = "TIME(6)";
+
+  /** TIMESTAMP column type. */
   protected static final String TYPE_TIMESTAMP = "TIMESTAMP";
+
+  /** TINYINT column type. */
   protected static final String TYPE_TINYINT = "TINYINT";
+
+  /** SMALLFLOAT column type. */
   protected static final String TYPE_SMALLFLOAT = "SMALLFLOAT";
+
+  /** SMALLINT column type. */
   protected static final String TYPE_SMALLINT = "SMALLINT";
+
+  /** VARBINARY(MAX) column type. */
   protected static final String TYPE_VARBINARY_MAX = "VARBINARY(MAX)";
+
+  /** VARCHAR column type. */
   protected static final String TYPE_VARCHAR = "VARCHAR";
+
+  /** UUID column type. */
   protected static final String TYPE_UUID = "UUID";
+
+  /** XML column type. */
+  protected static final String TYPE_XML = "XML";
+
+  /** XMLTYPE column type. */
+  protected static final String TYPE_XMLTYPE = "XMLTYPE";
+
+  /** JSON column type. */
+  protected static final String TYPE_JSON = "JSON";
+
+  /** JSONB column type. */
+  protected static final String TYPE_JSONB = "JSONB";
 
 
   private static final String STATEMENT_SEPARATOR = ";";
@@ -137,7 +246,7 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
-  public void validateVersion(int databaseMajorVersion, int databaseMinorVersion) {
+  public void validateVersion(BackendVersionInfo versionInfo) {
     // ok, by default
   }
 
@@ -163,6 +272,57 @@ public abstract class AbstractBackend implements Backend {
     }
 
     return DriverManager.getConnection(url, username, createPassword(password));
+  }
+
+  @Override
+  public String getXADataSourceClassName() {
+    return null;    // XA not supported by default
+  }
+
+  @Override
+  public XADataSource createXADataSource(String url, String username, char[] password) throws SQLException {
+    String className = getXADataSourceClassName();
+    if (className == null) {
+      throw new SQLFeatureNotSupportedException("backend " + getName() + " does not support XA");
+    }
+    try {
+      Object dataSource = Class.forName(className).getDeclaredConstructor().newInstance();
+      setDataSourceProperty(dataSource, url, "setURL", "setUrl");
+      if (username != null) {
+        setDataSourceProperty(dataSource, username, "setUser");
+      }
+      setDataSourceProperty(dataSource, createPassword(password), "setPassword");
+      return (XADataSource) dataSource;
+    }
+    catch (ReflectiveOperationException | ClassCastException ex) {
+      throw new SQLException("cannot create XA data source " + className + " for backend " + getName(), ex);
+    }
+  }
+
+  /**
+   * Sets a string property of a data source via reflection.<br>
+   * The setter's name is not standardized among the JDBC drivers (e.g. {@code setURL} vs. {@code setUrl}),
+   * hence the first matching setter is used.
+   *
+   * @param dataSource the data source
+   * @param value the property value
+   * @param setterNames the candidate setter names
+   * @throws ReflectiveOperationException if no such setter or invocation failed
+   */
+  protected void setDataSourceProperty(Object dataSource, String value, String... setterNames)
+      throws ReflectiveOperationException {
+    for (String setterName : setterNames) {
+      Method setter;
+      try {
+        setter = dataSource.getClass().getMethod(setterName, String.class);
+      }
+      catch (NoSuchMethodException nx) {
+        continue;
+      }
+      setter.invoke(dataSource, value);
+      return;
+    }
+    throw new NoSuchMethodException("none of " + String.join(", ", setterNames) + " found in " + dataSource.getClass().getName());
   }
 
   @Override
@@ -314,7 +474,7 @@ public abstract class AbstractBackend implements Backend {
   @Override
   public int getMaxSize(SqlType sqlType) {
     return switch (sqlType) {
-      case BIT, TINYINT, SMALLINT, INTEGER, BIGINT, FLOAT, DOUBLE, CHAR, DATE, TIME, TIMESTAMP, BLOB, CLOB -> -1;    // sizeless type
+      case BIT, TINYINT, SMALLINT, INTEGER, BIGINT, FLOAT, DOUBLE, CHAR, DATE, TIME, TIMESTAMP, BLOB, CLOB, XML, JSON -> -1;    // sizeless type
       default -> 0;   // default is unlimited
     };
   }
@@ -359,7 +519,7 @@ public abstract class AbstractBackend implements Backend {
     // Most implementations just return an empty result set if the table is not known,
     // but one never knows...
 
-    // try original tablename
+    // try original table name
     TableMetaData table = createTableMetaData(modelMetaData, tableName);
 
     String schemaPattern = null;
@@ -498,7 +658,7 @@ public abstract class AbstractBackend implements Backend {
   @Override
   public String valueToLiteral(SqlType sqlType, Object value) {
     return switch (sqlType) {
-      case CHAR, VARCHAR, CLOB, TIME, DATE, TIMESTAMP, BIT -> "'" + value + "'";
+      case CHAR, VARCHAR, CLOB, XML, JSON, TIME, DATE, TIMESTAMP, BIT -> "'" + value + "'";
       default -> value.toString();
     };
   }
@@ -582,9 +742,10 @@ public abstract class AbstractBackend implements Backend {
     boolean typeChanged = !column.matchesSqlType(sqlType);
     boolean sizeChanged = maxSize != -1 &&
                           (size > column.getSize() ||    // model size increased
-                           // or changed from VARCHAR(x) to VARCHAR(maxSize)
+                           // or changed from VARCHAR(x) to VARCHAR(maxSize).
+                           // Some databases report an unbounded column with a size beyond maxSize.
                            size == 0 && sqlType == SqlType.VARCHAR &&
-                           column.getSize() > 0 && column.getSize() != maxSize);
+                           column.getSize() > 0 && column.getSize() < maxSize);
     boolean sizeWarning = maxSize != -1 && size != 0 && size < column.getSize();
     boolean scaleChanged = scale > column.getScale(); // smaller model scale is allowed
     boolean scaleWarning = maxSize != -1 && scale < column.getScale();
@@ -991,7 +1152,14 @@ public abstract class AbstractBackend implements Backend {
 
       case Types.CLOB:
       case Types.NCLOB:
-        sqlType = SqlType.CLOB;
+        // a backend without a native JSON type emulates it as CLOB, so a CLOB column
+        // must match a JSON attribute as well, or the migration would alter it forever.
+        // The same applies to XML, but only for backends without a native XML type,
+        // which therefore add XML in their overrides.
+        return new SqlType[] { SqlType.CLOB, SqlType.JSON };
+
+      case Types.SQLXML:
+        sqlType = SqlType.XML;
         break;
 
       default:
@@ -999,6 +1167,11 @@ public abstract class AbstractBackend implements Backend {
     }
 
     return new SqlType[] { sqlType };
+  }
+
+  @Override
+  public SqlType[] jdbcTypeToSqlType(int jdbcType, String typeName, int size, int scale) {
+    return jdbcTypeToSqlType(jdbcType, size, scale);    // the type name is only needed by some backends
   }
 
   @Override
@@ -1126,7 +1299,7 @@ public abstract class AbstractBackend implements Backend {
 
   /**
    * Splits the SQL text into tokens.<br>
-   * The tokens hold the original text, i.e. concatenating all tokens restores the SQL text.
+   * The tokens hold the original text, i.e., concatenating all tokens restores the SQL text.
    * Only uppercase keywords are recognized as operators. Text within quotes is never interpreted.
    *
    * @param sql the SQL text
@@ -1172,9 +1345,10 @@ public abstract class AbstractBackend implements Backend {
       }
       else if (isKeywordAt(sql, index, "NOT")) {
         // "NOT IN", "NOT LIKE" and "IS NOT NULL" belong to the operand
-        if (isKeywordAt(sql, skipBlanks(sql, index + 3), "IN") ||
-            isKeywordAt(sql, skipBlanks(sql, index + 3), "LIKE") ||
-            isKeywordAt(sql, skipBlanks(sql, index + 3), "NULL")) {
+        int skipBlanks = skipBlanks(sql, index + 3);
+        if (isKeywordAt(sql, skipBlanks, "IN") ||
+            isKeywordAt(sql, skipBlanks, "LIKE") ||
+            isKeywordAt(sql, skipBlanks, "NULL")) {
           length = 3;
         }
         else {
@@ -1249,11 +1423,11 @@ public abstract class AbstractBackend implements Backend {
 
 
   /**
-   * The kind of an {@link SqlToken}.
+   * Kind of an {@link SqlToken}.
    */
   private enum SqlTokenType {
 
-    /** anything that is not an operator, a parenthesis or whitespace. */
+    /** anything that is not an operator, a parenthesis, or whitespace. */
     OPERAND,
 
     /** whitespace between tokens. */
@@ -1277,7 +1451,7 @@ public abstract class AbstractBackend implements Backend {
     /**
      * Returns whether this is a logical operator.
      *
-     * @return true if AND, OR or NOT
+     * @return true if AND, OR, or NOT
      */
     private boolean isOperator() {
       return this == AND || this == OR || this == NOT;
@@ -1326,6 +1500,36 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
+  public boolean isSqlxmlSupported() {
+    // unlike isClobSupported(), this defaults to false: JDBC SQLXML driver support is far less
+    // consistent across backends, and only a backend that has actually verified it should opt in.
+    return false;
+  }
+
+  @Override
+  public boolean isJsonSupported() {
+    // same rationale as isSqlxmlSupported(): there is no JDBC binding for JSON at all,
+    // so only a backend that has actually verified its native type should opt in.
+    return false;
+  }
+
+  @Override
+  public void setJson(PreparedStatement statement, int pos, String json) throws SQLException {
+    // correct for every backend emulating JSON as a text column
+    if (json == null) {
+      statement.setNull(pos, Types.VARCHAR);
+    }
+    else {
+      statement.setString(pos, json);
+    }
+  }
+
+  @Override
+  public String getJson(ResultSet resultSet, int pos) throws SQLException {
+    return resultSet.getString(pos);
+  }
+
+  @Override
   public boolean isUUIDSupported() {
     return false;
   }
@@ -1348,6 +1552,22 @@ public abstract class AbstractBackend implements Backend {
   @Override
   public boolean isDropIfExistsEnabled() {
     return dropIfExistsEnabled && isDropIfExistsSupported();
+  }
+
+  @Override
+  public boolean isSetConstraintsDeferredSupported() {
+    return false;
+  }
+
+  @Override
+  public String sqlSetConstraintsDeferred(boolean deferred) {
+    throw new BackendException(this + " does not support deferred constraints");
+  }
+
+  @Override
+  public void enrichIndexDeferrability(TableMetaData tableMetaData, Map<String, IndexMetaData> indexesByName,
+                                        DatabaseMetaData metaData) throws SQLException {
+    // no-op by default: only backends supporting isSetConstraintsDeferredSupported() need this
   }
 
   @Override
@@ -1399,8 +1619,8 @@ public abstract class AbstractBackend implements Backend {
   /**
    * Generates the first line of a CREATE TABLE statement.
    *
-   * @param tableName the tablename with optional schema separated by a dot
-   * @return the SQL code including the opening bracket
+   * @param tableName the table name with optional schema separated by a dot
+   * @return the SQL code including the opening parenthesis
    */
   protected String sqlCreateTableIntroWithoutComment(String tableName) {
     return "CREATE TABLE " + tableName + " (";
@@ -1439,7 +1659,7 @@ public abstract class AbstractBackend implements Backend {
   }
 
   /**
-   * Normalize the default string to compare.
+   * Normalizes the default string to compare.
    *
    * @param str the default value as a string, null if none
    * @return the normalized value, never null
@@ -1464,7 +1684,7 @@ public abstract class AbstractBackend implements Backend {
    * Generates the attribute definition of a CREATE TABLE statement.
    *
    * @param columnName the database column name
-   * @param sqlType the JDBC SQL type
+   * @param sqlType the SQL type
    * @param size the optional size
    * @param scale the optional scale
    * @param nullable true if NULL, else NOT NULL
@@ -1485,29 +1705,6 @@ public abstract class AbstractBackend implements Backend {
       buf.append(',');
     }
     return buf.toString();
-  }
-
-  /**
-   * Extracts the where clause from a given sql.
-   *
-   * @param sql the SQL statement
-   * @param whereOffset the location of WHERE in SQL
-   * @return the where clause without the keyword WHERE
-   */
-  protected String extractWhereClause(String sql, int whereOffset) {
-    // cut order by
-    int ndx = sql.lastIndexOf(SQL_ORDERBY);
-    if (ndx >= 0) {
-      sql = sql.substring(whereOffset + SQL_WHERE.length(), ndx);
-    }
-    else  {
-      sql = sql.substring(whereOffset + SQL_WHERE.length());
-    }
-    sql = sql.trim();
-    if (sql.equals("1=1")) {
-      sql = "";
-    }
-    return sql;
   }
 
   /**

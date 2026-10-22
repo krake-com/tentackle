@@ -26,13 +26,13 @@ import java.util.Map;
 
 /**
  * PDO browser image provider.<br>
- * Bases on ikonli materialdesign pack, which is used by tentackle-fx.
+ * Based on the Ikonli Material Design 2 icon pack, which is also used by tentackle-fx.
  */
 @GraphicProviderService(DataNodeGraphicProvider.REALM)
 public class DataNodeGraphicProvider extends IkonliGraphicProvider {
 
   /**
-   * The admin image realm.
+   * The image realm of the data node icons.
    */
   public static final String REALM = "data";
 

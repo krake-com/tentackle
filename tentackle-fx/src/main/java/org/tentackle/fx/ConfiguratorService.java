@@ -29,7 +29,10 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation to express that the annotated class
- * is a configurator for a given class.
+ * is the {@link Configurator} for a given class.
+ * <p>
+ * The {@link FxFactory} picks up the configurators and applies the one
+ * registered for the nearest class along the superclass hierarchy.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -38,7 +41,7 @@ import java.lang.annotation.Target;
 public @interface ConfiguratorService {
 
   /**
-   * Determines the class for which the annotated class is a configurator for.<br>
+   * Determines the class the annotated configurator applies to.
    *
    * @return the class of the instances to be configured
    */

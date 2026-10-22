@@ -21,7 +21,11 @@ package org.tentackle.trip;
 import java.util.UUID;
 
 /**
- * Dictionary of objects to send over the wire.
+ * Dictionary of the classes sent over the wire.
+ * <p>
+ * Maps classes to ordinals, so that a class definition is sent only once per transport.
+ * The server is the master assigning the permanent ordinals; clients create temporary entries
+ * for classes the server doesn't know yet.
  */
 public interface Dictionary {
 
@@ -81,6 +85,7 @@ public interface Dictionary {
    * @param className the FQCN
    * @param isProxy true if this is an entry for a dynamic proxy, false otherwise
    * @param components the components
+   * @return the entry
    */
   DictionaryEntry createEntry(int ordinal, String className, boolean isProxy, DictionaryEntryComponent[] components);
 
@@ -97,19 +102,19 @@ public interface Dictionary {
    * Adds an entry to the dictionary.<br>
    * If a temporary entry for the given class name already exists,
    * the entry will be replaced.<br>
-   * Throws a {@link TripRuntimeException} if a non-temporary entry already exists
    * with the same ordinal or class name.
    *
    * @param entry the entry to add
+   * @throws TripRuntimeException if a non-temporary entry already exists
    */
   void addEntry(DictionaryEntry entry);
 
   /**
    * Returns the entry for the given ordinal.<br>
-   * Throws a {@link TripRuntimeException} if the ordinal is invalid.
    *
    * @param ordinal the ordinal of the entry
    * @return the entry
+   * @throws TripRuntimeException if the ordinal is invalid
    */
   DictionaryEntry getEntry(int ordinal);
 

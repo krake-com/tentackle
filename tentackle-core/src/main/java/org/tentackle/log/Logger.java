@@ -23,6 +23,11 @@ import java.util.function.Supplier;
 
 /**
  * A pluggable logger.
+ * <p>
+ * The concrete logging backend is determined by the {@link LoggerFactory}.
+ * Messages with parameters are formatted via {@link java.text.MessageFormat}, i.e. the parameters
+ * are referenced as <code>{0}</code>, <code>{1}</code>, etc. The parameter- and message-suppliers
+ * are evaluated only if the level is loggable.
  *
  * @author harald
  */
@@ -66,7 +71,7 @@ public interface Logger {
   enum Level {
 
     /**
-     * FINEST indicates a highly detailed tracing message.
+     * FINER indicates a highly detailed tracing message.
      */
     FINER,
 
@@ -430,7 +435,7 @@ public interface Logger {
 
 
   /**
-   * Gets the MDC.<br>
+   * Gets the mapped diagnostic context (MDC).<br>
    * Usually a singleton (depending on the backend).
    *
    * @return the MDC

@@ -26,9 +26,10 @@ import java.lang.annotation.Target;
 /**
  * Annotation to override the module order for the {@link ServiceFinder}.
  * <p>
- * By default, the {@link ModuleSorter} organizes resources within named modules according to their
- * module ordinal. By default, the ordinal is taken from the module descriptor and multiplied by 100
- * for sorting. Higher numbers come first. Sometimes, however, an application module must override
+ * The {@link ModuleSorter} organizes resources within named modules according to their
+ * module ordinal. By default, the ordinal is the module's position in the dependency sort
+ * (modules without further dependencies first), multiplied by 100 to leave room for insertions.
+ * Higher numbers come first. Sometimes, however, an application module must override
  * this default order to make sure that the correct implementation for a service is used. In such
  * cases, the module can be annotated with <code>&#64;ModuleOrdinal</code>. Example:
  * <pre>
@@ -47,6 +48,9 @@ public @interface ModuleOrdinal {
 
   /**
    * Gets the fixed ordinal.<br>
+   * Must not be zero, since zero denotes a module that has not been sorted yet.
+   * The ordinal only changes the order of the resource URLs, not the order of
+   * {@link ModuleSorter#getModuleInfos()}, which always reflects the dependencies.
    *
    * @return the ordinal
    */

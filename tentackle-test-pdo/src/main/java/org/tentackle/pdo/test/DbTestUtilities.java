@@ -44,7 +44,10 @@ interface DbTestUtilitiesHolder {
 
 
 /**
- * Low-level session utility methods for tests.
+ * Low-level session utility methods for tests.<br>
+ * Creates the database schema from the model, used by the test base classes for in-memory databases.
+ * <p>
+ * A {@link Service} that defaults to itself, so an application may replace it.
  */
 @Service(DbTestUtilities.class)    // defaults to self
 public class DbTestUtilities {
@@ -60,9 +63,21 @@ public class DbTestUtilities {
 
 
   /**
-   * Creates the SQL script to populate the database.<br>
-   * Used for in-memory test connections.<br>
-   * Loads the model from the classpath.
+   * Creates the utilities.
+   */
+  public DbTestUtilities() {
+    // see -Xlint:missing-explicit-ctor
+  }
+
+
+  /**
+   * Creates the SQL script that creates the database schema.<br>
+   * Used for in-memory test connections.
+   * <p>
+   * Loads the default model from all {@code META-INF/MODEL-INDEX.LIST} resources on the classpath.
+   * The script creates the object ID sequence (if the backend supports sequences), and for each
+   * table-providing entity not marked as provided, its schema (if any and not yet created),
+   * table and indexes. The foreign keys come last.
    *
    * @param db the low-level database session
    * @return the SQL script
@@ -108,7 +123,8 @@ public class DbTestUtilities {
 
 
   /**
-   * Runs an SQL script.
+   * Runs an SQL script.<br>
+   * Usually the script created by {@link #createPopulateScript(Db)}.
    *
    * @param db the low-level session
    * @param script the SQL script

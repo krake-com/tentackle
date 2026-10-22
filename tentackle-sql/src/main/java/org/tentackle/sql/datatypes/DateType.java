@@ -112,14 +112,23 @@ public class DateType extends AbstractDateTimeType<Date> {
   @Override
   public Date get(Backend backend, ResultSet resultSet, int[] pos, boolean mapNull, Integer size) throws SQLException {
     Date date = resultSet.getDate(pos[0]);
-    if (date == null || (mapNull && date.equals(DateHelper.MIN_DATE)))  {
-      // minimum date is translated back to null
+    if (date == null || (mapNull && date.toLocalDate().equals(DateHelper.MIN_DATE.toLocalDate())))  {
+      // minimum date is translated back to null.
+      // Notice that a DATE column carries no time of day: the value read back is the local midnight
+      // of the stored day, which equals MIN_DATE only in GMT. Comparing the local dates is symmetric
+      // to what set() wrote in any timezone.
       return null;
     }
     return org.tentackle.common.Date.createFrozen(date.getTime());    // upgrade to org.tentackle.common.Date
   }
 
-
+  /**
+   * Parses a string in the format {@code yyyy-MM-dd}.
+   *
+   * @param str the string, optionally enclosed in double quotes
+   * @return the date
+   * @throws BackendException if parsing failed
+   */
   protected Date parse(String str) throws BackendException {
     try {
       return Date.valueOf(DATE_FORMAT.parse(StringHelper.parseString(str), LocalDate::from));
@@ -129,6 +138,12 @@ public class DateType extends AbstractDateTimeType<Date> {
     }
   }
 
+  /**
+   * Formats a date as {@code yyyy-MM-dd}.
+   *
+   * @param date the date
+   * @return the formatted string
+   */
   protected String format(Date date) {
     return DATE_FORMAT.format(date.toLocalDate());
   }

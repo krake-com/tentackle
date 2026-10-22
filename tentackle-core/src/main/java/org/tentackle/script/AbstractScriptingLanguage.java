@@ -22,14 +22,15 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * Common code for scripting languages.
+ * Common code for scripting languages.<br>
+ * Languages are equal if their names are equal.
  *
  * @author harald
  */
 public abstract class AbstractScriptingLanguage implements ScriptingLanguage {
 
   /**
-   * Parent constructor.
+   * Creates a scripting language.
    */
   public AbstractScriptingLanguage() {
     // see -Xlint:missing-explicit-ctor since Java 16

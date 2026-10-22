@@ -31,8 +31,8 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * This test collects all method names from {@code AbstractPersistentObject}.<br>
- * Copied to and used by the model's {@code NameVerifier}.
+ * Collects the method names of {@code AbstractPersistentObject} that must not be used as model names.<br>
+ * The logged output is copied to the model's {@code NameVerifier} whenever the persistence API changes.
  */
 public class IllegalModelNamesTest {
 

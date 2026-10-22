@@ -32,7 +32,8 @@ import javafx.scene.control.TreeItem;
 
 /**
  * PDO-aware TreeItem translator for {@link org.tentackle.fx.component.FxTreeView} and
- * {@link org.tentackle.fx.component.FxTreeTableView}.
+ * {@link org.tentackle.fx.component.FxTreeTableView}.<br>
+ * The tree cells or table configuration are provided by the PDO's {@link GuiProvider}.
  *
  * @author harald
  * @param <T> the PDO type

@@ -59,8 +59,39 @@
         </configuration>
       </plugin>
 
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!-- QuicStallStressTest takes minutes and fails as of KWIK 0.12: opt in via -Pstress -->
+          <excludedGroups>stress</excludedGroups>
+        </configuration>
+      </plugin>
+
     </plugins>
 
   </build>
+
+  <profiles>
+    <profile>
+      <!--
+        Run the stall stress test instead of the tests: mvn -Pstress test
+        Tunable with -Dquic.stress.seconds and -Dquic.stress.threads.
+      -->
+      <id>stress</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <groups>stress</groups>
+              <excludedGroups combine.self="override"/>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>

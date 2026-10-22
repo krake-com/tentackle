@@ -87,7 +87,11 @@ public class RemoteIncludes {
           break;
 
         default:
-          String superClassPackageName = wurblet.determinePackageName(superClassName);
+          String superJavaClassName = StringHelper.getPlainClassName(wurblet.getSuperClassName());
+          int dotNdx = superJavaClassName.lastIndexOf('.');
+          String superClassPackageName = dotNdx > 0 ?
+                                         superJavaClassName.substring(0, dotNdx) :   // fully qualified
+                                         wurblet.determinePackageName(superJavaClassName);
           if (wurblet.isOperation()) {
             superInterface = namingRules.getOperationRemoteInterface(superClassName);
             superPackage = namingRules.getOperationRemoteInterfacePackageName(superClassPackageName);

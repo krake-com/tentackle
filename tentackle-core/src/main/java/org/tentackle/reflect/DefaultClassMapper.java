@@ -30,8 +30,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A default implementation of a class mapper.<br>
- * The map is either initialized from a map or a {@link Properties}-object which in turn
- * could be loaded from a properties file, an XML-file or constructed at runtime.
+ * The map is either initialized from a map, a {@link Properties}-object, which in turn
+ * could be loaded from a properties file, an XML-file or constructed at runtime,
+ * or from the mapped services found by the {@link ServiceFactory}.
+ * <p>
+ * Mapped classes are cached. The {@link ClassMappedListener}s are notified when a class is mapped the first time.
  *
  * @author harald
  */
@@ -86,7 +89,8 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
    * Creates a class mapper for a given mapped service name.
    *
    * @param name the mapper's name
-   * @param mappedServiceName the mapped name
+   * @param mappedServiceName the name of the mapped service
+   * @see org.tentackle.common.MappedService
    */
   public DefaultClassMapper(String name, String mappedServiceName) {
     this(name,
@@ -150,7 +154,7 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
       catch (ClassNotFoundException cx) {
         // no mapping at all
         if (defaultClass != null) {
-          LOGGER.fine("{0} -> using default {0}", cx.getMessage(), defaultClass);
+          LOGGER.fine("{0} -> using default {1}", cx.getMessage(), defaultClass);
           // map to default and remember
           classMap.put(name, defaultClass);
           return defaultClass;

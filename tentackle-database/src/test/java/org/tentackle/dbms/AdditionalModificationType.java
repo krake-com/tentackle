@@ -37,6 +37,10 @@ public enum AdditionalModificationType implements ModificationType {
     return modType;
   }
 
+  @Override
+  public boolean isSerializable() {
+    return false;
+  }
 
   public static AdditionalModificationType toInternalImpl(Character modType) {
     for (AdditionalModificationType modificationType : AdditionalModificationType.values()) {

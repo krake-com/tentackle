@@ -86,7 +86,7 @@ interface CredentialsProviderHolder {
  *    }
  * </pre>
  * The method to use is configured by the {@value Constants#BACKEND_AUTHENTICATION} key in
- * {@code backend.properties} and defaults to {@value Constants#BACKEND_PASSWORD}.
+ * {@code backend.properties} and defaults to {@value PasswordCredentials#SCHEME}.
  *
  * @author harald
  * @see AuthenticationProvider
@@ -96,12 +96,12 @@ public interface CredentialsProvider {
   /**
    * Gets the credentials provider for an authentication method.
    *
-   * @param method the name of the method, null for {@value Constants#BACKEND_PASSWORD}
+   * @param method the name of the method, null for {@value PasswordCredentials#SCHEME}
    * @return the provider, never null
    * @throws TentackleRuntimeException if there is no provider for that method
    */
   static CredentialsProvider getInstance(String method) {
-    String name = method == null ? Constants.BACKEND_PASSWORD : method;
+    String name = method == null ? PasswordCredentials.SCHEME : method;
     CredentialsProvider provider = CredentialsProviderHolder.INSTANCES.get(name);
     if (provider == null) {
       throw new TentackleRuntimeException("no credentials provider for authentication method '" + name + "'");
@@ -134,7 +134,7 @@ public interface CredentialsProvider {
    *
    * @param sessionInfo the session info being logged in with
    * @param prompt the user interaction, never null
-   * @return the credentials, null if the user cancelled
+   * @return the credentials, null if the user canceled
    */
   Credentials createCredentials(SessionInfo sessionInfo, CredentialsPrompt prompt);
 

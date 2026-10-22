@@ -17,7 +17,11 @@
  */
 
 /**
- * tentackle-update module.
+ * The application self-update service.<br>
+ * Provides the TRIP {@code UpdateService} contract with its request and reply records,
+ * the server side to publish the service, and the client side to detect an updatable
+ * jlink or jpackage image and to download and verify the update.
+ * The user interface is provided by {@code org.tentackle.fx.rdc.update}.
  */
 module org.tentackle.update {
 

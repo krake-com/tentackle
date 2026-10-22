@@ -25,6 +25,7 @@ import org.tentackle.bind.Bindable;
 import org.tentackle.buildsupport.codegen.GeneratedFile;
 import org.tentackle.common.NamingRules;
 import org.tentackle.model.Model;
+import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScopeFactory;
 import org.tentackle.validate.validator.Changeable;
@@ -38,7 +39,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Generator for the operation files.
+ * Generator for the operation files.<br>
+ * Used by the interactive operation wizard and the batch mode of the {@code operation} goal.
  */
 public class OperationGenerator extends AbstractValidateableGenerator {
 
@@ -123,26 +125,40 @@ public class OperationGenerator extends AbstractValidateableGenerator {
       targets.put("PersistenceInterface.ftl",
                   new File(getProfile().getPersistencePackageInfo().getPath(), getPersistenceInterface() + Constants.JAVA_EXT));
     }
-    if (getDomainImplementation() != null) {
+    if (getDomainInterface() != null && getDomainImplementation() != null) {
       targets.put("DomainImplementation.ftl",
                   new File(getProfile().getDomainImplPackageInfo().getPath(), getDomainImplementation() + Constants.JAVA_EXT));
     }
-    if (getPersistenceImplementation() != null) {
+    if (getPersistenceInterface() != null && getPersistenceImplementation() != null) {
       targets.put("PersistenceImplementation.ftl",
                   new File(getProfile().getPersistenceImplPackageInfo().getPath(), getPersistenceImplementation() + Constants.JAVA_EXT));
     }
     return targets;
   }
 
+  /**
+   * Initializes the remoting option from the project's model defaults.
+   *
+   * @see #isRemoteDefault()
+   */
   public void initializeRemoteDefault() {
-    setRemoteEnabled(getModel().getModelDefaults() == null ||
-                     Boolean.TRUE.equals(getModel().getModelDefaults().getRemote()));
+    setRemoteEnabled(isRemoteDefault());
   }
 
+  /**
+   * Returns whether the operation has a domain part.
+   *
+   * @return true if there is a domain interface
+   */
   public boolean isDomainValid() {
     return domainInterface != null;
   }
 
+  /**
+   * Returns whether the operation has a persistence part.
+   *
+   * @return true if there is a persistence interface
+   */
   public boolean isPersistenceValid() {
     return persistenceInterface != null;
   }
@@ -151,23 +167,44 @@ public class OperationGenerator extends AbstractValidateableGenerator {
   // ------------------------------------- model -------------------------------------------------
 
 
+  /**
+   * Gets the profile.
+   *
+   * @return the profile
+   */
   @Bindable
   @NotNull
   public OperationProfile getProfile() {
     return profile;
   }
 
+  /**
+   * Sets the profile.
+   *
+   * @param profile the profile
+   */
   @Bindable
   public void setProfile(OperationProfile profile) {
     this.profile = profile;
   }
 
+  /**
+   * Gets the operation name, i.e. the name of the operation interface.
+   *
+   * @return the operation name
+   */
   @Bindable
   @NotNull(message = "missing operation name")
   public String getOperationName() {
     return operationName;
   }
 
+  /**
+   * Sets the operation name, i.e. the name of the operation interface.<br>
+   * Also sets the derived names of the interfaces and implementations and the remoting default.
+   *
+   * @param operationName the operation name
+   */
   @Bindable
   public void setOperationName(String operationName) {
     this.operationName = operationName;
@@ -187,53 +224,104 @@ public class OperationGenerator extends AbstractValidateableGenerator {
     }
   }
 
+  /**
+   * Gets the name of the super operation.
+   *
+   * @return the super operation, null if none
+   */
   @Bindable
   public String getSuperOperationName() {
     return superOperationName;
   }
 
+  /**
+   * Sets the name of the super operation.
+   *
+   * @param superOperationName the super operation, null if none
+   */
   @Bindable
   public void setSuperOperationName(String superOperationName) {
     this.superOperationName = superOperationName;
   }
 
+  /**
+   * Returns whether the operation is abstract.
+   *
+   * @return true if abstract
+   */
   @Bindable
   public boolean isAbstractOperation() {
     return abstractOperation;
   }
 
+  /**
+   * Sets whether the operation is abstract.
+   *
+   * @param abstractOperation true if abstract
+   */
   @Bindable
   public void setAbstractOperation(boolean abstractOperation) {
     this.abstractOperation = abstractOperation;
   }
 
+  /**
+   * Gets the short description.
+   *
+   * @return the short description
+   */
   @Bindable
   @NotNull(message = "missing short description")
   public String getShortDescription() {
     return shortDescription;
   }
 
+  /**
+   * Sets the short description.
+   *
+   * @param shortDescription the short description
+   */
   @Bindable
   public void setShortDescription(String shortDescription) {
     this.shortDescription = shortDescription;
   }
 
+  /**
+   * Gets the long description.
+   *
+   * @return the long description, null if none
+   */
   @Bindable
   public String getLongDescription() {
     return longDescription;
   }
 
+  /**
+   * Sets the long description.
+   *
+   * @param longDescription the long description, null if none
+   */
   @Bindable
   public void setLongDescription(String longDescription) {
     this.longDescription = longDescription;
   }
 
+  /**
+   * Gets the name of the domain interface.
+   *
+   * @return the name, null if none
+   */
   @Bindable
   @NotNull(message = "missing domain interface", condition = "!$isPersistenceValid")
   public String getDomainInterface() {
     return domainInterface;
   }
 
+  /**
+   * Sets the name of the domain interface.<br>
+   * Null drops the domain implementation as well.
+   *
+   * @param domainInterface the name, null if none
+   */
   @Bindable
   public void setDomainInterface(String domainInterface) {
     this.domainInterface = domainInterface;
@@ -245,12 +333,23 @@ public class OperationGenerator extends AbstractValidateableGenerator {
     }
   }
 
+  /**
+   * Gets the name of the persistence interface.
+   *
+   * @return the name, null if none
+   */
   @Bindable
   @NotNull(message = "missing persistence interface", condition = "!$isDomainValid")
   public String getPersistenceInterface() {
     return persistenceInterface;
   }
 
+  /**
+   * Sets the name of the persistence interface.<br>
+   * Null drops the persistence implementation as well and disables remoting.
+   *
+   * @param persistenceInterface the name, null if none
+   */
   @Bindable
   public void setPersistenceInterface(String persistenceInterface) {
     this.persistenceInterface = persistenceInterface;
@@ -264,34 +363,64 @@ public class OperationGenerator extends AbstractValidateableGenerator {
     }
   }
 
+  /**
+   * Gets the name of the domain implementation.
+   *
+   * @return the name, null if none
+   */
   @Bindable
   @Changeable(condition = "$isDomainValid")
   public String getDomainImplementation() {
     return domainImplementation;
   }
 
+  /**
+   * Sets the name of the domain implementation.
+   *
+   * @param domainImplementation the name, null if none
+   */
   @Bindable
   public void setDomainImplementation(String domainImplementation) {
     this.domainImplementation = domainImplementation;
   }
 
+  /**
+   * Gets the name of the persistence implementation.
+   *
+   * @return the name, null if none
+   */
   @Bindable
   @Changeable(condition = "$isPersistenceValid")
   public String getPersistenceImplementation() {
     return persistenceImplementation;
   }
 
+  /**
+   * Sets the name of the persistence implementation.
+   *
+   * @param persistenceImplementation the name, null if none
+   */
   @Bindable
   public void setPersistenceImplementation(String persistenceImplementation) {
     this.persistenceImplementation = persistenceImplementation;
   }
 
+  /**
+   * Returns whether remoting is enabled.
+   *
+   * @return true if remoting is enabled
+   */
   @Bindable
   @Changeable(condition = "$isPersistenceValid")
   public boolean isRemoteEnabled() {
     return remoteEnabled;
   }
 
+  /**
+   * Sets whether remoting is enabled.
+   *
+   * @param remoteEnabled true if remoting is enabled
+   */
   @Bindable
   public void setRemoteEnabled(boolean remoteEnabled) {
     this.remoteEnabled = remoteEnabled;
@@ -309,7 +438,7 @@ public class OperationGenerator extends AbstractValidateableGenerator {
       superOperationInterface = superOperationName;
     }
     else if (profile.getOperationInterface() != null) {
-      superOperationInterface = profile.getOperationInterface();
+      superOperationInterface = ReflectionHelper.getClassBaseName(profile.getOperationInterface());
     }
     else {
       superOperationInterface = "Operation";
@@ -328,7 +457,7 @@ public class OperationGenerator extends AbstractValidateableGenerator {
       superDomainInterface = NamingRules.getInstance().getOperationDomainInterface(superOperationName);
     }
     else if (profile.getDomainInterface() != null) {
-      superDomainInterface = profile.getDomainInterface();
+      superDomainInterface = ReflectionHelper.getClassBaseName(profile.getDomainInterface());
     }
     else {
       superDomainInterface = "DomainOperation";
@@ -347,7 +476,7 @@ public class OperationGenerator extends AbstractValidateableGenerator {
       superPersistenceInterface = NamingRules.getInstance().getOperationPersistenceInterface(superOperationName);
     }
     else if (profile.getPersistenceInterface() != null) {
-      superPersistenceInterface = profile.getPersistenceInterface();
+      superPersistenceInterface = ReflectionHelper.getClassBaseName(profile.getPersistenceInterface());
     }
     else {
       superPersistenceInterface = "PersistentOperation";
@@ -366,7 +495,7 @@ public class OperationGenerator extends AbstractValidateableGenerator {
       superDomainImplementation = NamingRules.getInstance().getOperationDomainImplementation(superOperationName);
     }
     else if (profile.getDomainImplementation() != null) {
-      superDomainImplementation = profile.getDomainImplementation();
+      superDomainImplementation = ReflectionHelper.getClassBaseName(profile.getDomainImplementation());
     }
     else {
       superDomainImplementation = "AbstractDomainOperation";
@@ -385,12 +514,62 @@ public class OperationGenerator extends AbstractValidateableGenerator {
       superPersistenceImplementation = NamingRules.getInstance().getOperationPersistenceImplementation(superOperationName);
     }
     else if (profile.getPersistenceImplementation() != null) {
-      superPersistenceImplementation = profile.getPersistenceImplementation();
+      superPersistenceImplementation = ReflectionHelper.getClassBaseName(profile.getPersistenceImplementation());
     }
     else {
       superPersistenceImplementation = "AbstractPersistentOperation";
     }
     return superPersistenceImplementation;
+  }
+
+  /**
+   * Gets the package of the parent operation interface.<br>
+   * Only known if the profile configures it by its fully qualified name.
+   *
+   * @return the package name, the empty string if unknown or no import is necessary
+   */
+  public String getSuperOperationInterfacePackage() {
+    return superOperationName == null ? ReflectionHelper.getPackageName(profile.getOperationInterface()) : "";
+  }
+
+  /**
+   * Gets the package of the parent domain interface.<br>
+   * Only known if the profile configures it by its fully qualified name.
+   *
+   * @return the package name, the empty string if unknown or no import is necessary
+   */
+  public String getSuperDomainInterfacePackage() {
+    return superOperationName == null ? ReflectionHelper.getPackageName(profile.getDomainInterface()) : "";
+  }
+
+  /**
+   * Gets the package of the parent persistence interface.<br>
+   * Only known if the profile configures it by its fully qualified name.
+   *
+   * @return the package name, the empty string if unknown or no import is necessary
+   */
+  public String getSuperPersistenceInterfacePackage() {
+    return superOperationName == null ? ReflectionHelper.getPackageName(profile.getPersistenceInterface()) : "";
+  }
+
+  /**
+   * Gets the package of the parent domain class.<br>
+   * Only known if the profile configures it by its fully qualified name.
+   *
+   * @return the package name, the empty string if unknown or no import is necessary
+   */
+  public String getSuperDomainImplementationPackage() {
+    return superOperationName == null ? ReflectionHelper.getPackageName(profile.getDomainImplementation()) : "";
+  }
+
+  /**
+   * Gets the package of the parent persistence class.<br>
+   * Only known if the profile configures it by its fully qualified name.
+   *
+   * @return the package name, the empty string if unknown or no import is necessary
+   */
+  public String getSuperPersistenceImplementationPackage() {
+    return superOperationName == null ? ReflectionHelper.getPackageName(profile.getPersistenceImplementation()) : "";
   }
 
 }

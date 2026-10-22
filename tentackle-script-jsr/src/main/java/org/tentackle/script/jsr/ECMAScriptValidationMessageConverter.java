@@ -22,12 +22,18 @@ import org.tentackle.validate.validator.AbstractScriptValidationMessageConverter
 import org.tentackle.validate.validator.MessageScriptConverter;
 
 /**
- * Converts a Nashorn validator message script.
+ * Converts a validator message script for ECMAScript (JavaScript) engines.
+ * <p>
+ * Applies to all JSR-223 engines reporting the language name {@code ECMAScript}, such as the standalone OpenJDK
+ * Nashorn or GraalJS.
  *
  * @author harald
  */
 @MessageScriptConverter(ECMAScriptValidationMessageConverter.NAME)
 public class ECMAScriptValidationMessageConverter extends AbstractScriptValidationMessageConverter {
+
+  /** the language name reported by the ECMAScript engines. */
+  public static final String NAME = "ECMAScript";
 
   /**
    * Creates the converter.
@@ -35,8 +41,5 @@ public class ECMAScriptValidationMessageConverter extends AbstractScriptValidati
   public ECMAScriptValidationMessageConverter() {
     // see -Xlint:missing-explicit-ctor since Java 16
   }
-
-  /** the primary language name. */
-  public static final String NAME = "ECMAScript";
 
 }

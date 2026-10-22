@@ -35,6 +35,9 @@ public abstract class AbstractSuggestionGenerator<T> implements Function<String,
   private List<T> choices;
   private List<String> selectList;
 
+  /**
+   * Parent constructor.
+   */
   public AbstractSuggestionGenerator() {
     // see -Xlint:missing-explicit-ctor since Java 16
   }
@@ -50,7 +53,8 @@ public abstract class AbstractSuggestionGenerator<T> implements Function<String,
 
   /**
    * Sets the original list of available choices.<br>
-   * {@link #convert(Object)} is invoked on that objects to compare against the user's input.
+   * {@link #convert(Object)} is invoked on these objects to compare against the user's input.
+   * Null choices are skipped.
    *
    * @param choices the choices
    */

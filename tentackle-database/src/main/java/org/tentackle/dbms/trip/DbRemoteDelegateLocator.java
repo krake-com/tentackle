@@ -77,8 +77,8 @@ public class DbRemoteDelegateLocator implements RemoteDbDelegateLocator {
 
     String delegateImplName =
       isOperation ?
-        namingRules.getOperationRemoteInterfacePackageName(pkgName) + '.' + namingRules.getOperationRemoteImplementation(clsName) :
-        namingRules.getPdoRemoteInterfacePackageName(pkgName) + '.' + namingRules.getPdoRemoteImplementation(clsName);
+        namingRules.getOperationRemoteImplementationPackageName(pkgName) + '.' + namingRules.getOperationRemoteImplementation(clsName) :
+        namingRules.getPdoRemoteImplementationPackageName(pkgName) + '.' + namingRules.getPdoRemoteImplementation(clsName);
 
     Class<?> delegateImplClass = Class.forName(delegateImplName);
     if (delegateImplClass.isInterface()) {

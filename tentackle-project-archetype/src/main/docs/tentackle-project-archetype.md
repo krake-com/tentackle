@@ -42,7 +42,7 @@ The archetype declares one required property, `application`, in
 mvn archetype:generate \
     -DarchetypeGroupId=org.tentackle \
     -DarchetypeArtifactId=tentackle-project-archetype \
-    -DarchetypeVersion=25.19.0.0 \
+    -DarchetypeVersion=25.0 \
     -DgroupId=com.example \
     -DartifactId=myapp \
     -Dversion=1.0-SNAPSHOT \
@@ -68,13 +68,14 @@ Archetype resources are processed by **Velocity**, so the template files differ 
   `__packageInPathFormat__` are renamed using the generation properties. Hence `__application__FxClient.java`
   becomes `MyAppFxClient.java`.
 - **Content substitution** — `${package}`, `${application}`, `${rootArtifactId}` etc. are expanded inside the
-  files. Because Velocity also interprets `#` and `$`, every template begins with the three `#set` directives
-  defining `$symbol_pound`, `$symbol_dollar` and `$symbol_escape`, so that a literal `$` (Maven property
-  references in the generated POMs) or `#` survives expansion.
+  files. Because Velocity also interprets `#` and `$`, the filtered Java, POM and properties templates begin with
+  the three `#set` directives defining `$symbol_pound`, `$symbol_dollar` and `$symbol_escape`, and write a
+  literal `$` (Maven property references in the generated POMs) or `#` as `${symbol_dollar}` and
+  `${symbol_pound}`, so that it survives expansion.
 - **Filtering selection** — [`archetype-metadata.xml`](../resources/META-INF/maven/archetype-metadata.xml) lists,
   per module, which file sets are `filtered` (text/source/properties) and which are copied verbatim (`.png`,
-  `.gif`, `.xcf`, the jlink `.ftl` templates). `packaged="true"` file sets are relocated under the generated
-  package directory.
+  `.gif`, `.xcf`, and the FreeMarker `.ftl` templates under `jlink/*/templates` and `templates`, which use `$`
+  and `#` themselves). `packaged="true"` file sets are relocated under the generated package directory.
 
 The archetype's own [`pom.xml`](../../../pom.xml) additionally pre-filters the generated root
 [`pom.xml`](../resources/archetype-resources/pom.xml) at *archetype build time* (with `\` as the escape string),
@@ -110,16 +111,18 @@ myapp (root pom)
 Each module has an explicit `module-info.java`. The dependency edges mirror Tentackle's architecture and enforce
 the strict separation between the persistence- and domain layers:
 
-| Module                   | `requires transitive`                                           | Role                                                                                                                                                                                                                                        |
-|--------------------------|-----------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `…-common`               | `org.tentackle.pdo`                                             | base types shared by everything ([`Constants`](../resources/archetype-resources/__rootArtifactId__-common/src/main/java/common/Constants.java), `Version`, `…SessionInfo`, `…DomainContext`, `…Preferences`, `…Cryptor`, `…LocaleProvider`) |
-| `…-pdo`                  | `…-common`                                                      | the PDO *interfaces* — entity, domain facet, persistence facet — that define the model                                                                                                                                                      |
-| `…-domain` *(open)*      | `…-pdo`, `org.tentackle.domain`                                 | domain-logic implementations (`UserDomainImpl`, `MessageDomainImpl`, …)                                                                                                                                                                     |
-| `…-persistence` *(open)* | `…-pdo`, `org.tentackle.persistence`                            | persistence implementations and TRIP remote delegates                                                                                                                                                                                       |
-| `…-gui` *(open)*         | `…-pdo`, `org.tentackle.fx.rdc`                                 | FX controllers, editors, providers, FXML/CSS                                                                                                                                                                                                |
-| `…-client`               | `…-gui`, `…-persist`, `…-domain`, `org.tentackle.fx.rdc.update` | the desktop application                                                                                                                                                                                                                     |
-| `…-server`               | `…-persist`, `…-domain`, `org.tentackle.update`                 | the middle-tier server                                                                                                                                                                                                                      |
-| `…-daemon`               | `…-persist`, `…-domain`                                         | a headless console client                                                                                                                                                                                                                   |
+| Module                   | `requires` (*t* = `transitive`)                                                   | Role                                                                                                                                                                                                                                        |
+|--------------------------|-----------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `…-common`               | `org.tentackle.pdo` *t*                                                           | base types shared by everything ([`Constants`](../resources/archetype-resources/__rootArtifactId__-common/src/main/java/common/Constants.java), `Version`, `…SessionInfo`, `…DomainContext`, `…Preferences`, `…Cryptor`, `…LocaleProvider`) |
+| `…-pdo`                  | `…-common` *t*                                                                    | the PDO *interfaces* — entity, domain facet, persistence facet — that define the model                                                                                                                                                      |
+| `…-domain` *(open)*      | `…-pdo` *t*, `org.tentackle.domain` *t*                                           | domain-logic implementations (`UserDomainImpl`, `MessageDomainImpl`, …)                                                                                                                                                                     |
+| `…-persistence` *(open)* | `…-pdo` *t*, `org.tentackle.persistence` *t*                                      | persistence implementations and TRIP remote delegates                                                                                                                                                                                       |
+| `…-gui` *(open)*         | `…-pdo` *t*, `org.tentackle.fx.rdc` *t*, `org.tentackle.fx.atlanta`               | FX controllers, editors, providers, FXML/CSS                                                                                                                                                                                                |
+| `…-client`               | `…-gui` *t*, `…-persist`, `…-domain`, `org.tentackle.fx.rdc.update` *t*           | the desktop application                                                                                                                                                                                                                     |
+| `…-server`               | `…-persist` *t*, `…-domain`, `org.tentackle.update` *t*                           | the middle-tier server                                                                                                                                                                                                                      |
+| `…-daemon`               | `…-persist` *t*, `…-domain`                                                       | a headless console client                                                                                                                                                                                                                   |
+
+The persistence module's JPMS name is `….persist` (its Maven artifact is `…-persistence`).
 
 The domain, persistence, and gui modules are **open** because the framework reflects into them (TRIP
 serialization, FX/FXML, the proxy-based PDO assembly). Every module `provides org.tentackle.common.ModuleHook`
@@ -135,7 +138,7 @@ that extends its persistence facet (`UserPersistence`), its domain facet (`UserD
 wurblets read:
 
 ```java
-@TableName(value =/*@*/"md.user"/*@*/, …)
+@TableName(value =/*@*/"md.users"/*@*/, …)
 @ClassId(/*@*/1001/*@*/)
 @Singular("User")
 @Plural("Users")
@@ -145,9 +148,11 @@ public interface User extends OrgUnit<User>, UserPersistence, UserDomain {
 }
 ```
 
+The `/*@*/ … /*@*/` literals are kept in sync with the model variables by the `Inject` wurblet.
+
 The example divides entities into two schemas that the wizard profiles set up: **master data** (`pdo.md` — class
-ids ≥ 1000: `OrgUnit`, `User`, `UserGroup`, `User2Group`) and **transaction data** (`pdo.td` — class ids ≥ 2000:
-`Message`). For each entity the project ships the interface (`pdo/md`), the generated domain
+ids ≥ 1000: `User`, `UserGroup`, `User2Group`, plus their abstract multi-table base `OrgUnit`, which has no class
+id of its own) and **transaction data** (`pdo.td` — class ids ≥ 2000: `Message`). For each entity the project ships the interface (`pdo/md`), the generated domain
 (`pdo/md/domain`) and persistence (`pdo/md/persist`) facet interfaces, the domain implementation
 (`domain/md`), the persistence implementation (`persist/md`) and the TRIP remote delegate
 (`persist/md/trip`) — a complete worked example of the [PDO pattern](../../../../tentackle-pdo/src/main/docs/pdo.md).
@@ -157,10 +162,11 @@ ids ≥ 1000: `OrgUnit`, `User`, `UserGroup`, `User2Group`) and **transaction da
 Each runnable module subclasses a Tentackle application base class:
 
 - [`…FxClient`](../resources/archetype-resources/__rootArtifactId__-client/src/main/java/client/__application__FxClient.java)
-  extends `UpdatableDesktopApplication` — the JavaFX desktop client with login, an updatable main controller,
+  extends `UpdatableDesktopApplication` — the JavaFX desktop client with login, the `MainController` shell,
   preferences, and the auto-update hook.
 - [`…Server`](../resources/archetype-resources/__rootArtifactId__-server/src/main/java/server/__application__Server.java)
-  extends `ServerApplication` — the TRIP middle tier that also starts the update service.
+  extends `ServerApplication` — the TRIP middle tier that also starts the update service if `updateService` and
+  `updateURL` are configured.
 - [`…Daemon`](../resources/archetype-resources/__rootArtifactId__-daemon/src/main/java/daemon/__application__Daemon.java)
   extends `ConsoleApplication` — a headless example that listens for new `Message` PDOs and logs them.
 
@@ -173,40 +179,65 @@ remote (client/daemon).
 ## The Generated Build Pipeline
 
 The most instructive part of the archetype is the `<pluginManagement>` block in the generated root
-[`pom.xml`](../resources/archetype-resources/pom.xml): it is a complete, correctly ordered Tentackle build. The
-plugins it configures, in build order:
+[`pom.xml`](../resources/archetype-resources/pom.xml): it configures a complete Tentackle build once, and the
+modules only declare the plugins they need. Per module, the plugins run in this order:
 
 1. [**tentackle-maven-plugin**](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md) —
-   `analyze` / `test-analyze` (and `properties` in the jlink modules) generate service descriptors and analyze
-   metadata before compilation.
-2. [**wurbelizer-maven-plugin**](https://www.wurbelizer.org/) — `wurbel` / `test-wurbel` run the
+   `analyze` (`generate-sources`) generates the service descriptors and analyze metadata; declared in the root
+   POM, so it runs in every module.
+2. [**wurbelizer-maven-plugin**](https://www.wurbelizer.org/) — `wurbel` runs the
    [persistence wurblets](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md) over
    the PDO interfaces, facet interfaces, implementations, and remote delegates (selected by the configured
    `<filesets>`), weaving generated code into the guarded regions and emitting the model under
-   `target/wurbel/model`.
+   `target/wurbel/model`. Only the pdo, domain and persistence modules declare it.
 3. [**tentackle-sql-maven-plugin**](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md)
-   — turns the model into DDL for the `td` and `md` schemas, with migration-hint support.
-4. [**tentackle-check-maven-plugin**](../../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md)
-   — `bundles` / `validations` verify i18n bundle completeness (`en_US, de_DE`) and Groovy validation scripts.
-5. [**tentackle-i18n-maven-plugin**](../../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md)
-   — i18n resource handling for the German locale.
-6. **maven-compiler-plugin** — compiles with the framework annotation processors
+   — `create` (`generate-resources`, pdo module only) turns the model into DDL for the `td` and `md` schemas
+   under `target/wurbel/sql` and dumps the model into the jar (`META-INF/model`, `META-INF/MODEL-INDEX.LIST`).
+4. **maven-compiler-plugin** — compiles with the framework annotation processors
    (`tentackle-core`, `tentackle-pdo`, `tentackle-fx`, `tentackle-fx-rdc`) on the processor path.
-7. [**tentackle-jlink-maven-plugin**](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md) — builds the native images under
-   the `jlink` profile.
+5. [**tentackle-check-maven-plugin**](../../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md)
+   — `bundles` / `validations` (`process-classes`, i.e. after compilation) verify i18n bundle completeness
+   (`en_US, de_DE`) and the Groovy validation scripts; declared in the root POM.
+6. The same for the tests: `test-analyze`, `test-wurbel`, test compilation and surefire.
+7. Under the `jlink` profile only: `tentackle-maven-plugin:properties` encrypts the passwords for the
+   images, `tentackle-sql-maven-plugin` (`allsql` in `jlink/server`) generates the complete DDL including the
+   framework's tables, `keytool-maven-plugin` creates the TLS key- and truststores, and the
+   [**tentackle-jlink-maven-plugin**](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md)
+   builds the runtime images.
 
 The build also wires shared model defaults (`tentackle.modelDefaults`), per-column sizes, the
 `generated-resources` service directories and a US-locale surefire configuration — all the settings a real
 Tentackle project needs, pre-filled.
 
+### Profiles
+
+| Profile             | Where           | Purpose                                                                                                                       |
+|---------------------|-----------------|-------------------------------------------------------------------------------------------------------------------------------|
+| `jlink`             | `jlink/pom.xml` | adds the `server`, `client` and `daemon` image modules                                                                        |
+| `initdb`            | `…-server`      | runs `FillDatabase` (TestNG group `initdb`) to seed the database of `server.properties`                                       |
+| `release`           | root            | attaches source and Javadoc jars                                                                                              |
+| `migrate-tentackle` | `…-pdo`         | lets the SQL plugin load the framework's model from the classpath, to migrate the framework's own tables                      |
+| `wurbel-model-only` | `…-pdo`         | extracts the model to `target/wurbel/model` without generating code (`lastPhase=0`)                                           |
+
+### Schema migration
+
+The SQL plugin's backend configuration points `migrationHints` at
+[`src/main/migrate/postgres`](../resources/archetype-resources/src/main/migrate/postgres) (one subfolder per
+version holding `*.hints` files; `sql/` is for documentation snippets only) and determines the deployed version
+of a database with the `minVersion` query against a `migration` table. That table is created, together with a
+"Project Start" row, by [`jlink/server/src/sql/migration.sql`](../resources/archetype-resources/jlink/server/src/sql/migration.sql),
+which the `allsql` execution appends to the generated DDL. See the
+[SQL plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) for the
+`migrate` goal.
+
 ### The wizard plugin
 
 The [**tentackle-wizard-maven-plugin**](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md)
 is configured (but not bound to a phase) so the developer can *grow* the generated project: its `PdoProfile`s
-(`masterdata`, `transactiondata`) and `OperationProfile` (`operation`) capture the package conventions and class-id
-ranges, and the [FreeMarker templates](../resources/archetype-resources/templates) under `templates/pdo` and
-`templates/operation` are the scaffolds it uses to generate new PDOs and operations consistently with the example.
-The `RemoteInterface.ftl` / `RemoteImplementation.ftl` pair in those directories is the exception: the wizard only
+(`masterdata`, `transactiondata`) and `OperationProfile` (`operation`) capture the package conventions and, for
+PDOs, the class-id ranges and table prefixes. The [FreeMarker templates](../resources/archetype-resources/templates)
+under `templates/pdo` and `templates/operation` are the scaffolds it uses to generate new PDOs and operations
+consistently with the example. The `RemoteInterface.ftl` / `RemoteImplementation.ftl` pair in those directories is the exception: the wizard only
 installs it, the wurbelizer renders it when a remote delegate is missing.
 
 ### The MCP plugin
@@ -215,6 +246,13 @@ The [**tentackle-mcp-maven-plugin**](../../../../tentackle-mcp-maven-plugin/src/
 is configured (but not bound to a phase either) with the project's `tentackle.modelDefaults` and the same backends
 the wurblets generate for, so `mvn tentackle-mcp:serve` in the project root serves the generated model — as the
 build sees it — to a coding agent over MCP. It is read-only and needs the model, so run a build first.
+
+### The i18n plugin
+
+The [**tentackle-i18n-maven-plugin**](../../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md)
+is configured (not bound to a phase either) with the project's database and the extra locale `de`. Its goals,
+such as `mvn tentackle-i18n:push`, synchronize the resource bundles between the `*.properties` files and the
+`bundle` tables of the database, from where the application can serve them at runtime.
 
 ---
 
@@ -230,7 +268,7 @@ build sees it — to a coding agent over MCP. It is read-only and needs the mode
         └──────────────────────────────────────────────────────────────┘
                           │ mvn install  (drives the plugin pipeline)
                           ▼
-   analyze → wurbel → sql → check/i18n → compile → (jlink)  →  runnable app
+   analyze → wurbel → sql → compile → check → test → (jlink)  →  runnable app
         (each step documented in the linked plugin docs above)
 ```
 

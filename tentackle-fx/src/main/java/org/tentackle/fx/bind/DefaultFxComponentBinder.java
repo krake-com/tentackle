@@ -55,7 +55,11 @@ import java.util.StringTokenizer;
 import java.util.TreeMap;
 
 /**
- * Binding Workhorse.
+ * Default implementation of a component binder.<br>
+ * Binds the components declared in a controller to the {@link org.tentackle.bind.Bindable} members of the controller,
+ * including the members of the members, and so forth. A component is bound if its camel-cased binding path
+ * matches the component's field name, optionally with the component type name or one of the
+ * {@link #bindingPathSuffixes} removed (e.g. {@code invoiceNumberField} binds to {@code invoice.number}).
  *
  * @author harald
  */
@@ -72,7 +76,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
   private static final Logger LOGGER = Logger.get(DefaultFxComponentBinder.class);
 
   private final FxController controller;                                // the controller to bind
-  private final TreeMap<String,FxComponent> eligibleComponents;         // all eligible components in given form
+  private final TreeMap<String,FxComponent> eligibleComponents;         // all eligible components mapped by binding path
   private final Map<FxComponent,FxComponentBinding> boundComponents;    // the bindings mapped by component
   private final Set<FxComponent> unboundComponents;                     // unbound components
   private final Map<String,FxComponentBinding> boundPaths;              // the bindings mapped by binding path
@@ -485,10 +489,12 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
 
 
   /**
-   * Converts a bindingpath (in dot-notation) into camelcase paths
-   * to be matched against eligibleComponents.
+   * Converts a binding path (in dot-notation) into camelcase paths
+   * to be matched against eligibleComponents.<br>
+   * If the leading path elements repeat the previous element's name (e.g. {@code customer.customerName}),
+   * a second path with the repetitions omitted (e.g. {@code customerName}) is returned as well.
    *
-   * @param bindingPath the bindingpath in dot-notation
+   * @param bindingPath the binding path in dot-notation
    * @return an array of strings in camelcase
    */
   private String[] toCamelCase(String bindingPath) {
@@ -529,7 +535,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
     }
 
     if (omitCount > 1 && omitCount < 4) {
-      // don't allow more than 4 omits to detect cases like booking.booking.booking.booking...
+      // allow at most 3 omits to detect cases like booking.booking.booking.booking...
       return new String[] { buf.toString(), omitBuf.toString() };
     }
     else  {
@@ -540,7 +546,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
   /**
    * Finds the component according to the field's object path.
    * <p>
-   * The method scans for components that are named to match the object's path.<br>
+   * The method scans for components that are named to match the object's path.
    *
    * @param bindingPath the object's binding path
    * @return the component, null if not found
@@ -595,8 +601,8 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
    * Adds all eligible components of the given controller.
    *
    * @param controller the controller of the component
-   * @param controllerPath the path to the component
-   * @param checkedControllers set of all controllers
+   * @param controllerPath the path of the controller
+   * @param checkedControllers the controllers already checked
    * @param declaredOnly true if only components declared in the controller, else also inherited
    */
   private void addEligibleComponents(FxController controller, String controllerPath,
@@ -666,9 +672,9 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
   }
 
   /**
-   * Binds all objects to the form.
+   * Binds the components of the controller.
    *
-   * @param declaredBindablesOnly true if search for methods and field which are declared only,
+   * @param declaredBindablesOnly true if search for methods and fields which are declared only,
    *        false to include inherited as well
    * @param declaredComponentsOnly true if search for components which are declared only,
    *        false to include inherited as well

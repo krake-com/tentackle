@@ -21,7 +21,7 @@ package org.tentackle.persist.trip;
 import org.tentackle.dbms.trip.DbModificationTrackerRemoteDelegate;
 
 /**
- * Remote delegate interface for {@link org.tentackle.session.ModificationTracker}.
+ * Remote delegate interface for {@link org.tentackle.persist.PdoModificationTracker}.
  *
  * @author  harald
  */

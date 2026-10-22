@@ -190,10 +190,14 @@ and differ only by the `Interception.Type` passed to the constructor:
 | `AllInterceptorAnnotationProcessor` | `ALL` | either |
 
 The check walks the enclosing type's interfaces and superclasses looking for
-`Interceptable`, so inherited implementations are accepted. `HIDDEN` additionally
-rejects application to an interface method with a distinct message — the mistake being
-easy to make and its consequence (an interceptor that silently never fires) being hard
-to diagnose.
+`Interceptable`, so inherited implementations are accepted. Applying a `HIDDEN` annotation
+to an interface method is rejected as well — the mistake being easy to make and its
+consequence (an interceptor that silently never fires) being hard to diagnose.
+
+All three also reject an interception annotation on a method that overrides a method marked
+[`@NotInterceptable`](interceptors.md#notinterceptable-sealing-a-method-against-interception), searching the
+whole supertype hierarchy. Such methods are invoked by the framework directly, bypassing
+the interceptor chain, so the annotation would never take effect.
 
 ### The dynamically discovered annotation set
 

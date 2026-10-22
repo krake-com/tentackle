@@ -36,8 +36,11 @@ public class ConcurrencyHelper {
    * Wraps an existing executor by a blocking executor.<br>
    * The returned executor waits until the command has been executed by the given executor.
    * <p>
-   * Important: invoking the execute-method on the blocking executor from the same thread
-   * as the wrapped executor will execute, results in a deadlock!
+   * Important: invoking {@code execute} on the blocking executor from the thread
+   * the wrapped executor executes the command in results in a deadlock!
+   * <p>
+   * Exceptions thrown by the command are wrapped in a {@link TentackleRuntimeException},
+   * an interruption while waiting in an {@link InterruptedRuntimeException}.
    *
    * @param executor the executor to wrap
    * @return the blocking executor

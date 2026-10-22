@@ -28,12 +28,24 @@
       <artifactId>maven-plugin-api</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.apache.maven.resolver</groupId>
+      <artifactId>maven-resolver-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven.resolver</groupId>
+      <artifactId>maven-resolver-util</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-java</artifactId>
     </dependency>
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-archiver</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>javax.inject</groupId>
+      <artifactId>javax.inject</artifactId>
     </dependency>
   </dependencies>
 
@@ -86,7 +98,65 @@
           </archive>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <!-- automatic module name screws it up -->
+          <legacyMode>true</legacyMode>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <!--
+        Runs the src/it/* end-to-end fixtures with the maven-invoker-plugin, e.g. the layered-app
+        fixture proving that two versions of the same module can be isolated in sibling ModuleLayers
+        and both loaded correctly by a real, jlink-built launcher. Not part of the default build:
+        it forks real Maven builds (including real jlink/jpackage tool invocations), so it is opt-in,
+        analogous to tentackle-test-pdo's "postgres" profile.
+
+        Requires this module (and its own dependencies) to already be installed, e.g. via a plain
+        "mvn install" beforehand - invoker:install only (re-)installs this module's own artifact.
+
+        Run with: mvn -Pinvoker-it verify
+      -->
+      <id>invoker-it</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-invoker-plugin</artifactId>
+            <version>1.9</version>
+            <configuration>
+              <projectsDirectory>src/it</projectsDirectory>
+              <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+              <streamLogs>true</streamLogs>
+              <!-- setup-libs installs the two conflicting it-lib versions layered-app's <layers>
+                   config independently resolves via Aether - always run before the other IT projects,
+                   regardless of directory/alphabetical order -->
+              <setupIncludes>
+                <setupInclude>setup-libs/pom.xml</setupInclude>
+              </setupIncludes>
+              <goals>
+                <goal>install</goal>
+              </goals>
+            </configuration>
+            <executions>
+              <execution>
+                <id>invoker-it</id>
+                <goals>
+                  <goal>install</goal>
+                  <goal>run</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>

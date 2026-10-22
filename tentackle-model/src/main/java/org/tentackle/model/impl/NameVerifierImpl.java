@@ -199,7 +199,6 @@ public class NameVerifierImpl implements NameVerifier {
     "CREATEDELETESQL",
     "CREATEDUMMYUPDATESQL",
     "CREATEINSERTSQL",
-    "CREATEMODIFICATIONLOG",
     "CREATEPREPAREDSTATEMENT",
     "CREATEQUERY",
     "CREATERELATIONSNORMTEXT",
@@ -433,6 +432,9 @@ public class NameVerifierImpl implements NameVerifier {
     "WRITEALLOWED"
   );
 
+
+  private boolean enabled = true;
+
   /**
    * Creates the name verifier.
    */
@@ -441,52 +443,83 @@ public class NameVerifierImpl implements NameVerifier {
   }
 
   @Override
+  public void setEnabled(boolean enabled) {
+    this.enabled = enabled;
+  }
+
+  @Override
+  public boolean isEnabled() {
+    return enabled;
+  }
+
+  @Override
   public String verifyEntityName(Entity entity) {
-    String name = entity.getName();
-    return StringHelper.isValidJavaClassName(name) ? null : "'" + name + "' is not a valid Java class name";
+    if (isEnabled()) {
+      String name = entity.getName();
+      return StringHelper.isValidJavaClassName(name) ? null : "'" + name + "' is not a valid Java class name";
+    }
+    return null;
   }
 
   @Override
   public String verifyTableName(Entity entity) {
-    String name = entity.getTableName();
-    if (isNotQuotedOrProvided(name, entity)) {
-      return isAllUpperOrLowerCase(name, entity) ? null : TABLE_NAME + name + MIXED_UC_LC;
+    if (isEnabled()) {
+      String name = entity.getTableName();
+      if (isNotQuotedOrProvided(name, entity)) {
+        return isAllUpperOrLowerCase(name, entity) ? null : TABLE_NAME + name + MIXED_UC_LC;
+      }
+      return TABLE_NAME + name + QUOTED;
     }
-    return TABLE_NAME + name + QUOTED;
+    return null;
   }
 
   @Override
   public String verifyTableAlias(Entity entity) {
-    String name = entity.getTableAlias();
-    if (isNotQuotedOrProvided(name, entity)) {
-      return isAllUpperOrLowerCase(name, entity) ? null : TABLE_ALIAS + name + MIXED_UC_LC;
+    if (isEnabled()) {
+      String name = entity.getTableAlias();
+      if (isNotQuotedOrProvided(name, entity)) {
+        return isAllUpperOrLowerCase(name, entity) ? null : TABLE_ALIAS + name + MIXED_UC_LC;
+      }
+      return TABLE_ALIAS + name + QUOTED;
     }
-    return TABLE_ALIAS + name + QUOTED;
+    return null;
   }
 
   @Override
   public String verifyAttributeName(Attribute attribute) {
-    return attribute.isImplicit() ? null : validateJavaIdentifier(attribute.getName());
+    if (isEnabled()) {
+      return attribute.isImplicit() ? null : validateJavaIdentifier(attribute.getName());
+    }
+    return null;
   }
 
   @Override
   public String verifyRelationName(Relation relation) {
-    return validateJavaIdentifier(relation.getVariableName());
+    if (isEnabled()) {
+      return validateJavaIdentifier(relation.getVariableName());
+    }
+    return null;
   }
 
   @Override
   public String verifyColumnName(Attribute attribute) {
-    String name = attribute.getColumnName();
-    if (isNotQuotedOrProvided(name, attribute.getEntity())) {
-      return isAllUpperOrLowerCase(name, attribute.getEntity()) ? null : COLUMN_NAME + name + MIXED_UC_LC;
+    if (isEnabled()) {
+      String name = attribute.getColumnName();
+      if (isNotQuotedOrProvided(name, attribute.getEntity())) {
+        return isAllUpperOrLowerCase(name, attribute.getEntity()) ? null : COLUMN_NAME + name + MIXED_UC_LC;
+      }
+      return COLUMN_NAME + name + QUOTED;
     }
-    return COLUMN_NAME + name + QUOTED;
+    return null;
   }
 
   @Override
   public String verifyIndexName(Index index) {
-    String name = index.getName();  // index not allowed for [PROVIDED] entities
-    return isAllUpperOrLowerCase(name, index.getEntity()) ? null : "index name '" + name + MIXED_UC_LC;
+    if (isEnabled()) {
+      String name = index.getName();  // index is not allowed for [PROVIDED] entities
+      return isAllUpperOrLowerCase(name, index.getEntity()) ? null : "index name '" + name + MIXED_UC_LC;
+    }
+    return null;
   }
 
 
@@ -499,14 +532,14 @@ public class NameVerifierImpl implements NameVerifier {
    *
    * @param name the name
    * @param entity the entity
-   * @return true if ok, false if mixed
+   * @return true if null, all upper- or lowercase, or the entity is provided; false if mixed
    */
   protected boolean isAllUpperOrLowerCase(String name, Entity entity) {
     return name == null || entity.getOptions().isProvided() || name.equals(name.toLowerCase(Locale.ROOT)) || name.equals(name.toUpperCase(Locale.ROOT));
   }
 
   /**
-   * Checks whether the name is quoted.
+   * Checks whether the name is unquoted, or the entity is provided (where quoting is allowed).
    *
    * @param name the name
    * @param entity the entity
@@ -548,7 +581,7 @@ public class NameVerifierImpl implements NameVerifier {
   /**
    * Gets the set of confusing names.
    *
-   * @return confusing model name
+   * @return the confusing model names (uppercase)
    */
   protected Set<String> getConfusingNames() {
     return CONFUSING_NAMES;

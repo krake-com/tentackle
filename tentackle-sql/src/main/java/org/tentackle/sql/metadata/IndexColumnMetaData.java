@@ -33,7 +33,7 @@ import java.util.Locale;
 public class IndexColumnMetaData implements Comparable<IndexColumnMetaData> {
 
   private final IndexMetaData indexMetaData;    // index column belongs to
-  private String columnName;                    // column columnName
+  private String columnName;                    // column name
   private String functionName;                  // optional function name
   private boolean descending;                   // true = DESC, false = ASC
   private int position;                         // ordinal position within index
@@ -42,7 +42,7 @@ public class IndexColumnMetaData implements Comparable<IndexColumnMetaData> {
   /**
    * Creates an index column.
    *
-   * @param indexMetaData the index column belongs to
+   * @param indexMetaData the index this column belongs to
    */
   public IndexColumnMetaData(IndexMetaData indexMetaData) {
     this.indexMetaData = indexMetaData;
@@ -52,7 +52,7 @@ public class IndexColumnMetaData implements Comparable<IndexColumnMetaData> {
    * Sets up the index column from the database metadata result.
    *
    * @param resultSet the column result set
-   * @throws SQLException the processing the result set failed
+   * @throws SQLException if processing the result set failed
    */
   public void setupIndexColumnFromMetaData(ResultSet resultSet) throws SQLException {
     columnName = StringHelper.toLower(resultSet.getString("COLUMN_NAME"));
@@ -75,14 +75,14 @@ public class IndexColumnMetaData implements Comparable<IndexColumnMetaData> {
   /**
    * Gets the index.
    *
-   * @return index column belongs to
+   * @return the index this column belongs to
    */
   public IndexMetaData getIndexMetaData() {
     return indexMetaData;
   }
 
   /**
-   * Returns ascending or descending order.
+   * Returns whether the column is sorted in descending order.
    *
    * @return true if descending
    */
@@ -91,9 +91,9 @@ public class IndexColumnMetaData implements Comparable<IndexColumnMetaData> {
   }
 
   /**
-   * Gets the column columnName.
+   * Gets the column name.
    *
-   * @return the index column's columnName in lowercase
+   * @return the index column name in lowercase
    */
   public String getColumnName() {
     return columnName;

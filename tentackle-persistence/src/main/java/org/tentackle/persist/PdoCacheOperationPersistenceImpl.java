@@ -40,7 +40,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
 /**
- * Persistence delegate for {@link PdoCacheOperation}.
+ * Persistence delegate for {@link PdoCacheOperation}.<br>
+ * Preloads the PDO caches whose persistence classes are annotated with {@link PreloadCache},
+ * either from the database or, for remote sessions, from the server in a single round trip.
+ *
+ * @see PersistenceUtilities#getPreloadingCaches()
  */
 @PersistentOperationService(PdoCacheOperation.class)
 public class PdoCacheOperationPersistenceImpl
@@ -70,7 +74,7 @@ public class PdoCacheOperationPersistenceImpl
    * Creates an operation object.
    *
    * @param operation the operation object this is a delegate for
-   * @param context the database context
+   * @param context the domain context
    */
   public PdoCacheOperationPersistenceImpl(PdoCacheOperation operation, DomainContext context) {
     super(operation, context);
@@ -78,18 +82,18 @@ public class PdoCacheOperationPersistenceImpl
 
   /**
    * Creates an operation object without a domain context
-   * for a given connection.<p>
+   * for a given session.<p>
    * Note: the application must set the context.
    *
    * @param operation the operation object this is a delegate for
-   * @param session the session (must be an instance of {@link Session}).
+   * @param session the session (must be an instance of {@link org.tentackle.dbms.Db})
    */
   public PdoCacheOperationPersistenceImpl(PdoCacheOperation operation, Session session) {
     super(operation, session);
   }
 
   /**
-   * Creates an operation object without a database context.<p>
+   * Creates an operation object without a domain context.<p>
    * Note: the application must set the context.
    *
    * @param operation the persistent operation object this is a delegate for
@@ -99,7 +103,7 @@ public class PdoCacheOperationPersistenceImpl
   }
 
   /**
-   * Creates an operation object without a database context.
+   * Creates an operation object without a domain context.
    */
   public PdoCacheOperationPersistenceImpl() {
     super();
@@ -116,6 +120,15 @@ public class PdoCacheOperationPersistenceImpl
 
   //</editor-fold>
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * For remote sessions, the caches are always preloaded from the server in a separate thread.
+   * For local sessions, the caches are preloaded in a separate thread if the application is interactive,
+   * otherwise synchronously.
+   *
+   * @return the latch to wait for the preload to finish, null if the caches were preloaded synchronously
+   */
   @Override
   public CountDownLatch preloadPdoCaches() {
     Application application = Application.getInstance();
@@ -176,7 +189,7 @@ public class PdoCacheOperationPersistenceImpl
   protected void preloadCachesFromRemote(DomainContext context) {
     LOGGER.info("preloading PDO caches from remote ...");
     Collection<PdoCachePreloadContent<?>> cachesContent =
-      getRemoteDelegate().getPreloadingCachesContent(context, getPreloadCacheClassNames());
+      getRemoteDelegate().getPreloadingCachesContent(context);
     for (PdoCachePreloadContent<?> cacheContent : cachesContent) {
       PersistentDomainObject<?> pdo = Pdo.create(cacheContent.pdoClass(), context);
       PdoCache cache = pdo.getPersistenceDelegate().getCache();
@@ -206,16 +219,8 @@ public class PdoCacheOperationPersistenceImpl
   }
 
   /**
-   * Gets the class names of the PDO persistence implementations with preloading caches.
-   *
-   * @return the class names
-   */
-  protected String[] getPreloadCacheClassNames() {
-    return ((PersistenceUtilities) DbUtilities.getInstance()).getPreloadCacheClassNames();
-  }
-
-  /**
-   * Gets the preloading caches.
+   * Gets the preloading caches.<br>
+   * The default implementation delegates to {@link PersistenceUtilities#getPreloadingCaches()}.
    *
    * @return the caches
    */

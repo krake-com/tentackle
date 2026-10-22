@@ -45,7 +45,9 @@ interface PropertiesUtilitiesHolder {
  * <p>
  * By default, the {@link DefaultPropertiesResource} is the only one. However, applications
  * can register more loaders, for example to override properties via environment variables
- * or use a yaml file instead.
+ * or use a YAML file instead.
+ * <p>
+ * Replaceable via &#64;{@link Service}.
  */
 @Service(PropertiesUtilities.class)   // defaults to self
 public class PropertiesUtilities {
@@ -53,7 +55,7 @@ public class PropertiesUtilities {
   private static final Logger LOGGER = Logger.get(PropertiesUtilities.class);
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */
@@ -77,7 +79,9 @@ public class PropertiesUtilities {
   private final Set<PrioritizedResource> prioritizedResources = new TreeSet<>();
 
   /**
-   * Loads all {@link PropertiesResource}s sorted by priority.
+   * Creates the utilities and loads all {@link PropertiesResource}s sorted by priority.
+   *
+   * @throws TentackleRuntimeException if no resource was found or a resource could not be instantiated
    */
   public PropertiesUtilities() {
     try {
@@ -116,7 +120,7 @@ public class PropertiesUtilities {
   /**
    * Creates empty properties.
    *
-   * @param initialCapacity the to accommodate this many elements initially
+   * @param initialCapacity the number of elements to accommodate initially
    * @return the empty properties
    */
   public EncryptedProperties create(int initialCapacity) {
@@ -124,10 +128,12 @@ public class PropertiesUtilities {
   }
 
   /**
-   * Loads the properties for the given resource name.
+   * Loads the properties for the given resource name.<br>
+   * All {@link PropertiesResource}s are applied in the order of their priority,
+   * so that resources with a higher priority override those with a lower one.
    *
    * @param name the resource name
-   * @return the properties, null if no such resource found
+   * @return the properties, null if no resource applied any properties
    */
   public EncryptedProperties loadIfExists(String name) {
     EncryptedProperties properties = create();
@@ -153,7 +159,7 @@ public class PropertiesUtilities {
    *
    * @param name the resource name
    * @return the properties
-   * @throws FileNotFoundException if no such resource
+   * @throws FileNotFoundException if no resource applied any properties
    */
   public EncryptedProperties load(String name) throws FileNotFoundException {
     EncryptedProperties properties = loadIfExists(name);

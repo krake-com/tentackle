@@ -4,6 +4,9 @@
 
 package ${domainImplPackage};
 
+<#if superDomainImplementationPackage != "" && superDomainImplementationPackage != domainImplPackage>
+import ${superDomainImplementationPackage}.${superDomainImplementation};
+</#if>
 import ${pdoPackage}.${pdoInterface};
 <#if domainPackage != domainImplPackage>
 import ${domainPackage}.${domainInterface};

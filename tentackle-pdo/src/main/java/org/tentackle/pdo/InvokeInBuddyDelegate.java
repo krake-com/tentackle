@@ -46,7 +46,7 @@ public @interface InvokeInBuddyDelegate {
 
   /**
    * The method name.<br>
-   * If the name is missing the buddy delegate's method has the same name as
+   * If the name is missing, the buddy delegate's method has the same name as
    * the annotated one.
    *
    * @return the optional method name

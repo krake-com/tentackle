@@ -32,11 +32,12 @@ import java.util.Map;
 /**
  * The default implementation of a builder factory.
  * <p>
- * Adds custom builders to replace by tentackle's implementations.
+ * Returns the builders registered via {@link BuilderService} for the node classes they serve,
+ * so that the FXML loader creates the tentackle implementations.
+ * All other types are delegated to the standard {@link JavaFXBuilderFactory}.
  * <p>
- * We cannot extend {@link JavaFXBuilderFactory}, since it is final.
- * Duplicating its code is impossible as well, since it uses a lot of <code>com.sun.xxx</code>
- * private classes, final, static, ... anti OOP at its best :(
+ * Delegation is used because {@link JavaFXBuilderFactory} is final and its code
+ * depends on internal <code>com.sun.xxx</code> classes, so it can neither be extended nor duplicated.
  *
  * @author harald
  */
@@ -52,7 +53,7 @@ public class FxBuilderFactory implements BuilderFactory {
   public FxBuilderFactory() {
     defaultFactory = new JavaFXBuilderFactory();
 
-    // pickup class mapping for builders
+    // pick up the class mapping for the builders
     Map<String,String> serviceMap = ServiceFactory.getServiceFinder().createNameMap(Builder.class.getName());
     builderMap = new HashMap<>();
     for (Map.Entry<String,String> entry: serviceMap.entrySet()) {

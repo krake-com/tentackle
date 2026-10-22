@@ -164,8 +164,8 @@ public interface Relation extends ModelElement, Commented {
 
   /**
    * Gets the pathname.<br>
-   * The pathname is identical to the java name for non-embedded relations.<br>
-   * For embedded entities, the pathname consists of the dotted path from the parent entity to the embedded attribute.
+   * The pathname is identical to the Java name for non-embedded relations.<br>
+   * For embedded entities, the pathname consists of the dotted path from the parent entity to the embedded relation.
    *
    * @return the pathname
    */
@@ -255,8 +255,10 @@ public interface Relation extends ModelElement, Commented {
   boolean isClearOnRemoteSave();
 
   /**
-   * Returns whether this is a list relation with only one element.<br>
-   * A.k.a. reversed 1:1 object relation.
+   * Returns whether this is a reversed relation.<br>
+   * Technically, a reversed relation is a 1:N list relation limited to one element.
+   * The foreign entity holds the link to this entity.
+   * However, the generated accessors look like those of a 1:1 object relation.
    *
    * @return true if reversed
    */
@@ -284,7 +286,7 @@ public interface Relation extends ModelElement, Commented {
   boolean isPartOfNormText();
 
   /**
-   * Returns whether the blunt-method becomes part if the interface.
+   * Returns whether the blunt-method becomes part of the interface.
    *
    * @return true if declared in interface, false if only implementation generated
    */
@@ -309,6 +311,18 @@ public interface Relation extends ModelElement, Commented {
    * @return the selection type
    */
   SelectionType getSelectionType();
+
+  /**
+   * Gets the depth of the eager join cascade.
+   * <p>
+   * Only meaningful for {@link SelectionType#EAGER}. It is the number of relation hops the
+   * generated join tree may span, counting this relation as the first one. The default 1 joins
+   * the related entity only; a higher value additionally joins the eager relations of the
+   * related entity, and so on, until the depth is exhausted.
+   *
+   * @return the depth, always &gt;= 1, 1 by default
+   */
+  int getEagerDepth();
 
   /**
    * Returns whether the select method is caching.
@@ -336,7 +350,8 @@ public interface Relation extends ModelElement, Commented {
   boolean isDeletionFromMainClass();
 
   /**
-   * Returns whether deletion is cascaded to elements in lists.
+   * Returns whether deletion is cascaded to elements in lists.<br>
+   * Only relevant if the integrity disables database integrity checks for components.
    *
    * @return true if cascaded
    */
@@ -373,9 +388,9 @@ public interface Relation extends ModelElement, Commented {
   // args = ...
 
   /**
-   * Gets the effective method arguments for select- and delete-methods.<br>
+   * Gets the effective method arguments for select- and delete-methods.
    *
-   * @return the args, never null, at least 1 element
+   * @return the args, never null (contains at least one element once the model is valid)
    */
   List<MethodArgument> getMethodArgs();
 
@@ -415,7 +430,7 @@ public interface Relation extends ModelElement, Commented {
   void validate() throws ModelException;
 
   /**
-   * Gets the variable name.<br>
+   * Gets the variable name.
    *
    * @return the variable name
    */
@@ -455,20 +470,20 @@ public interface Relation extends ModelElement, Commented {
   String getGetterSetterComment();
 
   /**
-   * Gets the declared java type of the relation.
+   * Gets the declared Java type of the relation.
    *
    * @param withinForeignEntity true if we need the type from within the foreign entity,
    *                            else from within the relation's entity
-   * @return the declared java type
+   * @return the declared Java type
    */
   String getDeclaredJavaType(boolean withinForeignEntity);
 
   /**
-   * Gets the effective java type of the relation.
+   * Gets the effective Java type of the relation.
    * <p>
    * Example: the effective type is ArrayList and the declared type is List.
    *
-   * @return the effective java type
+   * @return the effective Java type
    */
   String getJavaType();
 

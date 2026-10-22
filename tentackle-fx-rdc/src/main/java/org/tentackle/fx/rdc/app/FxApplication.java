@@ -26,7 +26,8 @@ import javafx.application.Application;
 import javafx.stage.Stage;
 
 /**
- * Tentackle FX application base class.
+ * Tentackle FX application base class.<br>
+ * The JavaFX application launched by the {@link DesktopApplication}.
  * <p>
  * Usually the application initially launched is the {@link LoginApplication}.
  *
@@ -69,7 +70,7 @@ public abstract class FxApplication extends Application {
   }
 
   /**
-   * Sets the exit value and throwable to be picked up by the stop-method when the last window is closed
+   * Sets the exit value and throwable to be picked up by the stop method when the last window is closed
    * and stop is not invoked explicitly from within the application with a non-zero exit value.
    *
    * @param exitValue the exit value
@@ -92,7 +93,7 @@ public abstract class FxApplication extends Application {
    * The main entry point for all Tentackle JavaFX applications.
    * <p>
    * This is just a replacement for {@link Application#start(javafx.stage.Stage)} to make sure the
-   * client application is really implementing this method.
+   * client application really implements this method.
    *
    * @param primaryStage the primary stage
    */

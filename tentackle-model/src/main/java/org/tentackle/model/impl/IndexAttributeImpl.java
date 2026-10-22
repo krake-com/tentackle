@@ -76,15 +76,33 @@ public class IndexAttributeImpl implements IndexAttribute {
   }
 
 
+  /**
+   * Sets the attribute and the column name.<br>
+   * For data types mapped to more than one column, the column name may differ
+   * from the attribute's column name.
+   *
+   * @param attribute the attribute
+   * @param columnName the database column name
+   */
   public void setAttributeAndColumnName(Attribute attribute, String columnName) {
     this.attribute = attribute;
     this.columnName = columnName;
   }
 
+  /**
+   * Sets the function name of a function-based index.
+   *
+   * @param functionName the function name, null if none
+   */
   public void setFunctionName(String functionName) {
     this.functionName = functionName;
   }
 
+  /**
+   * Sets the sort order.
+   *
+   * @param descending true if descending, false if ascending
+   */
   public void setDescending(boolean descending) {
     this.descending = descending;
   }

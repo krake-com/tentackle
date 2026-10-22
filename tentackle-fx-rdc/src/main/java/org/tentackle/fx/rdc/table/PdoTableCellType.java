@@ -29,9 +29,10 @@ import javafx.geometry.Pos;
 
 /**
  * PDO cell type.<br>
- * Not covered by the default ObjectTableCellType because PersistentDomainObject is an interface.<br>
- * This cell type does <em>not</em> set the graphics icon. If you need that, create an application-specific cell type.
+ * Not covered by the default {@code ObjectTableCellType} because {@code PersistentDomainObject} is an interface.<br>
+ * This cell type does <em>not</em> set the graphic icon. If you need that, create an application-specific cell type.
  *
+ * @param <T> the PDO type
  * @author harald
  */
 @TableCellTypeService(PersistentDomainObject.class)

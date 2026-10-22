@@ -52,8 +52,9 @@ import java.util.concurrent.locks.ReentrantLock;
  *     requests on virtual threads, so a whole invocation runs under {@link #call(ModelOperation)} and a refresh can
  *     never land halfway through a description.</li>
  * <li><strong>Staleness.</strong> The server outlives many builds. Model files are re-scanned, at most once per
- *     staleness interval, and the model is refreshed when they are moved. Sources that do not load leave the
- *     loaded model alone, so a build in progress never turns into a model with entities missing from it.</li>
+ *     staleness interval, and the model is refreshed when they changed, or reloaded from scratch when one was
+ *     removed. Sources that do not load leave the loaded model alone, so a build in progress never turns into a
+ *     model with entities missing from it.</li>
  * </ul>
  *
  * @author harald
@@ -68,6 +69,9 @@ public class ModelSession {
 
   /** The name suffix of the scratch model a reload is verified in. */
   public static final String VERIFY_MODEL_SUFFIX = "-mcp-verify";
+
+  /** The leading text of the warning that the model on disk could not be reloaded. */
+  public static final String RELOAD_FAILED_WARNING = "model files changed but could not be reloaded";
 
   private final ModelConfiguration config;
   private final long stalenessCheckMillis;
@@ -344,6 +348,8 @@ public class ModelSession {
    * The result includes what an automatic staleness refresh picked up since the last reload: that refresh runs
    * before every tool call, so without this a caller of {@code model_reload} would be told that nothing changed
    * moments after the change was loaded.
+   * <p>
+   * A successful reload withdraws the warning of an earlier one that failed.
    *
    * @param full true for a complete reload, false to refresh changed files only
    * @return the names of the entities whose source changed, never null
@@ -363,6 +369,7 @@ public class ModelSession {
         entitySources = snapshotSources();
         lastStalenessCheck = System.currentTimeMillis();
       }
+      warnings.removeIf(warning -> warning.startsWith(RELOAD_FAILED_WARNING));
       Set<String> changed = new TreeSet<>(unreportedChanges);
       unreportedChanges.clear();
       changed.addAll(changedEntities(before, entitySources));
@@ -404,7 +411,7 @@ public class ModelSession {
     }
     catch (ModelException mex) {
       // the model on disk became inconsistent: keep serving the last good one, but say so
-      addWarning("model files changed but could not be reloaded, still serving the model loaded before: " +
+      addWarning(RELOAD_FAILED_WARNING + ", still serving the model loaded before: " +
                  mex.getMessage());
       return List.of();
     }

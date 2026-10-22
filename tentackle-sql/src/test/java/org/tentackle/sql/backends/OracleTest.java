@@ -180,7 +180,7 @@ public class OracleTest {
    * @param defaultValue the default value as reported by {@code getColumns}, null if none
    * @return the column metadata
    */
-  private OracleColumnMetaData createColumnMetaData(Oracle backend, String defaultValue) {
+  static OracleColumnMetaData createColumnMetaData(Oracle backend, String defaultValue) {
     TableMetaData tableMetaData = new TableMetaData(new ModelMetaData(backend, new DatabaseMetaData[0], null), "foo");
     OracleColumnMetaData column = (OracleColumnMetaData) backend.createColumnMetaData(tableMetaData);
     try {
@@ -198,9 +198,9 @@ public class OracleTest {
    * @param defaultValue the default value, null if none
    * @return the result set
    */
-  private ResultSet columnResultSet(String defaultValue) {
+  private static ResultSet columnResultSet(String defaultValue) {
     return (ResultSet) Proxy.newProxyInstance(
-        getClass().getClassLoader(), new Class<?>[] { ResultSet.class },
+        OracleTest.class.getClassLoader(), new Class<?>[] { ResultSet.class },
         (proxy, method, args) -> switch (method.getName()) {
           case "getString" -> switch ((String) args[0]) {
             case "COLUMN_NAME" -> "SERIAL";

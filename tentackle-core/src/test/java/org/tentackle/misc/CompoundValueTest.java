@@ -71,4 +71,23 @@ public class CompoundValueTest {
     // scripts are tested in the corresponding scripting language tt-modules
   }
 
+  @Test
+  public void testMalformed() {
+    Assert.assertThrows(IllegalArgumentException.class, () -> new CompoundValue(""));
+    Assert.assertThrows(IllegalArgumentException.class, () -> new CompoundValue("$"));
+    Assert.assertThrows(IllegalArgumentException.class, () -> new CompoundValue("!$"));
+    Assert.assertThrows(IllegalArgumentException.class, () -> new CompoundValue("!x"));
+    Assert.assertThrows(IllegalArgumentException.class, () -> new CompoundValue("\\"));
+    // a static reference needs a member
+    Assert.assertThrows(IllegalArgumentException.class, () -> new CompoundValue("$org.tentackle.common.DateHelper"));
+    Assert.assertThrows(IllegalArgumentException.class, () -> new CompoundValue("$org.tentackle.common.DateHelper."));
+  }
+
+  @Test
+  public void testEscapedConstant() {
+    CompoundValue par = new CompoundValue("\\$abc", String.class);
+    Assert.assertEquals(par.getType(), CompoundValue.Type.CONSTANT);
+    Assert.assertEquals(par.getValue(), "$abc");
+  }
+
 }

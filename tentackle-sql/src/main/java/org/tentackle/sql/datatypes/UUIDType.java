@@ -36,6 +36,10 @@ import java.util.UUID;
  * For databases not supporting this type natively, it is mapped to VARCHAR(36).<br>
  * There are alternatives (storing in 2 longs or 16 bytes, etc...),
  * but manually written SQL queries may become rather tricky.
+ * <p>
+ * The type is not predefined, i.e. the persistence layer uses {@code setObject}/{@code getObject},
+ * and it is not sortable by the database in a meaningful manner.
+ * The MAPNULL option maps to the nil UUID.
  */
 @Service(DataType.class)
 public final class UUIDType extends AbstractDataType<UUID> {

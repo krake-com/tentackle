@@ -41,7 +41,7 @@ public interface SecurityDomain extends DomainObject<Security> {
    *
    * @param context the domain context the object or class is used in, null = all
    * @param permission the requested permission
-   * @return true if rule fires, else this rules does not apply
+   * @return true if rule fires, false if this rule does not apply
    */
   boolean evaluate(DomainContext context, Permission permission);
 

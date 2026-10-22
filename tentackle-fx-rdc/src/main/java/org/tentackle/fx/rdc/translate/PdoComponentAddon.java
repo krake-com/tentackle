@@ -53,7 +53,15 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Adds style, context-menu, DnD and function-keys to components bound to a PDO.
+ * Adds style, context menu, drag and drop, and function keys to components bound to a PDO.<br>
+ * <ul>
+ *   <li>the style class {@link #PDO_STYLE}</li>
+ *   <li>F2 or the context menu's edit item opens the PDO in a modal CRUD dialog</li>
+ *   <li>F3 or the context menu's search item opens a modal search dialog for the component's type</li>
+ *   <li>a PDO can be dragged out of the component, and a PDO of a matching type dropped into it</li>
+ * </ul>
+ * Removing the style class from the component disables these features.
+ * They need the {@link DomainContext} as a binding property of the binder.
  *
  * @param <T> the PDO type
  */
@@ -79,7 +87,7 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
   /**
    * Creates the addon.
    *
-   * @param component the fx component
+   * @param component the FX component
    * @param pdoSupplier a supplier for the currently displayed PDO
    * @param pdoConsumer a consumer for the PDO (changed by DnD)
    */
@@ -208,9 +216,9 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
   }
 
   /**
-   * Gets the fx component.
+   * Gets the FX component.
    *
-   * @return the fx component
+   * @return the FX component
    */
   public FxComponent getComponent() {
     return component;
@@ -235,18 +243,18 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
   }
 
   /**
-   * Gets the PDO.<br>
+   * Gets the PDO.
    *
-   * @return the pdo
+   * @return the PDO
    */
   public T getPdo() {
     return pdo;
   }
 
   /**
-   * Sets the PDO.<br>
+   * Sets the PDO.
    *
-   * @param pdo the pdo
+   * @param pdo the PDO
    */
   public void setPdo(T pdo) {
     this.pdo = pdo;
@@ -254,9 +262,9 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
 
   /**
    * Returns a collection of all PDOs.<br>
-   * Used in ComboBoxes and ChoiceBoxes to initialize the component's item list.
+   * Used in combo boxes and choice boxes to initialize the component's item list.
    *
-   * @param proxy the proxy pdo
+   * @param proxy the proxy PDO
    * @return the collection of all PDOs
    */
   public Collection<T> getAllPdos(T proxy) {
@@ -265,7 +273,7 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
 
   /**
    * Gets the callback to load all PDOs.<br>
-   * Used by {@link #getAllPdos(PersistentDomainObject)}.
+   * Used by {@link #getAllPdos(PersistentDomainObject)}. Defaults to {@link #loadAllPdos(PersistentDomainObject)}.
    *
    * @return the callback
    */
@@ -284,7 +292,7 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
   }
 
   /**
-   * Returns whether search or edit dialog is currently displayed.
+   * Returns whether the search or edit dialog is currently displayed.
    *
    * @return true if within search or edit
    */
@@ -293,7 +301,9 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
   }
 
   /**
-   * Edit or view current pdo.
+   * Edits or views the current PDO.<br>
+   * The PDO is reloaded and shown in a modal CRUD dialog, editable unless the PDO is immutable.
+   * The component is updated with the edited PDO afterward.
    */
   public void edit() {
     if (!inSearchOrEdit) {
@@ -303,7 +313,7 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
         if (pdo != null) {
           inSearchOrEdit = true;
           try {
-            ObservableList<T> pdoList = FXCollections.observableArrayList();    // pdo list will disable new,delete and find buttons!
+            ObservableList<T> pdoList = FXCollections.observableArrayList();    // PDO list will hide new, delete and find buttons!
             pdoList.add(pdo);
 
             RdcUtilities.getInstance().displayCrudStage(
@@ -331,7 +341,8 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
   }
 
   /**
-   * Search for a PDO.
+   * Searches for a PDO.<br>
+   * Opens a modal search dialog and sets the selected PDO into the component, if the component is changeable.
    */
   public void search() {
     if (!inSearchOrEdit) {
@@ -370,9 +381,10 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
   }
 
   /**
-   * Creates a new PDO.
+   * Creates a new PDO of the component's type.<br>
+   * Throws {@link RdcRuntimeException} if the domain context is missing.
    *
-   * @return the pdo
+   * @return the PDO
    */
   @SuppressWarnings("unchecked")
   public T createPdo() {
@@ -386,7 +398,9 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
 
 
   /**
-   * Gets the domain context from the binding properties.
+   * Gets the domain context from the binding properties.<br>
+   * Taken from the binder of the component's container, table cell, or tree table cell, or from the
+   * node's properties if the component is not part of a container or table.
    *
    * @return the domain context, null if not defined in properties
    */
@@ -409,10 +423,10 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
 
 
   /**
-   * Modal search of the pdo.
+   * Modal search of the PDO.
    *
-   * @param proxy the proxy pdo (possibly preset with partial search criteria)
-   * @param selectedItem the consumer for the selected pdo, invoked with null if no pdo found
+   * @param proxy the proxy PDO (possibly preset with partial search criteria)
+   * @param selectedItem the consumer for the selected PDO, invoked with null if no PDO was selected
    */
   public void searchPdo(T proxy, Consumer<T> selectedItem) {
     RdcUtilities.getInstance().displaySearchStage(proxy, Modality.APPLICATION_MODAL, Fx.getStage((Node) component), true,
@@ -421,7 +435,9 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
 
 
   /**
-   * Default implementation for the {@link #getLoadAllPdosCallback()}.
+   * Default implementation for the {@link #getLoadAllPdosCallback()}.<br>
+   * Uses {@code selectAllCached()} if the entity has a preloading cache, else {@code selectAll()}
+   * and logs a warning recommending a cache.
    *
    * @param proxy the PDO proxy
    * @return the collection of PDOs

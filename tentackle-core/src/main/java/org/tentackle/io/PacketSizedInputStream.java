@@ -24,13 +24,14 @@ import java.io.InputStream;
 
 /**
  * An input stream that reads packets with a header holding the packet size.<br>
- * The header is read as 2 bytes. Thus, the maximum packet size is 64K - 1.
+ * The header is read as 2 bytes, low byte first. Thus, the maximum packet size is 64K - 1.
  *
  * @see PacketSizedOutputStream
  */
 public abstract class PacketSizedInputStream extends FilterInputStream {
 
-  private boolean closed;               // true if closed
+  private final byte[] headerBuf = new byte[2];   // the header of the current packet
+  private boolean closed;                         // true if closed
 
   /**
    * Creates the input stream.
@@ -63,10 +64,11 @@ public abstract class PacketSizedInputStream extends FilterInputStream {
    * Reads the header of the next packet.
    *
    * @return the packet size, -1 if the end of the stream is reached
+   * @throws IOException if reading failed
    */
   protected int readHeader() throws IOException {
-    byte[] header = in.readNBytes(2);
-    if (header.length != 2) {
+    byte[] header = headerBuf;
+    if (in.readNBytes(header, 0, 2) != 2) {
       return -1;
     }
     return header[0] & 0xFF | (header[1] & 0xFF) << 8;

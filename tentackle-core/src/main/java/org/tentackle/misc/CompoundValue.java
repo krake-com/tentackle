@@ -41,7 +41,8 @@ import java.util.function.Function;
  * <ol>
  * <li>fixed constants: these are simple strings and will be treated as constants.</li>
  * <li>references: they start with a dollar followed by a reference in dot-notation relative to a given object or a
- * static method or field. If the dotted path contains an element with the first character in uppercase, the latter is assumed.
+ * static method or field. If the dotted path contains an element with the first character in uppercase, the latter is assumed,
+ * and that element denotes the class.
  * Boolean references may be preceded by <code>"!"</code> to negate the result.</li>
  * <li>a script in a scripting language, for example Groovy or JRuby.</li>
  * </ol>
@@ -49,16 +50,18 @@ import java.util.function.Function;
  * Examples:
  * <pre>
  * "123" -&gt; constant
+ * "\$abc" -&gt; the constant "$abc"
  * "$grandTotal" -&gt; object.getGrandTotal()
  * "!$customer.customerNoValid" -&gt; !object.getCustomer().isCustomerNoValid()
- * "$org.tentackle.misc.StringHelper.now" -&gt; org.tentackle.misc.StringHelper.now()
+ * "$org.tentackle.common.DateHelper.now" -&gt; org.tentackle.common.DateHelper.now()
  * "#!groovy{ object.amount &gt; 200}"
  * </pre>
  *
- * If the object parameter in the constructor is not-null the script will get the
- * parameter "object" set ("@object" in Ruby).
+ * If the parent object passed to {@link #getValue(Object, Set)} is not null, the script will get the
+ * variable "object" set ("@object" in Ruby).
  * <p>
- * Notice: <code>"#!{"</code> or just <code>"{"</code> may be used as a shorthand for <code>"#!groovy{"</code>.
+ * Notice: <code>"#!{"</code> or just <code>"{"</code> may be used as a shorthand for the default scripting language,
+ * see {@link ScriptFactory#createScript(String, String, boolean, boolean, Function)}.
  *
  * @author harald
  */
@@ -68,20 +71,23 @@ public class CompoundValue {
    * The value type of strings.
    * <ul>
    * <li>{@link #CONSTANT}: a constant value (e.g.: <code>"123"</code>)</li>
-   * <li>{@link #REFERENCE}: a reference-path relative to the annotated parent object in dot-notation (e.g.: <code>"$invoice.grantTotal"</code>)</li>
-   * <li>{@link #STATIC_REFERENCE}: a reference to a static method (e.g.: <code>"$org.tentackle.misc.StringHelper.now"</code>)</li>
+   * <li>{@link #REFERENCE}: a reference-path relative to the annotated parent object in dot-notation (e.g.: <code>"$invoice.grandTotal"</code>)</li>
+   * <li>{@link #STATIC_REFERENCE}: a reference to a static method or field (e.g.: <code>"$org.tentackle.common.DateHelper.now"</code>)</li>
    * <li>{@link #SCRIPT}: a script (e.g.: <code>"#!groovy{ object.amount &lt; 200 }"</code>)</li>
    * </ul>
    *
-   * Notice: a backslash quotes the special meaning of characters, for ex. <code>"\$string"</code> is treated as the constant "$string".<br>
+   * Notice: a leading backslash quotes the special meaning of characters, for example <code>"\$string"</code> is treated as the constant "$string".
    */
   public enum Type {
     /** a fixed value (constant) */
     CONSTANT,
+
     /** a reference relative to the parent object */
     REFERENCE,
-    /** a reference to a static method of a class */
+
+    /** a reference to a static method or field of a class */
     STATIC_REFERENCE,
+
     /** a script */
     SCRIPT,
   }
@@ -99,6 +105,7 @@ public class CompoundValue {
   private Object constantValue;                                               // the cached constant value
   private String reference;                                                   // the reference, null if none
   private String staticClassName;                                             // the name of the static class reference
+  private volatile Class<?> staticClass;                                      // the loaded static class, null if not loaded yet
   private boolean negate;                                                     // true if negate the (boolean) reference
   private Script script;                                                      // the script, null if none
 
@@ -119,6 +126,8 @@ public class CompoundValue {
    * @param scriptCached true to use caching if possible because script code may be used more than once
    * @param scriptThreadSafe true if the script may be invoked in parallel from different threads
    * @param scriptConverterProvider the optional provider for the script converter
+   * @throws IllegalArgumentException if the text is null, empty or malformed, the script could not be created,
+   *         or the class is missing for an escaped constant
    */
   public CompoundValue(String text, Class<?> clazz, boolean scriptCached, boolean scriptThreadSafe, Function<String, ScriptConverter> scriptConverterProvider) {
     this.text = text;
@@ -201,6 +210,9 @@ public class CompoundValue {
               // static reference
               type = Type.STATIC_REFERENCE;
               staticClassName = classBuf.toString();
+              if (reference.length() <= staticClassName.length() + 1) {
+                throw new IllegalArgumentException("static reference '" + staticClassName + "' must be followed by a member");
+              }
               reference = reference.substring(staticClassName.length() + 1);
               break;
             }
@@ -223,15 +235,19 @@ public class CompoundValue {
    *
    * @param text the string value
    * @param clazz the class of the value
+   * @throws IllegalArgumentException if the text is null, empty or malformed, the script could not be created,
+   *         or the class is missing for an escaped constant
    */
   public CompoundValue(String text, Class<?> clazz) {
     this(text, clazz, false, false, null);
   }
 
   /**
-   * Creates and configures a compound value.<br>
+   * Creates and configures a compound value without a value class.<br>
+   * Applicable to references and scripts, which don't need a class.
    *
    * @param text the string value
+   * @throws IllegalArgumentException if the text is null, empty or malformed, or the script could not be created
    */
   public CompoundValue(String text) {
     this(text, null, false, false, null);
@@ -255,7 +271,7 @@ public class CompoundValue {
   /**
    * Gets the class of the value.
    *
-   * @return the value's class, null if determined by SCRIPT or not necessary for this {@link Type}
+   * @return the value's class, null if determined by the script or not necessary for this {@link Type}
    */
   public Class<?> getClazz() {
     return clazz;
@@ -312,9 +328,10 @@ public class CompoundValue {
 
 
   /**
-   * Gets the constant value.
+   * Gets the cached constant value.<br>
+   * The value is created and cached by the first invocation of one of the {@code getValue} methods.
    *
-   * @return the constant value, null if none
+   * @return the constant value, null if not a constant or not evaluated yet
    */
   public Object getConstantValue() {
     return constantValue;
@@ -322,7 +339,8 @@ public class CompoundValue {
 
 
   /**
-   * Gets the reference.
+   * Gets the reference.<br>
+   * For static references, this is the path relative to the class.
    *
    * @return the reference, null if none
    */
@@ -344,7 +362,7 @@ public class CompoundValue {
   /**
    * Gets the logical negation flag.
    *
-   * @return true boolean result will be negated
+   * @return true if the boolean result will be negated
    */
   public boolean isNegate() {
     return negate;
@@ -352,18 +370,19 @@ public class CompoundValue {
 
 
   /**
-   * Gets the value according to the type.<br>
+   * Gets the value according to the type.
    * <p>
    * The <code>parentObject</code> is required for {@link Type#REFERENCE} and denotes the
    * object the reference refers to.<br>
    * For {@link Type#SCRIPT} it is optional and if given will set the script's variable
    * {@link ValidationContext#VAR_OBJECT}.
    * <p>
-   * Throws {@link IllegalArgumentException} if evaluating the value failed.
+   * Constants are converted to the value's class once and cached.
    *
    * @param parentObject the parent object, null if none
    * @param variables the script variables (only for scripts), null or empty if none
    * @return some value
+   * @throws IllegalArgumentException if evaluating the value failed
    */
   public Object getValue(Object parentObject, Set<ScriptVariable> variables) {
 
@@ -390,7 +409,11 @@ public class CompoundValue {
 
       case STATIC_REFERENCE:
         try {
-          Class<?> staticClass = Class.forName(staticClassName);
+          Class<?> staticClass = this.staticClass;
+          if (staticClass == null) {
+            // load once: this is evaluated over and over again, e.g. by validators
+            staticClass = this.staticClass = Class.forName(staticClassName);
+          }
           Object value = ReflectionHelper.getStaticValueByPath(staticClass, reference);
           return negate ? negateBoolean(value) : value;
         }
@@ -410,7 +433,7 @@ public class CompoundValue {
             }
             else {
               try {
-                variables.add(parentVariable);    // add or replace if already present
+                variables.add(parentVariable);    // add, unless a variable with the same name is already present
               }
               catch (RuntimeException rx) {       // immutable set?
                 variables = new HashSet<>(variables);
@@ -435,19 +458,17 @@ public class CompoundValue {
   }
 
   /**
-   * Gets the value according to the type.<br>
+   * Gets the value according to the type.
    * <p>
    * The <code>parentObject</code> is required for {@link Type#REFERENCE} and denotes the
    * object the reference refers to.<br>
    * For {@link Type#SCRIPT} it is optional and if given will set the script's variable
    * {@link ValidationContext#VAR_OBJECT}.
-   * <p>
-   * Throws {@link IllegalArgumentException} if evaluating the value failed
-   * or if there are any duplicate variable names.
    *
-   * @param parentObject the parent object
+   * @param parentObject the parent object, null if none
    * @param variables the optional script variables (only for scripts)
    * @return some value
+   * @throws IllegalArgumentException if evaluating the value failed or if there are any duplicate variables
    */
   public Object getValue(Object parentObject, ScriptVariable... variables) {
     Set<ScriptVariable> variableSet;
@@ -471,25 +492,24 @@ public class CompoundValue {
   }
 
   /**
-   * Gets the value according to the type.
-   * <p>
-   * Throws {@link IllegalArgumentException} if evaluating the value failed.
+   * Gets the value according to the type without a parent object.
    *
    * @param variables the script variables (only for scripts), null or empty if none
    * @return some value
+   * @throws IllegalArgumentException if evaluating the value failed
+   * @see #getValue(Object, Set)
    */
   public Object getValue(Set<ScriptVariable> variables) {
     return getValue(null, variables);
   }
 
   /**
-   * Gets the value according to the type.
-   * <p>
-   * Throws {@link IllegalArgumentException} if evaluating the value failed
-   * or if there are any duplicate variable names.
+   * Gets the value according to the type without a parent object.
    *
    * @param variables the optional script variables (only for scripts)
    * @return some value
+   * @throws IllegalArgumentException if evaluating the value failed or if there are any duplicate variables
+   * @see #getValue(Object, Set)
    */
   public Object getValue(ScriptVariable... variables) {
     return getValue(null, variables);

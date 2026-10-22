@@ -34,6 +34,9 @@ public class LogoutEventHandler implements Consumer<LogoutEvent> {
 
   private static final Logger LOGGER = Logger.get(LogoutEventHandler.class);
 
+  /**
+   * Creates the logout event handler.
+   */
   public LogoutEventHandler() {
     // see -Xlint:missing-explicit-ctor since Java 16
   }

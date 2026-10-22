@@ -17,6 +17,8 @@
  */
 
 /**
- * Application lifecycle.
+ * Application lifecycle.<br>
+ * The {@link org.tentackle.fx.rdc.app.DesktopApplication} launches the
+ * {@link org.tentackle.fx.rdc.app.LoginApplication}, logs in, and opens the main window.
  */
 package org.tentackle.fx.rdc.app;

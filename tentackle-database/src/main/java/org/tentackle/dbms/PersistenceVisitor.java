@@ -35,7 +35,7 @@ import java.io.Serializable;
  * The methods are invoked in the following order:
  * <ol>
  * <li>{@code visit(org.tentackle.dbms.AbstractDbObject, Character)} which in turn invokes the type-specific visit method</li>
- * <li>{@code isPersistenceOperationAllowed(org.tentackle.dbms.AbstractDbObject, char)}</li>
+ * <li>{@link #isPersistenceOperationAllowed(AbstractDbObject, ModificationType)}</li>
  * </ol>
  *
  * A visitor may also throw a {@link org.tentackle.session.PersistenceException} if the operation must not continue.

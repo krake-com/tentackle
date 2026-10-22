@@ -267,7 +267,7 @@ public abstract class AbstractTripType<T> implements TripType<T> {
    *
    * @param stream the stream to write to
    * @param value the value to create a reference for
-   * @return the reference, or null if the value is not referencable or de-duplicatable
+   * @return the reference, or null if the value is not referenceable or de-duplicatable
    */
   protected Reference<T> sendReference(TripStream stream, T value) {
     Reference<T> reference;

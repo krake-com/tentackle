@@ -74,8 +74,8 @@ public interface SessionHolder extends Serializable {
    * Gets the unique instance number of the Session.
    * <p>
    * Delegating {@code getSession().getInstanceNumber()} to
-   * {@code getSessionInstanceNumber} allows to override
-   * getSession and dynamically retrieve the thread's session
+   * {@code getSessionInstanceNumber} allows overriding
+   * {@code getSession} to dynamically retrieve the thread's session
    * without changing the sorting order.
    *
    * @return the session's instance number

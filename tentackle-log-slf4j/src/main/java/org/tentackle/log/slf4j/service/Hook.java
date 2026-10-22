@@ -24,7 +24,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 /**
- * Hook for the slf4j-module.
+ * Module hook of tentackle-log-slf4j (resource bundle access).
  *
  * @author harald
  */

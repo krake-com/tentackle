@@ -22,6 +22,8 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import org.tentackle.sql.BackendException;
+import org.tentackle.sql.BackendVersionInfo;
+import org.tentackle.sql.SqlType;
 
 /**
  * Tests for the MariaDB backend.
@@ -49,11 +51,11 @@ public class MariaDbTest {
   @Test
   public void testValidateVersion() {
     // sequences need at least 10.3
-    Assert.assertThrows(BackendException.class, () -> backend.validateVersion(10, 2));
+    Assert.assertThrows(BackendException.class, () -> backend.validateVersion(new BackendVersionInfo(10, 2)));
     // the mariadb driver connects to mysql servers as well
-    Assert.assertThrows(BackendException.class, () -> backend.validateVersion(8, 0));
-    backend.validateVersion(10, 3);
-    backend.validateVersion(11, 4);
+    Assert.assertThrows(BackendException.class, () -> backend.validateVersion(new BackendVersionInfo(8, 0)));
+    backend.validateVersion(new BackendVersionInfo(10, 3));
+    backend.validateVersion(new BackendVersionInfo(11, 4));
   }
 
   /**
@@ -77,6 +79,21 @@ public class MariaDbTest {
     finally {
       backend.setDropIfExistsEnabled(false);
     }
+  }
+
+  /**
+   * MariaDB's JSON is only an alias for LONGTEXT plus a {@code json_valid()} check constraint, and
+   * the driver reports it as LONGTEXT. Declaring it as JSON would make the metadata drift away from
+   * the model and provoke an ALTER on every migration run.
+   */
+  @Test
+  public void testJsonIsLongText() {
+    Assert.assertFalse(backend.isJsonSupported());
+    Assert.assertEquals(backend.columnTypeToString(SqlType.JSON, 0, 0), "LONGTEXT");
+    // unlike MariaDB, mysql has a real JSON column type
+    MySql mySql = new MySql();
+    Assert.assertTrue(mySql.isJsonSupported());
+    Assert.assertEquals(mySql.columnTypeToString(SqlType.JSON, 0, 0), "JSON");
   }
 
   /**

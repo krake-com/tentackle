@@ -199,37 +199,45 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
   }
 
   @Override
-  public synchronized void put(String key, String value) {
-    DbPreferencesKey prefKey = getPersistentKey(key);
-    if (prefKey == null) {
-      prefKey = new DbPreferencesKey();
-      prefKey.setKey(key);
-      putPersistentKey(prefKey);
+  public void put(String key, String value) {
+    synchronized (getFactory()) {   // the factory guards the whole tree, see flushImpl
+      DbPreferencesKey prefKey = getPersistentKey(key);
+      if (prefKey == null) {
+        prefKey = new DbPreferencesKey();
+        prefKey.setKey(key);
+        putPersistentKey(prefKey);
+      }
+      else if (prefKey.isRemoved()) {
+        prefKey.setRemoved(false);
+        prefKey.setModified(true);    // in case the value didn't change
+      }
+      prefKey.setValue(value);
     }
-    else if (prefKey.isRemoved()) {
-      prefKey.setRemoved(false);
-      prefKey.setModified(true);    // in case the value didn't change
-    }
-    prefKey.setValue(value);
   }
 
   @Override
-  public synchronized String get(String key, String def) {
-    DbPreferencesKey prefKey = getPersistentKey(key);
-    return prefKey == null || prefKey.isRemoved() ? def : prefKey.getValue();
+  public String get(String key, String def) {
+    synchronized (getFactory()) {   // the factory guards the whole tree, see flushImpl
+      DbPreferencesKey prefKey = getPersistentKey(key);
+      return prefKey == null || prefKey.isRemoved() ? def : prefKey.getValue();
+    }
   }
 
   @Override
-  public synchronized void remove(String key) {
-    DbPreferencesKey prefKey = getPersistentKey(key);
-    if (prefKey != null) {
-      prefKey.setRemoved(true);
+  public void remove(String key) {
+    synchronized (getFactory()) {   // the factory guards the whole tree, see flushImpl
+      DbPreferencesKey prefKey = getPersistentKey(key);
+      if (prefKey != null) {
+        prefKey.setRemoved(true);
+      }
     }
   }
 
   @Override
   public void clear() throws BackingStoreException {
-    keyMap.clear();
+    synchronized (getFactory()) {   // the factory guards the whole tree, see flushImpl
+      keyMap.clear();
+    }
   }
 
   @Override
@@ -353,44 +361,52 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
   }
 
   @Override
-  public synchronized String[] keys() throws BackingStoreException {
-    return keyMap.values().stream().filter(k -> !k.isRemoved())
-           .map(DbPreferencesKey::getKey).toArray(String[]::new);
-  }
-
-  @Override
-  public synchronized String[] childrenNames() throws BackingStoreException {
-    return childMap.values().stream().filter(c -> !c.getPersistentNode().isRemoved())
-           .map(DbPreferences::name).toArray(String[]::new);
-  }
-
-  @Override
-  public synchronized boolean nodeExists(String pathName) throws BackingStoreException {
-
-    pathName = fixPathName(pathName);
-
-    DbPreferences currentPrefs = this;
-    if (pathName.startsWith("/")) {
-      currentPrefs = getRoot();
+  public String[] keys() throws BackingStoreException {
+    synchronized (getFactory()) {   // the factory guards the whole tree, see flushImpl
+      return keyMap.values().stream().filter(k -> !k.isRemoved())
+             .map(DbPreferencesKey::getKey).toArray(String[]::new);
     }
+  }
 
-    DbPreferences childPrefs = currentPrefs;
-    StringTokenizer stok = new StringTokenizer(pathName, "/");
-    while (stok.hasMoreTokens() && !currentPrefs.getPersistentNode().isRemoved()) {
-      String subName = stok.nextToken();
-      childPrefs = currentPrefs.getChild(subName);
-      if (childPrefs == null) {
-        break;
+  @Override
+  public String[] childrenNames() throws BackingStoreException {
+    synchronized (getFactory()) {   // the factory guards the whole tree, see flushImpl
+      return childMap.values().stream().filter(c -> !c.getPersistentNode().isRemoved())
+             .map(DbPreferences::name).toArray(String[]::new);
+    }
+  }
+
+  @Override
+  public boolean nodeExists(String pathName) throws BackingStoreException {
+    synchronized (getFactory()) {   // the factory guards the whole tree, see flushImpl
+
+      pathName = fixPathName(pathName);
+
+      DbPreferences currentPrefs = this;
+      if (pathName.startsWith("/")) {
+        currentPrefs = getRoot();
       }
-      currentPrefs = childPrefs;
-    }
 
-    return childPrefs != null && !childPrefs.getPersistentNode().isRemoved();
+      DbPreferences childPrefs = currentPrefs;
+      StringTokenizer stok = new StringTokenizer(pathName, "/");
+      while (stok.hasMoreTokens() && !currentPrefs.getPersistentNode().isRemoved()) {
+        String subName = stok.nextToken();
+        childPrefs = currentPrefs.getChild(subName);
+        if (childPrefs == null) {
+          break;
+        }
+        currentPrefs = childPrefs;
+      }
+
+      return childPrefs != null && !childPrefs.getPersistentNode().isRemoved();
+    }
   }
 
   @Override
-  public synchronized void removeNode() throws BackingStoreException {
-    getPersistentNode().setRemoved(true);
+  public void removeNode() throws BackingStoreException {
+    synchronized (getFactory()) {   // the factory guards the whole tree, see flushImpl
+      getPersistentNode().setRemoved(true);
+    }
   }
 
   @Override
@@ -449,39 +465,41 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
   }
 
   @Override
-  public synchronized DbPreferences node(String pathName) {
+  public DbPreferences node(String pathName) {
+    synchronized (getFactory()) {   // the factory guards the whole tree, see flushImpl
 
-    pathName = fixPathName(pathName);
+      pathName = fixPathName(pathName);
 
-    DbPreferences currentPrefs = this;
-    if (pathName.startsWith("/")) {
-      currentPrefs = getRoot();
-    }
-
-    DbPreferences childPrefs = currentPrefs;
-    StringTokenizer stok = new StringTokenizer(pathName, "/");
-    while (stok.hasMoreTokens()) {
-      if (currentPrefs.getPersistentNode().isRemoved()) {
-        currentPrefs.getPersistentNode().setRemoved(false);
+      DbPreferences currentPrefs = this;
+      if (pathName.startsWith("/")) {
+        currentPrefs = getRoot();
       }
-      String subName = stok.nextToken();
-      childPrefs = currentPrefs.getChild(subName);
-      if (childPrefs == null) {
-        DbPreferencesNode childNode = new DbPreferencesNode();
-        if (currentPrefs.isRootNode()) {
-          childNode.setName(currentPrefs.absolutePath() + subName);
-        }
-        else {
-          childNode.setName(currentPrefs.absolutePath() + "/" + subName);
-        }
-        childNode.setUser(currentPrefs.getUser());
-        childPrefs = new DbPreferences(currentPrefs, childNode, null, null);
-        currentPrefs.addChild(childPrefs);
-      }
-      currentPrefs = childPrefs;
-    }
 
-    return childPrefs;
+      DbPreferences childPrefs = currentPrefs;
+      StringTokenizer stok = new StringTokenizer(pathName, "/");
+      while (stok.hasMoreTokens()) {
+        if (currentPrefs.getPersistentNode().isRemoved()) {
+          currentPrefs.getPersistentNode().setRemoved(false);
+        }
+        String subName = stok.nextToken();
+        childPrefs = currentPrefs.getChild(subName);
+        if (childPrefs == null) {
+          DbPreferencesNode childNode = new DbPreferencesNode();
+          if (currentPrefs.isRootNode()) {
+            childNode.setName(currentPrefs.absolutePath() + subName);
+          }
+          else {
+            childNode.setName(currentPrefs.absolutePath() + "/" + subName);
+          }
+          childNode.setUser(currentPrefs.getUser());
+          childPrefs = new DbPreferences(currentPrefs, childNode, null, null);
+          currentPrefs.addChild(childPrefs);
+        }
+        currentPrefs = childPrefs;
+      }
+
+      return childPrefs;
+    }
   }
 
   @Override
@@ -677,8 +695,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
       exportMethod.invoke(null, os, this, subtree);   // static method
     }
     catch (ClassNotFoundException | InaccessibleObjectException | IllegalAccessException |
-           IllegalArgumentException | NoSuchMethodException |
-           SecurityException | InvocationTargetException ex) {
+           IllegalArgumentException | NoSuchMethodException | InvocationTargetException ex) {
       LOGGER.severe("exporting node failed", ex);
     }
   }

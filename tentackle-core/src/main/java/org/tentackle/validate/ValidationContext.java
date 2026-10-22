@@ -22,6 +22,10 @@ import java.util.List;
 
 /**
  * The validation context.
+ * <p>
+ * Passed to the validators and provides the element to validate, its parent object, the effective scope
+ * and the results collected so far. The {@code VAR_...} constants are the names of the variables
+ * provided to scripts.
  *
  * @author harald
  */
@@ -56,7 +60,7 @@ public interface ValidationContext {
 
   /**
    * Gets the element to validate.<br>
-   * This is usually annotated with validator annotation.
+   * This is usually annotated with a validator annotation.
    *
    * @return the element to validate
    */
@@ -77,7 +81,7 @@ public interface ValidationContext {
   ValidationScope getEffectiveScope();
 
   /**
-   * Gets the parent object.<br>
+   * Gets the parent object.
    *
    * @return the object containing the element to validate
    */
@@ -111,7 +115,8 @@ public interface ValidationContext {
   Object get(Object key);
 
   /**
-   * Gets a validation property for an object of given class.
+   * Gets a validation property stored with its class as the key.<br>
+   * Same as {@code (T) get((Object) clazz)}.
    *
    * @param <T> the property type
    * @param clazz the property class

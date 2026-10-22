@@ -28,8 +28,9 @@ import java.time.ZonedDateTime;
 import java.util.TimeZone;
 
 /**
- * Special timezone cell type for the session view.<br>
+ * Special timezone cell type for the sessions view.<br>
  * Shows the current local time and date in the given timezone as a tooltip.
+ * Supports tables only.
  */
 public class SessionsViewTimezoneCellType extends AbstractTableCellType<String>  {
 

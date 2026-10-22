@@ -24,7 +24,10 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 /**
- * Hook for the JSR223 module.
+ * Hook for the JSR-223 module.
+ * <p>
+ * Makes the module part of the module hierarchy, so that its {@link org.tentackle.script.ScriptFactory}
+ * overrides the default one of tentackle-core in modular applications.
  *
  * @author harald
  */

@@ -61,12 +61,17 @@ A `null` batch means "no batching" — the code paths below all degrade to plain
 
 Since `createBatch()` is a protected method, an application that wants batching for its nightly import but
 not for interactive transactions can provide its own
-[`SessionFactory`](../../../../tentackle-session/src/main/docs/session.md) and override
-`Db#createTransaction(String, boolean)` to return a `DbTransaction` whose `createBatch()` decides per
+[`SessionFactory`](../../../../tentackle-session/src/main/docs/session.md) creating a subclass of `Db` that
+overrides `Db#createTransaction(String, boolean)` to return a `DbTransaction` whose `createBatch()` decides per
 transaction name, per user, or on whatever criterion fits:
 
 ```java
 public class MyTransaction extends DbTransaction {
+
+  public MyTransaction(Db session, long txVoucher, String txName, long txNumber) {
+    super(session, txVoucher, txName, txNumber);
+  }
+
   @Override
   protected DbBatch createBatch() {
     return "import".equals(getTxName()) ? super.createBatch() : null;
@@ -103,8 +108,8 @@ protected PreparedStatementWrapper getBatchablePreparedStatement(ModificationTyp
 }
 ```
 
-`Db#addToBatch(...)` is a no-op if the running transaction has no batch, which is why the generated
-`insertImpl`/`updateImpl`/`deleteImpl` methods look exactly the same in both modes:
+`Db#addToBatch(...)` is a no-op if the running transaction has no batch, which is why the
+`insertImpl`/`updateImpl`/`deleteImpl` methods of `AbstractPersistentObject` look exactly the same in both modes:
 
 ```java
 @Override
@@ -174,6 +179,7 @@ A flush happens when:
 | A **non-batchable** statement is executed (`Query`, plain `Statement`, any `executeUpdate(sql)`) | It might depend on, or be depended upon by, pending writes. |
 | A **savepoint** is set (`Db#setSavepoint(...)`) | The savepoint must have the pending work behind it. |
 | The transaction **commits** (`DbTransaction#commit()`) | Nothing may be left unwritten. |
+| A **global transaction** is about to complete (before the two-phase commit) | Same as commit, see [JTA](../../../../tentackle-jta/src/main/docs/jta.md). |
 
 The first two are handled in `DbBatch#add`:
 

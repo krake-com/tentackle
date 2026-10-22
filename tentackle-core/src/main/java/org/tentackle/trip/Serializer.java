@@ -21,7 +21,7 @@ package org.tentackle.trip;
 import java.io.OutputStream;
 
 /**
- * Low-level serializer for primitive values and Strings.
+ * Low-level serializer for primitive values and raw bytes.
  */
 public interface Serializer {
 

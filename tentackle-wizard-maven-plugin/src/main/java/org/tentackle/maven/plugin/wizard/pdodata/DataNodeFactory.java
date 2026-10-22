@@ -64,7 +64,8 @@ public class DataNodeFactory {
   }
 
   /**
-   * Creates the data object with its sub nodes.
+   * Creates the data object with its sub nodes.<br>
+   * Loads all components of the PDO first.
    *
    * @param pdo the PDO
    * @return the PDO's data, never null
@@ -75,7 +76,7 @@ public class DataNodeFactory {
   }
 
 
-  // --- all private static below ---
+  // --- all private below ---
 
   /**
    * Collected info for attributes and components of a PDO class.
@@ -89,7 +90,7 @@ public class DataNodeFactory {
     private ClassInfo(Class<? extends PersistentDomainObject<?>> pdoClass, Class<?> poClass) {
       this.pdoClass = pdoClass;
       entity = lookupEntity(pdoClass.getSimpleName());
-      methodInfos = new TreeSet<>();      // sorted by name
+      methodInfos = new TreeSet<>();      // attributes first, then components and lists, each sorted by name
       Method[] pdoClassMethods = pdoClass.getMethods();
       Method[] poClassMethods = ReflectionHelper.getAllMethods(poClass, new Class<?>[] {PersistentObject.class}, false, null, false);
       Method[] methods = new Method[pdoClassMethods.length + poClassMethods.length];
@@ -99,11 +100,11 @@ public class DataNodeFactory {
         if (method.getParameterCount() == 0 && !method.isBridge()) {        // skip bridge methods such as List<Blah> implemented by TrackedList<Blah>
           String name = method.getName();
           Class<?> type = method.getReturnType();
-          boolean isGetter = name.startsWith("get") && Character.isUpperCase(name.charAt(3));
+          boolean isGetter = name.length() > 3 && name.startsWith("get") && Character.isUpperCase(name.charAt(3));
           if (isGetter) {
             name = StringHelper.firstToLower(name.substring(3));
           }
-          else if (name.startsWith("is") && Character.isUpperCase(name.charAt(2))
+          else if (name.length() > 2 && name.startsWith("is") && Character.isUpperCase(name.charAt(2))
                    && (type == Boolean.class || type == Boolean.TYPE)) {
             name = StringHelper.firstToLower(name.substring(2));
             isGetter = true;
@@ -165,7 +166,7 @@ public class DataNodeFactory {
   /**
    * Method info for getters of attributes or composite relations.
    */
-  private static class MethodInfo implements Comparable<MethodInfo> {     // sorted by name
+  private static class MethodInfo implements Comparable<MethodInfo> {     // attributes first, then sorted by name
 
     private final String name;
     private final String comment;
@@ -194,12 +195,12 @@ public class DataNodeFactory {
         return false;
       }
       MethodInfo that = (MethodInfo) o;
-      return name.equals(that.name);
+      return isComponent == that.isComponent && name.equals(that.name);
     }
 
     @Override
     public int hashCode() {
-      return name.hashCode();
+      return 31 * Boolean.hashCode(isComponent) + name.hashCode();
     }
 
     @Override
@@ -350,15 +351,7 @@ public class DataNodeFactory {
     if (parentPdo != null) {
       ClassInfo parentInfo = classMap.get(parentPdo.getEffectiveClass());
       if (parentInfo != null) {   // must exist, but one never knows...
-        String relationName;    // relation name w/o index [xxx]
-        int ndx = name.indexOf('[');
-        if (ndx >= 0) {
-          relationName = name.substring(0, ndx);
-        }
-        else {
-          relationName = name;
-        }
-        Relation relation = parentInfo.entity.getRelation(relationName, true);
+        Relation relation = parentInfo.entity.getRelation(name, true);   // the name of a list element has no [index] yet
         if (relation != null && relation.isComposite()) {
           objectRelation = relation;
           Relation nmRel = relation.getNmRelation();

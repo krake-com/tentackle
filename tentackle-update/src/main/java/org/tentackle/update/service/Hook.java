@@ -24,7 +24,8 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 /**
- * Hook for the update module.
+ * Hook for the update module.<br>
+ * Loads the resource bundles within the context of this module.
  *
  * @author harald
  */

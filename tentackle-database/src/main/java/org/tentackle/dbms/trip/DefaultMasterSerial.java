@@ -26,9 +26,11 @@ import org.tentackle.trip.TripReferencable;
  * The default master serial.
  *
  * @param serial the master serial
+ * @param generation the generation of the modification table the server's tracker is working on,
+ *                   see {@link org.tentackle.dbms.DbModification#initializeModificationTable(org.tentackle.dbms.Db)}
  */
 @TripDeduplicatable(TripDeduplicatable.NEVER)
 @TripReferencable(TripReferencable.NEVER)
-public record DefaultMasterSerial(long serial) implements MasterSerial {
+public record DefaultMasterSerial(long serial, long generation) implements MasterSerial {
 
 }

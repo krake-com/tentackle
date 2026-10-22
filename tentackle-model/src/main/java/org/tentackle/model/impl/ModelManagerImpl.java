@@ -37,6 +37,9 @@ public class ModelManagerImpl implements ModelManager {
 
   private final Map<String, Model> modelMap;
 
+  /**
+   * Creates the model manager.
+   */
   public ModelManagerImpl() {
     modelMap = new ConcurrentHashMap<>();
   }

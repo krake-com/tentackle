@@ -25,8 +25,10 @@ import org.tentackle.misc.Identifiable;
 import java.io.Serial;
 
 /**
- * TRIP servers should throw LoginFailedException if authentication fails (or
- * any other reason)
+ * Thrown if a login is refused, because authentication failed or for any other reason.
+ * <p>
+ * Application servers throw it (or one of its subclasses) to refuse a client's login.
+ * It is an expected exception and therefore not logged at all, see {@link #getLogLevel()}.
  *
  * @author harald
  */
@@ -100,18 +102,18 @@ public class LoginFailedException extends PersistenceException implements Loggab
    * The cause is not initialized and may subsequently be
    * initialized by a call to {@link #initCause}.
    *
-   * @param object the persistent object
+   * @param object the identifiable
    */
   public LoginFailedException(Identifiable object) {
     super(object);
   }
 
   /**
-   * Constructs a new login failed exception for a given session with the specified detail message.
+   * Constructs a new login failed exception for a given {@link Identifiable} with the specified detail message.
    * The cause is not initialized and may subsequently be initialized by a
    * call to {@link #initCause}.
    *
-   * @param   object the persistent object
+   * @param   object the identifiable
    * @param   message   the detail message. The detail message is saved for
    *          later retrieval by the {@link #getMessage()} method.
    */
@@ -120,10 +122,10 @@ public class LoginFailedException extends PersistenceException implements Loggab
   }
 
   /**
-   * Constructs a new login failed exception for a given session with the specified detail message and
+   * Constructs a new login failed exception for a given {@link Identifiable} with the specified detail message and
    * cause.
    *
-   * @param  object the persistent object
+   * @param  object the identifiable
    * @param  message the detail message (which is saved for later retrieval
    *         by the {@link #getMessage()} method).
    * @param  cause the cause (which is saved for later retrieval by the
@@ -136,13 +138,13 @@ public class LoginFailedException extends PersistenceException implements Loggab
   }
 
   /**
-   * Constructs a new login failed exception for a given session with the specified cause and a
+   * Constructs a new login failed exception for a given {@link Identifiable} with the specified cause and a
    * detail message of <code>(cause==null ? null : cause.toString())</code>
    * (which typically contains the class and detail message of
    * <code>cause</code>).  This constructor is useful for runtime exceptions
    * that are little more than wrappers for other {@link Throwable}s.
    *
-   * @param  object the persistent object
+   * @param  object the identifiable
    * @param  cause the cause (which is saved for later retrieval by the
    *         {@link #getCause()} method).  (A <code>null</code> value is
    *         permitted and indicates that the cause is nonexistent or
@@ -192,9 +194,15 @@ public class LoginFailedException extends PersistenceException implements Loggab
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to suppress logging, since a refused login is an expected exception.
+   *
+   * @return null
+   */
   @Override
   public Logger.Level getLogLevel() {
-    // don't log the stacktrace, it's an expected exception
     return null;
   }
 

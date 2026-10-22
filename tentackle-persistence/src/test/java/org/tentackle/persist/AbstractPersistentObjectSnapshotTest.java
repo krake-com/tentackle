@@ -136,6 +136,47 @@ public class AbstractPersistentObjectSnapshotTest {
                "the object is restored as it was when the snapshot was taken, snapshot registry included");
   }
 
+  /**
+   * Reverting truncates the timeline: the snapshot itself and all later ones are discarded, the
+   * earlier ones remain valid.
+   */
+  @Test
+  public void testRevertDiscardsTheSnapshotAndAllLaterOnes() {
+    DemoEntity pdo = createEntity("first");
+    DemoEntity first = pdo.createSnapshot();
+    delegate(pdo).setName("second");
+    DemoEntity second = pdo.createSnapshot();
+    delegate(pdo).setName("third");
+    DemoEntity third = pdo.createSnapshot();
+    delegate(pdo).setName("fourth");
+
+    pdo.revertToSnapshot(second);
+    assertEquals(delegate(pdo).getName(), "second");
+    assertEquals(delegate(pdo).getSnapshots(), List.of(first));
+    assertTrue(expectThrows(PersistenceException.class, () -> pdo.revertToSnapshot(third))
+                   .getMessage().contains("not my snapshot"), "later snapshot discarded");
+    assertTrue(expectThrows(PersistenceException.class, () -> pdo.revertToSnapshot(second))
+                   .getMessage().contains("not my snapshot"), "the snapshot itself is discarded");
+
+    pdo.revertToSnapshot(first);
+    assertEquals(delegate(pdo).getName(), "first");
+    assertTrue(delegate(pdo).getSnapshots().isEmpty());
+  }
+
+  /**
+   * A copy has its own snapshots.
+   */
+  @Test
+  public void testCopySharesNoSnapshotsWithTheOriginal() {
+    DemoEntity pdo = createEntity("original");
+    DemoEntity snapshot = pdo.createSnapshot();
+    DemoEntity copy = pdo.copy();
+    DemoEntity copySnapshot = copy.createSnapshot();
+    assertEquals(delegate(copy).getSnapshots(), List.of(copySnapshot));
+    assertFalse(delegate(pdo).getSnapshots().contains(copySnapshot));
+    assertTrue(delegate(pdo).getSnapshots().contains(snapshot));
+  }
+
   @Test
   public void testRevertToAForeignSnapshot() {
     DemoEntity pdo = createEntity("original");

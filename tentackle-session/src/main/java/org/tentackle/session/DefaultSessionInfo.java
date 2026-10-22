@@ -83,7 +83,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
    * Creates a session-info from an optional username, optional password, and
    * a property file holding the connection parameters.
    *
-   * @param username is the name of the user
+   * @param username is the name of the user, null if none
    * @param password is the password, null if none
    * @param propertiesName name of the session's properties file, null if {@code "backend"}
    */
@@ -112,7 +112,8 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   }
 
   /**
-   * Creates a session from properties.
+   * Creates a session-info from properties.<br>
+   * The username and password are taken from the properties.
    *
    * @param properties the properties
    */

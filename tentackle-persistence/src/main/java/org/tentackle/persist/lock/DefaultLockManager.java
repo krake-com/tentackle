@@ -47,7 +47,11 @@ import java.util.stream.Collectors;
  * Default implementation of {@link LockManager}.
  * <p>
  * The token locks are persisted in an extra table of {@link DbTokenLock}s in parallel to the token-lock columns
- * of the PDOs.
+ * of the PDOs. Additionally, the locks are kept in memory along with the name of the domain context
+ * they were created in. Changes within transactions are tracked and reverted on rollback.
+ * <p>
+ * Applications may keep certain token locks on session cleanup or server startup by overriding
+ * {@link #isTokenLockToKeep(DbTokenLock, DomainContext)}.
  */
 @Service(LockManager.class)
 public class DefaultLockManager implements LockManager {
@@ -55,7 +59,8 @@ public class DefaultLockManager implements LockManager {
   private static final Logger LOGGER = Logger.get(DefaultLockManager.class);
 
   /**
-   * holds the lock and the name of the domain context.
+   * Holds the lock, the name of the domain context and the tainted flag.<br>
+   * A lock is tainted if its context name is unknown, i.e., it was loaded from the database.
    */
   private record Lock(DbTokenLock tokenLock, String contextName, boolean tainted) {
 
@@ -96,7 +101,7 @@ public class DefaultLockManager implements LockManager {
   }
 
   /**
-   * PdoKey for a PDO.
+   * Key identifying a PDO by its class ID and object ID.
    */
   private record PdoKey(int classId, long pdoId) {
 
@@ -160,7 +165,7 @@ public class DefaultLockManager implements LockManager {
 
 
   /**
-   * The lockmanager is enabled in servers only.<br>
+   * The lock manager is enabled in servers connected directly to the database only.<br>
    * In 2-tier applications or 3-tier clients, the token in the PDO will be used and
    * the lock table is ignored.
    */
@@ -173,17 +178,17 @@ public class DefaultLockManager implements LockManager {
   private final Map<PdoKey, Lock> lockMap;
 
   /**
-   * Map of transaction numbers to a list of locks that were created but not committed yet.
+   * Map of transactions to the locks that were created but not committed yet.
    */
   private final Map<TransactionKey, Map<PdoKey, Lock>> createdLocksInFlight;
 
   /**
-   * Map of transaction numbers to a list of locks that were updated but not committed yet.
+   * Map of transactions to the original state of the locks that were updated but not committed yet.
    */
   private final Map<TransactionKey, Map<PdoKey, Lock>> updatedLocksInFlight;
 
   /**
-   * Map of transaction numbers to a list of locks that were removed but not committed yet.
+   * Map of transactions to the locks that were removed but not committed yet.
    */
   private final Map<TransactionKey, Map<PdoKey, Lock>> removedLocksInFlight;
 
@@ -195,7 +200,7 @@ public class DefaultLockManager implements LockManager {
 
   /**
    * Creates the lock manager.<br>
-   * Enabled only if running within a server application.
+   * Enabled only if running within a server application connected directly to the database.
    */
   public DefaultLockManager() {
     Application application = Application.getInstance();
@@ -211,6 +216,12 @@ public class DefaultLockManager implements LockManager {
     return enabled;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Token locks for which {@link #isTokenLockToKeep(DbTokenLock, DomainContext)} returns true are kept.
+   * Tokens taken over by another user in the meantime are not removed.
+   */
   @Override
   public void cleanupUserTokens(Db session, long userId) {
     if (enabled) {
@@ -228,7 +239,7 @@ public class DefaultLockManager implements LockManager {
 
       for (DbTokenLock dbTokenLock : userTokenLocks) {
         if (isTokenLockToKeep(dbTokenLock, context)) {
-          LOGGER.warning("kept tokenlock for class {0}, id {1}, userId {2}, since {3}, expiry {4}",
+          LOGGER.warning("kept token lock for class {0}, id {1}, userId {2}, since {3}, expiry {4}",
                          dbTokenLock.getPdoClassId(), dbTokenLock.getPdoId(),
                          dbTokenLock.getLockedBy(), dbTokenLock.getLockedSince(), dbTokenLock.getLockExpiry());
         }
@@ -247,13 +258,19 @@ public class DefaultLockManager implements LockManager {
             });
           }
           catch (RuntimeException rx) {
-            LOGGER.severe("cleanup stale locktoken failed", rx);
+            LOGGER.severe("cleanup stale token lock failed", rx);
           }
         }
       }
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Token locks for which {@link #isTokenLockToKeep(DbTokenLock, DomainContext)} returns true are kept
+   * as tainted locks, since their domain context is unknown.
+   */
   @Override
   public void initialize(Db session) {
     if (enabled) {
@@ -276,7 +293,7 @@ public class DefaultLockManager implements LockManager {
           // add as tainted lock since we don't know the context name
           lockMap.put(new PdoKey(dbTokenLock), new Lock(dbTokenLock));
           dbTokenLock.setSession(null);    // remove link to session to allow GC
-          LOGGER.warning("added tokenlock for class {0}, id {1}, userId {2}, since {3}, expiry {4}",
+          LOGGER.warning("added token lock for class {0}, id {1}, userId {2}, since {3}, expiry {4}",
                          dbTokenLock.getPdoClassId(), dbTokenLock.getPdoId(),
                          dbTokenLock.getLockedBy(), dbTokenLock.getLockedSince(), dbTokenLock.getLockExpiry());
         }
@@ -291,7 +308,7 @@ public class DefaultLockManager implements LockManager {
           });
         }
         catch (RuntimeException rx) {
-          LOGGER.severe("removing locktoken failed", rx);
+          LOGGER.severe("removing token lock failed", rx);
         }
       }
 
@@ -331,6 +348,15 @@ public class DefaultLockManager implements LockManager {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Creates, updates or removes the {@link DbTokenLock} according to the token-lock attributes of the PDO.
+   * If an unexpected exception occurs, the internal map is rebuilt from the database as soon as
+   * there are no more transactions in flight.
+   *
+   * @throws LockException if the lock was created within a domain context the PDO's context does not belong to
+   */
   @Override
   public <T extends PersistentDomainObject<T>> void update(T pdo) {
     if (enabled) {
@@ -429,6 +455,11 @@ public class DefaultLockManager implements LockManager {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Reverts all lock changes made within the transaction.
+   */
   @Override
   public void rollback(Db session, long txNumber) {
     if (enabled) {
@@ -500,7 +531,7 @@ public class DefaultLockManager implements LockManager {
 
 
   /**
-   * Creates a tokenlock persistent object.
+   * Creates a token lock persistent object.
    *
    * @param session the session
    * @return the PO
@@ -523,10 +554,11 @@ public class DefaultLockManager implements LockManager {
 
   /**
    * Reloads locks from the database into the internal map.<br>
-   * There must be no transactions running!
+   * Invoked to rebuild the map after an unexpected error in {@link #update(PersistentDomainObject)}.
+   * There must be no transactions running, and the caller must hold the monitor of the internal map!
    * <p>
-   * The method is protected to allow application-specific lock managers to keep certain tokens
-   * on server startup after a crash, for example.
+   * The context names are restored from the old map, if possible.
+   * Otherwise, the locks are marked as tainted.
    *
    * @param session the session
    */
@@ -606,7 +638,7 @@ public class DefaultLockManager implements LockManager {
       poStr = po.toGenericString();
       if (expectedUserId != 0 && po.getEditedBy() != expectedUserId) {
         // another user took the token over in the meantime: leave it alone, it's not stale anymore
-        LOGGER.warning("tokenlock for {0} taken over by userId {1}: stale token of userId {2} not removed",
+        LOGGER.warning("token lock for {0} taken over by userId {1}: stale token of userId {2} not removed",
                        poStr, po.getEditedBy(), expectedUserId);
         return;
       }
@@ -617,12 +649,12 @@ public class DefaultLockManager implements LockManager {
     if (dbTokenLock.getSession() != null) {   // if not removed by po.updateTokenLockOnly() above
       DbTokenLock reloadedDbTokenLock = dbTokenLock.reloadObject();
       if (reloadedDbTokenLock != null) {    // still in database table (wasn't in map or PDO didn't exist)
-        LOGGER.warning("removing obsolete tokenlock for {0}", poStr);
+        LOGGER.warning("removing obsolete token lock for {0}", poStr);
         reloadedDbTokenLock.deleteObject();
       }
     }
 
-    LOGGER.warning("stale tokenlock removed for {0}, userId {1}, since {2}, expiry {3}",
+    LOGGER.warning("stale token lock removed for {0}, userId {1}, since {2}, expiry {3}",
                    poStr, dbTokenLock.getLockedBy(), dbTokenLock.getLockedSince(), dbTokenLock.getLockExpiry());
   }
 
@@ -689,7 +721,7 @@ public class DefaultLockManager implements LockManager {
   }
 
   /**
-   * Rebuilds the internal if rebuild requested and no locks are in flight.
+   * Rebuilds the internal map if a rebuild was requested and no locks are in flight.
    *
    * @param session the session
    */
@@ -707,7 +739,8 @@ public class DefaultLockManager implements LockManager {
   }
 
   /**
-   * Checks if the in-flight map is empty and removes dummy weak references.
+   * Checks if the in-flight map is empty.<br>
+   * Removes the entries whose session has been garbage-collected.
    *
    * @param txMap the in-flight map
    * @return true if empty

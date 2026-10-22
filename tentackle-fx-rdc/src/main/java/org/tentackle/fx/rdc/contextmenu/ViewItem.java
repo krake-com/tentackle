@@ -33,7 +33,9 @@ import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
- * Menu item to view a PDO.
+ * Tree and table menu item to view a PDO.<br>
+ * Opens the PDO in a non-modal, read-only CRUD dialog.
+ * Disabled if the GUI provider does not allow viewing.
  *
  * @author harald
  * @param <T> the PDO type
@@ -60,6 +62,11 @@ public class ViewItem<T extends PersistentDomainObject<T>> extends MenuItem impl
     }
   }
 
+  /**
+   * Creates a menu item.
+   *
+   * @param cell the table cell
+   */
   public ViewItem(PdoTableCell<?,T> cell) {
     setText(RdcFxRdcBundle.getString("VIEW"));
     setGraphic(Fx.createGraphic("view"));

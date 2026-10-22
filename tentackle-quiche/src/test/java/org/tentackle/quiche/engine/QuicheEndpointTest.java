@@ -19,8 +19,11 @@
 package org.tentackle.quiche.engine;
 
 import org.tentackle.quiche.QuicheTestSupport;
+import org.tentackle.quiche.QuicheTripTransport;
 import org.tentackle.quiche.ffm.QuicheConfig;
+import org.tentackle.quiche.ffm.RecvInfo;
 
+import org.testng.ITestResult;
 import org.testng.Reporter;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -29,11 +32,16 @@ import org.testng.annotations.Test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.foreign.MemorySegment;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.channels.DatagramChannel;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -66,7 +74,7 @@ public class QuicheEndpointTest {
   private QuicheEndpoint serverEndpoint;
   private QuicheEndpoint clientEndpoint;
   private QuicheServer server;
-  private final List<Thread> handlers = new ArrayList<>();
+  private final List<Thread> handlers = new CopyOnWriteArrayList<>();    // added to by the server's event loop
 
   @BeforeMethod
   public void setUp() throws Exception {
@@ -75,7 +83,10 @@ public class QuicheEndpointTest {
   }
 
   @AfterMethod
-  public void tearDown() {
+  public void tearDown(ITestResult result) {
+    if (!result.isSuccess()) {
+      dumpThreads();
+    }
     for (Thread handler : handlers) {
       handler.interrupt();
     }
@@ -103,7 +114,7 @@ public class QuicheEndpointTest {
   }
 
 
-  @Test
+  @Test(timeOut = 60000)
   public void testHandshakeOverUdp() throws Exception {
     Reporter.log("a client connects to a server over a real UDP socket", true);
     startServer(stream -> { });
@@ -113,7 +124,7 @@ public class QuicheEndpointTest {
     assertEquals(serverEndpoint.getConnectionCount(), 1, "the server did not keep the connection");
   }
 
-  @Test
+  @Test(timeOut = 60000)
   public void testStreamEcho() throws Exception {
     Reporter.log("data written on a stream comes back through the server's echo handler", true);
     startServer(this::echo);
@@ -127,7 +138,7 @@ public class QuicheEndpointTest {
     assertEquals(readFully(stream.getInputStream()), "hello over udp");
   }
 
-  @Test
+  @Test(timeOut = 60000)
   public void testLargePayloadCrossesTheFlowControlWindow() throws Exception {
     Reporter.log("a payload larger than the flow control window is transferred in full", true);
     startServer(this::echo);
@@ -157,7 +168,7 @@ public class QuicheEndpointTest {
     assertEquals(received, payload);
   }
 
-  @Test
+  @Test(timeOut = 60000)
   public void testSeveralConcurrentStreams() throws Exception {
     Reporter.log("several streams of one connection are served independently", true);
     startServer(this::echo);
@@ -192,12 +203,36 @@ public class QuicheEndpointTest {
     assertEquals(failures.get(), 0, "some streams did not echo correctly");
   }
 
+  @Test(timeOut = 60000)
+  public void testAvailableIsPerStream() throws Exception {
+    Reporter.log("available() reports the data of its own stream, not of any stream of the connection", true);
+    startServer(this::echo);
+    QuicheConnection connection = connect();
+    assertTrue(connection.awaitEstablished(TIMEOUT_MILLIS));
+
+    QuicheStream withData = connection.openStream();
+    QuicheStream withoutData = connection.openStream();
+    withoutData.getOutputStream().write(new byte[0]);
+    withoutData.getOutputStream().flush();
+    OutputStream out = withData.getOutputStream();
+    out.write("x".getBytes(StandardCharsets.UTF_8));
+    out.flush();
+
+    long deadline = System.currentTimeMillis() + TIMEOUT_MILLIS;
+    while (withData.getInputStream().available() == 0 && System.currentTimeMillis() < deadline) {
+      Thread.sleep(20);
+    }
+    assertEquals(withData.getInputStream().available(), 1, "the echo was not reported as available");
+    assertEquals(withoutData.getInputStream().available(), 0, "data of another stream was reported");
+    assertEquals(withData.getInputStream().read(), 'x');
+  }
+
   /**
    * A blocked read must not give up when its thread is interrupted, and must not swallow the interrupt
    * either &mdash; the blocking socket streams the TCP transports use behave exactly that way, and the
    * layers above rely on it.
    */
-  @Test
+  @Test(timeOut = 60000)
   public void testAnInterruptDoesNotAbortABlockedRead() throws Exception {
     Reporter.log("an interrupt while parked in a read is remembered, not turned into a failure", true);
     startServer(this::echo);
@@ -238,7 +273,7 @@ public class QuicheEndpointTest {
     assertTrue(interruptSeen.get(), "the interrupt was swallowed instead of re-asserted");
   }
 
-  @Test
+  @Test(timeOut = 60000)
   public void testStreamLimitIsEnforced() throws Exception {
     Reporter.log("opening more streams than the peer grants is refused, not blocked forever", true);
     startServer(stream -> { });
@@ -253,7 +288,7 @@ public class QuicheEndpointTest {
     assertTrue(e.getMessage().contains("no further streams"), e.getMessage());
   }
 
-  @Test
+  @Test(timeOut = 60000)
   public void testServerRefusesAnAlpnMismatch() throws Exception {
     Reporter.log("a client speaking a different application protocol never gets established", true);
     startServer(stream -> { });
@@ -265,7 +300,7 @@ public class QuicheEndpointTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 60000)
   public void testClosingTheClientTerminatesTheServerSide() throws Exception {
     Reporter.log("closing the client endpoint makes the server drop its connection too", true);
     startServer(stream -> { });
@@ -283,7 +318,7 @@ public class QuicheEndpointTest {
     assertEquals(serverEndpoint.getConnectionCount(), 0, "the server kept a connection that is gone");
   }
 
-  @Test
+  @Test(timeOut = 60000)
   public void testUnknownConnectionIdIsDroppedByAClientEndpoint() throws Exception {
     Reporter.log("a client endpoint drops datagrams for connections it does not know", true);
     clientEndpoint = new QuicheEndpoint(loopback(0));
@@ -299,6 +334,263 @@ public class QuicheEndpointTest {
     assertEquals(clientEndpoint.getConnectionCount(), 0);
   }
 
+  @Test(timeOut = 60000)
+  public void testFailingEventLoopClosesTheEndpoint() throws Exception {
+    Reporter.log("an endpoint whose event loop dies closes itself instead of holding on to its port", true);
+    serverEndpoint = new QuicheEndpoint(loopback(0));
+    int port = serverEndpoint.getLocalAddress().getPort();
+    server = new QuicheServer(serverEndpoint, serverConfig, stream -> { }) {
+      @Override
+      public void accept(InetSocketAddress peer, MemorySegment buffer, int length, RecvInfo recvInfo) {
+        throw new IllegalStateException("injected failure");
+      }
+    };
+    serverEndpoint.setServer(server);
+
+    byte[] datagram = new byte[1200];
+    datagram[0] = 0x40;   // a short header packet for an unknown connection is handed to the server
+    try (DatagramSocket socket = new DatagramSocket()) {
+      socket.send(new DatagramPacket(datagram, datagram.length, InetAddress.getLoopbackAddress(), port));
+    }
+
+    long deadline = System.currentTimeMillis() + TIMEOUT_MILLIS;
+    while (!serverEndpoint.isClosed() && System.currentTimeMillis() < deadline) {
+      Thread.sleep(20);
+    }
+    assertTrue(serverEndpoint.isClosed(), "the endpoint survived the death of its event loop");
+    assertEquals(serverEndpoint.getChannelCount(), 0, "the socket was not closed");
+    try (DatagramChannel rebound = DatagramChannel.open()) {
+      rebound.bind(loopback(port));    // throws if the port is still taken
+    }
+  }
+
+
+  /**
+   * A path that stops delivering in the middle of a connection is left for a new source port, and the
+   * connection carries on as if nothing happened &mdash; several times in a row, which needs the connection
+   * IDs of the abandoned paths to be retired and new ones to be issued.
+   */
+  @Test(timeOut = 60000)
+  public void testMigratesAwayFromAStalledPath() throws Exception {
+    Reporter.log("a client whose path is black-holed migrates to a new source port and keeps going", true);
+    startServer(this::echo);
+    try (UdpRelay relay = new UdpRelay(serverAddress())) {
+      clientEndpoint = new QuicheEndpoint(loopback(0));
+      QuicheConnection connection = clientEndpoint.connect(relay.getAddress(), "localhost", clientConfig);
+      assertTrue(connection.awaitEstablished(TIMEOUT_MILLIS));
+      connection.setMigrationProbeTimeouts(2);
+      assertEquals(roundTrip(connection, "before"), "before");
+
+      int migrations = 3;
+      for (int i = 1; i <= migrations; i++) {
+        int stalledPort = connection.getLocalAddress().getPort();
+        relay.blackhole(stalledPort);
+        // blocks until the connection found a way around the black hole
+        assertEquals(roundTrip(connection, "after " + i), "after " + i);
+        assertEquals(connection.getMigrationCount(), i, "the connection did not migrate");
+        assertTrue(connection.getLocalAddress().getPort() != stalledPort, "still on the stalled port");
+      }
+
+      assertEquals(relay.getFlowCount(), migrations + 1, "every migration must use a new source port");
+      // the endpoint's own socket and the one of the active path: the abandoned ones are closed
+      assertEquals(clientEndpoint.getChannelCount(), 2, "sockets of abandoned paths were left open");
+      assertEquals(serverEndpoint.getConnectionCount(), 1, "the server must follow, not start over");
+      assertTrue(connection.isConnected());
+    }
+  }
+
+  /**
+   * Once a migration used up the server's spare connection IDs, a connection nobody holds a lease on is
+   * given up on at once, without waiting for its path to stall again, so that it can be replaced.
+   */
+  @Test(timeOut = 60000)
+  public void testIdleConnectionIsGivenUpWhenNoConnectionIdIsLeft() throws Exception {
+    Reporter.log("a connection that cannot migrate any further is closed right away if it is not leased", true);
+    startServer(this::echo);
+    try (UdpRelay relay = new UdpRelay(serverAddress())) {
+      clientEndpoint = new QuicheEndpoint(loopback(0));
+      QuicheConnection connection = clientEndpoint.connect(relay.getAddress(), "localhost", clientConfig);
+      assertTrue(connection.awaitEstablished(TIMEOUT_MILLIS));
+      connection.setMigrationProbeTimeouts(2);
+      assertEquals(roundTrip(connection, "before"), "before");
+
+      int blackholes = 0;
+      long stalledNanos = 0;
+      for (int i = 1; i <= 2 * QuicheTripTransport.ACTIVE_CONNECTION_ID_LIMIT && !connection.isFailed(); i++) {
+        relay.blackhole(connection.getLocalAddress().getPort());
+        blackholes = i;
+        stalledNanos = System.nanoTime();
+        try {
+          // blocks until the connection found a way around the black hole or was given up on
+          assertEquals(roundTrip(connection, "after " + i), "after " + i);
+        }
+        catch (IOException e) {
+          break;
+        }
+      }
+
+      long millis = (System.nanoTime() - stalledNanos) / 1_000_000L;
+      assertTrue(connection.isFailed(), "the connection was not given up on");
+      assertTrue(connection.getFailure().contains("spare connection ID"), connection.getFailure());
+      assertTrue(connection.isMigrationExhausted(), "the connection did not run out of connection IDs");
+      assertTrue(connection.getMigrationCount() > 0, "the connection never migrated");
+      // each black hole led to a migration, the last one included: no further stall was waited for
+      assertEquals(connection.getMigrationCount(), blackholes, "not given up on right after the last migration");
+      assertTrue(millis < 10_000, "given up on after " + millis + " ms only");
+      assertFalse(connection.isConnected());
+      assertFalse(connection.acquire(), "a connection given up on must not be leased");
+    }
+  }
+
+  /**
+   * A connection that cannot migrate any further stays while it is leased, i.e., while a call is in flight
+   * on it, and is given up on as soon as the lease has been released.
+   */
+  @Test(timeOut = 60000)
+  public void testLeasedConnectionStaysWhenNoConnectionIdIsLeft() throws Exception {
+    Reporter.log("a connection that cannot migrate any further stays while it is leased", true);
+    startServer(this::echo);
+    try (UdpRelay relay = new UdpRelay(serverAddress())) {
+      clientEndpoint = new QuicheEndpoint(loopback(0));
+      QuicheConnection connection = clientEndpoint.connect(relay.getAddress(), "localhost", clientConfig);
+      assertTrue(connection.awaitEstablished(TIMEOUT_MILLIS));
+      connection.setMigrationProbeTimeouts(2);
+      assertEquals(roundTrip(connection, "before"), "before");
+      assertTrue(connection.acquire());
+
+      // one stream for the whole test, echoed back in the background, since the server grants only a few
+      QuicheStream stream = connection.openStream();
+      OutputStream out = stream.getOutputStream();
+      InputStream in = stream.getInputStream();
+      AtomicInteger echoed = new AtomicInteger();
+      Thread reader = Thread.ofVirtual().start(() -> {
+        try {
+          while (in.read() >= 0) {
+            echoed.incrementAndGet();
+          }
+        }
+        catch (IOException e) {
+          // the connection is given up on at the end of the test
+        }
+      });
+      handlers.add(reader);
+
+      // Migrate until the connection runs out of connection IDs. Waiting for the echo gives each new path a
+      // measured round trip time before it is black-holed: a path without one starts from quiche's initial
+      // estimate of 333 ms, and the probe timeouts would take seconds.
+      int written = 0;
+      for (int i = 1; i <= 2 * QuicheTripTransport.ACTIVE_CONNECTION_ID_LIMIT && !connection.isMigrationExhausted(); i++) {
+        relay.blackhole(connection.getLocalAddress().getPort());
+        written += awaitEcho(out, echoed, written, "after " + i);
+      }
+      assertTrue(connection.isMigrationExhausted(), "the connection never ran out of connection IDs");
+      assertFalse(connection.isFailed(), "a leased connection must not be given up on: " + connection.getFailure());
+      assertTrue(connection.isConnected());
+      // the call in flight continues on the new path
+      awaitEcho(out, echoed, written, "still alive");
+
+      connection.release();
+      // given up on right away, not after the next stall
+      assertTrue(connection.isFailed(), "the connection was not given up on once released");
+      assertTrue(connection.getFailure().contains("spare connection ID"), connection.getFailure());
+      assertFalse(connection.isConnected());
+      assertFalse(connection.acquire(), "a connection given up on must not be leased");
+    }
+  }
+
+  /**
+   * Writes a message to an echoing stream and waits for its echo.
+   *
+   * @param out the stream's output
+   * @param echoed the number of bytes echoed so far
+   * @param written the number of bytes written so far
+   * @param text the message
+   * @return the number of bytes written
+   */
+  private int awaitEcho(OutputStream out, AtomicInteger echoed, int written, String text) throws Exception {
+    byte[] message = text.getBytes(StandardCharsets.UTF_8);
+    out.write(message);
+    out.flush();
+    int expected = written + message.length;
+    long deadline = System.nanoTime() + 10_000_000_000L;
+    while (echoed.get() < expected && System.nanoTime() < deadline) {
+      Thread.sleep(10);
+    }
+    assertEquals(echoed.get(), expected, "no echo of '" + text + "'");
+    return message.length;
+  }
+
+  /**
+   * Leases are counted, and releasing more of them than were taken is ignored.
+   */
+  @Test(timeOut = 60000)
+  public void testLeases() throws Exception {
+    startServer(this::echo);
+    QuicheConnection connection = connect();
+    assertTrue(connection.awaitEstablished(TIMEOUT_MILLIS));
+    assertTrue(connection.acquire());
+    assertTrue(connection.acquire());
+    connection.release();
+    connection.release();
+    connection.release();   // one too many: ignored
+    assertTrue(connection.acquire());
+    connection.release();
+    assertTrue(connection.isConnected());
+  }
+
+  @Test(timeOut = 60000)
+  public void testNoMigrationIfDisabled() throws Exception {
+    Reporter.log("a client that is not allowed to migrate stays on its stalled path", true);
+    startServer(this::echo);
+    try (UdpRelay relay = new UdpRelay(serverAddress())) {
+      clientEndpoint = new QuicheEndpoint(loopback(0));
+      QuicheConnection connection = clientEndpoint.connect(relay.getAddress(), "localhost", clientConfig);
+      assertTrue(connection.awaitEstablished(TIMEOUT_MILLIS));
+      assertEquals(connection.getMigrationProbeTimeouts(), 0, "migration must be off unless enabled");
+      assertEquals(roundTrip(connection, "before"), "before");
+
+      relay.blackhole(connection.getLocalAddress().getPort());
+      QuicheStream stream = connection.openStream();
+      try (OutputStream out = stream.getOutputStream()) {
+        out.write("lost".getBytes(StandardCharsets.UTF_8));
+      }
+      // far more probe timeouts than it takes to migrate on loopback
+      Thread.sleep(2000);
+      assertEquals(connection.getMigrationCount(), 0);
+      assertEquals(relay.getFlowCount(), 1);
+      assertEquals(clientEndpoint.getChannelCount(), 1);
+    }
+  }
+
+
+  /**
+   * Prints the stacks of the endpoints' event loops, the UDP relay and the stream handlers.
+   * <p>
+   * Taken before the endpoints are closed, so that a failure that cannot be reproduced at will (it has
+   * only ever shown up on a Windows build machine) leaves a trace of what each side was doing: an event
+   * loop parked on a connection's lock, for instance, explains a peer that falls silent until the idle
+   * timeout, whereas one idling in {@code select()} rules that out.
+   */
+  private void dumpThreads() {
+    StringBuilder dump = new StringBuilder("threads at the failure of the test:\n");
+    for (Map.Entry<Thread, StackTraceElement[]> entry : Thread.getAllStackTraces().entrySet()) {
+      String name = entry.getKey().getName();
+      if (name.startsWith("QUIC endpoint") || name.startsWith("UDP relay")) {
+        appendThread(dump, entry.getKey(), entry.getValue());
+      }
+    }
+    for (Thread handler : handlers) {
+      appendThread(dump, handler, handler.getStackTrace());   // virtual, so not among the above
+    }
+    System.err.println(dump);
+  }
+
+  private static void appendThread(StringBuilder dump, Thread thread, StackTraceElement[] stack) {
+    dump.append('"').append(thread.getName()).append("\" ").append(thread.getState()).append('\n');
+    for (StackTraceElement element : stack) {
+      dump.append("\tat ").append(element).append('\n');
+    }
+  }
 
   /**
    * Starts the server endpoint.
@@ -361,6 +653,22 @@ public class QuicheEndpointTest {
       }
     });
     handlers.add(thread);
+  }
+
+  /**
+   * Sends a message on a stream of its own and reads the echo.
+   *
+   * @param connection the connection
+   * @param message the message
+   * @return the echo
+   * @throws IOException if the stream failed
+   */
+  private static String roundTrip(QuicheConnection connection, String message) throws IOException {
+    QuicheStream stream = connection.openStream();
+    try (OutputStream out = stream.getOutputStream()) {
+      out.write(message.getBytes(StandardCharsets.UTF_8));
+    }
+    return readFully(stream.getInputStream());
   }
 
   /**

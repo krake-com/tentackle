@@ -19,14 +19,15 @@
 package org.tentackle.sql.metadata;
 
 /**
- * Postgres column data.
+ * Column metadata for PostgreSQL.<br>
+ * Strips the {@code ::type} cast PostgreSQL appends to default values.
  *
  * @author harald
  */
 public class PostgresColumnMetaData extends ColumnMetaData {
 
   /**
-   * Creates column meta data.
+   * Creates column metadata.
    *
    * @param tableMetaData the table metadata this column belongs to
    */

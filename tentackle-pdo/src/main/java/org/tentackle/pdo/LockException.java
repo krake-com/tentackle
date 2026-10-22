@@ -33,6 +33,7 @@ import java.util.Objects;
  * By default, {@link LockException}s are marked as temporary.
  *
  * @author harald
+ * @see org.tentackle.pdo.trip.LockExceptionInstanceCreator
  */
 public final class LockException extends PersistenceException implements Loggable {
 

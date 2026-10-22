@@ -30,7 +30,7 @@ import javafx.util.Callback;
 import java.util.Collection;
 
 /**
- * Delegate for RdcChoiceBox.
+ * Delegate for {@link RdcChoiceBox}.
  *
  * @author harald
  */
@@ -59,7 +59,7 @@ public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
     if (getPdoAddon() == null && PersistentDomainObject.class.isAssignableFrom(type)) {
       // FxChoiceBox is not a FxTextComponent, hence PdoStringTranslator does not apply.
       // If there is no explicit PdoTranslator for the given concrete PDO type, create a default
-      // pdo addon. This allows us to use FxChoiceBox for PDOs even without such a translator.
+      // PDO addon. This allows us to use FxChoiceBox for PDOs even without such a translator.
       pdoAddon = createPdoAddon();
     }
   }
@@ -83,6 +83,7 @@ public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
    * Gets the callback to load all PDOs.<br>
    * Used by {@link PdoComponentAddon#getAllPdos(PersistentDomainObject)}.
    *
+   * @param <T> the PDO type
    * @return the callback
    */
   public <T extends PersistentDomainObject<T>> Callback<T, Collection<T>> getLoadAllPdosCallback() {
@@ -93,6 +94,7 @@ public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
    * Sets the callback to load all PDOs.<br>
    * Used by {@link PdoComponentAddon#getAllPdos(PersistentDomainObject)}.
    *
+   * @param <T> the PDO type
    * @param loadAllPdosCallback the callback
    */
   public <T extends PersistentDomainObject<T>> void setLoadAllPdosCallback(Callback<T, Collection<T>> loadAllPdosCallback) {
@@ -102,7 +104,7 @@ public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
   /**
    * Gets the PDO addon.
    *
-   * @return the addon
+   * @return the addon, null if not bound to a PDO type
    */
   @SuppressWarnings("rawtypes")
   public PdoComponentAddon getPdoAddon() {
@@ -114,9 +116,9 @@ public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
   }
 
   /**
-   * Creates the PDO style implementation.
+   * Creates the PDO component addon.
    *
-   * @return the implementation
+   * @return the addon, null if not bound to a PDO type
    */
   @SuppressWarnings({ "rawtypes", "unchecked" })
   protected PdoComponentAddon createPdoAddon() {

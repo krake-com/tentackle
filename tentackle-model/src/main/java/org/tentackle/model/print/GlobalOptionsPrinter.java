@@ -53,7 +53,7 @@ public class GlobalOptionsPrinter {
   /**
    * Pretty prints the options.
    *
-   * @return the string
+   * @return the options in square brackets, including the optional sorting, "[]" if none
    */
   public String print() {
     StringBuilder buf = new StringBuilder();

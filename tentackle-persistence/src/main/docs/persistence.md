@@ -42,9 +42,10 @@ the domain context. It is therefore the topmost runtime layer of the persistence
 - **Location transparency via TRIP.** Every persistence capability has a *remote delegate* counterpart in the
   `*.trip` packages, so the identical PDO code runs whether the database is local or reached through a Tentackle
   server, which in turn may itself be a client of another Tentackle server, and so on.
-- **SPI-replaced infrastructure.** Several singletons (`DbUtilities`, `ModificationTracker`, `LockManager`,
-  `DbClassVariablesFactory`, the remote-session/delegate factories) are *replaced* with PDO-aware implementations
-  through Tentackle's `@Service`/`ServiceFinder` mechanism, so the lower layers transparently become PDO-aware.
+- **SPI-replaced infrastructure.** Several singletons (`DbUtilities`, `ModificationTracker`,
+  `DbClassVariablesFactory`, the remote-session factory and the remote-delegate locator) are *replaced* with
+  PDO-aware implementations through Tentackle's `@Service`/`ServiceFinder` mechanism, so the lower layers
+  transparently become PDO-aware.
 
 ---
 
@@ -60,18 +61,22 @@ can be referenced when it travels across the wire, never the implementation.
 
 Its (large) API covers the full persistence lifecycle of a domain object:
 
-| Group                      | Examples                                                                                                                         | Purpose                                                              |
-|----------------------------|----------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|
-| **Single-object CRUD**     | `select(id)`, `selectForUpdate`, `selectTokenLocked`, `insertObject`, `updateObject`, `deleteObject`, `save`, `delete`, `reload` | Read and write one entity, optionally locking it.                    |
-| **Bulk / aggregate**       | `insertPlainWithComponents`, `deletePlainWithComponents`, `selectAll`, `selectAny(ids)`, `save(Collection,…)`                    | Operate on collections and on roots together with their components.  |
-| **Querying**               | `selectByTemplate`, `selectByNormText`, `findDuplicate`, `selectLatest`, `selectAllAsCursor`, `selectByNormTextAsCursor`         | Higher-level finders, including streaming via cursors.               |
-| **Caching**                | `selectCached`, `selectCachedOnly`, `selectAllCached`, `selectAnyCached`, `selectForCache`, `expireCache`                        | The PDO cache, kept coherent via the modification tracker's serials. |
-| **Modification / serials** | `countModification`, `selectAllWithExpiredTableSerials`, `updateRootContext`                                                     | Hook into change tracking and table serials.                         |
-| **Token locking**          | the `editedBy` / `editedSince` / `editedExpiry` token-lock attributes plus the lock-aware `select*`/`reload*` variants           | Cooperative, persisted "currently edited by user X" locks.           |
-| **Normtext**               | `updateNormText`, `selectByNormText`                                                                                             | Phonetically normalized search text (see [NormText](#normtext)).     |
+| Group                      | Examples                                                                                                                 | Purpose                                                                                                 |
+|----------------------------|--------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| **Single-object CRUD**     | `select(id)`, `selectForUpdate`, `selectTokenLocked`, `persist`, `persistTokenLocked`, `save`, `delete`, `reload`        | Read and write one entity, optionally locking it.                                                       |
+| **Bulk / aggregate**       | `insertPlainWithComponents`, `deletePlainWithComponents`, `selectAll`, `selectAny(ids)`, `save(Collection,…)`            | Operate on collections and on roots together with their components.                                     |
+| **Querying**               | `selectByTemplate`, `selectByNormText`, `findDuplicate`, `selectLatest`, `selectAllAsCursor`, `selectByNormTextAsCursor` | Higher-level finders, including streaming via cursors.                                                  |
+| **Caching**                | `selectCached`, `selectCachedOnly`, `selectAllCached`, `selectAnyCached`, `selectForCache`, `expireCache`                | The [PDO cache](../../../../tentackle-pdo/src/main/docs/cache.md), kept coherent via the table serials. |
+| **Modification / serials** | `countModification`, `selectAllWithExpiredTableSerials`, `updateRootContext`                                             | Hook into change tracking and table serials.                                                            |
+| **Token locking**          | the `editedBy` / `editedSince` / `editedExpiry` token-lock attributes plus the lock-aware `select*`/`reload*` variants   | Cooperative, persisted "currently edited by user X" locks (see [locking.md](locking.md)).               |
+| **Normtext**               | `updateNormText`, `selectByNormText`                                                                                     | Phonetically normalized search text (see [NormText](#normtext)).                                        |
 
-An entity optionally also carries a **normText** column (a phonetically normalized search string) and the token-lock
-columns, which is why those concerns are baked into the base class.
+An entity optionally also carries a **normText** column (a phonetically normalized search string, model option
+`normtext`) and the token-lock columns (model option `tokenlock`), which is why those concerns are baked into the
+base class. The low-level `insertObject`/`updateObject`/`deleteObject` are not part of the PDO API and cannot be
+invoked remotely; applications use `persist`, `save` and `delete` on root entities. Inserts, updates and deletes
+take part in [JDBC batching](../../../../tentackle-database/src/main/docs/batching.md) if the transaction runs in
+batched mode.
 
 ### AbstractPersistentOperation
 
@@ -90,29 +95,42 @@ Tentackle keeps per-class (static) metadata in *class-variable* objects.
 the database layer's `DbObjectClassVariables` / `DbOperationClassVariables` with PDO-level information. They are
 produced by [`PersistentClassVariablesFactory`](../java/org/tentackle/persist/PersistentClassVariablesFactory.java),
 which is registered as a `@Service(DbClassVariablesFactory.class)` so it *replaces and extends* the database
-layer's factory — making all class variables PDO-aware.
+layer's factory — making all class variables PDO-aware. The `CLASSVARIABLES` of a persistence class, including
+its eager joins, are generated by the `ClassVariables` wurblet (see
+[persistence-wurblets](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md)).
 
 ### Modification tracking
 
 [`PdoModificationTracker`](../java/org/tentackle/persist/PdoModificationTracker.java) is the persistence-layer
 implementation of the `ModificationTracker` from [`tentackle-session`](../../../../tentackle-session/src/main/docs/session.md)
-(registered via `@Service(ModificationTracker.class)`). It maintains the table/modification serials that drive
-cache expiry and cross-client change notification: when an entity is written, its serial advances; caches and
-remote clients compare serials to learn what to refresh.
+(registered via `@Service(ModificationTracker.class)`). It maintains the table serials that drive cache expiry
+and cross-client change notification: when an entity is written, the modification serial of its table advances;
+caches and remote clients compare serials to learn what to refresh. It differs from the database layer's tracker
+only in mapping PDO interfaces to their table names. See
+[modification-tracking.md](../../../../tentackle-session/src/main/docs/modification-tracking.md) for the
+full picture.
 
 ### Token locking
 
 A **token lock** is a cooperative, persisted lock expressing "this object is currently being edited by user X
 until time Y". Unlike a database row lock, it survives across transactions and is visible to other users.
 
-- [`TokenLock`](../java/org/tentackle/persist/TokenLock.java) — the interface for an object that can be token-locked
-  (backed by the `editedBy`/`editedSince`/`editedExpiry` columns on every PDO).
+The token lock is opt-in: an entity gets the `editedBy`/`editedSince`/`editedExpiry` columns by declaring the
+`tokenlock` option in its model.
+
 - [`LockManager`](../java/org/tentackle/persist/LockManager.java) — tracks the state of *all* token locks in
   parallel to the PDO columns, so the full set of locks is known without scanning every table. It exists to clean
-  up locks when a **client session crashes** (drop that user's locks) or when the **server restarts** (drop all
-  locks). It is only enabled on non-remote servers; in 2-tier and remote-client setups it is disabled.
+  up locks when a **client logs out or its session crashes** (drop that user's locks) or when the **server
+  restarts** (drop all locks). It is only enabled on servers connected directly to the database; in 2-tier and
+  remote-client setups it is disabled.
+- [`TokenLock`](../java/org/tentackle/persist/TokenLock.java) — a lock as the `LockManager` knows it: the PDO's
+  class ID and ID, the holder, and since/expiry.
 - [`DefaultLockManager`](../java/org/tentackle/persist/lock/DefaultLockManager.java) (`@Service(LockManager.class)`)
   persists locks in a dedicated table of [`DbTokenLock`](../java/org/tentackle/persist/lock/DbTokenLock.java) rows.
+  Applications can keep selected locks across a session cleanup or server restart by overriding
+  `isTokenLockToKeep`.
+
+See [locking.md](locking.md) for how token locks and the optimistic `serial` column work together.
 
 ### Joins
 
@@ -121,11 +139,16 @@ implement PDO-level joins — fetching two related PDOs in a single `SELECT`. Th
 (relations marked to load with their root) and **explicit domain-driven joins**, and work for composite
 (aggregate component) and non-composite relations alike.
 
-A `Join` is an immutable *description* of how to join. Model-based eager joins are created once in the static class
-variables of a persistence class, so the same `Join` instances are used concurrently by every thread
-selecting that entity. The bookkeeping of which PDOs have already been joined therefore lives in
+A `Join` is a *description* of how to join that is not modified once set up. Model-based eager joins are created
+once in the static class variables of a persistence class, so the same `Join` instances are used concurrently by
+every thread selecting that entity. The bookkeeping of which PDOs have already been joined therefore lives in
 [`JoinState`](../java/org/tentackle/persist/JoinState.java), which is created per query and owned by the
 `JoinedSelect` — never in the `Join` itself.
+
+See [eager-relations.md](../../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md) for how
+eager joins are declared in the model, and
+[persistence-wurblet-api.md](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblet-api.md)
+for using `JoinedSelect` in handwritten finders.
 
 ### Cursors
 
@@ -142,14 +165,20 @@ fetching, the join constraint, and cursor lifetime.
 ### NormText
 
 [`NormText`](../java/org/tentackle/persist/NormText.java) builds a *normtext* — a phonetically normalized string —
-from user input, for searching PDO normtext columns with `LIKE`/`NOT LIKE`. Every persistent object maintains such
-a column, enabling tolerant, accent/case-insensitive searches.
+from user input, for searching PDO normtext columns with `LIKE`/`NOT LIKE`. Entities declaring the `normtext`
+model option maintain such a column, built from the attributes and relations flagged for it, enabling tolerant,
+accent/case-insensitive searches via `selectByNormText` and `selectByNormTextAsCursor`.
+
+The search string is normalized the same way as the column and wrapped in `%…%`, so it matches anywhere.
+A leading `!` or `-` inverts the search (`NOT LIKE`), and an empty string matches all.
 
 ### Utilities
 
 [`PersistenceUtilities`](../java/org/tentackle/persist/PersistenceUtilities.java) is registered as
 `@Service(DbUtilities.class)` and **replaces** the database layer's `DbUtilities` with a PDO-aware version — the
-single most visible example of how this module quietly upgrades the layer beneath it.
+single most visible example of how this module quietly upgrades the layer beneath it. Among others, it creates
+and selects PDOs where the database layer expects low-level objects, forwards commits and rollbacks to the
+`LockManager`, releases the token locks of a closed client session, and collects the caches to preload.
 
 ---
 
@@ -165,6 +194,22 @@ interface (the contract) plus an `…Impl` (the server-side executor):
 | [`AbstractPersistentOperationRemoteDelegate`](../java/org/tentackle/persist/trip/AbstractPersistentOperationRemoteDelegate.java) / `…Impl` | `AbstractPersistentOperation`                    |
 | [`AdminExtensionAdapterRemoteDelegate`](../java/org/tentackle/persist/trip/AdminExtensionAdapterRemoteDelegate.java) / `…Impl`             | admin/session-management operations              |
 | [`RemoteResultSetCursor`](../java/org/tentackle/persist/trip/RemoteResultSetCursor.java) / `…Impl`                                         | streaming cursors                                |
+| [`PdoCacheOperationRemoteDelegate`](../java/org/tentackle/persist/trip/PdoCacheOperationRemoteDelegate.java) / `…Impl`                     | cache preloading (`PdoCacheOperation`)           |
+| [`PdoModificationTrackerRemoteDelegate`](../java/org/tentackle/persist/trip/PdoModificationTrackerRemoteDelegate.java) / `…Impl`           | `PdoModificationTracker`                         |
+
+The low-level methods inherited from the database layer (`insertObject`, `updatePlain`, `selectAllObjects`, …)
+are disabled in `AbstractPersistentObjectRemoteDelegateImpl`, so a malicious client cannot bypass the PDO-level
+security checks.
+
+[`PdoComponentTripFilter`](../java/org/tentackle/persist/trip/PdoComponentTripFilter.java) is a `TripFilter` that
+serializes PDOs without their related objects (except embedded ones), so they are loaded lazily on the receiving
+side — see [Filtering components with TripFilter](../../../../tentackle-core/src/main/docs/trip.md#filtering-components-with-tripfilter).
+
+[`TripModificationLogSerializer`](../java/org/tentackle/persist/trip/TripModificationLogSerializer.java) uses that
+filter to store the state of modified PDOs in the modification log, with a TRIP dictionary that spans several
+modlogs and is reset by count or time. The dictionary is commit-gated and split into epochs, so the modlog-writing
+transactions may overlap — see
+[Modification logging](../../../../tentackle-database/src/main/docs/database.md#modification-logging).
 
 [`PdoRemoteDelegateLocator`](../java/org/tentackle/persist/trip/PdoRemoteDelegateLocator.java)
 (`@Service(RemoteDbDelegateLocator.class)`) locates the right delegate for a PDO. On the client, a PDO method call
@@ -173,12 +218,14 @@ against a local database connection and ships the results back via TRIP.
 
 Session-side remoting is provided by
 [`PdoRemoteSessionAdapter`](../java/org/tentackle/persist/PdoRemoteSessionAdapter.java) (a PDO-aware
-`RemoteSessionAdapter`) and [`PdoRemoteSessionFactory`](../java/org/tentackle/persist/PdoRemoteSessionFactory.java)
+`RemoteSessionAdapter`, which also hands out session extensions after checking the execute permission) and
+[`PdoRemoteSessionFactory`](../java/org/tentackle/persist/PdoRemoteSessionFactory.java)
 (`@Service(RemoteSessionFactory.class)`), while
 [`DefaultPersistenceDelegateLinker`](../java/org/tentackle/persist/DefaultPersistenceDelegateLinker.java)
 (`@Service(PersistenceDelegateLinker.class)`) wires a PDO proxy to its persistence delegate, and
 [`AdminExtensionAdapter`](../java/org/tentackle/persist/AdminExtensionAdapter.java)
-(`@Service(AdminExtension.class)`) adds administrative session services.
+(`@Service(AdminExtension.class)`) adds administrative session services: listing, logging out and
+killing client sessions (see [Session administration](../../../../tentackle-fx-rdc/src/main/docs/rdc.md#session-administration)).
 
 ---
 
@@ -187,13 +234,20 @@ Session-side remoting is provided by
 The module ships ready-made persistence implementations for the framework's own infrastructure PDOs. Each is
 annotated `@PersistentObjectService(...)` so it is discovered as the persistence half of the corresponding PDO:
 
-- **Number sources** (`org.tentackle.persist.ns`) — server-side allocation of unique IDs / number ranges:
+- **Number sources** (`org.tentackle.persist.ns`) — allocation of *business* numbers (invoice numbers,
+  customer numbers, …) from number pools and their ranges, not of technical IDs:
   [`NumberPoolPersistenceImpl`](../java/org/tentackle/persist/ns/NumberPoolPersistenceImpl.java) and
   [`NumberRangePersistenceImpl`](../java/org/tentackle/persist/ns/NumberRangePersistenceImpl.java), with their
-  remote delegates under `ns/trip`.
+  remote delegates under `ns/trip`. See [ns.md](../../../../tentackle-pdo/src/main/docs/ns.md).
 - **Security rules** (`org.tentackle.persist.security`) —
   [`SecurityPersistenceImpl`](../java/org/tentackle/persist/security/SecurityPersistenceImpl.java) persists the
   access-control rules, with its remote delegate under `security/trip`.
+  See [security.md](../../../../tentackle-pdo/src/main/docs/security.md).
+
+Besides, [`PdoCacheOperationPersistenceImpl`](../java/org/tentackle/persist/PdoCacheOperationPersistenceImpl.java)
+implements the `PdoCacheOperation` that preloads the caches of all persistence classes annotated with
+[`@PreloadCache`](../java/org/tentackle/persist/PreloadCache.java) — for remote clients in a single round trip.
+See [Preloading Caches at Startup](../../../../tentackle-pdo/src/main/docs/cache.md#preloading-caches-at-startup-preloadcache).
 
 ---
 
@@ -202,24 +256,30 @@ annotated `@PersistentObjectService(...)` so it is discovered as the persistence
 The `org.tentackle.persist.app` package provides the entry points for the **middle-tier server**:
 
 - [`AbstractServerApplication`](../java/org/tentackle/persist/app/AbstractServerApplication.java) — base class
-  handling server startup/shutdown, configuration and the persistence environment.
-- [`ServerApplication`](../java/org/tentackle/persist/app/ServerApplication.java) — the concrete TRIP application
-  server clients connect to; it hosts the remote delegates described above and runs the (enabled) `LockManager`
-  and `ModificationTracker`.
+  handling server startup/shutdown, configuration and the persistence environment. A server connected directly
+  to the database serves its clients from a session pool with its own connection manager; a server that is
+  itself a client of another server uses a pool of remote sessions instead. At startup, all validators are
+  validated, so configuration errors show up immediately.
+- [`ServerApplication`](../java/org/tentackle/persist/app/ServerApplication.java) — the abstract base of TRIP
+  application servers clients connect to; it starts the `TripServer` hosting the remote delegates described above
+  and, if connected directly to the database, initializes the `LockManager`.
+
+See [application.md](../../../../tentackle-pdo/src/main/docs/application.md) for the application lifecycle and
+[tiers.md](../../../../src/main/docs/tiers.md) for how servers cascade.
 
 ---
 
 ## Package Layout
 
-| Package                                              | Contents                                                                                                                                                                                                                                      |
-|------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `org.tentackle.persist`                              | The core: `AbstractPersistentObject`, `AbstractPersistentOperation`, class-variables and their factory, the modification tracker, token-lock interfaces, joins (`Join`, `JoinedSelect`, `JoinState`), cursors, normtext, the PDO-aware utilities and the session/delegate adapters. |
-| `org.tentackle.persist.app`                          | Server-application lifecycle (`AbstractServerApplication`, `ServerApplication`).                                                                                                                                                              |
-| `org.tentackle.persist.lock`                         | The default `LockManager` and its persisted `DbTokenLock`.                                                                                                                                                                                    |
-| `org.tentackle.persist.ns` (+ `ns.trip`)             | Persistence for number sources (pools/ranges) and their remoting.                                                                                                                                                                             |
-| `org.tentackle.persist.security` (+ `security.trip`) | Persistence for security rules and their remoting.                                                                                                                                                                                            |
-| `org.tentackle.persist.trip`                         | The PDO-aware TRIP remote delegates (entity, operation, admin, cursor) and the delegate locator.                                                                                                                                              |
-| `org.tentackle.persist.service`                      | The [`Hook`](../java/org/tentackle/persist/service/Hook.java) (`ModuleHook`) for i18n bundle resolution.                                                                                                                                      |
+| Package                                              | Contents                                                                                                                                                                                                                                                                                                                                                   |
+|------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `org.tentackle.persist`                              | The core: `AbstractPersistentObject`, `AbstractPersistentOperation`, class-variables and their factory, the modification tracker, token-lock interfaces, joins (`Join`, `JoinedSelect`, `JoinState`), cursors, normtext, cache preloading (`PreloadCache`, `PdoCacheOperationPersistenceImpl`), the PDO-aware utilities and the session/delegate adapters. |
+| `org.tentackle.persist.app`                          | Server-application lifecycle (`AbstractServerApplication`, `ServerApplication`).                                                                                                                                                                                                                                                                           |
+| `org.tentackle.persist.lock`                         | The default `LockManager` and its persisted `DbTokenLock`.                                                                                                                                                                                                                                                                                                 |
+| `org.tentackle.persist.ns` (+ `ns.trip`)             | Persistence for number sources (pools/ranges) and their remoting.                                                                                                                                                                                                                                                                                          |
+| `org.tentackle.persist.security` (+ `security.trip`) | Persistence for security rules and their remoting.                                                                                                                                                                                                                                                                                                         |
+| `org.tentackle.persist.trip`                         | The PDO-aware TRIP remote delegates (entity, operation, admin, cursor, cache preloading, modification tracker), the delegate locator and the `PdoComponentTripFilter`.                                                                                                                                                                                     |
+| `org.tentackle.persist.service`                      | The [`Hook`](../java/org/tentackle/persist/service/Hook.java) (`ModuleHook`) for i18n bundle resolution.                                                                                                                                                                                                                                                   |
 
 ---
 
@@ -248,7 +308,7 @@ For a **local** session, `AbstractPersistentObject` assembles SQL via the
 [`Backend`](../../../../tentackle-sql/src/main/docs/sql.md) and executes it through the
 [`tentackle-database`](../../../../tentackle-database/src/main/docs/database.md) primitives. For a **remote** session, the call is shipped to
 the server, where the corresponding `…RemoteDelegateImpl` runs the very same logic against its local connection and
-returns the PDOs over TRIP. Caches stay coherent because every write advances a serial in the
+returns the PDOs over TRIP. Caches stay coherent because every write advances the table serial tracked by the
 `PdoModificationTracker`, which clients consult to expire stale entries.
 
 The per-entity SQL, column mapping, finders, and relations are **generated** into the application's persistence
@@ -265,17 +325,20 @@ entities, relations, and attributes are declared.
 
 - It **requires transitive** [`tentackle-pdo`](../../../../tentackle-pdo/src/main/docs/pdo.md) (the PDO contracts
   it implements) and [`tentackle-database`](../../../../tentackle-database/src/main/docs/database.md) (the low-level DB engine it builds on),
-  plus `java.naming`.
-- It **opens** its `persist`, `persist.ns`, `persist.security` and `persist.trip` packages to `org.tentackle.core`
-  for TRIP serialization.
+  plus (non-transitively) `java.naming` to detect a container.
+- It **opens** its `persist`, `persist.lock`, `persist.ns`, `persist.security` and `persist.trip` packages to
+  `org.tentackle.core` for TRIP serialization.
 - It **provides** a `ModuleHook` service (`org.tentackle.persist.service.Hook`) for i18n.
 - Through `@Service`/`@MappedService` it **replaces** several lower-layer singletons with PDO-aware versions
   (`DbUtilities` → `PersistenceUtilities`, `ModificationTracker` → `PdoModificationTracker`,
-  `DbClassVariablesFactory` → `PersistentClassVariablesFactory`, the remote-session/delegate factories), so code
-  written against the database layer automatically becomes PDO-aware at runtime.
+  `DbClassVariablesFactory` → `PersistentClassVariablesFactory`, `RemoteSessionFactory` → `PdoRemoteSessionFactory`,
+  `RemoteDbDelegateLocator` → `PdoRemoteDelegateLocator`), so code written against the database layer
+  automatically becomes PDO-aware at runtime.
 
 ## Related Documentation
 
+- [Locking](locking.md) — token locks and the optimistic `serial` column.
+- [Cursors](cursors.md) — streaming large result sets, locally and remotely.
 - [PDO](../../../../tentackle-pdo/src/main/docs/pdo.md) — the persistent domain object pattern this module implements.
 - [Operations](../../../../tentackle-pdo/src/main/docs/operation.md) — operations backed by `AbstractPersistentOperation`.
 - [Persistence Wurblets](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md) — generates the per-entity persistence code that extends this module.

@@ -65,4 +65,10 @@ public class TripNoSuchDelegateException extends TripRuntimeException {
     return delegateId;
   }
 
+  @TripIgnore
+  @Override
+  public Throwable getCause() {
+    return super.getCause();
+  }
+
 }

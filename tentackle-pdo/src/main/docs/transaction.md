@@ -11,7 +11,13 @@ unit when the failure was temporary — an optimistic-lock conflict, a deadlock,
 failure.
 
 ```java
-@Transaction
+// the domain interface declares the transactional contract
+public interface InvoiceDomain extends DomainObject<Invoice> {
+  @Transaction
+  void invoiceShipment(Shipment shipment);
+}
+
+// the implementation carries no annotation
 @Override
 public void invoiceShipment(Shipment shipment) {
   ...   // everything in here commits or rolls back as one unit
@@ -33,7 +39,7 @@ For a method annotated with plain `@Transaction`, the interceptor:
 2. **invokes** the method;
 3. **commits** on normal return, or **rolls back** on any exception, which is then rethrown.
 
-The transaction gets a **name** and is visible in logs. 
+The transaction gets a **name** and is visible in logs.
 By default, it is derived from the method: `DeclaringClass#methodName`. Set it explicitly via the
 `value` attribute when several methods form one logical unit or when a
 [retry policy](#custom-retry-policies) should treat certain transactions specially:
@@ -61,19 +67,23 @@ Two consistency rules apply at the join point:
 
 ## The Attributes
 
-| Attribute          | Default            | Meaning                                                                                                     |
-|--------------------|--------------------|-------------------------------------------------------------------------------------------------------------|
-| `value`            | derived            | The transaction name; defaults to `DeclaringClass#methodName`.                                              |
-| `running`          | `false`            | Assert that a transaction is *already* running instead of beginning one.                                    |
-| `rollbackSilently` | `false`            | Never log rollback details for this method.                                                                 |
-| `isolation`        | `DEFAULT`          | Transaction isolation: `READ_UNCOMMITTED`, `READ_COMMITTED`, `REPEATABLE_READ`, `SERIALIZABLE`, `NONE`.     |
-| `writability`      | `DEFAULT`          | `READ_WRITE` or `READ_ONLY` (a hint the database may use to optimize).                                      |
-| `retry`            | `false`            | Retry the transaction after a *temporary* failure.                                                          |
-| `retryPolicy`      | `""` (the default) | Name of the [`TransactionRetryPolicy`](../java/org/tentackle/pdo/TransactionRetryPolicy.java) to use.       |
-| `retryLogLevel`    | `WARNING`          | Level at which each retry is logged.                                                                        |
+| Attribute               | Default            | Meaning                                                                                                                                                                     |
+|-------------------------|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `value`                 | derived            | The transaction name; defaults to `DeclaringClass#methodName`.                                                                                                              |
+| `running`               | `false`            | Assert that a transaction is *already* running instead of beginning one.                                                                                                    |
+| `rollbackSilently`      | `false`            | Never log rollback details for this method.                                                                                                                                 |
+| `isolation`             | `DEFAULT`          | Transaction isolation: `READ_UNCOMMITTED`, `READ_COMMITTED`, `REPEATABLE_READ`, `SERIALIZABLE`, `NONE`.                                                                     |
+| `writability`           | `DEFAULT`          | `READ_WRITE` or `READ_ONLY` (a hint the database may use to optimize).                                                                                                      |
+| `deferred`              | `false`            | Defer deferrable constraint checks to commit time (see [below](#deferring-constraint-checks-with-deferred)).                                                                |
+| `statementHistoryLimit` | `-1`               | Keep only the most recent statements in the diagnostic statement history (`0` = none, `-1` = all), see [below](#limiting-the-statement-history-with-statementhistorylimit). |
+| `retry`                 | `false`            | Retry the transaction after a *temporary* failure.                                                                                                                          |
+| `retryPolicy`           | `""` (the default) | Name of the [`TransactionRetryPolicy`](../java/org/tentackle/pdo/TransactionRetryPolicy.java) to use.                                                                       |
+| `retryLogLevel`         | `WARNING`          | Level at which each retry is logged.                                                                                                                                        |
 
 `DEFAULT` for `isolation` and `writability` means: whatever the session (and ultimately the
 database backend) is configured with — most applications never need to override either.
+`retryPolicy` is ignored unless `retry = true`; an unknown policy name fails with a
+`PersistenceException` before the transaction even begins.
 
 ### Asserting an open transaction with `running`
 
@@ -101,6 +111,38 @@ Not every rollback is worth a stack trace. The interceptor distinguishes:
 `rollbackSilently = true` forces the silent variant for methods where rollbacks are expected
 behavior and would only clutter the log.
 
+### Deferring constraint checks with `deferred`
+
+Some databases (Postgres, Oracle) can postpone checking `DEFERRABLE` unique- and foreign-key
+constraints to commit time via `SET CONSTRAINTS ... DEFERRED`, instead of after every statement.
+This is useful for operations that temporarily violate a constraint mid-transaction — swapping two
+rows' unique values, or reordering a self-referencing hierarchy — without having to restructure
+the transaction around the violation.
+
+```java
+@Transaction(deferred = true)
+```
+
+calls `Session.setConstraintsDeferred(true)` right after the transaction actually starts (not when
+joining an already-running one), for the rest of that transaction. It only has an effect on
+constraints declared `deferred` or `deferrable` in the model — see
+[Index Lines](../../../../tentackle-model/src/main/docs/model-definition.md#7-index-lines).
+
+### Limiting the statement history with `statementHistoryLimit`
+
+Within a transaction, the session keeps every executed statement with its parameters, so that a
+rollback or a transaction timeout can log what happened. For bulk transactions, e.g., importing
+a million rows, that history costs a lot of memory.
+
+```java
+@Transaction(statementHistoryLimit = 100)
+```
+
+calls `Session.setStatementHistoryLimit(100)` right after the transaction actually starts (not when
+joining an already-running one), so only the 100 most recent statements are kept for the rest of that
+transaction. `0` keeps no history at all. Other transactions are not affected. See
+[Diagnostics and statistics](../../../../tentackle-database/src/main/docs/database.md#diagnostics-and-statistics).
+
 ### Remote sessions
 
 When the session is remote and the implementation is a
@@ -109,6 +151,24 @@ When the session is remote and the implementation is a
 `TransactionInterceptor` runs begin, method and commit *on the server* — saving the two network
 round trips for begin and commit, and keeping the transaction (including any
 [retry](#transparent-retry)) close to the database, where it belongs.
+
+### Global transactions
+
+With the optional module `tentackle-jta`, a session can take part in a global (JTA/XA) transaction
+that spans several databases or other XA resources. `@Transaction` works unchanged: a session
+configured to *join* enlists in the global transaction of the current thread and behaves like a
+nested transaction, while a session configured as *required* starts the global transaction in its
+outermost `@Transaction` method and completes it via two-phase commit — including the retry.
+Isolation and writability cannot be changed within a global transaction. See
+[Global Transactions — JTA and XA](../../../../tentackle-jta/src/main/docs/jta.md).
+
+### Idle transactions
+
+A transaction must not stay open while the code waits for something outside the database: it holds
+a connection and its locks. The database layer watches for this. A local transaction that performs
+no database I/O for a minute (by default) is rolled back and its connection closed by the
+[idle transaction supervisor](../../../../tentackle-database/src/main/docs/database.md#idle-transaction-supervisor),
+configurable via the `txIdleTimeout` and `txIdleInterval` backend properties.
 
 ## Transparent Retry
 
@@ -121,7 +181,11 @@ from the start would very likely succeed**. Scattering hand-written retry loops 
 logic is error-prone — so the `@Transaction` interceptor offers the loop as a one-word feature:
 
 ```java
+// domain interface
 @Transaction(retry = true)
+void transferStock(StorageBin from, StorageBin to, int amount);
+
+// implementation
 @Override
 public void transferStock(StorageBin from, StorageBin to, int amount) {
   ...
@@ -139,6 +203,8 @@ disappear if you try again". The flag is set by:
 - the **backend's error classification**: `SQLException`s the
   [backend](../../../../tentackle-sql/src/main/docs/sql.md) recognizes as transient — deadlock
   victim, serialization failure — are wrapped in a temporary `PersistenceException`;
+- the **token lock**: a [`LockException`](../java/org/tentackle/pdo/LockException.java) because
+  another user (or another named context) holds the token lock is temporary as well;
 - any application code that throws a `TentackleRuntimeException` with `setTemporary(true)`.
 
 Everything else — constraint violations, domain exceptions, programming errors — fails
@@ -211,6 +277,8 @@ back with the transaction. Two things to watch:
 
 ## Related Documentation
 
+- [Global Transactions — JTA and XA](../../../../tentackle-jta/src/main/docs/jta.md) — transactions
+  spanning several databases or other XA resources.
 - [Locking](../../../../tentackle-persistence/src/main/docs/locking.md) — the optimistic `serial`
   check whose temporary `NotFoundException` powers the retry, and token locks for long
   interactions.

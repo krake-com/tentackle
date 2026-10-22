@@ -26,8 +26,8 @@ import java.net.URI;
 /**
  * The credentials prompt for applications without a graphical user interface.
  * <p>
- * There is no browser to launch, so the URI to visit is printed, and the user is expected to open
- * it. This is what a console application, a service, or a test gets by default; the desktop client
+ * There is no browser to launch, so the URI to visit is logged, and the user is expected to open
+ * it. Messages are logged as well, and secrets are read from the {@link System#console() console}, if any. This is what a console application, a service, or a test gets by default; the desktop client
  * provides a prompt that drives the login view instead.
  *
  * @author harald

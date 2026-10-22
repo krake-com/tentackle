@@ -35,7 +35,7 @@ interface IntegerTypeHolder {
 
 
 /**
- * Trip type for {@link Integer[]} array.
+ * Trip type for {@code Integer[]} array.
  */
 @TripTypeService(Integer[].class)
 public final class IntegerArrayTripType extends AbstractPredefinedArrayTripType<Integer[]> {
@@ -99,11 +99,12 @@ public final class IntegerArrayTripType extends AbstractPredefinedArrayTripType<
       int count = 0;
       while (count < length) {
         opCode = stream.receiveOpCode();
-        switch (opCode) {
-          case DefaultOpCode.SKIP -> count += deserializer.deserializeInt();
-          case DefaultOpCode.SKIP2 -> count += deserializer.deserializeShortAsUnsigned();
-          case DefaultOpCode.SKIP1 -> count += deserializer.deserializeByteAsUnsigned();
-          case null, default -> result[count++] = integerTripType.read(stream, opCode);
+        int skip = readSkip(deserializer, opCode);
+        if (skip != NO_SKIP) {
+          count += skip;
+        }
+        else {
+          result[count++] = integerTripType.read(stream, opCode);
         }
       }
       stream.addReference(reference, result, false);

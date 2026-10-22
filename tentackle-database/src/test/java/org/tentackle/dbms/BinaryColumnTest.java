@@ -31,9 +31,12 @@ import org.tentackle.sql.SqlType;
 import java.io.IOException;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 
 /**
- * Tests reading and writing {@link Binary} and {@link TBinary} columns.
+ * Tests reading and writing {@link Binary}, {@link TBinary} and raw {@code byte[]} columns.
  * <p>
  * Both ways to apply a binary are covered: via the {@link DataType} (as done by the generated
  * persistence layer) and via the setters of the {@link PreparedStatementWrapper} (as done by
@@ -49,6 +52,7 @@ public class BinaryColumnTest extends AbstractDbTest {
   private static final String TABLE_NAME = "binarytest";
   private static final String BINARY_TEXT = "some binary";
   private static final String TBINARY_TEXT = "some other binary";
+  private static final byte[] BYTES = { 0, 1, -1, 127, -128 };
 
 
   @BeforeClass(dependsOnMethods = "beforeClass")
@@ -59,7 +63,9 @@ public class BinaryColumnTest extends AbstractDbTest {
     ddl.append("    ").append(backend.sqlCreateColumn(
         "bin", null, SqlType.BLOB, 0, 0, true, null, false, true));
     ddl.append("    ").append(backend.sqlCreateColumn(
-        "tbin", null, SqlType.BLOB, 0, 0, true, null, false, false));
+        "tbin", null, SqlType.BLOB, 0, 0, true, null, false, true));
+    ddl.append("    ").append(backend.sqlCreateColumn(
+        "raw", null, SqlType.BLOB, 0, 0, true, null, false, false));
     ddl.append(backend.sqlCreateTableClosing(TABLE_NAME, null));
 
     try (StatementWrapper st = db.createStatement()) {
@@ -77,10 +83,12 @@ public class BinaryColumnTest extends AbstractDbTest {
     Db db = getSession();
     DataType binaryType = DataTypeFactory.getInstance().get(Binary.class);
     DataType tbinaryType = DataTypeFactory.getInstance().get(TBinary.class);
+    DataType bytesType = DataTypeFactory.getInstance().get(byte[].class);
 
     try (PreparedStatementWrapper st = db.createPreparedStatement(b -> insertSql())) {
       st.set(binaryType, 1, new Binary<>(BINARY_TEXT), false, null);
       st.set(tbinaryType, 2, new TBinary<>(TBINARY_TEXT), false, null);
+      st.set(bytesType, 3, BYTES, false, null);
       assertEquals(st.executeUpdate(), 1);
     }
 
@@ -98,6 +106,7 @@ public class BinaryColumnTest extends AbstractDbTest {
     try (PreparedStatementWrapper st = db.createPreparedStatement(b -> insertSql())) {
       st.setBinary(1, new Binary<>(BINARY_TEXT));
       st.setTBinary(2, new TBinary<>(TBINARY_TEXT));
+      st.setBytes(3, BYTES);
       assertEquals(st.executeUpdate(), 1);
     }
 
@@ -105,8 +114,47 @@ public class BinaryColumnTest extends AbstractDbTest {
   }
 
 
+  /**
+   * Empty binaries are stored as is and come back as empty binaries, not as null.
+   */
+  @Test(dependsOnMethods = "testApplyBySetter")
+  public void testEmptyBinaries() throws IOException, ClassNotFoundException {
+    Db db = getSession();
+
+    try (PreparedStatementWrapper st = db.createPreparedStatement(b -> insertSql())) {
+      st.setBinary(1, new Binary<>());
+      st.setTBinary(2, new TBinary<>());
+      st.setBytes(3, new byte[0]);
+      assertEquals(st.executeUpdate(), 1);
+    }
+
+    int rows = 0;
+    try (PreparedStatementWrapper st = db.createPreparedStatement(b -> "SELECT bin, tbin, raw FROM " + TABLE_NAME);
+         ResultSetWrapper rs = st.executeQuery()) {
+      while (rs.next()) {
+        Binary<String> binary = rs.getBinary(1, 0);
+        TBinary<String> tbinary = rs.getTBinary(2, 0);
+        byte[] bytes = rs.getBytes(3);
+        if (bytes.length == 0) {
+          assertNotNull(binary, "empty binary read back as null");
+          assertNotNull(tbinary, "empty tbinary read back as null");
+          assertTrue(binary.isEmpty());
+          assertTrue(tbinary.isEmpty());
+          assertNull(binary.getObject());
+          assertNull(tbinary.getObject());
+          assertEquals(binary, new Binary<>());
+          assertEquals(tbinary, new TBinary<>());
+          rows++;
+        }
+      }
+    }
+
+    assertEquals(rows, 1);
+  }
+
+
   private String insertSql() {
-    return "INSERT INTO " + TABLE_NAME + " (bin, tbin) VALUES (?, ?)";
+    return "INSERT INTO " + TABLE_NAME + " (bin, tbin, raw) VALUES (?, ?, ?)";
   }
 
 
@@ -117,13 +165,14 @@ public class BinaryColumnTest extends AbstractDbTest {
     Db db = getSession();
     int rows = 0;
 
-    try (PreparedStatementWrapper st = db.createPreparedStatement(b -> "SELECT bin, tbin FROM " + TABLE_NAME);
+    try (PreparedStatementWrapper st = db.createPreparedStatement(b -> "SELECT bin, tbin, raw FROM " + TABLE_NAME);
          ResultSetWrapper rs = st.executeQuery()) {
       while (rs.next()) {
         Binary<String> binary = rs.getBinary(1, 0);
         TBinary<String> tbinary = rs.getTBinary(2, 0);
         assertEquals(binary.getObject(), BINARY_TEXT);
         assertEquals(tbinary.getObject(), TBINARY_TEXT);
+        assertEquals(rs.getBytes(3), BYTES);
         rows++;
       }
     }

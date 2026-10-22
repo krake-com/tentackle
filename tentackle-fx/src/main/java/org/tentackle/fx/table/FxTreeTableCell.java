@@ -20,19 +20,22 @@
 package org.tentackle.fx.table;
 
 import org.tentackle.fx.FxComponent;
-import org.tentackle.fx.FxFactory;
-import org.tentackle.fx.ValueTranslator;
+import org.tentackle.fx.component.FxTreeTableView;
+import org.tentackle.fx.table.edit.TableEditContext;
 
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
-import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.control.TreeTableCell;
 import javafx.scene.control.TreeTablePosition;
-import javafx.scene.input.KeyEvent;
+import javafx.scene.control.TreeTableRow;
 
 /**
- * Extended tree table cell.
+ * Extended tree table cell.<br>
+ * Renders the item via the column's {@link TableCellType} and edits it via an {@link FxComponent}.
+ * After committing with {@code ENTER} or {@code TAB}, the
+ * {@link org.tentackle.fx.table.edit.TableEditHandler} of the table configuration is notified and determines
+ * the next cell to edit.
  *
  * @param <S> type of the objects contained within the tree table's item list
  * @param <T> type of the content in all cells in this column
@@ -42,8 +45,7 @@ public class FxTreeTableCell<S,T> extends TreeTableCell<S,T> {
 
   private final TableColumnConfiguration<S,T> columnConfiguration;      // column configuration
 
-  private boolean toNext;                           // true if editor was committed with ENTER or TAB
-  private boolean toPrevious;                       // true if editor was committed with Shift ENTER/TAB
+  private final TableCellEditSupport<S, T> editSupport;                 // the editing logic
 
   /**
    * Creates a table cell.
@@ -52,6 +54,7 @@ public class FxTreeTableCell<S,T> extends TreeTableCell<S,T> {
    */
   public FxTreeTableCell(TableColumnConfiguration<S,T> columnConfiguration) {
     this.columnConfiguration = columnConfiguration;
+    this.editSupport = new EditSupport();
     setEditable(columnConfiguration.isEditable());
   }
 
@@ -65,107 +68,34 @@ public class FxTreeTableCell<S,T> extends TreeTableCell<S,T> {
   }
 
   @Override
-  @SuppressWarnings({ "unchecked", "rawtypes" })
   public void startEdit() {
-    if (isEditable() && getTreeTableView().isEditable() && getTableColumn().isEditable()) {
+    if (isEditable() && getTreeTableView().isEditable() && getTableColumn().isEditable() && editSupport.isCellEditable()) {
       super.startEdit();
       if (isEditing()) {
-        toNext = false;
-        toPrevious = false;
-        TableCellType<T> cellType = getCellType();
-        FxComponent editor = getEditor(cellType);
-        editor.setTreeTableCell(this);
-        editor.setType(columnConfiguration.getType());
-        ValueTranslator translator = FxFactory.getInstance().createValueTranslator(
-                editor.getType(), cellType.getEditorType(), editor);
-        Object viewObject = translator.toView(getItem());
-        editor.setViewObject(viewObject);
-        editor.getDelegate().setLastViewObject(viewObject);
-
-        setText(null);
-        setGraphic((Node) editor);
-
-        Node node = editor.getDelegate().getNode();   // effective node getting the keyboard events
-
-        EventHandler<KeyEvent> handler = event -> {
-          switch (event.getCode()) {
-            case ESCAPE:
-              cancelEdit();
-              getTreeTableView().refresh();
-              event.consume();
-              break;
-
-            case TAB:
-            case ENTER:
-              if (event.isShiftDown()) {
-                toPrevious = true;
-              }
-              else {
-                toNext = true;
-              }
-              T value = (T) translator.toModel(editor.getViewObject());
-              columnConfiguration.getBinding().setModelValue(value);
-              commitEdit(value);
-              getTreeTableView().refresh();
-              event.consume();
-              break;
-          }
-        };
-
-        node.setOnKeyPressed(handler);
-
-        if (editor != node) {
-          // for whatever reason, ESC is sometimes not forwarded to the inner component.
-          // In such a case, catch the keystroke on the outer one (for ex. DatePicker).
-          // @todo: check if still necessary in newer releases then Java 9
-          ((Node) editor).setOnKeyPressed(handler);
-        }
-
-        // same sh*t as in Swing... hoping 3 loops in eventQ is enough
-        Platform.runLater(() -> Platform.runLater(() -> Platform.runLater(node::requestFocus)));
+        editSupport.startEdit();
       }
     }
   }
 
   @Override
   public void commitEdit(T newValue) {
+    boolean editing = isEditing();
     super.commitEdit(newValue);
-    Platform.runLater(() -> {
-      switch(columnConfiguration.getTableConfiguration().getEditMode()) {
-        case ROW:
-          if (toNext) {
-            TreeTablePosition<S, ?> pos;
-            do {
-              getTreeTableView().getSelectionModel().selectNext();
-              pos = getPosition();
-            }
-            while (pos != null && !pos.getTableColumn().isEditable());
-            editCell();
-          }
-          else if (toPrevious) {
-            TreeTablePosition<S, ?> pos;
-            do {
-              getTreeTableView().getSelectionModel().selectPrevious();
-              pos = getPosition();
-            }
-            while (pos != null && !pos.getTableColumn().isEditable());
-            editCell();
-          }
-          break;
+    if (editing) {
+      editSupport.committed();
+    }
+  }
 
-        case COLUMN:
-          if (toNext) {
-            getTreeTableView().getSelectionModel().selectBelowCell();
-            editCell();
-          }
-          else if (toPrevious) {
-            getTreeTableView().getSelectionModel().selectAboveCell();
-            editCell();
-          }
-          break;
-      }
-      getTreeTableView().requestFocus();
-    });
+  @Override
+  public void cancelEdit() {
+    if (isEditing()) {
+      editSupport.canceling();
+      super.cancelEdit();
+      editSupport.canceled();
+    }
+    else {
+      super.cancelEdit();
+    }
   }
 
 
@@ -229,6 +159,80 @@ public class FxTreeTableCell<S,T> extends TreeTableCell<S,T> {
     TreeTablePosition<S, ?> pos = getPosition();
     if (pos != null) {
       Platform.runLater(() -> getTreeTableView().edit(pos.getRow(), pos.getTableColumn()));
+    }
+  }
+
+  /**
+   * Binds the editing logic to this cell.
+   */
+  private class EditSupport extends TableCellEditSupport<S,T> {
+
+    EditSupport() {
+      super(columnConfiguration);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    TableEditContext<S> getEditContext() {
+      return getTreeTableView() instanceof FxTreeTableView<?> view ? ((FxTreeTableView<S>) view).getEditContext() : null;
+    }
+
+    @Override
+    S getRowObject() {
+      TreeTableRow<S> row = getTableRow();
+      return row == null ? null : row.getItem();
+    }
+
+    @Override
+    T getItem() {
+      return FxTreeTableCell.this.getItem();
+    }
+
+    @Override
+    TableCellType<T> getCellType() {
+      return FxTreeTableCell.this.getCellType();
+    }
+
+    @Override
+    FxComponent getEditor() {
+      return FxTreeTableCell.this.getEditor(getCellType());
+    }
+
+    @Override
+    void showEditor(FxComponent editor) {
+      editor.setTreeTableCell(FxTreeTableCell.this);
+      setText(null);
+      setGraphic((Node) editor);
+    }
+
+    @Override
+    boolean isEditing() {
+      return FxTreeTableCell.this.isEditing();
+    }
+
+    @Override
+    boolean isViewEditing() {
+      return getTreeTableView().getEditingCell() != null;
+    }
+
+    @Override
+    void commitEdit(T value) {
+      FxTreeTableCell.this.commitEdit(value);
+    }
+
+    @Override
+    void cancelEdit() {
+      FxTreeTableCell.this.cancelEdit();
+    }
+
+    @Override
+    void refreshView() {
+      getTreeTableView().refresh();
+    }
+
+    @Override
+    void requestViewFocus() {
+      getTreeTableView().requestFocus();
     }
   }
 

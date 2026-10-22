@@ -66,6 +66,46 @@ Because the wurblet owns the entire class body here, this mode can generate ever
 setters, transient fields, a constructor that forwards `^`-prefixed properties to a superclass, `equals`/`hashCode`,
 post-construction validation, and non-final fields for serialization.
 
+For the model above, without any options, the generated region contains (Javadoc abbreviated):
+
+```java
+  /** the object's name. */
+  private final String name;
+
+  /** the counter. */
+  private final int count;
+
+  /** a free-text note. */
+  private String note;
+
+  /**
+   * Creates a CustomerDTO.
+   * ...
+   */
+  public CustomerDTO(String name, int count) {
+    this.name = name;
+    this.count = count;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public int getCount() {
+    return count;
+  }
+
+  public String getNote() {
+    return note;
+  }
+
+  public void setNote(String note) {
+    this.note = note;
+  }
+```
+
+The mutable `note` is not a constructor argument. It is set through its setter after construction.
+
 ### Mode 2 — a Java `record` + `@RecordDTO`
 
 When the natural shape of the carrier already *is* an immutable record, you do not write a property model at all.
@@ -149,8 +189,9 @@ A couple of details worth knowing:
 - `@RecordDTO` targets **types** and is honored only on **records**. The handler ignores annotated annotation
   types and warns (then skips) if the annotated element is not a record.
 - The captured info is just *type + name* per component — enough to drive the builder and copy factories.
-  Per-property annotations you want on the generated builder methods (e.g. `@Bindable`) are written directly on the
-  record components in the usual Java way; they are not part of `record.info`.
+  Annotations on the record components (e.g. `@Bindable`) stay where Java puts them — on the fields, the accessors
+  and the canonical constructor's parameters. They are not part of `record.info`, so the generated builder and copy
+  methods carry **no** annotations in record mode. A property model can annotate them with the `[@Anno]` syntax.
 
 ---
 
@@ -159,21 +200,59 @@ A couple of details worth knowing:
 | Generated element                         | Property-model DTO                      | `@RecordDTO` record                                  |
 |-------------------------------------------|-----------------------------------------|------------------------------------------------------|
 | Private fields                            | **Yes** (the wurblet owns the body)     | No — the record declares them                        |
-| All-args constructor                      | **Yes** (unless everything is mutable)  | No — the record's canonical constructor is used      |
+| Constructor                               | all immutable properties as arguments, or a `protected` constructor taking the `Builder` in builder mode | only in builder mode: a `protected` constructor taking the `Builder` and delegating to the canonical one |
 | Getters                                   | **Yes** (`getX` / `isX`)                | No — the record's accessors (`x()`) are used         |
 | Setters                                   | For `=` / `~` properties                | n/a (records are immutable)                           |
 | `--names` constants (`PN_*`)              | **Yes**                                 | **Yes**                                              |
 | `--builder`                               | **Yes**                                 | **Yes** (builder feeds the canonical constructor)    |
 | `--from` / `--with` copy factories        | per-property `+` prefix                 | **all** components by default                         |
+| `toBuilder()` (`--builder` with `--from`/`--with`) | **Yes**                        | **Yes**                                              |
+| Annotations on generated methods          | `[@Anno]` per property, global `[...]` line | none                                             |
 | `--equals` / `--hashCode`                 | **Yes**                                 | **Rejected** (records already have them)             |
 | `--validate`                              | **Yes** (needs `Validateable`)          | **Rejected** (use a compact canonical constructor)   |
-| `--nofinal` (serialization-friendly)      | **Yes**                                 | n/a                                                  |
+| `--nofinal` (serialization-friendly)      | **Yes**                                 | Not rejected, but do not use: the generated no-args constructor does not compile in a record |
 | `^` super-constructor forwarding          | **Yes**                                 | n/a                                                  |
 
 The options themselves are shared and documented in
 [wurblets.md → The DTO wurblet](wurblets.md#the-dto-wurblet) and in the wurblet's
 [`@{comment}@` header](../wurblets/org/tentackle/wurblet/DTO.wrbl). The table above only shows which apply in each
 mode.
+
+---
+
+## Builder mode in detail
+
+`--builder` (or `--builderScope`/`--builderPrefix`, which imply it) replaces the all-args constructor with a
+nested `public static class Builder`, a static `builder()` factory and a `protected` constructor that takes the
+builder. The details are easy to miss:
+
+- **Only immutable properties are in the builder.** A mutable (`=`/`~`) property has no builder method. Set it with
+  its setter on the built object.
+- **Required properties.** For each `!` property the builder records whether it was set. `build()` throws a
+  `TentackleRuntimeException` (a plain `RuntimeException` with `--nott`) naming the first missing property.
+- **Builder method names.** By default a builder method is named like the property (`name(...)`), with
+  `--builderPrefix=with` it becomes `withName(...)`. The builder's constructor gets the scope of `--builderScope`,
+  `protected` by default, so `builder()` is the public entry point.
+- **`toBuilder()`.** Together with `--from` or `--with`, the DTO gets a `toBuilder()` method and the builder a
+  constructor taking a template instance. The copy factories then delegate to it:
+  `return toBuilder().name(name).build();`. If the DTO also has mutable properties, the copy factories copy them
+  over via their setters.
+- **Annotating the builder.** `--builder[@Anno]` puts an annotation on the `Builder` class, for example
+  `@JsonPOJOBuilder(withPrefix = "")` so Jackson can deserialize through the builder.
+
+### Inheritance
+
+A property-model DTO may extend another DTO:
+
+- **Without builder**, `^`-prefixed properties are the ones the superclass declares. The generated constructor
+  takes them as well and passes them to `super(...)`. The copy factories read them through their getters.
+- **With builder**, `^` is rejected. The generated `Builder` instead extends the superclass's `Builder`, the
+  constructor calls `super(builder)`, and `build()` (and `toBuilder()`, if generated) override the superclass's. So every class of
+  the hierarchy must be generated in builder mode. An `abstract` DTO's `build()` throws, because there is nothing to
+  instantiate.
+- **`equals`/`hashCode`.** The generated methods call `super.equals`/`super.hashCode` when the class has a
+  superclass. If a subclass is generated with `--equals` or `--hashCode`, all its superclasses must be generated
+  with the same option.
 
 ---
 
@@ -233,8 +312,8 @@ public record Position3D(@Bindable(options = "AUTOSELECT") int x,
 - `@RecordDTO` makes the analyze phase emit a `record.info` describing `int x`, `int y`, `int z`.
 - The wurblet reads that file, sees it is in a record, and generates **only** a `Builder` and `withX/withY/withZ`
   copy methods — no fields, no getters, no all-args constructor, because the record already has them.
-- `@Bindable` on each component rides along on the record; it is not stored in `record.info` but stays visible on
-  the accessors and (as the wurblet weaves them) the builder methods.
+- `@Bindable` on each component is a plain Java annotation on the record. It is not stored in `record.info`, and
+  the generated builder methods do not repeat it.
 
 Compare this with a property-model `CustomerDTO` that needs a mutable `note` field and generated `equals`: that one
 *must* be a property model, because a record cannot express a setter.

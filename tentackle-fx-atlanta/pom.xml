@@ -28,6 +28,18 @@
       <groupId>io.github.mkpaz</groupId>
       <artifactId>atlantafx-base</artifactId>
     </dependency>
+    <dependency>
+      <!--
+        The wurblets are referenced only in the wurbelizer configuration, which Maven ignores
+        when sorting the reactor. This adds the missing edge for parallel builds (-T), without
+        putting the wurblets on the classpath.
+      -->
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-wurblets</artifactId>
+      <version>${project.version}</version>
+      <type>pom</type>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
 
   <build>

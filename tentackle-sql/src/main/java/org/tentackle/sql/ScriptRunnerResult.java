@@ -19,7 +19,9 @@
 package org.tentackle.sql;
 
 /**
- * The result of a statement executed by a {@link ScriptRunner}.
+ * The result of a statement executed by a {@link ScriptRunner}.<br>
+ * Results with warnings only (no SQL code) report the warnings of the connection or a failure
+ * while terminating the script.
  *
  * @param sql the SQL code executed, null if warnings only
  * @param offset the offset within the SQL script
@@ -72,7 +74,7 @@ public record ScriptRunnerResult(String sql, int offset, String warnings, long m
   /**
    * Returns whether a result set was returned.
    *
-   * @return true if a result set was returned, otherwise only update count
+   * @return true if a result set was returned, otherwise update count or warnings only
    */
   public boolean isResultSet() {
     return columnCount > 0;
@@ -81,7 +83,7 @@ public record ScriptRunnerResult(String sql, int offset, String warnings, long m
   /**
    * Gets the update count.
    *
-   * @return the update count, -1 if a result set was returned
+   * @return the update count, -1 if a result set was returned or warnings only
    */
   public int getUpdateCount() {
     return columnCount == 0 && data.length > 0 ? (Integer) data[0] : -1;

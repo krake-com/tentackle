@@ -195,8 +195,9 @@ public interface Binding {
 
   /**
    * Adds a validator.
+   *
    * @param validator the validator to add
-   * @return true if added
+   * @return true if added, false if already added
    */
   boolean addValidator(Validator validator);
 
@@ -216,11 +217,10 @@ public interface Binding {
   List<Validator> getValidators();
 
   /**
-   * Validates the binding.
-   * <p>
-   * Returns null if there are no validators for this binding.
+   * Validates the binding.<br>
+   * Applies the validators to the bound member and fires the validation events.
    *
-   * @return the validation results, never null
+   * @return the validation results, never null, empty if no validators or nothing to validate
    */
   List<ValidationResult> validate();
 

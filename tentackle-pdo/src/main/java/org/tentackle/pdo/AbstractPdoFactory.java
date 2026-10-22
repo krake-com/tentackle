@@ -227,7 +227,7 @@ public abstract class AbstractPdoFactory implements PdoFactory {
       return createPdo((Class<T>) Class.forName(className), persistenceDelegate, domainDelegate);
     }
     catch (ClassNotFoundException e) {
-      throw new PdoRuntimeException(CANNOT_CREATE_PDO_FOR + className + " for domain delegate " + domainDelegate, e);
+      throw new PdoRuntimeException(CANNOT_CREATE_PDO_FOR + className + " for delegates " + persistenceDelegate + " : " + domainDelegate, e);
     }
   }
 

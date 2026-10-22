@@ -23,6 +23,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.misc.SubString;
 
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
@@ -31,7 +32,10 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * Auto-completion controller.
+ * Auto-completion controller.<br>
+ * Runs the suggestion generator in the background whenever the user changes the text,
+ * but never more than one at a time. Input arriving while the generator is running is
+ * processed as soon as it has finished.
  */
 public class AutoCompletionController {
 
@@ -41,6 +45,8 @@ public class AutoCompletionController {
   private final Function<String, List<List<SubString>>> suggestionGenerator;
   private final AutoCompletionPopup popup;
   private final Service<List<List<SubString>>> backgroundService;
+  private final ChangeListener<String> textListener = this::textChanged;
+  private final ChangeListener<Boolean> focusListener = this::focusChanged;
   private String lastInput;
   private String textInput;
   private boolean updatingItem;
@@ -54,8 +60,8 @@ public class AutoCompletionController {
   public AutoCompletionController(TextInputControl component, Function<String, List<List<SubString>>> suggestionGenerator) {
     this.component = component;
     this.suggestionGenerator = suggestionGenerator;
-    component.textProperty().addListener(this::textChanged);
-    component.focusedProperty().addListener(this::focusChanged);
+    component.textProperty().addListener(textListener);
+    component.focusedProperty().addListener(focusListener);
     popup = createAutoCompletionPopup();
 
     // run the suggestions generator in background and not more than one at a time.
@@ -123,8 +129,8 @@ public class AutoCompletionController {
    * Provided in case auto-completion is removed from a component.
    */
   public void close() {
-    component.textProperty().removeListener(this::textChanged);
-    component.focusedProperty().removeListener(this::focusChanged);
+    component.textProperty().removeListener(textListener);
+    component.focusedProperty().removeListener(focusListener);
     hidePopup();
   }
 

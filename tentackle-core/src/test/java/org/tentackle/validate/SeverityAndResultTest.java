@@ -138,6 +138,27 @@ public class SeverityAndResultTest {
   }
 
   @Test
+  public void testValidationCollectionIndexesNested() {
+    ValidationResult result = new FailedValidationResult(validator(),
+        context("invoice.invoiceLineList[3].referenceList[10].text"), "boom");
+    ValidationResult.CollectionIndex[] indexes = result.getValidationCollectionIndexes();
+    assertEquals(indexes.length, 2);
+    assertEquals(indexes[0], new ValidationResult.CollectionIndex(3, "invoice.invoiceLineList", "referenceList[10].text"));
+    assertEquals(indexes[1], new ValidationResult.CollectionIndex(10, "invoice.invoiceLineList[3].referenceList", "text"));
+  }
+
+  /**
+   * Object validators of collection elements produce paths ending with the index.
+   */
+  @Test
+  public void testValidationCollectionIndexesTrailing() {
+    ValidationResult result = new FailedValidationResult(validator(), context("root.items[2]"), "boom");
+    ValidationResult.CollectionIndex[] indexes = result.getValidationCollectionIndexes();
+    assertEquals(indexes.length, 1);
+    assertEquals(indexes[0], new ValidationResult.CollectionIndex(2, "root.items", ""));
+  }
+
+  @Test
   public void testValidationCollectionIndexesEmpty() {
     ValidationResult result = new FailedValidationResult(validator(), context("root.name"), "boom");
     assertEquals(result.getValidationCollectionIndexes().length, 0);

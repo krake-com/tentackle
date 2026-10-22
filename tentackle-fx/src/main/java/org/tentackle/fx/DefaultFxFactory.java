@@ -27,6 +27,10 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.fx.nofxml.NoFXMLLinker;
 import org.tentackle.fx.table.DefaultTableConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.fx.table.edit.ColumnWiseEditHandler;
+import org.tentackle.fx.table.edit.RowWiseEditHandler;
+import org.tentackle.fx.table.edit.RuleBasedEditHandler;
+import org.tentackle.fx.table.edit.SimpleEditHandler;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Holder;
 import org.tentackle.reflect.DefaultClassMapper;
@@ -98,7 +102,7 @@ public class DefaultFxFactory implements FxFactory {
   private final Map<Class<?>, Optional<Configurator<?>>> fxToConfiguratorMap;   // Optional to denote: not present, null if not determined yet
 
   /**
-   * all FX controller classes.
+   * All FX controller classes.
    */
   private final Collection<Class<FxController>> controllerClasses;
 
@@ -162,7 +166,7 @@ public class DefaultFxFactory implements FxFactory {
     }
     catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
            InvocationTargetException | NoSuchMethodException ex) {
-      throw new FxRuntimeException("loading image providers failed", ex);
+      throw new FxRuntimeException("loading graphic providers failed", ex);
     }
 
     record ValueTranslatorKey<M, V>(Class<M> modelClass, Class<V> viewClass) {}
@@ -485,6 +489,7 @@ public class DefaultFxFactory implements FxFactory {
   }
 
   @Override
+  @SuppressWarnings("bundle")
   public StackPane createButton(String styleClass, String graphicName, String bundleKey, Runnable action) {
     StackPane button = new StackPane(Fx.createGraphic(graphicName));
     button.getStyleClass().add(styleClass);
@@ -508,6 +513,26 @@ public class DefaultFxFactory implements FxFactory {
   @Override
   public <S> TableConfiguration<S> createTableConfiguration(Class<S> objectClass, String name) {
     return new DefaultTableConfiguration<>(objectClass, name);
+  }
+
+  @Override
+  public <S> SimpleEditHandler<S> simpleTableEditHandler() {
+    return new SimpleEditHandler<>();
+  }
+
+  @Override
+  public <S> RowWiseEditHandler<S> rowWiseTableEditHandler() {
+    return new RowWiseEditHandler<>();
+  }
+
+  @Override
+  public <S> ColumnWiseEditHandler<S> columnWiseTableEditHandler() {
+    return new ColumnWiseEditHandler<>();
+  }
+
+  @Override
+  public <S> RuleBasedEditHandler<S> ruleBasedTableEditHandler() {
+    return new RuleBasedEditHandler<>(rowWiseTableEditHandler());
   }
 
   /**

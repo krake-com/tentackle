@@ -46,15 +46,28 @@ import org.tentackle.sql.Backend;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 
 import static org.testng.Assert.fail;
 
 /**
  * Base class for TestNG tests on PDO level.
+ * <ul>
+ *   <li>the session and the modification tracker are opened once for all test classes
+ *   ({@code @BeforeSuite}) and closed when the suite ends ({@code @AfterSuite})</li>
+ *   <li>if the backend is in-memory, the database tables are created from the model</li>
+ *   <li>transactions are begun and rolled back (or committed) per class or per method,
+ *   see {@link TransactionType}</li>
+ *   <li>the tests are skipped if no backend is available</li>
+ * </ul>
+ * Test classes must not run in parallel.
  *
  * @author harald
  */
@@ -81,7 +94,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   private final TransactionType txType;     // transaction handling
   private final boolean commit;             // true if commit transaction, else rollback (default)
   private boolean rollbackLogged;           // true to log the rollback, even if the test succeeds
-  private long txVoucher;                   // transaction voucher for the current test class
+  private long txVoucher;                   // voucher of the running transaction, 0 if none
 
 
   /**
@@ -135,8 +148,14 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   }
 
   /**
-   * Opens the sessions and starts the modification tracker.<br>
-   * If the database is in-memory, it will be populated before the tracker is started.
+   * Opens the session and starts the modification tracker.<br>
+   * If the database is in-memory, the tables are created before the tracker is started
+   * and populated afterward.
+   * <p>
+   * Invoked only once for all test classes, on the instance of the test class that runs first.
+   * Hence, overrides of {@link #openSession()}, {@link #createDomainContext()},
+   * {@link #createDatabaseTables(Db)} and {@link #populateDatabase()} must be provided by a common
+   * base class of all tests, not by individual test classes.
    *
    * @throws Exception if failed
    * @see #createDatabaseTables(Db)
@@ -174,7 +193,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   }
 
   /**
-   * Terminates the modification tracker and closes the sessions.
+   * Terminates the modification tracker and closes the session.
    *
    * @throws Exception if failed
    */
@@ -223,8 +242,10 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   }
 
   /**
-   * Ends the transaction if type is {@link TransactionType#METHOD}.
+   * Ends the transaction if type is {@link TransactionType#METHOD}.<br>
+   * If the test method failed, the statements rolled back are logged.
    *
+   * @param result the test result
    * @throws Exception if failed
    */
   @AfterMethod(alwaysRun = true)
@@ -267,7 +288,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   }
 
   /**
-   * Runs the given class in another JVM.<br>
+   * Runs the given class in another JVM and waits for its termination.<br>
    * The test class must have a main method.
    *
    * @param testClass the test class
@@ -281,9 +302,9 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   }
 
   /**
-   * Opens the session.
+   * Opens the session and makes it the current session of the thread.
    *
-   * @return the thread-local session
+   * @return the session
    */
   protected Session openSession() {
     Session s;
@@ -317,7 +338,9 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   }
 
   /**
-   * Populates the database with test data.
+   * Populates the database with test data.<br>
+   * Invoked once after the tables were created, if the database is in-memory.
+   * The default implementation does nothing.
    */
   protected void populateDatabase() {
     // default does nothing
@@ -375,7 +398,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   }
 
   /**
-   * Invokes the pre-commits, if any.<br>
+   * Invokes the post-commits, if any.<br>
    * Useful for special test scenarios, since tests are usually rolled back.
    * Must be invoked explicitly from within the test.
    */
@@ -387,8 +410,10 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
 
 
   /**
-   * Runs the given class in another JVM and waits for termination.<br>
+   * Runs the given class in another JVM.<br>
    * The test class must have a main method.
+   * The other JVM gets the classpath and module path of this JVM as its classpath.
+   * The method does not wait for the process to terminate.
    *
    * @param testClass the test class
    * @param args optional arguments
@@ -396,13 +421,12 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    * @throws IOException if some IO operation failed
    */
   public static Process runClass(Class<?> testClass, String... args) throws IOException {
-    // add node and key in other jvm
     String javaHome = System.getProperty("java.home");
     String classPath = System.getProperty("java.class.path");
     String modulePath = System.getProperty("jdk.module.path");
     if (modulePath != null) {
-      if (!classPath.endsWith(":")) {
-        classPath += ":";
+      if (!classPath.endsWith(File.pathSeparator)) {
+        classPath += File.pathSeparator;
       }
       classPath += modulePath;    // append the module path to the classpath
     }
@@ -422,34 +446,49 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   }
 
   /**
-   * Waits for the process to terminate and write stdout and stderr to the reporter log.
+   * Waits for the process to terminate and writes its stdout and stderr to the reporter log.<br>
+   * Both streams are drained while the process is running. Otherwise, a process writing more than
+   * the pipe buffer can hold would block forever (on Windows, the buffer holds only a few kilobytes).
    *
    * @param process the process
    * @throws IOException if some IO failed
    */
   public static void waitForProcess(Process process) throws IOException {
+    // drain stderr in another thread while stdout is read in this one
+    FutureTask<List<String>> stderr = new FutureTask<>(() -> readLines(process.getErrorStream()));
+    Thread.ofPlatform().daemon().name("stderr-drain").start(stderr);
+    List<String> lines = readLines(process.getInputStream());
     try {
       process.waitFor();
+      lines.addAll(stderr.get());
     }
     catch (InterruptedException ex) {
       fail("executing " + process + " failed<br>", ex);
     }
-    // collect stdout
-    Reader r = new InputStreamReader(process.getInputStream());
-    try (BufferedReader in = new BufferedReader(r)) {
+    catch (ExecutionException ex) {
+      throw ex.getCause() instanceof IOException iox ? iox : new IOException(ex.getCause());
+    }
+    for (String line : lines) {
+      Reporter.log(line + "<br>");
+    }
+  }
+
+  /**
+   * Reads all lines from a stream until EOF.
+   *
+   * @param stream the stream
+   * @return the lines
+   * @throws IOException if reading failed
+   */
+  private static List<String> readLines(InputStream stream) throws IOException {
+    List<String> lines = new ArrayList<>();
+    try (BufferedReader in = new BufferedReader(new InputStreamReader(stream))) {
       String line;
       while ((line = in.readLine()) != null) {
-        Reporter.log(line + "<br>");
+        lines.add(line);
       }
     }
-    // collect stderr
-    r = new InputStreamReader(process.getErrorStream());
-    try (BufferedReader in = new BufferedReader(r)) {
-      String line;
-      while ((line = in.readLine()) != null) {
-        Reporter.log(line + "<br>");
-      }
-    }
+    return lines;
   }
 
 }

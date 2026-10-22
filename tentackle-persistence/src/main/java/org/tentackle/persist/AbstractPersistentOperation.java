@@ -40,11 +40,12 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * A {@code AbstractPersistentOperation} provides methods that are not part of {@link PersistentOperation}s
- * and is associated to a {@link DomainContext}. Complex transactions usually are
- * {@code AbstractPersistentOperation}s. {@code AbstractPersistentOperation}s are remoting capable.
+ * Base persistence implementation of an {@link Operation}.
+ * <p>
+ * An operation provides persistence logic that is not bound to a single PDO, such as complex
+ * transactions. It is associated with a {@link DomainContext} and is remoting capable.
  *
- * @param <T> the PO class (interface)
+ * @param <T> the operation class (interface)
  * @param <P> the operation implementation class
  * @author harald
  */
@@ -56,7 +57,7 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
   @Serial
   private static final long serialVersionUID = 1L;
 
-  private DomainContext context;                  // application domain context
+  private DomainContext context;                  // the domain context
   private transient boolean contextImmutable;     // true if domain context cannot be changed anymore
   private T operation;                            // operation proxy instance this is a delegate for
 
@@ -65,7 +66,7 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
    * Creates an operation object.
    *
    * @param operation the operation object this is a delegate for
-   * @param context the database context
+   * @param context the domain context
    */
   public AbstractPersistentOperation(T operation, DomainContext context) {
     this.operation = operation;
@@ -77,7 +78,7 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
    * Notice: the application must set the domain context.
    *
    * @param operation the operation object this is a delegate for
-   * @param session the session (must be an instance of {@link Db}).
+   * @param session the session (must be an instance of {@link Db})
    */
   public AbstractPersistentOperation(T operation, Session session) {
     super((Db) session);
@@ -85,7 +86,7 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
   }
 
   /**
-   * Creates an operation object without a database context.<p>
+   * Creates an operation object without a domain context.<p>
    * Note: the application must set the context.
    *
    * @param operation the persistent operation object this is a delegate for
@@ -96,7 +97,8 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
   }
 
   /**
-   * Creates an operation object without a database context.
+   * Creates an operation object without a domain context.<br>
+   * Note: the application must set the operation and the context.
    */
   public AbstractPersistentOperation() {
     super();
@@ -124,7 +126,11 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
    * <p>
    * In fact, {@link PersistentOperationClassVariables} is an extension of
    * {@link org.tentackle.dbms.DbOperationClassVariables}.
-   * So this fulfills the requirements for AbstractDbObject
+   * So this fulfills the requirements of {@link AbstractDbOperation}.
+   * <p>
+   * Must be overridden by the concrete operation.
+   *
+   * @throws PersistenceException if not overridden
    */
   @Override
   public PersistentOperationClassVariables<T,P> getClassVariables() {
@@ -139,7 +145,7 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
   /**
    * {@inheritDoc}
    * <p>
-   * Overridden to set the Db in DomainContext as well.
+   * Overridden to set the session in the domain context as well.
    */
   @Override
   public void setSession(Session session)  {
@@ -151,9 +157,10 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
 
 
   /**
-   * Sets the database context.
+   * Sets the domain context.
    *
-   * @param context the domain context
+   * @param context the domain context, never null
+   * @throws PersistenceException if the domain context is immutable
    */
   @Override
   public void setDomainContext(DomainContext context)  {
@@ -166,7 +173,7 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
   }
 
   /**
-   * Gets the database context.
+   * Gets the domain context.
    *
    * @return the domain context
    */
@@ -187,7 +194,7 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
   }
 
   /**
-   * Sets the operation.<br>
+   * Sets the operation.
    *
    * @param operation the operation
    */
@@ -218,7 +225,7 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
   /**
    * {@inheritDoc}
    * <p>
-   * The default implementation returns the PDO's DomainContext.
+   * The default implementation returns the operation's domain context.
    */
   @Override
   public DomainContext getBaseContext()  {
@@ -228,7 +235,8 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
   /**
    * {@inheritDoc}
    * <p>
-   * The default implementation just returns a new {@link DomainContext}.<br>
+   * The default implementation returns a new {@link DomainContext}.
+   * If there is a thread-local session, the new context uses it, otherwise the session of this operation.
    */
   @Override
   public DomainContext createValidContext() {
@@ -265,8 +273,9 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
 
 
   /**
-   * Configures a within an operation remotely retrieved PDO.
+   * Configures a PDO retrieved remotely within an operation.
    *
+   * @param <X> the PDO type
    * @param context the local domain context
    * @param pdo the PDO
    */
@@ -276,8 +285,9 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
   }
 
   /**
-   * Configures a within an operation remotely retrieved collection of PDOs.
+   * Configures a collection of PDOs retrieved remotely within an operation.
    *
+   * @param <X> the PDO type
    * @param context the local domain context
    * @param pdos the PDOs to configure
    */
@@ -292,6 +302,8 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
 
   /**
    * Asserts that the domain context is mutable.
+   *
+   * @throws PersistenceException if the domain context is immutable
    */
   protected void assertDomainContextMutable() {
     if (isDomainContextImmutable()) {

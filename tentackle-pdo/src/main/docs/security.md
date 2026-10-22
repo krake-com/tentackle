@@ -6,7 +6,7 @@ Tentackle ships a complete, **ACL-based authorization** subsystem that is woven
 into the [PDO](pdo.md) pattern rather than bolted on beside it. Its job is to
 answer one question, consistently, on every tier of the application:
 
-> *May **this grantee** perform **this permission** on **this object** (or class)
+> *May **this grantee** exercise **this permission** on **this object** (or class)
 > within **this domain context**?*
 
 The complementary question — *who is this grantee in the first place?* — is answered once, at login,
@@ -67,8 +67,12 @@ Tentackle predefines six in
 
 Because `EditPermission extends WritePermission, ViewPermission` and both extend
 `ReadPermission`, **granting `EDIT` implies `WRITE`, `VIEW`, and `READ`** as well.
+The implication works the other way round for denials: **denying `READ` denies `VIEW`,
+`WRITE`, and `EDIT`** too, since none of them can be granted without `READ`.
 This is what `Permission.isAllowedBy(...)` / `isDeniedBy(...)` compute when a rule
-fires.
+fires. `ALL` is special: a rule granting or denying `ALL` matches every requested
+permission, whereas a request for `ALL` is granted only by a rule granting `ALL`, but
+denied by any deny-rule.
 
 The split between the *business* permissions and the *presentation* permissions is
 deliberate and important:
@@ -84,9 +88,10 @@ deliberate and important:
 
 > A back-end batch job may legitimately need to **READ/WRITE** rows the interactive
 > user is not allowed to **VIEW/EDIT**. Separating the two lets the same data be
-> processed by logic while staying hidden from the screen — see
-> [cache.md → Security](cache.md#security), which recommends `ViewPermission` (not
-> `ReadPermission`) on cached entities for exactly this reason.
+> processed by logic while staying hidden from the screen. Cached entities rely on
+> exactly this: a cache is shared by all users, so cached entities are always
+> readable and `READ` rules do not apply to them — use `ViewPermission` instead
+> (see [cache.md → Security](cache.md#security)).
 
 There is deliberately **no `isReadAllowed()`** on a PDO: a PDO the user cannot read
 is never loaded, so there is no instance on which to ask the question.
@@ -104,26 +109,30 @@ This is the backbone. Every load and store consults the
 [`SecurityManager`](../java/org/tentackle/security/SecurityManager.java) through
 `SecurityFactory.getInstance()`:
 
-- **Reading a root entity.** When a PDO is selected through its
-  [root context](pdo.md#aggregates-and-the-root-context),
-  `assertRootContextIsAccepted()` evaluates `READ` on the root; denial throws a
+- **Reading a root entity.** Every root entity loaded from the database is checked for
+  `READ`. A denied root entity is silently dropped: `select` returns `null`, and lists
+  simply don't contain it.
+- **Reading within a root context.** Selecting from within a
+  [root context](pdo.md#aggregates-and-the-root-context) — which is how the components
+  of an aggregate are loaded — first evaluates `READ` on the context's root entity
+  (`assertRootContextIsAccepted()`); denial throws a
   [`SecurityException`](../java/org/tentackle/security/SecurityException.java).
 - **Reading components — aggregate-aware.** Because every component knows its root
-  *without a query*, the layer evaluates the **root's** `READ` rule when a component
-  is read. If the root is not readable, the component "does not exist" for this user
-  and `select` returns `null`. A permission expressed once on the
-  [aggregate root](pdo.md#aggregates-prevent-whole-classes-of-bugs) therefore governs
-  its whole component tree — no per-component rules needed.
-- **Writing.** `persist()`/`delete()` check `WRITE` on the root entity
-  (`isWriteAllowed()`). Only root entities are writable; components are saved through
-  their root, which is the object actually checked.
-- **Class-level pre-checks.** `isReadAllowed(context)` / `isWriteAllowed(context)`
-  let code (and `selectAll`) check a *whole class* before issuing a query.
+  *without a query*, a component loaded *outside* its root context (e.g. via a deep link)
+  is checked against the **root's** `READ` rule. If the root is not readable, the
+  component "does not exist" for this user and `select` returns `null`. A permission
+  expressed once on the [aggregate root](pdo.md#aggregates-prevent-whole-classes-of-bugs)
+  therefore governs its whole component tree — no per-component rules needed.
+- **Writing.** `save()`/`persist()`/`delete()` check `WRITE` on the root entity
+  (`isWriteAllowed()`) and throw a `SecurityException` if denied. Only root entities
+  are writable; components are saved through their root, which is the object actually
+  checked.
 
 The application normally writes **none** of this; it falls out of the ordinary
 `select`/`persist`/`delete` calls. The rule entity itself
 ([`SecurityPersistenceImpl`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/security/SecurityPersistenceImpl.java))
-is always readable, otherwise the manager could never load its own rules.
+is always readable; otherwise, the manager could never load its own rules. The same applies
+to all [cached](cache.md#security) entities.
 
 ### 2. Declaratively on methods with `@Secured`
 
@@ -140,8 +149,11 @@ public interface InvoiceDomain extends DomainObject<Invoice> {
   @Secured(EditPermission.class)                 // caller needs EDIT on this invoice
   @Transaction void approve();
 
-  @Secured({EditPermission.class, BookkeeperPermission.class}, ored = true)
-  @Transaction void postToLedger();              // EDIT *or* a custom Bookkeeper permission
+  @Secured(BookkeeperPermission.class)           // a custom permission, see below
+  @Transaction void postToLedger();
+
+  @Secured(value = {BookkeeperPermission.class, AuditorPermission.class}, ored = true)
+  Report createJournal();                        // BOOKKEEPER *or* a custom AUDITOR permission
 }
 ```
 
@@ -184,23 +196,30 @@ A [`Security`](../java/org/tentackle/security/pdo/Security.java) rule (table
 |--------------------|-------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Secured object** | `objectClassName`, `objectClassId`, `objectId`  | The protected target. A non-PDO class (by name), a PDO class (`objectClassId`, `objectId = 0` → *all instances*), or one PDO instance (`objectId ≠ 0`). |
 | **Grantee**        | `granteeClassId`, `granteeId`                   | The user/group entity the rule applies to. `0/0` means **all grantees**.                                                                                |
-| **Context**        | `domainContextClassId`, `domainContextId`       | Optional restriction to a [domain context](pdo.md#the-domaincontext-and-ddd) entity (e.g. a tenant). `0/0` → any context.                               |
-| **Decision**       | `permissions`, `allowed`, `message`, `priority` | A comma-separated permission list, the allow/deny flag, an optional i18n explanation, and the evaluation order.                                         |
+| **Context**        | `domainContextClassId`, `domainContextId`       | Optional restriction to a [domain context](pdo.md#the-domaincontext-and-ddd) entity (e.g., a tenant). `0/0` → the default context.                      |
+| **Decision**       | `permissions`, `allowed`, `message`, `priority` | A comma-separated permission list, the allow/deny flag, an optional explanation shown to the user, and the evaluation order.                            |
+
+A rule for a PDO class or instance must leave `objectClassName` empty, a rule for a non-PDO class
+must set it, and every rule needs at least one permission — the
+[`SecurityValidator`](../java/org/tentackle/security/pdo/SecurityValidator.java) rejects
+anything else. Rules of the same grantee and target are evaluated by `priority`, rules with the
+same priority by their object ID.
 
 ### How a request is evaluated
 
 The [`DefaultSecurityManager`](../java/org/tentackle/security/DefaultSecurityManager.java)
-treats the rule set as an **access control list walked in priority order, first
-match wins**:
+treats the rule set as an **access control list walked grantee by grantee and, within
+a grantee, in priority order — first match wins**:
 
 1. **Determine the grantee** from the session's user
    (`SessionInfo.getUserId()` / `getUserClassId()`). A **system user**
    (`userId ≤ 0`) bypasses all checks — every permission is granted.
-2. **Determine the grantees to check** — by default the user itself plus the
+2. **Determine the grantees to check** — by default the user itself, followed by the
    wildcard `0/0` ("all"). Override `determineGranteesToCheck(...)` to expand this to
-   the user's **groups/roles** (see below).
-3. **Select the candidate rules** for the target, sorted by `priority` (0 = highest
-   / evaluated first). Three separate indexes exist for the three target kinds:
+   the user's **groups/roles** (see below). The grantees are checked in this order:
+   all rules of the user are tried before any rule for "all", whatever their priority.
+3. **Select the candidate rules** of each grantee for the target, sorted by `priority`
+   (lowest value first). Three separate indexes exist for the three target kinds:
    instance rules, PDO-class rules, and non-PDO-class rules.
 4. **Fire the first matching rule.** A rule matches when its context applies
    (`DomainContext.isWithinContext(...)`) **and** the requested permission is
@@ -228,14 +247,14 @@ if (!r.isAccepted()) {
 - **deny by default** → a **whitelist**: nothing is permitted unless a rule grants
   it. Add allow-rules for what is permitted.
 
-Setting *both* accept and deny to false yields a "neither accepted nor denied"
-result, which the `explicit = true` mode of `@Secured` can require to be turned into
-an explicit grant.
+Either way, the result tells whether it was reached by default
+(`SecurityResult.isDefault()`), which the `explicit = true` mode of `@Secured` uses to
+require an explicit grant even when accepting by default.
 
-> The manager is **disabled by default** and must be enabled at startup
-> (`setEnabled(true)`). While disabled, **every** request is granted regardless of
-> the default — convenient for tests and tooling, and the reason production startup
-> code must remember to enable it.
+> The manager is **disabled when created**. While disabled, **every** request is granted
+> regardless of the default — convenient for tests and tooling.
+> [`AbstractApplication.configure()`](application.md) enables it at startup, unless the
+> property `nosecurity` is given.
 
 ---
 
@@ -255,17 +274,26 @@ belongs to:
 @Override
 protected Collection<GranteeDescriptor> determineGranteesToCheck(
         DomainContext context, GranteeDescriptor grantee) {
-  Collection<GranteeDescriptor> grantees = super.determineGranteesToCheck(context, grantee);
-  User user = Pdo.create(User.class, context).select(grantee.getGranteeId());
+  Collection<GranteeDescriptor> grantees = new ArrayList<>();
+  grantees.add(grantee);                        // the user's own rules first
+  // systemContext: a context whose session belongs to a system user (userId <= 0)
+  User user = Pdo.create(User.class, systemContext).select(grantee.getGranteeId());
   for (Group g : user.getGroups()) {
     grantees.add(new GranteeDescriptor(g));     // rules granted to the group now apply
   }
+  grantees.add(new GranteeDescriptor(0, 0));    // and the rules for all grantees last
   return grantees;
 }
 ```
 
-The per-grantee expansion is memoized in the manager's `granteeMap`, so the group
-lookup happens once per distinct user, not on every check.
+The grantees are checked in the order of the returned collection, so the example places
+the groups between the user and "all". Two things to keep in mind:
+
+- The method runs *while* a permission is being evaluated. Loading the groups with the
+  user's own context would ask the manager again for the same user, which recurses into
+  the manager. Hence, the example loads them with a system context, which is never checked.
+- The per-grantee expansion is memoized in the manager's `granteeMap`, so the group
+  lookup happens once per distinct user, not on every check.
 
 ---
 
@@ -278,8 +306,8 @@ object being checked lives within that context (`isWithinContext(...)`). This do
 with Tentackle's [multi-tenancy](pdo.md#logical-data-spaces-and-multi-tenancy): a single
 rule set can express "user X is a bookkeeper **in tenant A** but only a viewer **in
 tenant B**" without duplicating entities. On the middle tier,
-`DomainContext.assertPermissions()` additionally verifies the incoming context is
-allowed for the connected user (see [pdo.md → Sessions, immutability, and remote
+`DomainContext.assertPermissions()` can additionally verify that the incoming context is
+allowed for the connected user, if the application overrides it — the default does nothing (see [pdo.md → Sessions, immutability, and remote
 safety](pdo.md#sessions-immutability-and-remote-safety)).
 
 ---
@@ -303,6 +331,21 @@ public final class BookkeeperPermissionImpl
 }
 ```
 
+The base class decides what kind of object the permission applies to, through
+`Permission.appliesTo(Class)`:
+
+| Base class                                                                            | Applies to                                                                                       |
+|---------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
+| [`AbstractPdoPermission`](../java/org/tentackle/security/permissions/AbstractPdoPermission.java)       | PDO classes — like the built-in `READ`, `VIEW`, `WRITE` and `EDIT`                              |
+| [`AbstractNonPdoPermission`](../java/org/tentackle/security/permissions/AbstractNonPdoPermission.java) | everything else: operations, remote services, UI features — like the built-in `EXEC`           |
+| [`AbstractPermission`](../java/org/tentackle/security/permissions/AbstractPermission.java)             | implement `appliesTo` yourself; the built-in `ALL` applies to any class                         |
+
+`SecurityFactory.getPermissionInterfaces(clazz)` returns only the permissions applicable to a class,
+and the [security rules editor](../../../../tentackle-fx-rdc/src/main/docs/rdc.md#security-and-administration)
+offers only those for the class whose rules are being edited. A `BookkeeperPermission` derived from
+`AbstractPdoPermission` thus shows up for PDOs, but not for an operation. A custom permission guarding
+a menu entry or an operation extends `AbstractNonPdoPermission` instead.
+
 The name (`"BOOKKEEPER"`) is what appears in a rule's comma-separated `permissions`
 column; `SecurityFactory.getPermissionInterface(name)` maps it back to the interface
 at evaluation time. Custom permissions are first-class: usable in `@Secured`, in rule
@@ -322,14 +365,15 @@ Treating rules as PDOs has concrete operational consequences:
   the `Security` class. Any insert/update/delete of a rule — from anywhere in the
   cluster — calls `invalidate()`, and the next request lazily rebuilds the maps. Rule
   changes thus take effect **without a restart** and stay coherent across JVMs.
-- **They are remoting-aware.** A remote client's manager initializes against the
-  server (`assertRemoteSecurityManagerInitialized()`); evaluation and rule loading
-  dispatch over [TRIP](../../../../tentackle-core/src/main/docs/trip.md) like any
-  PDO operation. Remote **service** invocation is itself gated by `ExecutePermission`
-  before dispatch.
+- **They are remoting-aware.** A remote client's manager makes sure the server's
+  manager is initialized (`assertRemoteSecurityManagerInitialized()`) and loads the
+  rules from the server's cache over [TRIP](../../../../tentackle-core/src/main/docs/trip.md)
+  like any PDO. The evaluation itself always runs locally on the loaded rules. Remote
+  **service** invocation is itself gated by `ExecutePermission` before dispatch.
 - **They can go stale.** Since the model has no FK from a rule to its target,
   deleting a secured object or a grantee can orphan a rule.
   `removeObsoleteRules(session)` sweeps rules whose object or grantee no longer exists.
+  Failures are logged, not thrown.
 
 ---
 
@@ -369,7 +413,7 @@ onto Tentackle grantees. See
 | Per-tenant authorization                       | Scope rules to a `domainContext` target.                                                    |
 | Roles/groups                                   | Override `determineGranteesToCheck(...)`.                                                   |
 | App-specific right                             | Custom `Permission` interface + `@PermissionService` impl.                                  |
-| Change policy without redeploy                 | Edit `Security` rules (e.g. via the RDC `SecurityEditor`); caches invalidate automatically. |
+| Change policy without redeploy                 | Edit `Security` rules (e.g., via the RDC `SecurityEditor`); caches invalidate themselves.   |
 | Swap the whole mechanism                       | Provide an alternative `SecurityManager` via `SecurityFactory`.                             |
 | Lock everything down by default                | `setAcceptByDefault(false)` and grant explicitly.                                           |
 | Grant system/superuser access                  | Run under a session whose `userId ≤ 0`.                                                     |
@@ -393,11 +437,11 @@ onto Tentackle grantees. See
 ## See Also
 
 - [pdo.md](pdo.md) — PDOs, the `DomainContext`, and the aggregate roots the rules key on.
-- [cache.md](cache.md) — why cached entities should use `ViewPermission`, not `ReadPermission`.
+- [cache.md](cache.md) — why cached entities are always readable and use `ViewPermission` instead.
 - [operation.md](operation.md) — securing table-less service operations with `@Secured`.
 - [interceptors.md](../../../../tentackle-core/src/main/docs/interceptors.md) — the interception mechanism behind `@Secured`.
 - [session.md](../../../../tentackle-session/src/main/docs/session.md) — the session/user the grantee is derived from, and the `ModificationTracker`.
 - [authentication.md](../../../../tentackle-session/src/main/docs/authentication.md) — how that user is established at login: credentials, providers, single sign-on.
-- [trip.md](../../../../tentackle-core/src/main/docs/trip.md) — how security evaluation and rule loading work across tiers.
+- [trip.md](../../../../tentackle-core/src/main/docs/trip.md) — how the rules travel across tiers.
 - [services.md](../../../../tentackle-common/src/main/docs/services.md) — the SPI discovery used for permissions and the security manager.
 - [rdc.md](../../../../tentackle-fx-rdc/src/main/docs/rdc.md) — the `SecurityEditor` UI for managing rules.

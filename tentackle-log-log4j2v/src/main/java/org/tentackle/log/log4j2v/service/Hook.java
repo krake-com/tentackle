@@ -24,7 +24,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 /**
- * Hook for the log4j2v module.
+ * Module hook of tentackle-log-log4j2v (resource bundle access).
  *
  * @author harald
  */

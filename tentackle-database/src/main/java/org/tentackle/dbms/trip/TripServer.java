@@ -38,7 +38,7 @@ import java.util.TreeMap;
  * A generic TRIP server.<br>
  * Creates the server {@link org.tentackle.trip.Transport}(s) to handle incoming connections.
  * <p>
- * The backend properties from the {@link SessionInfo} is parsed for the following keys:
+ * The backend properties from the {@link SessionInfo} are parsed for the following keys:
  * <ul>
  * <li>
  *   {@code service=<uri>}:

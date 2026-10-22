@@ -19,10 +19,10 @@
 package org.tentackle.misc;
 
 /**
- * A short and a long text.<br>
- *
- * A ShortLongText is something very simple and common:
- * a short String and a longer more detailed description of
+ * A short and a long text.
+ * <p>
+ * A {@code ShortLongText} is something very simple and common:
+ * a short string and a longer, more detailed description of
  * an object.
  *
  * @author harald

@@ -26,6 +26,16 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Annotation for the handler of a {@link MasterSerialEvent}.
+ * <p>
+ * The annotated class must implement {@link java.util.function.Consumer} of the event type and provide
+ * a public no-args constructor, which is verified at compile time by the annotation processor.
+ * The handler is a stateless singleton. Since this is a {@link MappedService}, different clients
+ * may provide different handlers for the same event, and the server does not need to know them at all.
+ *
+ * @see MasterSerialEventHandlerFactory
+ */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
@@ -35,7 +45,7 @@ public @interface MasterSerialEventService {
   /**
    * Determines the serviced event class.
    *
-   * @return the class representing
+   * @return the event class handled by the annotated class
    */
   Class<? extends MasterSerialEvent> value();
 

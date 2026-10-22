@@ -137,7 +137,7 @@ public class DslDeclarationFactoryTest {
     // a variant cannot be determined from the class alone
     assertEquals(fieldCode(factory, "notes"),
                  "private static final Field<String> NOTES = " +
-                 "CUSTOMER.field(\"notes\", DataTypeFactory.getInstance().get(String.class, \"Large\"));");
+                 "CUSTOMER.field(\"notes\", DataTypeFactory.getInstance().get(String.class, \"LargeString\"));");
 
     // there is no class literal for a generic type
     assertEquals(fieldCode(factory, "attachment"),

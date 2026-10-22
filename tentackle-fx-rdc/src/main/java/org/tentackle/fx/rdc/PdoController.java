@@ -25,14 +25,14 @@ import org.tentackle.pdo.PersistentDomainObject;
 /**
  * FX controller for a persistent domain object.
  *
- * @param <T> the pdo type
+ * @param <T> the PDO type
  */
 public interface PdoController<T extends PersistentDomainObject<T>> extends FxController, PdoProvider<T> {
 
   /**
    * Sets the PDO.
    *
-   * @param pdo the pdo
+   * @param pdo the PDO
    */
   void setPdo(T pdo);
 

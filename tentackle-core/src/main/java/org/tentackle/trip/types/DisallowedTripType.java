@@ -53,6 +53,8 @@ public class DisallowedTripType<T> extends ObjectTripType<T> {
 
   /**
    * Creates the type.
+   *
+   * @param clazz the disallowed class
    */
   public DisallowedTripType(Class<T> clazz) {
     super(clazz);

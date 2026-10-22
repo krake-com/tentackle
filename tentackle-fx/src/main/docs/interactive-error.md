@@ -103,8 +103,9 @@ InteractiveError navigating = new DefaultInteractiveError(error) {
 The standard flow, as implemented by
 [`AbstractValidateableFxController.validateForm()`](../java/org/tentackle/fx/AbstractValidateableFxController.java):
 
-1. `prepareValidation()` clears previous errors (`container.clearErrors()`) and saves the view into
-   the model — the latter so that errors clear as soon as the user edits the offending field.
+1. `prepareValidation()` clears previous errors (`container.clearErrors()`) and saves the view
+   (`container.saveView()`) — the latter so that editing the offending field afterward counts as a
+   [modification](fx.md#view-modified-tracking), which clears its error again.
 2. `ValidationUtilities.validate(this)` runs the constraints and throws `ValidationFailedException`
    carrying the list of results.
 3. `FxUtilities.showValidationResults(view, ex, validationMappers, binder)` turns each result into an
@@ -145,5 +146,3 @@ resolve controls differently, or build errors explicitly for problems that valid
 - [tentackle-fx](fx.md) — the component error/info popups and the `tt-error` / `tt-info` styles.
 - [tentackle-fx-atlanta](../../../../tentackle-fx-atlanta/src/main/docs/atlanta.md) — the `-tt-error-color` / `-tt-info-color` theme variables.
 - [tentackle-fx-rdc](../../../../tentackle-fx-rdc/src/main/docs/rdc.md) — `PdoCrud` and the editor flow.
-</content>
-</invoke>

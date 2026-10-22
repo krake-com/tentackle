@@ -30,7 +30,7 @@ public interface AttributeOptions extends CommonOptions {
   /**
    * Gets the attribute this option-set belongs to.
    *
-   * @return the entity
+   * @return the attribute
    */
   Attribute getAttribute();
 
@@ -38,7 +38,7 @@ public interface AttributeOptions extends CommonOptions {
    * Gets the list of annotations.<br>
    * Annotations start with an &#64;. By default, they are applied to the getters
    * of the interfaces only. However, the at-sign may be followed by one or two modifiers
-   * that changes the code generation:
+   * that change the code generation:
    *
    * <ul>
    *   <li><code>=</code>: annotate setter only.</li>
@@ -64,14 +64,14 @@ public interface AttributeOptions extends CommonOptions {
   Object getDefaultValue();
 
   /**
-   * Gets the initial value if [INIT value] given.<br>
+   * Gets the initial value if [INIT value] given.
    *
    * @return the Java code to initialize the declaration with
    */
   String getInitialValue();
 
   /**
-   * Gets the new value if [NEW value] given.<br>
+   * Gets the new value if [NEW value] given.
    *
    * @return the Java code to initialize before validation if PDO is persisted the first time
    */

@@ -271,6 +271,41 @@ public class ValidatorsTest {
     assertPasses(ok);
   }
 
+  public static class LessNullObj {
+    @Less(value = "$limit", ignoreNulls = false) public Integer value = 5;
+    public Integer getLimit() { return null; }
+  }
+
+  @Test
+  public void testLessIgnoreNulls() {
+    // with ignoreNulls=false null is smaller than any value: nothing is less than null
+    assertFails(new LessNullObj());
+  }
+
+  public static class SizeArrayObj {
+    @Size(min = 1, max = 2) public String[] array = { "a", "b", "c" };
+  }
+
+  @Test
+  public void testSizeArray() {
+    assertFails(new SizeArrayObj());
+    SizeArrayObj ok = new SizeArrayObj();
+    ok.array = new String[] { "a" };
+    assertPasses(ok);
+  }
+
+  public static class NotEmptyArrayObj {
+    @NotEmpty public int[] array = {};
+  }
+
+  @Test
+  public void testNotEmptyArray() {
+    assertFails(new NotEmptyArrayObj());
+    NotEmptyArrayObj ok = new NotEmptyArrayObj();
+    ok.array = new int[] { 1 };
+    assertPasses(ok);
+  }
+
   public static class LessOrEqualObj {
     @LessOrEqual("10") public int value;
   }
@@ -396,6 +431,26 @@ public class ValidatorsTest {
   }
 
 
+  // ---- lazy objects --------------------------------------------------------
+
+  public static class LazyObj {
+    int loads;
+    public boolean isSlave() { return false; }
+    @NotNull(condition = "$slave")
+    public String getLazy() { loads++; return null; }
+  }
+
+  /**
+   * The element is supplied lazily: a reference condition that does not apply must not retrieve it.
+   */
+  @Test
+  public void testReferenceConditionDoesNotLoadObject() {
+    LazyObj obj = new LazyObj();
+    assertPasses(obj);
+    assertEquals(obj.loads, 0, "lazy object retrieved although the condition does not apply");
+  }
+
+
   // ---- Validate ------------------------------------------------------------
 
   public static class ValidateNullObj {
@@ -414,6 +469,32 @@ public class ValidatorsTest {
   @Test
   public void testValidateNotValidateableThrows() {
     assertThrows(ValidationRuntimeException.class, () -> validate(new ValidateNotValidateableObj()));
+  }
+
+  /**
+   * A component providing its own validation.
+   */
+  public static class OwnValidation extends NotNullObj implements Validateable {
+    boolean ownValidationInvoked;
+
+    @Override
+    public List<ValidationResult> validate(String validationPath, ValidationScope scope) {
+      ownValidationInvoked = true;
+      return Validateable.super.validate(validationPath, scope);
+    }
+  }
+
+  public static class ValidateValidateableObj {
+    @Validate public OwnValidation component = new OwnValidation();
+  }
+
+  @Test
+  public void testValidateInvokesOwnValidation() {
+    ValidateValidateableObj obj = new ValidateValidateableObj();
+    List<ValidationResult> results = validate(obj);
+    assertTrue(obj.component.ownValidationInvoked, "Validateable.validate() not invoked");
+    assertEquals(results.size(), 1);                     // the null text of the component
+    assertEquals(results.getFirst().getValidationPath(), "o.component.text");
   }
 
   public static class ValidateCollectionObj {

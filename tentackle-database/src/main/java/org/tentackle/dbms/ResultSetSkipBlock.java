@@ -86,12 +86,12 @@ public class ResultSetSkipBlock {
   /**
    * Maps the given column name to its column index.
    * <p>
-   * If the result set is in skip mode, the first column with that name is found
-   * after having skipped some columns according to the last invocation of {@link ResultSetWrapper#skip()}.
-   * Otherwise, the standard JDBC implementation is used.
+   * Finds the first column with that name after the skipped columns of this block.
+   * The column names of the result set are mapped in lowercase.
    *
    * @param name the column name
    * @return the index in the result set
+   * @throws PersistenceException if no such column beyond the skipped columns
    */
   public int findColumn(String name) {
     Integer ndx = columnMap.get(name);

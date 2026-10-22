@@ -63,15 +63,23 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
- * To handle login failed exceptions.
+ * Login failed handler that updates an outdated client.
+ * <p>
+ * A {@link VersionIncompatibleException} or an {@link SSLHandshakeException} (a new server version may come
+ * with a new certificate) is taken as a hint that the client is outdated. If the client runs from an updatable
+ * jlink or jpackage image and an {@code updateService} property is configured, the remote {@link UpdateService}
+ * is asked for a newer version, which is then downloaded and installed, and the application restarted.
+ * If the client is not updatable, the user is told to contact the administrator.
+ * All other failures are passed on to the standard {@link LoginFailedHandler}.
  *
  * @author harald
  */
 public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
 
   /**
-   * Exit value if the application terminated because it is outdated or the update failed.<br>
-   * Differs from the exit value 98 used by the standard {@link LoginFailedHandler} for other login failures.
+   * Exit value if the application terminated because it is outdated and cannot update itself, or the update failed.<br>
+   * Differs from {@link LoginFailedHandler#EXIT_LOGIN_FAILED} used by the standard handler for other login failures.
+   * If the user declines the update, the application terminates without a stop reason.
    */
   public static final int EXIT_VALUE_OUTDATED = 97;
 
@@ -88,6 +96,12 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
     super(application, view, sessionInfo);
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Returns the update runnable if a newer version is available.
+   * Like the handler itself, the runnable is invoked from within the login service's background thread.
+   */
   @Override
   @SuppressWarnings("unchecked")
   public Runnable handle(Exception ex) {
@@ -139,7 +153,8 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
   /**
    * Creates a runnable that will be invoked if a newer version exists.<br>
    * The default implementation asks the user whether to update or not and invokes
-   * {@link #update(UpdateInfo, InstallationType)} or {@link #terminate(String, Throwable)}, respectively.<br>
+   * {@link #update(UpdateInfo, InstallationType)} or {@link #terminate(String, Throwable)}, respectively.
+   * The runnable blocks until the user has answered the dialog shown on the FX thread.<br>
    * Applications running in unattended mode (presentation mode, dashboards, etc...)
    * may override this method and update without asking the user.
    *
@@ -177,6 +192,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
   /**
    * Shows an update dialog to ask the user whether to update or not.<br>
    * Invoked from within the FX thread.
+   * Closing the notification without pressing a button (ESC, for example) is taken as NO.
    * <p>
    * Implementations must either invoke the answer consumer or throw, since the invoking thread
    * is blocked until the answer is provided (see {@link #createUpdateRunnable}).
@@ -211,9 +227,11 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
 
   /**
    * Creates a countdown timeline for the go-button to start the update automatically after a few seconds.<br>
-   * The default implementation counts down from 3 each second.<br>
-   * The update should not start automatically since the user should have to option to cancel.
-   * Furthermore, if the update fails for whatever reason, we don't want to end up in an installation loop.
+   * The default implementation replaces the button text every second by 3, 2, 1 and 0 seconds
+   * and clicks the button at 0, i.e. about four seconds after the dialog was shown.<br>
+   * The update should not start immediately, since the user must have the option to cancel.
+   * Furthermore, if the update keeps failing for whatever reason, the user can break the installation loop.
+   * Return null to require an explicit confirmation.
    *
    * @param goButton the go-button
    * @return the timeline, null if no countdown (no automatic update start)
@@ -239,7 +257,8 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
   }
 
   /**
-   * Creates the remote update service.
+   * Creates the remote update service.<br>
+   * The service URL is taken from the application property {@code updateService}.
    *
    * @return the service object, null if no service configured
    */
@@ -249,7 +268,9 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
   }
 
   /**
-   * Creates the update directory.
+   * Determines the update directory.<br>
+   * The default is {@code update} below the package root for jpackage and below the image root for jlink.
+   * The directory itself is (re)created empty by {@link ClientUpdateUtilities#downloadZip}.
    *
    * @param installationType the installation type
    * @return the directory to download and unzip the files for update
@@ -260,7 +281,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
       File rootDir = ClientUpdateUtilities.getInstance().determineJPackageRoot();   // cannot be null since installationType is already known
       return new File(rootDir, "update");
     }
-    // else JLink: execution dir is always the jlink images' root
+    // else JLink: execution dir is always the jlink image's root
     return new File("update");
   }
 
@@ -268,6 +289,8 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
    * Runs the update.<br>
    * Downloads and unzips the new version and launches the update script, which replaces the
    * running image after this application has terminated.
+   * The script gets the PID of this process and, for jpackage, the path of the launcher to restart.
+   * On success, the application exits via {@link System#exit(int)}.
    * If anything goes wrong, the update is aborted via {@link #terminate(String, Throwable)}.
    *
    * @param updateInfo the update info
@@ -311,12 +334,12 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
       long pid = ProcessHandle.current().pid();       // 1st arg is the PID of the executing process
       ProcessBuilder builder;
       if (installationType == InstallationType.JPACKAGE) {
-        Optional<String> javaCommand = ProcessHandle.current().info().command();   // 2nd is the path to the executable to be restarted
-        if (javaCommand.isPresent()) {
-          builder = new ProcessBuilder(updateScript.getPath(), Long.toString(pid), javaCommand.get());
+        Optional<String> launcher = ProcessHandle.current().info().command();   // 2nd is the path to the launcher to be restarted
+        if (launcher.isPresent()) {
+          builder = new ProcessBuilder(updateScript.getPath(), Long.toString(pid), launcher.get());
         }
         else {
-          throw new TentackleRuntimeException("cannot determine running java command");
+          throw new TentackleRuntimeException("cannot determine the running launcher executable");
         }
       }
       else {    // JLink
@@ -344,10 +367,12 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
 
   /**
    * Passes the current username and password encrypted to the process environment of the updated application.<br>
-   * This happens only if both the username and password were given and a valid cryptor was found.
+   * Requires a {@link Cryptor}. The username is passed if known, the password in addition if the credentials
+   * are password-based. The variables are named {@code <APP>_USER} and {@code <APP>_PASSWORD}, where
+   * {@code <APP>} is the application name reduced to ASCII letters and digits, all in upper case.
    *
    * @param environment the process environment
-   * @see LoginApplication#createSessionInfo()
+   * @see LoginApplication#updateSessionInfoFromEnvironment(SessionInfo)
    */
   protected void passSessionInfoViaEnvironment(Map<String, String> environment) {
     Cryptor cryptor = Cryptor.getInstance();
@@ -380,10 +405,13 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
   }
 
   /**
-   * Terminates the application.
+   * Terminates the application.<br>
+   * Shows the message, if any, as an error (with throwable) or info dialog and closes the login window
+   * when the dialog is closed. The application terminates when its last window is closed.
    *
-   * @param msg the message shown to the user
-   * @param t the throwable
+   * @param msg the message shown to the user, null to close the window without a message
+   * @param t the throwable recorded as the stop reason, null if none
+   * @see #setStopReason(Throwable)
    */
   protected void terminate(String msg, Throwable t) {
     setStopReason(t);   // before showing the dialog: the reason must survive a failing dialog

@@ -37,6 +37,7 @@ import org.tentackle.sql.Backend;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.DataTypeFactory;
 import org.tentackle.sql.SqlNameType;
+import org.tentackle.sql.datatypes.LargeStringType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -241,7 +242,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
 
       if ("String".equals(line.getJavaType()) && Integer.valueOf(0).equals(line.getSize())) {
         // special handling for LARGESTRING: String with explicit size of 0
-        setDataType(DataTypeFactory.getInstance().get(line.getJavaType(), DataTypeFactory.LARGE_VARIANT));
+        setDataType(DataTypeFactory.getInstance().get(line.getJavaType(), LargeStringType.VARIANT));
       }
 
       if (isConvertible()) {
@@ -276,7 +277,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
       // replace SIZE by MAXCOLS=size and/or SCALE=scale, if set
       if (getOptions().getBindOptions().contains(CommonOptionsImpl.BIND_SIZE)) {
         getOptions().removeBindOption(CommonOptionsImpl.BIND_SIZE);
-        // size option set: replace by [MAXCOLS=<size>][,SCALE=<scale] if not already defined in model
+        // size option set: replace by [MAXCOLS=<size>][,SCALE=<scale>] if not already defined in model
         // <=0 is ignored, as it is not a valid size value anyway and String(0) is used to represent a large string.
         if (getSize() != null && getSize() > 0 && !getOptions().getBindOptions().contains(Constants.BIND_MAXCOLS)) {
           getOptions().addBindOption(Constants.BIND_MAXCOLS + "=" + getSize());
@@ -345,7 +346,8 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
    * Sets the inner type name.
    *
    * @param innerTypeName the name of the inner type
-   * @throws ModelException if datatype is Convertible, and the inner type is not supported or inner type not applicable to datatype
+   * @throws ModelException if the data type does not support inner types,
+   *                        or the data type is Convertible and the inner type is not a supported data type
    */
   public void setInnerTypeName(String innerTypeName) throws ModelException {
     if (!dataType.isModelProvidingInnerType()) {
@@ -357,8 +359,8 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
         throw createModelException("inner type " + innerTypeName + " not supported for type " + dataType);
       }
     }
-    this.innerTypeName = innerTypeName;
     // else: just a generic type name
+    this.innerTypeName = innerTypeName;
   }
 
   @Override
@@ -484,9 +486,9 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
   }
 
   /**
-   * Overrides nullable feature.
+   * Overrides the nullable feature.
    *
-   * @param nullable null to determine from datatype
+   * @param nullable true or false to override, null to derive from the data type (primitive) and the MAPNULL option
    */
   public void setNullable(Boolean nullable) {
     this.nullable = nullable;
@@ -589,7 +591,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
   /**
    * Creates a model exception.
    * <p>
-   * Refers to the source line if set, otherwise just the message.
+   * Refers to the source line if set, otherwise to this attribute.
    *
    * @param message the message
    * @return the exception

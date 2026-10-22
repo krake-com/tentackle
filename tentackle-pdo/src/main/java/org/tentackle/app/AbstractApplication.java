@@ -91,18 +91,18 @@ public abstract class AbstractApplication implements Application {
 
   private final String name;                  // the application's name
   private final String version;               // the application's version
-  private final long creationTime;            // creation time in epochal milliseconds
+  private final long creationTime;            // creation time in epoch milliseconds
 
   private EncryptedProperties props;          // the application's properties
   private CommandLine cmdLine;                // command line
-  private DomainContext context;              // the server's connection context
-  private SessionInfo sessionInfo;            // server's session info
+  private DomainContext context;              // the application's domain context
+  private SessionInfo sessionInfo;            // the application's session info
   private boolean stopping;                   // true if application is stopping
 
 
   /**
    * Super constructor for all derived classes.<br>
-   * Detects whether application is running within a container or deployed by JNLP (webstart).
+   * Installs a default uncaught exception handler that logs the exception.
    *
    * @param name the application name, null for default name
    * @param version the application version, null for default version
@@ -168,7 +168,7 @@ public abstract class AbstractApplication implements Application {
 
 
   /**
-   * Gets the creation time in epochal milliseconds.
+   * Gets the creation time in epoch milliseconds.
    *
    * @return the creation time of this application
    */
@@ -246,6 +246,18 @@ public abstract class AbstractApplication implements Application {
    */
   protected EncryptedProperties getProperties() {
     return props;
+  }
+
+  /**
+   * Returns whether a property is set, regardless of its value.<br>
+   * The key is case-insensitive.
+   *
+   * @param key the property key
+   * @return true if set
+   */
+  protected boolean isPropertySet(String key) {
+    EncryptedProperties properties = getProperties();
+    return properties != null && properties.getPropertyIgnoreCase(key) != null;
   }
 
   /**
@@ -437,9 +449,9 @@ public abstract class AbstractApplication implements Application {
                    sysProps.getProperty("os.version") + " / " +
                    sysProps.getProperty("os.arch") + ")");
 
-    String str = System.getenv("COMPUTERNAME"); // windoze
+    String str = System.getenv("COMPUTERNAME"); // Windows
     if (str == null) {
-      str = System.getenv("HOSTNAME");    // unix and derivates
+      str = System.getenv("HOSTNAME");    // unix and derivatives
     }
     if (str == null) {
       // last chance
@@ -473,7 +485,10 @@ public abstract class AbstractApplication implements Application {
 
   /**
    * Creates the domain context.<br>
-   * Override this method if the application uses a subclass of DomainContext.
+   * The context is created via {@link Pdo#createDomainContext(Session, boolean)} with an immutable session,
+   * i.e., by the {@link org.tentackle.pdo.DomainContextFactory}, which is the recommended way to provide
+   * an application-specific context.
+   * For remote sessions, the user's ID, class ID, and name are taken from the server's view of the session.
    *
    * @param session the session, null if thread-local
    * @return the domain context
@@ -528,10 +543,11 @@ public abstract class AbstractApplication implements Application {
 
 
   /**
-   * Configures the security manager.
+   * Configures the security manager.<br>
+   * The default implementation enables the security manager, unless the property {@code "nosecurity"} is given.
    */
   protected void configureSecurityManager() {
-    SecurityFactory.getInstance().getSecurityManager().setEnabled(true);
+    SecurityFactory.getInstance().getSecurityManager().setEnabled(!isPropertySet(DISABLE_SECURITY_MANAGER));
   }
 
 
@@ -576,9 +592,9 @@ public abstract class AbstractApplication implements Application {
 
 
   /**
-   * Do anything what's necessary after the connection has been established.<br>
-   * The default creates the modification tracker (but does not start it),
-   * and configures the preferences and security manager.
+   * Does whatever is necessary after the connection has been established.<br>
+   * The default implementation configures the modification tracker (but does not start it),
+   * the preferences and the security manager.
    */
   protected void configure() {
     configureModificationTracker();
@@ -589,17 +605,22 @@ public abstract class AbstractApplication implements Application {
 
   /**
    * Finishes the startup.<br>
-   * The default implementation starts the modification tracker, unless the property {@literal "notracker"} is given.<br>
-   * The property {@literal "statistics"} activates the statistics.
+   * The default implementation:
+   * <ol>
+   *   <li>activates the statistics, if the property {@code "statistics"} is given,</li>
+   *   <li>preloads the caches (see {@link #preloadCaches()}) and starts the modification tracker,
+   *   unless the property {@code "notracker"} is given, which disables all PDO caches instead,</li>
+   *   <li>and, if this is a server, waits until the caches are preloaded.</li>
+   * </ol>
    */
   protected void finishStartup() {
 
-    if (getProperties().containsKey(ENABLE_STATISTICS)) {
+    if (isPropertySet(ENABLE_STATISTICS)) {
       activateStatistics();
     }
 
     // start the modification tracker
-    if (!getProperties().containsKey(DISABLE_MODIFICATION_TRACKER)) {
+    if (!isPropertySet(DISABLE_MODIFICATION_TRACKER)) {
       // Runs in a parallel thread on a cloned session for remote applications or
       // for local interactive applications (desktop).
       // In all other cases, it runs on the main thread.
@@ -641,7 +662,7 @@ public abstract class AbstractApplication implements Application {
    * Preloads the caches.<br>
    * Invoked from {@link #finishStartup()} after initializing the modification tracker.
    *
-   * @return a countdown latch that can be used to wait for the preload to finish, null if no parallel download
+   * @return a countdown latch that can be used to wait for the preload to finish, null if preloaded synchronously
    */
   protected CountDownLatch preloadCaches() {
     // don't use op() since the context's session is not set and the session is not thread-local (yet)

@@ -6,17 +6,22 @@
 .root {
 
   /**
-   * light yellow components indicate a mandatory field.
+   * dark yellow components indicate a mandatory field.
    */
   -tt-mandatory-color: -color-warning-7;
 
   /**
-   * light red components indicate an error.
+   * dark red components indicate an error.
    */
   -tt-error-color: -color-danger-7;
 
   /**
-   * light green components indicate an info/hint.
+   * briefly flashing components indicate rejected input (see InputAlert).
+   */
+  -tt-alert-color: -color-danger-5;
+
+  /**
+   * dark green components indicate an info/hint.
    */
   -tt-info-color: -color-success-7;
 
@@ -43,6 +48,20 @@
   -fx-control-inner-background: -tt-error-color;
   -fx-base: -tt-error-color;
   -color-bg-default: -tt-error-color;
+}
+
+/*
+ * visual input alert, overrides mandatory, error and info for the duration of the flash.
+ * JavaFX weighs a style class higher than any number of pseudo-classes,
+ * hence the state classes must be repeated here.
+ */
+:tt-alert,
+.tt-mandatory:tt-alert,
+.tt-error:tt-alert,
+.tt-info:tt-alert {
+  -fx-control-inner-background: -tt-alert-color;
+  -fx-base: -tt-alert-color;
+  -color-bg-default: -tt-alert-color;
 }
 
 .tt-i18n {

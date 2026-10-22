@@ -1,0 +1,9 @@
+## a port
+name := Port
+id := 31
+table := port
+extends := Hub
+
+## attributes
+
+Integer         berths          berths          the number of berths

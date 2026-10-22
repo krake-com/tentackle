@@ -25,6 +25,7 @@ import org.tentackle.fx.bind.FxBindingFactory;
 import org.tentackle.fx.bind.FxTableBinder;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTreeTableView;
+import org.tentackle.fx.table.edit.TableEditHandler;
 import org.tentackle.fx.table.filter.TableColumnFilter;
 import org.tentackle.fx.table.filter.TableFilter;
 import org.tentackle.fx.table.filter.TableFilterSupport;
@@ -54,7 +55,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
 
   /*
    * TableView and TreeTableView don't inherit from each other, and thus
-   * each spawns their own related types such as TableColum, TreeTableColumn, etc...
+   * each spawns their own related types such as TableColumn, TreeTableColumn, etc.
    * As a result, since TableConfiguration and TableColumnConfiguration apply
    * to both tables and tree-tables, a lot of semantically identical code is necessary.
    * However, it is not really duplicate code. There's little we can do to reduce it.
@@ -140,9 +141,9 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   private boolean filterIncluded;
 
   /**
-   * The edit mode.
+   * The edit handler.
    */
-  private EDITMODE editMode = EDITMODE.NO;
+  private TableEditHandler<S> editHandler;
 
   /**
    * The binding type.
@@ -172,7 +173,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
    * Creates a configuration.
    *
    * @param objectClass the object class
-   * @param name the table's name, null if basename from effective class of template
+   * @param name the table's name, null if basename of the object class
    */
   public DefaultTableConfiguration(Class<S> objectClass, String name) {
     this.template = null;
@@ -293,7 +294,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     if (suffix != null) {
       prefName.append('_').append(suffix);
     }
-    // always add the locale since header sizes etc... may vary
+    // always add the locale since header sizes etc. may vary
     prefName.append('_').append(LocaleProvider.getInstance().getEffectiveLocale());
 
     ObservableList<TableColumn<S,?>> sortOrder = table.getSortOrder();
@@ -350,7 +351,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     if (suffix != null) {
       prefName.append('_').append(suffix);
     }
-    // always add the locale since header sizes etc... may vary
+    // always add the locale since header sizes etc. may vary
     prefName.append('_').append(LocaleProvider.getInstance().getEffectiveLocale());
 
     Map<Integer, TableColumn<S,?>> sortOrder = new TreeMap<>();   // sorted by sort index
@@ -455,7 +456,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     if (suffix != null) {
       prefName.append('_').append(suffix);
     }
-    // always add the locale since header sizes etc... may vary
+    // always add the locale since header sizes etc. may vary
     prefName.append('_').append(LocaleProvider.getInstance().getEffectiveLocale());
 
     ObservableList<TreeTableColumn<S,?>> sortOrder = treeTable.getSortOrder();
@@ -507,7 +508,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     if (suffix != null) {
       prefName.append('_').append(suffix);
     }
-    // always add the locale since header sizes etc... may vary
+    // always add the locale since header sizes etc. may vary
     prefName.append('_').append(LocaleProvider.getInstance().getEffectiveLocale());
 
     Map<Integer, TreeTableColumn<S,?>> sortOrder = new TreeMap<>();   // sorted by sort index
@@ -605,13 +606,13 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   }
 
   @Override
-  public EDITMODE getEditMode() {
-    return editMode;
+  public TableEditHandler<S> getEditHandler() {
+    return editHandler;
   }
 
   @Override
-  public void setEditMode(EDITMODE editMode) {
-    this.editMode = editMode == null ? EDITMODE.NO : editMode;
+  public void setEditHandler(TableEditHandler<S> editHandler) {
+    this.editHandler = editHandler;
   }
 
   @Override

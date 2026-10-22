@@ -36,7 +36,8 @@ import java.util.function.Function;
 
 
 /**
- * BMoney translator.
+ * BMoney translator.<br>
+ * Applies to {@link DMoney} as well.
  *
  * @author harald
  */
@@ -67,6 +68,15 @@ public class BMoneyStringTranslator extends FractionNumberStringTranslator<BMone
     return FormatHelper.getMoneyPattern();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * If the decimal separator is missing and {@link FxUtilities#isLenientMoneyInput(FxTextComponent)} is enabled,
+   * it is inserted according to the component's scale.
+   * Unlike the other number translators, parsing errors are only set in the component and null is returned.
+   *
+   * @return the money value, null if the string is null or parsing failed
+   */
   @Override
   protected BMoney parse(String str) {
     if (str != null) {

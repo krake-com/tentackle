@@ -36,8 +36,9 @@ interface ValidatorCacheHolder {
 /**
  * Holds all fixed validators cached for all classes.
  * <p>
- * All validators bound by an annotation are considered fixed and can be cached.<br>
- * This is a singleton.
+ * All validators bound by an annotation are considered fixed and can be cached.
+ * <p>
+ * Replaceable via &#64;{@link Service}.
  *
  * @author harald
  */
@@ -45,7 +46,7 @@ interface ValidatorCacheHolder {
 public class ValidatorCache {
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */
@@ -99,10 +100,11 @@ public class ValidatorCache {
   /**
    * Gets all validators for all annotated fields or methods.<br>
    * If an attribute is annotated both at the field and the (getter-)method level,
-   * the method gets precedence.
+   * the validators of both are applied.
    *
    * @param clazz the class to inspect
-   * @return the validators for this class and scope
+   * @return the validators for this class
+   * @see ValidationUtilities#getFieldValidators(Class, ValidationScope)
    */
   public List<Validator> getFieldValidators(Class<?> clazz) {
     return fieldMap.computeIfAbsent(clazz,
@@ -110,7 +112,7 @@ public class ValidatorCache {
   }
 
   /**
-   * Get validators for an annotated field and/or method.<br>
+   * Gets the validators for an annotated field and/or method.
    *
    * @param field the field, null if none
    * @param method the (getter-)method, null if none
@@ -126,7 +128,7 @@ public class ValidatorCache {
    * Gets all validators for an annotated class.
    *
    * @param clazz the class to inspect
-   * @return the list of field validators
+   * @return the list of object validators
    */
   public List<Validator> getObjectValidators(Class<?> clazz) {
     return objectMap.computeIfAbsent(clazz,

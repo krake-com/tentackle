@@ -32,7 +32,8 @@ import java.net.Socket;
 import java.net.URI;
 
 /**
- * Transport implementation for compressed TCP.
+ * Transport implementation for compressed TCP.<br>
+ * Packets smaller than the URI query parameter {@code mincompress} (default 1024) are not compressed.
  */
 @TransportService(CompressedTransport.PROTOCOL)
 public class CompressedTransport extends TcpTransport {

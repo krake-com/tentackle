@@ -30,6 +30,15 @@ import java.util.TimeZone;
 /**
  * Session information.
  * <p>
+ * Describes <em>who</em> and <em>what</em> a session represents: the user, the {@link Credentials}
+ * proving the user's identity, the application, the client's environment, and the connection
+ * properties. A remote session sends its session info to the server at login, and the server
+ * writes back what it determined, such as the user id.
+ * <p>
+ * A session info is mutable until it is made {@link Immutable immutable}, as server applications do
+ * with their own session info. Modifying an immutable session info throws an
+ * {@link org.tentackle.misc.ImmutableException}, or just logs it if an immutable logging level is set.
+ * <p>
  * Implementations must define {@code equals} and {@code hashCode} by the username alone, so that
  * every session info of a user -- the original, its clones, and one created solely to address that
  * user -- is interchangeable as a key. A {@link MultiUserSessionPool} depends on it to map a user
@@ -97,9 +106,9 @@ public interface SessionInfo extends Immutable, Serializable {
   void setPassword(char[] password);
 
   /**
-   * Clears the password.<br>
-   * Will remove it from memory by overwriting each
-   * element in the character array.
+   * Clears the confidential parts of the credentials.<br>
+   * Removes them from memory by overwriting the corresponding arrays.
+   * Despite its name, this applies to any kind of credentials, not only passwords.
    *
    * @see Credentials#clear()
    */
@@ -186,7 +195,9 @@ public interface SessionInfo extends Immutable, Serializable {
 
   /**
    * Clones a session-info.<br>
-   * The password will be copied if not null.
+   * The credentials are physically copied, so clearing the original does not clear the clone.
+   * The cloned session info is mutable, flagged as {@link #isCloned() cloned} and has
+   * {@link #isLockLingerEnabled() lock linger} enabled.
    *
    * @return the cloned session info
    */
@@ -228,12 +239,11 @@ public interface SessionInfo extends Immutable, Serializable {
 
   /**
    * Gets the connection properties.<br>
-   * The properties are not set so far, the method will load
-   * the properties file by adding the extension {@code ".properties"}
-   * to {@link #getPropertiesName()} (if it does not contain an extension already).<br>
-   * If there is no such file, the properties will be read as a resource according
-   * to the classpath.<br>
-   * If all fails, a {@link PersistenceException} is thrown.
+   * If the properties are not set so far, they are loaded for {@link #getPropertiesName()} via
+   * {@link org.tentackle.misc.PropertiesUtilities#load(String)}, which applies all
+   * {@link org.tentackle.misc.PropertiesResource}s in the order of their priority (by default,
+   * a properties file and a resource from the classpath or module path).<br>
+   * If nothing is found, a {@link PersistenceException} is thrown.
    *
    * @return the connection properties, never null
    */
@@ -262,7 +272,8 @@ public interface SessionInfo extends Immutable, Serializable {
 
   /**
    * Gets the session's locale.<br>
-   * Returns the JVM's default locale if not set explicitly via {@link #setLocale(java.util.Locale)}.
+   * Returns the locale of the {@link org.tentackle.common.LocaleProvider} if not set explicitly
+   * via {@link #setLocale(java.util.Locale)}.
    *
    * @return the locale, never null
    */
@@ -271,7 +282,7 @@ public interface SessionInfo extends Immutable, Serializable {
   /**
    * Sets the session's locale.
    *
-   * @param locale the locale, null to use JVM's locale
+   * @param locale the locale, null to use the locale of the {@link org.tentackle.common.LocaleProvider}
    */
   void setLocale(Locale locale);
 
@@ -320,7 +331,7 @@ public interface SessionInfo extends Immutable, Serializable {
   /**
    * Gets the timezone.
    *
-   * @return the timezone
+   * @return the timezone, null if not set
    */
   TimeZone getTimeZone();
 
@@ -334,6 +345,7 @@ public interface SessionInfo extends Immutable, Serializable {
   /**
    * Checks the version of the server.
    * <p>
+   * Invoked by the client after connecting to the server.
    * The default implementation does nothing.
    *
    * @param serverVersion the server's version

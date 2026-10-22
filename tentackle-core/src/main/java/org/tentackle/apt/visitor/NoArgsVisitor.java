@@ -22,7 +22,7 @@ import javax.lang.model.type.ExecutableType;
 import javax.lang.model.util.SimpleTypeVisitor8;
 
 /**
- * A type visitor checks for no args.
+ * A type visitor that checks whether an executable, usually a constructor, takes no arguments.
  *
  * @author harald
  */

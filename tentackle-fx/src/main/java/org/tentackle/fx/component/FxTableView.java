@@ -32,6 +32,8 @@ import org.tentackle.fx.component.delegate.FxTableViewDelegate;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.fx.table.edit.FxTableEditContext;
+import org.tentackle.fx.table.edit.TableEditContext;
 import org.tentackle.fx.table.filter.TableFilter;
 import org.tentackle.fx.table.filter.TableFilterSupport;
 import org.tentackle.misc.CsvConverter;
@@ -50,7 +52,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Extended TableView.
+ * Extended TableView.<br>
+ * Usually configured by a {@link TableConfiguration}, which also provides the column filters
+ * and the preferences-backed layouts.
  *
  * @author harald
  * @param <S> the row type
@@ -78,6 +82,11 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
    */
   private TableFilterSupport<S> filterSupport;
 
+  /**
+   * The edit context, created on demand.
+   */
+  private TableEditContext<S> editContext;
+
 
   /**
    * Gets the table configuration.
@@ -86,6 +95,29 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
    */
   public TableConfiguration<S> getConfiguration() {
     return configuration;
+  }
+
+  /**
+   * Gets the edit context.<br>
+   * The context is passed to the {@link org.tentackle.fx.table.edit.TableEditHandler} of the table configuration.
+   * It can also be used by the application to modify the rows and to start editing a cell.
+   *
+   * @return the edit context, never null
+   */
+  public TableEditContext<S> getEditContext() {
+    if (editContext == null) {
+      editContext = createEditContext();
+    }
+    return editContext;
+  }
+
+  /**
+   * Creates the edit context.
+   *
+   * @return the edit context
+   */
+  protected TableEditContext<S> createEditContext() {
+    return new FxTableEditContext<>(this);
   }
 
   /**
@@ -258,7 +290,8 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
   }
 
   /**
-   * Configures the table to copy a cell via Ctrl-C to the clipboard.
+   * Configures the table to copy the selected cells via Ctrl-C to the clipboard.<br>
+   * With Ctrl-Shift-C, rows and columns are swapped.
    *
    * @param copyToClipboardEnabled true to enable
    */
@@ -377,7 +410,9 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
   }
 
   /**
-   * Handles all key events.
+   * Handles all key events.<br>
+   * Implements the copy-to-clipboard feature, if enabled. The copied text is shown in a note
+   * as long as the control key is held down.
    *
    * @param event the key event
    */
@@ -386,7 +421,7 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
       if (event.getEventType() == KeyEvent.KEY_PRESSED && event.isControlDown() && event.getCode() == KeyCode.C) {
         String text = copyToClipboard(event.isShiftDown());
         if (text != null) {
-          // display copied text for as long as the control button is held down (see setOnKeyReleased below)
+          // display copied text for as long as the control button is held down (see KEY_RELEASED below)
           Note infoNote = Fx.create(Note.class);
           infoNote.setText(text);
           infoNote.show(this);

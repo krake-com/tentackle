@@ -29,7 +29,9 @@ import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.testng.AbstractPdoTest;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.expectThrows;
 
 /**
  * Number-source tests.
@@ -129,6 +131,60 @@ public class NumberSourceTest extends AbstractPdoTest {
     assertEquals(range.begin(), 2201);
     assertEquals(range.end(), 6000);
     assertTrue(ns.isEmpty());
+  }
+
+  /**
+   * Creates and saves a pool.
+   *
+   * @param name the pool name
+   * @param online true if online
+   * @param ranges the ranges as begin/end pairs
+   * @return the saved pool
+   */
+  private NumberPool createPool(String name, boolean online, long... ranges) {
+    NumberPool numberPool = on(NumberPool.class);
+    numberPool.setName(name);
+    numberPool.setRealm(POOL_REALM);
+    numberPool.setOnline(online);
+    for (int i = 0; i < ranges.length; i += 2) {
+      NumberRange numberRange = numberPool.on(NumberRange.class);
+      numberRange.setBegin(ranges[i]);
+      numberRange.setEnd(ranges[i + 1]);
+      numberPool.getNumberRangeList().add(numberRange);
+    }
+    return numberPool.persist();
+  }
+
+  @Test(groups = "local")
+  public void offlinePoolIsNotOnline() {
+    createPool("offline", false, 1, 10);
+    NumberSource ns = NumberSourceFactory.getInstance().getNumberSource("offline", POOL_REALM);
+    assertFalse(ns.isOnline());
+    expectThrows(NumberSourceException.class, ns::popNumber);
+  }
+
+  @Test(groups = "local")
+  public void rangesWithTheSameBeginAreMerged() {
+    createPool("samebegin", true, 10, 20, 5, 8);
+    NumberSource ns = NumberSourceFactory.getInstance().getNumberSource("samebegin", POOL_REALM);
+    // extends [10,20) to [5,20), which now starts with the same number as [5,8)
+    ns.pushNumbers(5, 15);
+    NumberSource.Range[] ranges = ns.getRanges();
+    assertEquals(ranges.length, 1);
+    assertEquals(ranges[0].begin(), 5);
+    assertEquals(ranges[0].end(), 20);
+    assertEquals(ns.getCount(), 15);    // each number exactly once
+  }
+
+  @Test(groups = "local")
+  public void adjacentRangesAreMerged() {
+    createPool("adjacent", true, 1, 5, 6, 10);
+    NumberSource ns = NumberSourceFactory.getInstance().getNumberSource("adjacent", POOL_REALM);
+    ns.pushNumber(5);   // [1,6) now touches [6,10)
+    NumberSource.Range[] ranges = ns.getRanges();
+    assertEquals(ranges.length, 1);
+    assertEquals(ranges[0].begin(), 1);
+    assertEquals(ranges[0].end(), 10);
   }
 
 }

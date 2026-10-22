@@ -18,26 +18,26 @@
 
 package org.tentackle.maven.plugin;
 
-import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
-import org.apache.maven.project.DefaultProjectBuildingRequest;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.ProjectBuildingRequest;
-import org.apache.maven.shared.dependency.graph.DependencyGraphBuilder;
-import org.apache.maven.shared.dependency.graph.DependencyGraphBuilderException;
-import org.apache.maven.shared.dependency.graph.DependencyNode;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.collection.DependencyCollectionException;
+import org.eclipse.aether.graph.DependencyNode;
 
 import org.tentackle.common.StringHelper;
+import org.tentackle.maven.ProjectDependencies;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
  * Mojo to determine the versions of all 3rd-party dependencies of the current project.<br>
  * It logs the versions in XML-format ready to use within the properties section of a pom file.
  * The property names are of the form {@code version.groupIdInCamelCase.artifactIdInCamelCase}.<br>
+ * The artifacts of the reactor modules are excluded.
  * If no dependency scope is given, the dependencies of all scopes are listed.
  * <p>
  * Example:
@@ -54,7 +55,8 @@ import java.util.stream.Collectors;
  *   ...
  *   [INFO] 
  *   [INFO] --- tentackle-maven-plugin:11.5.1.0:versions (default-cli) @ myapplic-parent ---
- *   [INFO] versions of 3rd-party dependencies for scope 'compile':
+ *   [INFO]
+ *   &lt;!-- 3rd-party dependencies of project 'myapplic-parent' for scope 'compile' --&gt;
  *   &lt;version.orgCodehausGroovy.groovy&gt;2.5.8&lt;/version.orgCodehausGroovy.groovy&gt;
  *   &lt;version.orgOpenjfx.javafxBase&gt;13.0.1&lt;/version.orgOpenjfx.javafxBase&gt;
  *   &lt;version.orgOpenjfx.javafxControls&gt;13.0.1&lt;/version.orgOpenjfx.javafxControls&gt;
@@ -87,30 +89,27 @@ import java.util.stream.Collectors;
 @Mojo(name = "versions",
       aggregator = true,
       defaultPhase = LifecyclePhase.VALIDATE,
-      requiresDependencyResolution = ResolutionScope.COMPILE)
+      requiresDependencyResolution = ResolutionScope.COMPILE,
+      threadSafe = true)
 public class VersionInfoMojo extends AbstractVersionInfoMojo {
 
   /**
-   * Optional dependency scope.
+   * Optional dependency scope, case-insensitive.<br>
+   * If set, only dependencies of that scope are listed. The transitive dependencies of a
+   * dependency with a different scope are not followed.
    */
   @Parameter(property = "scope" )
   private String scope;
 
   /**
-   * The default dependency builder.
+   * Coordinates (groupId:artifactId:version) of the reactor modules to exclude.
    */
-  @Component(hint = "default" )
-  private DependencyGraphBuilder dependencyGraphBuilder;
+  private Set<String> modules;
 
   /**
-   * Collected module artifacts to exclude.
+   * Collected artifacts, by coordinates.
    */
-  private Set<Artifact> modules;
-
-  /**
-   * Collected artifacts.
-   */
-  private final Set<Artifact> artifacts = new HashSet<>();
+  private final Map<String, Artifact> artifacts = new LinkedHashMap<>();
 
 
   @Override
@@ -118,22 +117,21 @@ public class VersionInfoMojo extends AbstractVersionInfoMojo {
 
     if (getMavenSession().getTopLevelProject().equals(getMavenProject())) {
 
-      ProjectBuildingRequest buildingRequest = new DefaultProjectBuildingRequest(getMavenSession().getProjectBuildingRequest());
-
-      List<MavenProject> allProjects = getMavenProject().getCollectedProjects();
+      // copy: the collected projects are shared with other threads
+      List<MavenProject> allProjects = new ArrayList<>(getMavenProject().getCollectedProjects());
       if (allProjects.isEmpty()) {
         allProjects.add(getMavenProject());
       }
 
-      modules = allProjects.stream().map(MavenProject::getArtifact).collect(Collectors.toSet());
+      modules = allProjects.stream()
+                           .map(project -> project.getGroupId() + ":" + project.getArtifactId() + ":" + project.getVersion())
+                           .collect(Collectors.toSet());
 
       for (MavenProject subProject : allProjects) {
-        buildingRequest.setProject(subProject);
-
         try {
-          scanNode(dependencyGraphBuilder.buildDependencyGraph(buildingRequest, null));
+          scanNode(ProjectDependencies.collect(getRepositorySystem(), getMavenSession().getRepositorySession(), subProject));
         }
-        catch (DependencyGraphBuilderException e) {
+        catch (DependencyCollectionException e) {
           throw new MojoExecutionException("scanning for dependencies failed", e);
         }
       }
@@ -143,10 +141,10 @@ public class VersionInfoMojo extends AbstractVersionInfoMojo {
         comment += " for scope '" + scope + "'";
       }
 
-      generateVersionProperties(comment, artifacts);
+      generateVersionProperties(comment, new HashSet<>(artifacts.values()));
     }
     else {
-      getLog().info("skipped");
+      getLogger().info("skipped");
     }
   }
 
@@ -169,17 +167,21 @@ public class VersionInfoMojo extends AbstractVersionInfoMojo {
    * @param node the next node in the dependency tree
    */
   private void scanNode(DependencyNode node) {
-    Artifact artifact = node.getArtifact();
-    String artifactScope = artifact.getScope();
-    if (artifactScope == null) {
+    // the root node is the project itself and has no dependency
+    String artifactScope = node.getDependency() == null ? null : node.getDependency().getScope();
+    if (artifactScope == null || artifactScope.isEmpty()) {
       artifactScope = scope;
     }
     else {
       artifactScope = artifactScope.toLowerCase(Locale.ROOT);
     }
     if (scope == null || Objects.equals(artifactScope, scope)) {
-      if (!modules.contains(artifact)) {
-        artifacts.add(artifact);
+      Artifact artifact = node.getArtifact();
+      if (node.getDependency() != null) {
+        String coordinates = ProjectDependencies.toCoordinates(artifact);
+        if (!modules.contains(coordinates)) {
+          artifacts.putIfAbsent(coordinates, artifact);
+        }
       }
       node.getChildren().forEach(this::scanNode);
     }

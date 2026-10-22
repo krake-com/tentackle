@@ -18,7 +18,6 @@
 
 package org.tentackle.trip.impl;
 
-import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.trip.Dictionary;
@@ -41,6 +40,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Default implementation of a dictionary.
+ * <p>
+ * Since a dictionary is shared among the connections of a transport, an entry may be referenced
+ * by its ordinal on one connection before it was received on another. {@link #getEntry(int)} therefore
+ * waits for a missing entry (up to 5 minutes) before giving up.
  */
 public class DefaultDictionary implements Dictionary {
 
@@ -142,12 +145,14 @@ public class DefaultDictionary implements Dictionary {
   public synchronized void addEntry(DictionaryEntry entry) {
     // synchronized since two maps are involved and entries can be added concurrently,
     // i.e., this operation must be atomic!
+    DictionaryEntry replacedEntry;
     if (entry.isClientOnly()) {
       DictionaryEntry oldEntry = entriesByName.put(entry.getClassName(), entry);
       if (oldEntry != null) {
         entriesByOrdinal.remove(oldEntry.getOrdinal());
       }
       entriesByOrdinal.put(entry.getOrdinal(), entry);
+      replacedEntry = oldEntry;
     }
     else {
       DictionaryEntry oldEntry = entriesByOrdinal.get(entry.getOrdinal());
@@ -171,6 +176,11 @@ public class DefaultDictionary implements Dictionary {
       }
       entriesByOrdinal.put(entry.getOrdinal(), entry);
       entriesByName.put(entry.getClassName(), entry);
+      replacedEntry = oldEntry;
+    }
+    if (replacedEntry != null && replacedEntry != entry) {
+      // after the new entry is in place: streams caching the old one look it up again (see TripStream)
+      replacedEntry.markSuperseded();
     }
     this.notifyAll();
   }
@@ -191,6 +201,7 @@ public class DefaultDictionary implements Dictionary {
     // At the receiving side the waiting thread is virtual (cheap), and when the
     // connections are closed, they are released to the GC together with their shared dictionary.
     int loops = 0;
+    boolean interrupted = false;
     while (entry == null && !resources.closed && loops < MAX_WAIT_LOOPS) {
       if (++loops % WARN_WAIT_LOOPS == 0) {
         LOGGER.warning("still waiting for entry with ordinal " + ordinal + " for dictionary " + this + " ...");
@@ -201,9 +212,16 @@ public class DefaultDictionary implements Dictionary {
           entry = entriesByOrdinal.get(ordinal);
         }
         catch (InterruptedException e) {
-          throw new InterruptedRuntimeException(e);
+          // Don't throw! Just remember that the thread was interrupted.
+          // Don't restore the interrupt flag before leaving the loop, though: the next wait()
+          // would throw immediately and the loop would spin through all its iterations at once.
+          LOGGER.fine("interrupted while waiting for entry with ordinal {0} -> keep waiting", ordinal);
+          interrupted = true;
         }
       }
+    }
+    if (interrupted) {
+      Thread.currentThread().interrupt();
     }
     if (entry == null) {
       // Either the other connection failed to send the entry (which should not take that long!)
@@ -220,10 +238,10 @@ public class DefaultDictionary implements Dictionary {
   }
 
   /**
-   * Gets the component names for the given class.
+   * Gets the dictionary entry components for the given class.
    *
    * @param clazz the class
-   * @return the component names
+   * @return the components
    */
   protected DictionaryEntryComponent[] getComponents(Class<?> clazz) {
     TripComponent<?, ?>[] components = TripFactory.getInstance().getType(clazz).getComponents();

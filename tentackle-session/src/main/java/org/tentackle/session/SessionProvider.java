@@ -18,6 +18,8 @@
 
 package org.tentackle.session;
 
+import org.tentackle.reflect.NotInterceptable;
+
 /**
  * Session provider.
  * <p>
@@ -32,6 +34,7 @@ public interface SessionProvider {
    *
    * @return the session
    */
+  @NotInterceptable
   Session getSession();
 
 }

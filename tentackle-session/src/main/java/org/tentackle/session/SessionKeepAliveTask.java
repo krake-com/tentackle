@@ -32,9 +32,12 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * The task to keep a session alive.<br>
- * The task uses the {@link java.util.concurrent.ExecutorService} to spawn asynchronous pings.
- * This is necessary because a remote session
- * may block on slow or bad communication lines which should not block the whole task dispatcher.
+ * The task uses the {@link SessionKeepAliveDaemon#getExecutorService() executor service} of the daemon
+ * to spawn asynchronous pings. This is necessary because a remote session may block on slow or bad
+ * communication lines, which must not block the whole daemon.
+ * <p>
+ * If the ping fails more than 10 times in a row, the session is closed. It is up to the application
+ * to re-open it.
  */
 public class SessionKeepAliveTask extends AbstractTask {
 
@@ -43,7 +46,7 @@ public class SessionKeepAliveTask extends AbstractTask {
 
   private static final Logger LOGGER = Logger.get(SessionKeepAliveTask.class);
 
-  private static final int MAX_FAILURES = 10;     // max. 10 failures -> then close the db
+  private static final int MAX_FAILURES = 10;     // more than 10 failures in a row -> close the session
 
 
   private final transient SessionKeepAliveDaemon daemon;    // the keep alive daemon
@@ -60,7 +63,8 @@ public class SessionKeepAliveTask extends AbstractTask {
    * @param daemon the keep alive daemon
    * @param session the session
    * @param interval the check interval in milliseconds, &le; 0 to close the session
-   * @param timeOut the timeout interval in milliseconds
+   * @param timeOut the maximum time in milliseconds to wait for the ping to complete;
+   *                if exceeded, the pending ping is checked again on the next run
    */
   public SessionKeepAliveTask(SessionKeepAliveDaemon daemon, Session session, long interval, long timeOut) {
     this.daemon = daemon;

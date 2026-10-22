@@ -24,7 +24,8 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 /**
- * Hook for the fx rdc module.
+ * Hook for the fx-rdc module.<br>
+ * Loads the resource bundles within the context of this module.
  *
  * @author harald
  */

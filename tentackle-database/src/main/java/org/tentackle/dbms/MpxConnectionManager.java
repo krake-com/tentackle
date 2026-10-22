@@ -25,11 +25,13 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.BackendInfo;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
- * Multiplexing connection manager.<br>
- *
+ * Multiplexing connection manager.
+ * <p>
  * A connection manager for applications with a large number of session instances,
  * for example, application servers. The manager will multiplex N session instances against
  * M connections, allowing N &gt; M. This is not to be mixed up with session-pooling, as connection
@@ -70,16 +72,19 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   protected int unConCount;
 
   /** true if initialized. */
-  protected boolean initialized;
+  protected volatile boolean initialized;
+
+  /** serializes the initialization, which must not hold the monitor of this manager. */
+  private final Object initLock = new Object();
 
 
   // optional configuration
 
   /** connection inactivity timeout in ms. */
-  private long connectionInactivityTimeoutMs;
+  private volatile long connectionInactivityTimeoutMs;
 
   /** periodical fake-select to prevent premature close of idle connections. */
-  private boolean connectionKeepAlive;
+  private volatile boolean connectionKeepAlive;
 
 
   // connect thread
@@ -87,8 +92,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   private volatile boolean shutdownRequested;         // true if shutdown procedure initiated
   private final ConnectionThread connectThread;       // thread to bring up connections
   private int conRequestCount;                        // number of new connections requested (guarded by this)
-  private int warnLogSize;                            // number of connections when to start WARNING logging
-  private int infoLogSize;                            // number of connections when to start INFO logging
+  private volatile boolean probeRequested;            // true if the unattached connections should be verified
+  private volatile int warnLogSize;                   // number of connections when to start WARNING logging
+  private volatile int infoLogSize;                   // number of connections when to start INFO logging
   private final Object doneMtx;                       // connections created mutex
 
 
@@ -148,12 +154,12 @@ public class MpxConnectionManager extends DefaultConnectionManager {
    * Start with 8 connections.
    * Add 2 connections at a time if all connections are in use.
    * Don't drop below 4 connections.
-   * Maximum of 40 connections, i.e., concurrent db operations (i.e., info above 10, warning above 20)
+   * Maximum of 40 connections, i.e., concurrent db operations (info above 10, warning above 20).
    * Within 12 to 36h (approx. once a day), close and reopen connections
    * (allows updates of the database server's QEPs, prepared statements cache, etc...).
    *
    * @param backendInfo backend info to use for creating connections
-   * @param idOffset the offset for connection ids (&gt; 0)
+   * @param idOffset the offset for the session ids (&gt; 0)
    */
   public MpxConnectionManager(BackendInfo backendInfo, int idOffset) {
     this("mpx-mgr", backendInfo, 1000, idOffset, 8, 2, 4, 40, 720, 2160);
@@ -236,9 +242,13 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     }
     // close all connections
     super.shutdown();
-    synchronized (this) {
-      unConCount = 0;
-    }
+  }
+
+  @Override
+  protected void closeConnections() {
+    super.closeConnections();
+    // within the same monitor: attach() must not pop an index whose connection has already been removed
+    unConCount = 0;
   }
 
   /**
@@ -282,35 +292,54 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   }
 
   @Override
-  public synchronized int login(Db session) {
-    session.assertNotRemote();
-    if (!initialized) {
-      createConnections(iniSize);
-      connectThread.start();
-      logConfiguration();
-      initialized = true;
+  public int login(Db session) {
+    if (shutdownRequested) {
+      throw new PersistenceException(this + ": connection manager has been shut down");
     }
-    int id = getSessionIndex() + idOffset;
-    LOGGER.fine("{0} logged into {1}, id={2}", session, this, id);
-    return id;
+    session.assertNotRemote();
+    initialize();
+    synchronized (this) {
+      if (shutdownRequested) {
+        throw new PersistenceException(this + ": connection manager has been shut down");
+      }
+      int id = getSessionIndex() + idOffset;
+      LOGGER.fine("{0} logged into {1}, id={2}", session, this, id);
+      return id;
+    }
+  }
+
+  /**
+   * Brings up the initial connections and starts the connect thread, if not done yet.<br>
+   * Not within the monitor of this manager, since connecting may take a while:
+   * other sessions keep on attaching and detaching meanwhile.
+   */
+  private void initialize() {
+    if (!initialized) {
+      synchronized (initLock) {
+        if (!initialized) {
+          createConnections(iniSize);
+          logConfiguration();
+          connectThread.start();
+          initialized = true;
+        }
+      }
+    }
   }
 
   @Override
   public void logout(Db session) {
+    ManagedConnection con;
     synchronized (this) {
       assertSessionBelongsToMe(session);
       int index = getIndexFromSession(session);
       removeSessionIndex(index);
       LOGGER.fine("{0} logged out from {1}, id={2}", session, this, session.getSessionId());
-      try {
-        // check that the connection is not attached, if so, detach it!
-        freeConnection(session.getConnection());
-      }
-      finally {
-        session.clearSessionId();
-      }
+      con = session.getConnection();
+      session.clearSessionId();
     }
-    fireConnectionRequest();    // only after the monitor has been released!
+    // check that the connection is not attached, if so, detach it!
+    freeConnection(con, session);
+    fireConnectionRequest();
   }
 
   @Override
@@ -321,9 +350,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
         removeSessionIndex(index);
       }
       LOGGER.fine("{0}: session ID {1} cleaned up", this, sessionId);
-      freeConnection(connection);
     }
-    fireConnectionRequest();    // only after the monitor has been released!
+    freeConnection(connection, null);
+    fireConnectionRequest();
   }
 
   @Override
@@ -335,6 +364,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
     for (;;) {   // until attached
 
+      ManagedConnection candidate = null;   // unattached connection to verify before use
+      ManagedConnection deadCon = null;     // dead connection removed, to be closed without holding the monitor
+
       synchronized (this) {
 
         ManagedConnection con = session.getConnection();
@@ -343,6 +375,15 @@ public class MpxConnectionManager extends DefaultConnectionManager {
           con.attachSession(session);   // just increment the attach-count
           break;
         }
+
+        if (session.isTxRunning()) {
+          // force-detached within the transaction (e.g. by the attach-timeout thread):
+          // another connection would execute the remaining statements of the transaction in autocommit mode.
+          // Checked within the monitor, since the connection may be released concurrently.
+          throw session.createConnectionLostException();
+        }
+
+        assertNotShutdown();    // again within the monitor: shutdown may have closed the connections meanwhile
 
         // find an unattached connection
         int conIndex = popUnattached();
@@ -354,18 +395,40 @@ public class MpxConnectionManager extends DefaultConnectionManager {
           }
 
           if (con.isConnectionVerificationNecessary()) {
-            con.verifyConnection();
+            candidate = con;    // verify below, without blocking the connection manager
           }
-
-          if (con.isDead()) {
-            cleanupDeadConnection(con);
-            continue;
+          else if (con.isDead()) {
+            removeDeadConnection(con);
+            deadCon = con;      // close below, without blocking the connection manager
           }
-
-          // found: attach!
-          con.attachSession(session);
-          break;
+          else {
+            // found: attach!
+            con.attachSession(session);
+            break;
+          }
         }
+      }
+
+      if (deadCon != null) {
+        closeDeadConnection(deadCon);
+        continue;
+      }
+
+      if (candidate != null) {
+        // the popped connection is invisible to other sessions while being verified
+        candidate.verifyConnection();
+        synchronized (this) {
+          if (candidate.getIndex() < 0 || candidate.isClosed()) {
+            continue;   // removed in the meantime, e.g., by shutdown
+          }
+          if (!candidate.isDead()) {
+            candidate.attachSession(session);
+            break;
+          }
+          removeDeadConnection(candidate);
+        }
+        closeDeadConnection(candidate);
+        continue;
       }
 
       /*
@@ -431,68 +494,94 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The connection is cleaned up without holding the monitor of this manager, since this may access the database.
+   * Meanwhile, the connection is neither attached nor unattached, and thus invisible to other sessions.
+   */
   @Override
   public void detach(Db session) {
     assertSessionBelongsToMe(session);
 
-    boolean expired = false;
     ManagedConnection con;
 
     synchronized (this) {
-
       con = session.getConnection();
       if (con == null) {
         throw new PersistenceException(this + ": no connection attached to " + session);
       }
-
-      con.detachSession(session);
-
-      if (!con.isAttached()) {
-        if (con.isClosed()) {
-          LOGGER.warning("detached session {0}: connection {1} already closed!", session, con);
-          int ndx = con.getIndex();
-          if (ndx >= 0) {
-            removeConnection(ndx);
-          }
+      if (!con.unbindSession(session)) {
+        return;   // still attached (nested attach)
+      }
+      if (con.isClosed()) {
+        LOGGER.warning("detached session {0}: connection {1} already closed!", session, con);
+        int ndx = con.getIndex();
+        if (ndx >= 0) {
+          removeConnection(ndx);
         }
-        else {
-          if (!con.getAutoCommit()) {
-            /*
-             * The connection has been detached, even though a transaction is still running!
-             * This is bad and indicates some MT problem, or that some thread keeps on using
-             * a Db even if there has been an exception causing a rollback.
-             * Anyway: mark the connection dead so that it is closed and cleaned up.
-             * The Db is also closed to prevent any further use.
-             */
-            LOGGER.severe("connection {0} detached while still in transaction", con);
-            con.setDead(true);
-          }
+        return;
+      }
+    }
 
-          if (con.isDead()) {
-            cleanupDeadConnection(con);
-            try {
-              // close the db to make it unusable anymore
-              session.close();
-            }
-            catch (RuntimeException rex) {
-              LOGGER.warning("closing Db failed", rex);
-            }
-          }
-          else if (con.isExpired()) {
-            // connection time elapsed: close it
-            removeConnection(con.getIndex());
-            expired = true;    // will close below
-          }
-          else {
-            // add unattached connection
-            pushUnattached(con.getIndex());
-          }
+    // un-synchronized: restoring the transaction defaults and checking the autocommit mode are JDBC calls
+    if (!con.isDead()) {    // else closed below: a dead connection may block until a network timeout
+      try {
+        con.cleanupDetached();
+        if (!con.getAutoCommit()) {
+          /*
+           * The connection has been detached, even though a transaction is still running!
+           * This is bad and indicates some MT problem, or that some thread keeps on using
+           * a Db even if there has been an exception causing a rollback.
+           * Anyway: mark the connection dead so that it is closed and cleaned up.
+           * The Db is also closed to prevent any further use.
+           */
+          LOGGER.severe("connection {0} detached while still in transaction", con);
+          con.setDead(true);
         }
+      }
+      catch (RuntimeException rx) {
+        if (!con.isClosed()) {    // else closed by shutdown in the meantime
+          LOGGER.warning(this + ": cleaning up detached connection " + con + " failed -> marked dead", rx);
+        }
+        con.setDead(true);
+      }
+    }
+
+    boolean expired = false;
+    boolean dead = false;
+
+    synchronized (this) {
+      if (con.getIndex() < 0) {
+        return;   // removed by shutdown in the meantime
+      }
+      if (con.isDead() || con.isClosed()) {
+        removeDeadConnection(con);
+        dead = true;    // will close below
+      }
+      else if (con.isExpired()) {
+        // connection time elapsed: close it
+        removeConnection(con.getIndex());
+        expired = true;    // will close below
+      }
+      else {
+        // add unattached connection
+        pushUnattached(con.getIndex());
       }
     }
 
     // un-synchronized...
-    if (expired) {
+    if (dead) {
+      closeDeadConnection(con);
+      try {
+        // close the db to make it unusable anymore
+        session.close();
+      }
+      catch (RuntimeException rex) {
+        LOGGER.warning("closing Db failed", rex);
+      }
+    }
+    else if (expired) {
       LOGGER.info("{0}: closing expired connection {1}, open since {2}",
                   this, con, FormatHelper.formatTimestamp(new Date(con.getEstablishedSince())));
       try {
@@ -508,11 +597,22 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
   @Override
   public void forceDetach(Db session) {
-    synchronized (this) {
-      assertSessionBelongsToMe(session);
-      freeConnection(session.getConnection());
+    assertSessionBelongsToMe(session);
+    freeConnection(session.getConnection(), session);
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The connection is removed from the unattached connections while being verified.
+   */
+  @Override
+  public void verifyIdleConnection(ManagedConnection connection) {
+    if (verifyUnattached(connection)) {
+      // open any missing connections
+      reopenConnections();
+      fireConnectionRequest();
     }
-    fireConnectionRequest();    // only after the monitor has been released!
   }
 
 
@@ -531,45 +631,88 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   }
 
   /**
-   * Frees a connection and adds it to the unattached list.
+   * Frees a connection attached to a session and adds it to the unattached list.<br>
+   * Pending statements are cleaned up and a pending transaction is rolled back.
+   * If the connection turns out to be dead, it is closed and removed.
+   * <p>
+   * Must be invoked without holding the monitor of this manager, which is acquired only
+   * to release the session and to add the connection to the unattached list.
+   * The cleanup in between may take a while, but the connection is neither attached nor
+   * unattached meanwhile, and thus invisible to other sessions.
    *
    * @param con the connection (can be null if no more attached)
+   * @param session the session the connection is expected to be attached to, null if any
    */
-  protected void freeConnection(ManagedConnection con) {
-    // check that the connection is not attached, if so, detach it!
-    if (con != null) {
-      con.forceDetached();
-      if (con.isDead()) {
-        // remove the connection if dead and check to reopen
-        cleanupDeadConnection(con);
-        /*
-         * Crashed due to a dead server connection. This is a strong indicator that the database is facing some
-         * severe problems. Because we don't know how many unattached connections are down, we will probe them here. This
-         * is a little time-consuming but better than waiting for other clients to crash.
-         */
-        int[] newUnConList = new int[unConList.length];
-        int newUnConCount = 0;
-        for (int i = 0; i < unConCount; i++) {
-          ManagedConnection c = conList[unConList[i]];
-          c.verifyConnection();
-          if (c.isDead()) {
-            cleanupDeadConnection(c);
-          }
-          else {
-            newUnConList[newUnConCount++] = c.getIndex();
-          }
-        }
-        unConList = newUnConList;
-        unConCount = newUnConCount;
+  protected void freeConnection(ManagedConnection con, Db session) {
+    if (con == null) {
+      return;
+    }
 
-        // open any missing connections
-        reopenConnections();
+    Db releasedDb;
+    synchronized (this) {
+      releasedDb = releaseConnection(con, session);
+    }
+    if (releasedDb != null) {
+      cleanupReleasedConnection(con, releasedDb);
+    }
+    // else: detached in the meantime, or already attached to another session
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * From now on, the connection is neither attached nor unattached: no other session can get it.
+   */
+  @Override
+  protected Db releaseConnection(ManagedConnection con, Db session) {
+    return con.releaseSession(session);
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Adds the connection to the unattached connections afterward, or closes it, if it turned out to be dead.
+   */
+  @Override
+  protected void cleanupReleasedConnection(ManagedConnection con, Db releasedDb) {
+    // the lengthy part (cancel and close the statements, rollback) without blocking the connection manager
+    try {
+      con.cleanupReleased(releasedDb);
+    }
+    catch (RuntimeException rx) {
+      LOGGER.warning(this + ": cleaning up connection " + con + " failed -> marked dead", rx);
+      con.setDead(true);
+    }
+
+    boolean dead = false;
+    synchronized (this) {
+      if (con.getIndex() < 0) {
+        return;   // removed by shutdown in the meantime
+      }
+      if (con.isDead() || con.isClosed()) {
+        removeDeadConnection(con);
+        dead = true;
       }
       else {
         // add connection to freelist
         pushUnattached(con.getIndex());
       }
     }
+
+    if (dead) {
+      closeDeadConnection(con);
+      /*
+       * Crashed due to a dead server connection. This is a strong indicator that the database is facing some
+       * severe problems. Because we don't know how many unattached connections are down, they will be probed.
+       * This is done by the connect thread, since probing may take a long time if the server is unreachable,
+       * and must not block the connection manager.
+       */
+      probeRequested = true;
+
+      // open any missing connections
+      reopenConnections();
+    }
+    fireConnectionRequest();
   }
 
   /**
@@ -600,7 +743,8 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   }
 
   /**
-   * Create spare connections.
+   * Creates spare connections.<br>
+   * At least as many as necessary to reach the minimum size, but never more than the maximum size.
    *
    * @param count the number of connections to create
    * @return the number of connections created
@@ -650,10 +794,20 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     }
 
     for (int i=0; i < count; i++) {
+      if (shutdownRequested) {
+        return i;
+      }
       ManagedConnection con = createConnection(backendInfo);  // may take some time depending on the db backend...
       synchronized(this) {
-        pushUnattached(addConnection(con));   // add to established connections and unattached freelist
+        if (!shutdownRequested) {   // within the monitor: shutdown closes the connections with the monitor held
+          pushUnattached(addConnection(con));   // add to established connections and unattached freelist
+          continue;
+        }
       }
+      // shut down while connecting: the connection would never be closed
+      LOGGER.info("{0}: closing connection {1} established during shutdown", this, con);
+      con.close();
+      return i;
     }
 
     return count;
@@ -661,12 +815,92 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
 
   /**
-   * closes a dead connection and removes it from the
-   * connection list.
+   * Verifies all unattached connections and removes the dead ones.<br>
+   * Invoked by the connect thread. The connections are verified without holding the monitor.
+   * Each connection is taken from the unattached freelist while being verified, so that no session
+   * can attach it in the meantime, while the others stay available.
    */
-  private void cleanupDeadConnection(ManagedConnection con) {
-    // marked dead: close it (hard close) and remove it from the connection list
-    removeConnection(con.getIndex());
+  protected void probeUnattachedConnections() {
+    List<ManagedConnection> candidates = new ArrayList<>();
+    synchronized (this) {
+      probeRequested = false;
+      for (int i = 0; i < unConCount; i++) {
+        candidates.add(conList[unConList[i]]);
+      }
+    }
+
+    for (ManagedConnection con : candidates) {
+      verifyUnattached(con);
+    }
+    reopenConnections();
+  }
+
+  /**
+   * Removes the index of a connection from the unattached freelist.
+   *
+   * @param index the index of the connection in the connection list
+   * @return true if removed, false if not in the freelist
+   */
+  protected boolean removeUnattached(int index) {
+    for (int i = 0; i < unConCount; i++) {
+      if (unConList[i] == index) {
+        System.arraycopy(unConList, i + 1, unConList, i, unConCount - (i + 1));
+        unConCount--;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Verifies an unattached connection.<br>
+   * The connection is removed from the unattached connections while being verified,
+   * so that no session can attach it meanwhile.
+   *
+   * @param con the connection
+   * @return true if the connection turned out to be dead and was removed
+   */
+  private boolean verifyUnattached(ManagedConnection con) {
+    synchronized (this) {
+      if (shutdownRequested || con.getIndex() < 0 || !removeUnattached(con.getIndex())) {
+        return false;   // attached or removed in the meantime
+      }
+    }
+    con.verifyConnection();   // marks the connection dead if it fails
+    synchronized (this) {
+      if (con.getIndex() < 0 || con.isClosed()) {
+        return false;   // removed in the meantime, e.g., by shutdown
+      }
+      if (!con.isDead()) {
+        pushUnattached(con.getIndex());
+        return false;
+      }
+      removeDeadConnection(con);
+    }
+    closeDeadConnection(con);
+    return true;
+  }
+
+  /**
+   * Removes a dead connection from the connection list.<br>
+   * Must be invoked with the monitor held.
+   * The connection must be closed via {@link #closeDeadConnection(ManagedConnection)} afterward,
+   * without holding the monitor, since closing a dead connection may block until a network timeout.
+   *
+   * @param con the dead connection
+   */
+  private void removeDeadConnection(ManagedConnection con) {
+    if (con.getIndex() >= 0) {    // not removed by shutdown in the meantime
+      removeConnection(con.getIndex());
+    }
+  }
+
+  /**
+   * Closes a connection removed by {@link #removeDeadConnection(ManagedConnection)}.
+   *
+   * @param con the dead connection
+   */
+  private void closeDeadConnection(ManagedConnection con) {
     try {
       LOGGER.warning("{0}: closing connection {1}", this, con);
       con.close();
@@ -697,7 +931,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
    * Triggers the connect thread if there are outstanding connection requests.
    */
   private void fireConnectionRequest() {
-    if (getConnectionRequestCount() > 0) {
+    if (probeRequested || getConnectionRequestCount() > 0) {
       connectThread.requestConnections();    // fire connect, but don't wait for completion
     }
   }
@@ -781,6 +1015,15 @@ public class MpxConnectionManager extends DefaultConnectionManager {
         MpxConnectionManager mgr = cmRef.get();
         if (mgr == null || mgr.shutdownRequested) {
           break;
+        }
+
+        if (mgr.probeRequested) {
+          try {
+            mgr.probeUnattachedConnections();
+          }
+          catch (RuntimeException e) {
+            LOGGER.severe(mgr + ": probing connections failed", e);
+          }
         }
 
         int requestCount = mgr.getConnectionRequestCount();

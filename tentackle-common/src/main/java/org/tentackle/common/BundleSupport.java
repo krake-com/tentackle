@@ -24,10 +24,23 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Support to locate bundle services.<br>
- * For annotations providing bundle support, a META-INF/service entry must be created
- * manually in order to be processed by the BundleFactory at runtime as well as the
- * analyze-, checker- and i18n-maven-plugins at build time.
+ * Support to locate bundle services.
+ * <p>
+ * Annotations marking classes as bundles, such as &#64;{@link Bundle} or &#64;FxControllerService,
+ * must be listed in {@code META-INF/services/org.tentackle.common.BundleSupport} of the module declaring
+ * the annotation. This entry must be created manually in order to be processed by the {@link BundleFactory}
+ * at runtime as well as by the tentackle-, check- and i18n-maven-plugins at build time.
+ * <p>
+ * For each such annotation, the analyze goal of the tentackle-maven-plugin writes the annotated classes to
+ * {@code META-INF/bundles/<annotation classname>}, one entry per line, in the form
+ * <pre>
+ *   bundleName
+ * </pre>
+ * or, if the bundle is registered under an additional key name (see {@link Bundle#value()}),
+ * <pre>
+ *   keyName = bundleName
+ * </pre>
+ * Colons and spaces are accepted as separators as well.
  *
  * @see Bundle
  * @see BundleFactory
@@ -38,9 +51,6 @@ public class BundleSupport {
   /**
    * The service name to find all annotations to mark classes as bundles.<br>
    * Such as &#64;Bundle or &#64;FxControllerService.
-   * <p>
-   * The bundle service entry may optionally hold the path to the resource bundle property file.
-   * If missing, the resource name will be created from the classname.
    */
   public static final String BUNDLE_SERVICE = BundleSupport.class.getName();
 
@@ -49,6 +59,7 @@ public class BundleSupport {
    *
    * @param classLoader the classloader, null if default
    * @return the list of bundle supports
+   * @throws TentackleRuntimeException if an entry is malformed
    */
   public static List<BundleSupport> getBundles(ClassLoader classLoader) {
     if (classLoader == null) {
@@ -90,9 +101,9 @@ public class BundleSupport {
   /**
    * Creates a bundle support object.
    *
-   * @param info the optional jigsaw module info,  null if none
-   * @param className the name of the annotated class
-   * @param bundleName the name of the resource bundle
+   * @param info the optional jigsaw module info, null if none
+   * @param className the key name the bundle is registered for, usually the same as the bundle name
+   * @param bundleName the name of the resource bundle, i.e., the name of the annotated class
    */
   public BundleSupport(ModuleInfo info, String className, String bundleName) {
     this.info = info;
@@ -110,16 +121,19 @@ public class BundleSupport {
   }
 
   /**
-   * Gets the name of the annotated class.
+   * Gets the key name the bundle is registered for.<br>
+   * This is the same as the bundle name, unless the bundle was registered under an additional key name
+   * (see {@link Bundle#value()}).
    *
-   * @return the annotated class name
+   * @return the key name
    */
   public String getClassName() {
     return className;
   }
 
   /**
-   * Gets the bundle name.
+   * Gets the bundle name.<br>
+   * This is the name of the annotated class.
    *
    * @return the bundle name
    */

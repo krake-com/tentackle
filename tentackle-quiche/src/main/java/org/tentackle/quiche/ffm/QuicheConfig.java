@@ -29,10 +29,13 @@ import java.nio.file.Path;
  * A {@code quiche_config}, the settings a QUIC connection is created with.
  * <p>
  * A configuration is immutable from quiche's point of view once a connection has been created from it, and
- * one configuration can back any number of connections. It must outlive all of them, which is what
- * {@link #close()} must not be called too early for.
+ * one configuration can back any number of connections. It must outlive all of them, so {@link #close()}
+ * must not be called before the last of them has been freed.
  * <p>
- * The setters mirror the C API one to one and return {@code this} so they can be chained.
+ * The setters mirror the C API one to one and return {@code this} so they can be chained. A setter that
+ * fails throws a {@link QuicheException}, which wraps an {@link IllegalStateException} once the
+ * configuration has been closed. The strings handed to the setters are kept until the configuration is
+ * closed.
  */
 public class QuicheConfig implements AutoCloseable {
 
@@ -99,6 +102,9 @@ public class QuicheConfig implements AutoCloseable {
     Quiche.downcall("quiche_config_set_disable_active_migration",
                     FunctionDescriptor.ofVoid(ValueLayouts.POINTER, ValueLayouts.BOOL));
 
+  private static final MethodHandle SET_ACTIVE_CONNECTION_ID_LIMIT =
+    setter("quiche_config_set_active_connection_id_limit");
+
   private static final MethodHandle ENABLE_PACING =
     Quiche.downcall("quiche_config_enable_pacing",
                     FunctionDescriptor.ofVoid(ValueLayouts.POINTER, ValueLayouts.BOOL));
@@ -125,6 +131,7 @@ public class QuicheConfig implements AutoCloseable {
    * Creates a configuration.
    *
    * @param version the QUIC version
+   * @throws QuicheException if quiche does not support the version
    */
   public QuicheConfig(int version) {
     arena = Arena.ofShared();
@@ -159,8 +166,9 @@ public class QuicheConfig implements AutoCloseable {
   /**
    * Loads the certificate chain presented to the peer, in PEM format.
    *
-   * @param path the PEM file
+   * @param path the PEM file, read right away
    * @return this configuration
+   * @throws QuicheException if the file cannot be read or holds no valid certificate chain
    */
   public QuicheConfig loadCertChain(Path path) {
     invoke(LOAD_CERT_CHAIN, "quiche_config_load_cert_chain_from_pem_file", path);
@@ -170,8 +178,9 @@ public class QuicheConfig implements AutoCloseable {
   /**
    * Loads the private key belonging to the certificate chain, in PEM format.
    *
-   * @param path the PEM file
+   * @param path the PEM file, read right away
    * @return this configuration
+   * @throws QuicheException if the file cannot be read or holds no valid private key
    */
   public QuicheConfig loadPrivateKey(Path path) {
     invoke(LOAD_PRIV_KEY, "quiche_config_load_priv_key_from_pem_file", path);
@@ -181,11 +190,12 @@ public class QuicheConfig implements AutoCloseable {
   /**
    * Loads the CA certificates the peer's certificate is verified against, in PEM format.
    * <p>
-   * Without this, verification falls back to the system trust store, which will not contain the
-   * certificate of a self-signed Tentackle server.
+   * Without this, verification relies on the default trust store BoringSSL is initialized with, which does
+   * not contain the certificate of a self-signed Tentackle server, nor the JVM's CAs.
    *
-   * @param path the PEM file
+   * @param path the PEM file, read right away
    * @return this configuration
+   * @throws QuicheException if the file cannot be read or holds no valid certificate
    */
   public QuicheConfig loadVerifyLocations(Path path) {
     invoke(LOAD_VERIFY_LOCATIONS, "quiche_config_load_verify_locations_from_file", path);
@@ -219,6 +229,8 @@ public class QuicheConfig implements AutoCloseable {
    *
    * @param protocols the protocol names, in order of preference
    * @return this configuration
+   * @throws IllegalArgumentException if a name is empty or longer than 255 bytes
+   * @throws QuicheException if quiche refuses the list
    */
   public QuicheConfig setApplicationProtocols(String... protocols) {
     int length = 0;
@@ -392,6 +404,21 @@ public class QuicheConfig implements AutoCloseable {
   }
 
   /**
+   * Sets how many connection IDs this side is willing to hold for the peer at the same time.
+   * <p>
+   * Every network path needs a connection ID of its own in each direction, so this bounds how many paths
+   * a connection can use &mdash; quiche keeps at most this many paths per connection &mdash; and thereby how
+   * often a client can migrate. Values below 2, the protocol's default, are ignored by quiche.
+   *
+   * @param limit the number of connection IDs
+   * @return this configuration
+   */
+  public QuicheConfig setActiveConnectionIdLimit(long limit) {
+    set(SET_ACTIVE_CONNECTION_ID_LIMIT, "quiche_config_set_active_connection_id_limit", limit);
+    return this;
+  }
+
+  /**
    * Sets whether outgoing packets are paced.
    *
    * @param enable true to pace
@@ -408,7 +435,7 @@ public class QuicheConfig implements AutoCloseable {
   }
 
   /**
-   * Sets whether GREASE values are sent, see RFC-9287.
+   * Sets whether GREASE values are sent, which keeps peers from ossifying on unused protocol values.
    *
    * @param enable true to send GREASE
    * @return this configuration
@@ -428,6 +455,7 @@ public class QuicheConfig implements AutoCloseable {
    *
    * @param name the algorithm name
    * @return this configuration
+   * @throws QuicheException if the algorithm is unknown
    */
   public QuicheConfig setCongestionControlAlgorithm(String name) {
     MemorySegment segment = arena.allocateFrom(name);
@@ -496,8 +524,8 @@ public class QuicheConfig implements AutoCloseable {
   /**
    * Invokes one of the {@code int load(quiche_config *, const char *path)} functions.
    * <p>
-   * These report a failure - an unreadable file, a certificate BoringSSL does not accept - as a negative
-   * return code without saying anything about what went wrong, so the path is put into the message.
+   * These report a failure &mdash; an unreadable file, a certificate BoringSSL does not accept &mdash; as a
+   * negative return code without saying anything about what went wrong, so the path is put into the message.
    *
    * @param handle the method handle
    * @param name the symbol name, for the error message

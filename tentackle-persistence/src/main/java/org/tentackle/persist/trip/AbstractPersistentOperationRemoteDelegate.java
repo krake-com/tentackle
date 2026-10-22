@@ -16,18 +16,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.persist.trip;
 
 import org.tentackle.dbms.trip.AbstractDbOperationRemoteDelegate;
 import org.tentackle.persist.AbstractPersistentOperation;
 import org.tentackle.pdo.Operation;
 
-
-
 /**
  * Remote delegate for {@link AbstractPersistentOperation}.
  *
+ * @param <T> the operation class (interface)
+ * @param <P> the persistence implementation class
  * @author harald
  */
 public interface AbstractPersistentOperationRemoteDelegate<T extends Operation<T>, P extends AbstractPersistentOperation<T,P>>

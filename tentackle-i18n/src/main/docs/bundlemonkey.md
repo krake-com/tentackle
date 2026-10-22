@@ -7,7 +7,7 @@ the edits take effect immediately in every running client and server, without re
 redeploying anything.
 
 BundleMonkey is the interactive counterpart to the build-time
-[`tentackle-i18n-maven-plugin`](../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md):
+[`tentackle-i18n-maven-plugin`](../../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md):
 the plugin's `push` goal seeds the database from the application's property files, and from then on
 translators do their day-to-day work in BundleMonkey while developers occasionally `pull` the
 results back into the sources.
@@ -31,11 +31,11 @@ carrying those translations in the application's resources.
 
 BundleMonkey operates on the same *stored bundles* described in
 [Tentackle I18N](i18n.md). It is the editing stage of a cycle whose other stages are Maven goals of
-the [i18n plugin](../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md):
+the [i18n plugin](../../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md):
 
 | Stage       | Performed by                    | Purpose                                                              |
 |-------------|---------------------------------|---------------------------------------------------------------------|
-| **push**    | `mvn tentackle-i18n:push`       | Seed the database from the property files (adds new keys only; never overwrites translator edits). |
+| **push**    | `mvn tentackle-i18n:push`       | Seed the database from the property files (adds new keys only; overwrites translator edits only with `override`). |
 | **edit**    | **BundleMonkey**                | Translators maintain the stored texts and extra locales at runtime. |
 | **pull**    | `mvn tentackle-i18n:pull`       | Copy edits back into the property files so they enter the VCS changelog (shipped locales only). |
 | **verify**  | `mvn tentackle-i18n:verify`     | Ensure no stored bundle is missing keys before deployment (guards against `MissingResourceException`). |
@@ -44,11 +44,11 @@ the [i18n plugin](../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i
 ## Obtaining It
 
 BundleMonkey is developed as a **separate open-source project** at
-[bitbucket.org/krake-oss/bundlemonkey](https://bitbucket.org/krake-oss/bundlemonkey). It is an
+[github.com/krake-com/bundlemonkey](https://github.com/krake-com/bundlemonkey). It is an
 application, not a library or a Maven plugin, so it is **not published to Maven Central**.
 
 It is distributed as a self-contained, platform-specific
-[jlink](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md) image that bundles its
+[jlink](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md) image that bundles its
 own Java runtime — nothing else needs to be installed.
 
 To build the image yourself, clone the repository and run `mvn clean install -Prelease,jlink`; the
@@ -119,7 +119,7 @@ is not, the gesture is simply a no-op in the application.
 
 - [Tentackle I18N — Database-backed Resource Bundles](i18n.md) — the runtime module BundleMonkey
   edits, and how stored bundles transparently override the property files.
-- [I18N Maven Plugin](../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md) —
+- [I18N Maven Plugin](../../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md) —
   the `push`/`pull`/`verify`/`cleanup` goals that complete the workflow.
-- [Check Maven Plugin](../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md) —
+- [Check Maven Plugin](../../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md) —
   build-time verification that bundle keys referenced in the sources actually resolve.

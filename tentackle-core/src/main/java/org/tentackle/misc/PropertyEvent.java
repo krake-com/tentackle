@@ -25,8 +25,8 @@ import java.util.Objects;
 /**
  * Event fired when a property is modified.
  * <p>
- * Replacement for {@code java.beans.PropertyChangeEvent} as this becomes part of the Swing desktop module
- * in Java 9.
+ * Replacement for {@code java.beans.PropertyChangeEvent}, which belongs to the {@code java.desktop} module
+ * since Java 9.
  *
  * @author harald
  */
@@ -42,13 +42,14 @@ public class PropertyEvent extends EventObject {
   private final Object oldValue;        // the old value
 
   /**
-   * Constructs a new {@code PropertyModificationEvent}.
+   * Constructs a new {@code PropertyEvent}.
    *
    * @param source       the source of the event
    * @param propertyName the property name
    * @param oldValue     the old value of the property
    * @param newValue     the new value of the property
    * @throws IllegalArgumentException if {@code source} is {@code null}
+   * @throws NullPointerException if {@code propertyName} is {@code null}
    */
   public PropertyEvent(Object source, String propertyName, Object oldValue, Object newValue) {
     super(source);

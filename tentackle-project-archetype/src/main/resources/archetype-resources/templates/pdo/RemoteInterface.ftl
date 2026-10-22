@@ -27,7 +27,7 @@ import org.tentackle.persist.trip.RemoteResultSetCursor;
  * Remote delegate interface for {@link ${persistenceImplementation}}.
 <#if pdoInheritance != "NONE" && pdoInheritance != "EMBEDDED">
  *
- * @param <T> the pdo interface
+ * @param <T> the PDO interface
  * @param <P> the persistence implementation
 </#if>
  */

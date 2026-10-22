@@ -17,6 +17,8 @@
  */
 
 /**
- * FX table cell types.
+ * FX table cell types.<br>
+ * The built-in {@link org.tentackle.fx.table.TableCellType}s, registered via
+ * {@link org.tentackle.fx.table.TableCellTypeService} for the value classes they render.
  */
 package org.tentackle.fx.table.type;

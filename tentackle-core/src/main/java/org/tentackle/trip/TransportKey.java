@@ -25,12 +25,12 @@ import java.net.URI;
 /**
  * The {@link Transport} key.
  * <p>
- * Transports are unique by scheme, host and port.
+ * Transports are unique by scheme, host, port and query parameters.
  *
  * @param scheme the transport scheme
  * @param host the transport host
  * @param port the transport port
- * @param queryParameters the optional URI-query parameters
+ * @param queryParameters the optional URI-query parameters, null if none
  */
 public record TransportKey(String scheme, String host, int port, String queryParameters) {
 

@@ -17,14 +17,9 @@
  */
 
 /**
- * FX component builders.
- */
-
-/**
- * Text field suggestion generator.
- */
-
-/**
- * suggestion generator for text fields.
+ * Auto-completion for text input components.<br>
+ * The {@link org.tentackle.fx.component.auto.AutoCompletionController} runs a suggestion generator in the background
+ * while the user types and shows the matches in an {@link org.tentackle.fx.component.AutoCompletionPopup}.
+ * The package provides simple, camel-case, separator, and regex-based suggestion generators.
  */
 package org.tentackle.fx.component.auto;

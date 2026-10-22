@@ -27,6 +27,7 @@ import org.tentackle.session.TransactionIsolation;
 import org.tentackle.session.TransactionWritability;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendInfo;
+import org.tentackle.sql.BackendVersionInfo;
 
 import java.lang.ref.WeakReference;
 import java.sql.Connection;
@@ -34,6 +35,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
@@ -67,10 +69,10 @@ public class DefaultConnectionManager implements ConnectionManager {
   /** offset for session IDs. */
   protected final int idOffset;
 
-  /** min hours to close connections. */
+  /** min minutes to close connections. */
   protected final int minMinutes;
 
-  /** max hours to close connections. */
+  /** max minutes to close connections. */
   protected final int maxMinutes;
 
   /** randomizer. */
@@ -93,6 +95,9 @@ public class DefaultConnectionManager implements ConnectionManager {
   /** number of entries in freeDbList. */
   protected int freeDbCount;
 
+  /** the session indexes in use, to detect releasing an index twice. */
+  private final BitSet usedDbIndexes = new BitSet();
+
   /** managed connections. */
   protected ManagedConnection[] conList;
 
@@ -103,7 +108,7 @@ public class DefaultConnectionManager implements ConnectionManager {
   protected int freeConCount;
 
 
-  private int maxCountForClearWarnings = 1000;  // trigger when to clearWarning() on a connection (enabled by default)
+  private volatile int maxCountForClearWarnings = 1000;  // trigger when to clearWarning() on a connection (enabled by default)
 
   private volatile long attachTimeout;          // max. attach timeout, 0 to disable check (default)
   private volatile boolean shutdownRequested;   // true if connection manager and timeout thread should shut down
@@ -111,14 +116,7 @@ public class DefaultConnectionManager implements ConnectionManager {
 
   private boolean configurationLogged;          // true if configuration logged (once)
 
-  private record VersionInfo(int majorVersion, int minorVersion) {
-    @Override
-    public String toString() {
-      return majorVersion + "." + minorVersion;
-    }
-  }
-
-  private final Map<String,VersionInfo> versionInfoMap;   // version info per URL
+  private final Map<String, BackendVersionInfo> versionInfoMap;   // version info per URL
 
 
   /**
@@ -178,7 +176,7 @@ public class DefaultConnectionManager implements ConnectionManager {
    * <p>
    * With an initial size of 2, a maximum of 8 concurrent connections and an id offset of 1.
    * This is the default connection manager for 2-tier client applications.
-   * The max connections will prevent applications from tearing down the TRIP server
+   * The max connections will prevent applications from tearing down the database server
    * by opening connections excessively. The usual client application holds 2 connections and temporarily
    * a few more.<br>
    * Within 12 to 36h (approx. once a day), close and reopen connections
@@ -209,7 +207,7 @@ public class DefaultConnectionManager implements ConnectionManager {
   }
 
   /**
-   * Gets the current setting for clearWarnings() trigger
+   * Gets the current setting for clearWarnings() trigger.
    *
    * @return the countForClearWarnings trigger, 0 = app must eat the warnings!
    */
@@ -293,6 +291,9 @@ public class DefaultConnectionManager implements ConnectionManager {
 
   @Override
   public int login(Db session) {
+    if (shutdownRequested) {
+      throw new PersistenceException(this + ": connection manager has been shut down");
+    }
     session.assertNotRemote();
     BackendInfo backendInfo = session.getBackendInfo();
     if (backendInfo.getUser() == null && backendInfo.getPassword() == null) {
@@ -315,13 +316,16 @@ public class DefaultConnectionManager implements ConnectionManager {
     try {
       con = createConnection(backendInfo);    // lengthy operation outside synchronized!
       synchronized (this) {
-        /*
-         * because we add the connections in the same order as the sessions (1:1 mapping), the
-         * index returned after adding the connection must be the same as for the session.
-         */
-        if (addConnection(con) != id) {
-          throw new PersistenceException(this + ": session- and connection-list out of sync");
+        if (shutdownRequested) {
+          // shut down while connecting: the connection would never be closed
+          throw new PersistenceException(this + ": connection manager has been shut down");
         }
+        /*
+         * Sessions and connections are mapped 1:1 by index.
+         * Concurrent logins may complete in a different order than they started,
+         * so the connection must be stored at the session's index explicitly.
+         */
+        addConnection(con, id);
       }
     }
     catch (RuntimeException rx) {
@@ -341,33 +345,44 @@ public class DefaultConnectionManager implements ConnectionManager {
 
 
   @Override
-  public synchronized void logout(Db session) {
-    assertSessionBelongsToMe(session);
-    int index = getIndexFromSession(session);
-    removeSessionIndex(index);
-    try {
-      ManagedConnection con = removeConnection(index);
-      LOGGER.info("{0}: released {1} from connection {2}, id={3}", this, session.getName(), con, session.getSessionId());
-      con.close();  // physically close the removed connection
+  public void logout(Db session) {
+    ManagedConnection con;
+    synchronized (this) {
+      assertSessionBelongsToMe(session);
+      int index = getIndexFromSession(session);
+      awaitNotReserved(index);
+      removeSessionIndex(index);
+      try {
+        con = removeSessionConnection(index);
+        LOGGER.info("{0}: released {1} from connection {2}, id={3}", this, session.getName(), con, session.getSessionId());
+      }
+      finally {
+        session.clearSessionId();
+      }
     }
-    finally {
-      session.clearSessionId();
+    if (con != null) {
+      con.close();  // physically close the removed connection, not synchronized -> does not block the connection manager
     }
   }
 
   @Override
-  public synchronized void cleanup(int sessionId, ManagedConnection connection) {
+  public void cleanup(int sessionId, ManagedConnection connection) {
     ManagedConnection con;
-    if (sessionId > 0) {
-      int index = getIndexFromSessionId(sessionId);
-      removeSessionIndex(index);
-      con = removeConnection(index);
-    }
-    else {
-      con = connection;
+    synchronized (this) {
+      if (sessionId > 0) {
+        int index = getIndexFromSessionId(sessionId);
+        awaitNotReserved(index);
+        removeSessionIndex(index);
+        con = removeSessionConnection(index);
+      }
+      else {
+        con = connection;
+      }
     }
     LOGGER.info("{0}: cleanup session ID {1} from connection {2}", this, sessionId, con);
-    con.close();  // physically close the removed connection
+    if (con != null) {
+      con.close();  // physically close the removed connection, not synchronized -> does not block the connection manager
+    }
   }
 
 
@@ -375,48 +390,234 @@ public class DefaultConnectionManager implements ConnectionManager {
   public void attach(Db session) {
     /*
      * The happy path is synchronized only once.
-     * Only in case of a dead or expired connection, we need a second synchronized block.
-     * However, the lengthy close and reopen are not synchronized and therefore will not block other
+     * Only in case of a connection to verify, a dead or expired connection, we need more synchronized blocks.
+     * However, the lengthy verification, close and reopen are not synchronized and therefore will not block other
      * threads from using the connection manager.
      */
-    ManagedConnection con = attachImpl(session);    // <<-- synchronized
+    ManagedConnection verified = null;    // the connection verified so far
+    ManagedConnection oldCon;             // the connection to reopen, null if attached
+    for (;;) {
+      ManagedConnection candidate;
+      ManagedConnection lostCon = null;   // the connection lost within a transaction
+      Db releasedDb = null;               // the session released from the lost connection
+      synchronized (this) {
+        assertSessionBelongsToMe(session);
+        awaitNotReserved(getIndexFromSession(session));
+        if (shutdownRequested) {
+          throw new PersistenceException(session, this + ": connection manager has been shut down");
+        }
+        int index = getIndexFromSession(session);   // again: the session may have been closed while waiting
+        ManagedConnection con = conList[index];
+        if (session.isTxRunning() && (con.getSession() != session || con.isDead() || con.isClosed())) {
+          /*
+           * The connection was lost within the transaction: force-detached (e.g. by the attach-timeout thread),
+           * or dead (e.g. killed by the transaction supervisor). Reopening it or attaching the rolled back
+           * connection again would execute the remaining statements of the transaction in autocommit mode.
+           * Checked within the monitor, since the connection may be released concurrently.
+           * A dead connection still attached is released, so that the session can roll back its transaction.
+           */
+          lostCon = con;
+          releasedDb = releaseConnection(con, session);   // null if not attached to the session anymore
+          candidate = null;
+        }
+        else if (con != verified && con.isConnectionVerificationNecessary()) {
+          // reserved while being verified, so that no other thread uses it meanwhile
+          con.setReserved(true);
+          candidate = con;
+        }
+        else {
+          oldCon = attachImpl(session, con, con == verified);
+          break;
+        }
+      }
+      if (lostCon != null) {
+        if (releasedDb != null) {
+          cleanupReleasedConnection(lostCon, releasedDb);   // without the monitor: may take a while
+        }
+        throw session.createConnectionLostException();
+      }
+      try {
+        candidate.verifyConnection();   // marks the connection dead if it fails
+      }
+      finally {
+        synchronized (this) {
+          candidate.setReserved(false);
+          notifyAll();    // wake up other threads waiting for the connection
+        }
+      }
+      verified = candidate;
+    }
 
-    if (con != null) {    // need re-open
+    if (oldCon != null) {    // need re-open
       // not synchronized -> does not block the connection manager
       try {
-        con.close();
+        oldCon.close();
       }
       catch (RuntimeException ex) {
         LOGGER.warning("closing connection failed -> ignored", ex);
       }
       // reopen the connection
-      con = createConnection(session.getBackendInfo());
+      ManagedConnection con = createConnection(session.getBackendInfo());
 
-      synchronized(this) {
-        int index = getIndexFromSession(session);
-        conList[index] = con;
-        LOGGER.info("{0}: connection {1} reopened", this, con);
-        con.attachSession(session);
+      try {
+        synchronized(this) {
+          // the slot may have been released while unsynchronized (shutdown, logout, cleanup)
+          if (shutdownRequested) {
+            throw new PersistenceException(session, this + ": connection manager has been shut down");
+          }
+          int index = getIndexFromSession(session);
+          if (conList[index] != oldCon) {
+            throw new PersistenceException(session, this + ": connection " + oldCon + " released while being reopened");
+          }
+          conList[index] = con;
+          con.setIndex(index);
+          LOGGER.info("{0}: connection {1} reopened", this, con);
+          con.attachSession(session);
+        }
+      }
+      catch (RuntimeException rx) {
+        if (con.getIndex() < 0) {   // not stored in the connection list
+          con.close();
+        }
+        throw rx;
       }
     }
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The connection is cleaned up without holding the monitor of this manager, since this may access the database.
+   * Meanwhile, the connection is reserved, so that it is not verified concurrently and the session waits in
+   * {@link #attach(Db)} until the cleanup completes.
+   */
   @Override
-  public synchronized void detach(Db session) {
-    assertSessionBelongsToMe(session);
-    int index = getIndexFromSession(session);
-    ManagedConnection con = conList[index];
-    con.detachSession(session);
+  public void detach(Db session) {
+    ManagedConnection con;
+    synchronized (this) {
+      assertSessionBelongsToMe(session);
+      int index = getIndexFromSession(session);
+      con = conList[index];
+      if (con == null) {
+        // closed by shutdown(), which detached the session already
+        throw new PersistenceException(session, this + ": connection manager has been shut down");
+      }
+      if (!con.unbindSession(session) || con.isDead() || con.isClosed()) {
+        return;   // still attached (nested attach), or reopened by the next attach()
+      }
+      con.setReserved(true);
+    }
+    try {
+      con.cleanupDetached();
+    }
+    catch (RuntimeException rx) {
+      if (!con.isClosed()) {    // else closed by shutdown in the meantime
+        LOGGER.warning(this + ": cleaning up detached connection " + con + " failed -> marked dead", rx);
+      }
+      con.setDead(true);    // attach() will reopen it
+    }
+    finally {
+      synchronized (this) {
+        con.setReserved(false);
+        notifyAll();    // wake up attach()
+      }
+    }
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The connection is reserved while being verified, so that the session waits in {@link #attach(Db)}
+   * until the verification completes.
+   */
   @Override
-  public synchronized void forceDetach(Db session) {
-    assertSessionBelongsToMe(session);
-    int index = getIndexFromSession(session);
-    ManagedConnection con = conList[index];
-    con.forceDetached();
+  public void verifyIdleConnection(ManagedConnection connection) {
+    synchronized (this) {
+      int index = connection.getIndex();
+      if (shutdownRequested || index < 0 || index >= conList.length || conList[index] != connection ||
+          connection.isAttached() || connection.isReserved()) {
+        return;   // attached, being verified, or removed in the meantime
+      }
+      connection.setReserved(true);
+    }
+    try {
+      connection.verifyConnection();    // marks the connection dead if it fails, attach() will reopen it
+    }
+    finally {
+      synchronized (this) {
+        connection.setReserved(false);
+        notifyAll();    // wake up attach()
+      }
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The lengthy cleanup of the connection does not block the connection manager.
+   */
+  @Override
+  public void forceDetach(Db session) {
+    ManagedConnection con;
+    Db releasedDb;
+    synchronized (this) {
+      assertSessionBelongsToMe(session);
+      int index = getIndexFromSession(session);
+      con = conList[index];
+      if (con == null) {
+        return;   // closed by shutdown(), which detached the session already
+      }
+      releasedDb = releaseConnection(con, session);
+    }
+    if (releasedDb != null) {
+      cleanupReleasedConnection(con, releasedDb);
+    }
+  }
+
+  /**
+   * Releases the session attached to a connection, which is cleaned up afterward by
+   * {@link #cleanupReleasedConnection(ManagedConnection, Db)}.<br>
+   * Invoked with the monitor of this manager held.
+   * In between, the connection must not be attached by any session.
+   * The default implementation reserves the connection, so that the session waits in {@link #attach(Db)}
+   * until the cleanup completes.
+   *
+   * @param con the connection
+   * @param session the session the connection is expected to be attached to, null if any
+   * @return the released session, null if no session or not the expected one was attached
+   */
+  protected Db releaseConnection(ManagedConnection con, Db session) {
+    Db releasedDb = con.releaseSession(session);
+    if (releasedDb != null) {
+      con.setReserved(true);
+    }
+    return releasedDb;
+  }
+
+  /**
+   * Cleans up a connection released by {@link #releaseConnection(ManagedConnection, Db)}.<br>
+   * Cancels running statements, closes pending ones and rolls back a pending transaction.
+   * Must be invoked without holding the monitor of this manager, since the cleanup may take a while.
+   *
+   * @param con the connection
+   * @param releasedDb the released session
+   */
+  protected void cleanupReleasedConnection(ManagedConnection con, Db releasedDb) {
+    try {
+      con.cleanupReleased(releasedDb);
+    }
+    catch (RuntimeException rx) {
+      LOGGER.warning(this + ": cleaning up connection " + con + " failed -> marked dead", rx);
+      con.setDead(true);    // attach() will reopen it
+    }
+    finally {
+      synchronized (this) {
+        con.setReserved(false);
+        notifyAll();    // wake up attach()
+      }
+    }
   }
 
 
@@ -432,7 +633,7 @@ public class DefaultConnectionManager implements ConnectionManager {
     }
 
     if (t != null) {
-      // shutdown monitoring thread, unsynchronized: the thread locks this manager
+      // shutdown monitoring thread, not synchronized: the thread locks this manager
       t.requestTermination();
       t.interrupt();
       try {
@@ -443,20 +644,29 @@ public class DefaultConnectionManager implements ConnectionManager {
         LOGGER.warning(this + ": stopping the timeout thread failed", ex);
       }
       if (t.isAlive()) {
-        // the thread is stuck, most probably in a lengthy detach.
-        // it is a daemon thread and will terminate as soon as it is done.
+        // The thread is stuck.
+        // It is a daemon thread and will terminate as soon as it is done.
         LOGGER.warning("{0}: the timeout thread did not terminate within {1} ms", this, TIMEOUT_THREAD_JOIN_MS);
       }
     }
 
     synchronized (this) {
-      // close all connections
-      for (int i=0; i < conList.length; i++) {
-        if (conList[i] != null) {
-          ManagedConnection con = removeConnection(i);
-          LOGGER.info("{0}: close connection {1}", this, con);
-          con.close();
-        }
+      closeConnections();
+    }
+  }
+
+  /**
+   * Closes and removes all connections.<br>
+   * Invoked by {@link #shutdown()} with the monitor of this manager held.
+   * Subclasses maintaining additional connection lists must clear them here,
+   * so that no other thread can see them out of sync with the connection list.
+   */
+  protected void closeConnections() {
+    for (int i=0; i < conList.length; i++) {
+      if (conList[i] != null) {
+        ManagedConnection con = removeConnection(i);
+        LOGGER.info("{0}: close connection {1}", this, con);
+        con.close();
       }
     }
   }
@@ -500,7 +710,9 @@ public class DefaultConnectionManager implements ConnectionManager {
       freeDbList = nFreeDbList;
     }
 
-    return freeDbList[--freeDbCount];
+    int index = freeDbList[--freeDbCount];
+    usedDbIndexes.set(index);
+    return index;
   }
 
 
@@ -508,8 +720,14 @@ public class DefaultConnectionManager implements ConnectionManager {
    * Removes a session index.
    *
    * @param index the index of session in the list
+   * @throws PersistenceException if the index is not in use, i.e., released already
    */
   protected void removeSessionIndex(int index) {
+    if (!usedDbIndexes.get(index)) {
+      // pushing it again would hand out the same index to two sessions
+      throw new PersistenceException(this + ": session index " + index + " already released");
+    }
+    usedDbIndexes.clear(index);
     freeDbList[freeDbCount++] = index;
   }
 
@@ -523,33 +741,64 @@ public class DefaultConnectionManager implements ConnectionManager {
   protected int addConnection(ManagedConnection con) {
     if (freeConCount == 0) {
       // no more free connection entries: double the list size
-      if (maxConSize > 0 && conList.length >= maxConSize) {
-        PersistenceException pex = new PersistenceException(this + ": max. number of connections exceeded (" + maxConSize + ")");
-        pex.setTemporary(true);
-        throw pex;
-      }
-      // no more free Db entries: double the list size
-      int newSize = conList.length << 1;
-      if (maxConSize > 0 && newSize > maxConSize) {
-        newSize = maxConSize;
-      }
-      ManagedConnection[] nConList = new ManagedConnection[newSize];
-      System.arraycopy(conList, 0, nConList, 0, conList.length);
-      int[] nFreeConList = new int[newSize];
-      System.arraycopy(freeConList, 0, nFreeConList, 0, conList.length);
-      for (int i=newSize-1; i >= conList.length; i--) {
-        nFreeConList[freeConCount++] = i;
-        nFreeConList[i] = -1;
-        nConList[i] = null;
-      }
-      conList = nConList;
-      freeConList = nFreeConList;
+      growConnectionList(conList.length << 1);
     }
 
     int index = freeConList[--freeConCount];
     conList[index] = con;
     con.setIndex(index);
     return index;
+  }
+
+  /**
+   * Adds a connection to the list at a given index.<br>
+   * Used if connections are mapped 1:1 to session indexes.
+   *
+   * @param con the connection to add
+   * @param index the index of the connection in the list
+   * @throws PersistenceException if the index is not free
+   */
+  protected void addConnection(ManagedConnection con, int index) {
+    if (index >= conList.length) {
+      growConnectionList(Math.max(conList.length << 1, index + 1));
+    }
+    for (int i = 0; i < freeConCount; i++) {
+      if (freeConList[i] == index) {
+        freeConList[i] = freeConList[--freeConCount];   // remove from freelist
+        conList[index] = con;
+        con.setIndex(index);
+        return;
+      }
+    }
+    throw new PersistenceException(this + ": session- and connection-list out of sync at index " + index);
+  }
+
+  /**
+   * Enlarges the connection list.
+   *
+   * @param newSize the requested new size, limited by the maximum number of connections
+   * @throws PersistenceException if the maximum number of connections is already reached
+   */
+  private void growConnectionList(int newSize) {
+    if (maxConSize > 0 && conList.length >= maxConSize) {
+      PersistenceException pex = new PersistenceException(this + ": max. number of connections exceeded (" + maxConSize + ")");
+      pex.setTemporary(true);
+      throw pex;
+    }
+    if (maxConSize > 0 && newSize > maxConSize) {
+      newSize = maxConSize;
+    }
+    ManagedConnection[] nConList = new ManagedConnection[newSize];
+    System.arraycopy(conList, 0, nConList, 0, conList.length);
+    int[] nFreeConList = new int[newSize];
+    System.arraycopy(freeConList, 0, nFreeConList, 0, conList.length);
+    for (int i=newSize-1; i >= conList.length; i--) {
+      nFreeConList[freeConCount++] = i;
+      nFreeConList[i] = -1;
+      nConList[i] = null;
+    }
+    conList = nConList;
+    freeConList = nFreeConList;
   }
 
 
@@ -565,6 +814,18 @@ public class DefaultConnectionManager implements ConnectionManager {
     freeConList[freeConCount++] = index;
     con.setIndex(-1);
     return con;
+  }
+
+  /**
+   * Removes the connection of a session being logged out or cleaned up.<br>
+   * The connection is already gone if the connection manager has been shut down meanwhile.
+   * Removing it again would add its index to the free list twice.
+   *
+   * @param index the index of connection in the list
+   * @return the removed connection, null if already removed by {@link #shutdown()}
+   */
+  private ManagedConnection removeSessionConnection(int index) {
+    return conList[index] == null ? null : removeConnection(index);
   }
 
 
@@ -632,10 +893,10 @@ public class DefaultConnectionManager implements ConnectionManager {
 
     Connection con;
     ManagedConnection mc;
-    VersionInfo versionInfo;
+    BackendVersionInfo versionInfo;
 
     try {
-      con = backendInfo.connect();
+      con = connect(backendInfo);
     }
     catch (SQLException sx) {
       throw new PersistenceException(this + ": connection to '" + backendInfo + "' failed", sx);
@@ -645,7 +906,7 @@ public class DefaultConnectionManager implements ConnectionManager {
       versionInfo = versionInfoMap.computeIfAbsent(backendInfo.getUrl(), url -> {
         try {
           DatabaseMetaData metaData = con.getMetaData();    // maybe a lengthy operation -> cached per URL
-          return new VersionInfo(metaData.getDatabaseMajorVersion(), metaData.getDatabaseMinorVersion());
+          return new BackendVersionInfo(metaData.getDatabaseMajorVersion(), metaData.getDatabaseMinorVersion());
         }
         catch (SQLException sx) {
           throw new PersistenceException(this + ": connection metadata could not be retrieved", sx);
@@ -653,20 +914,15 @@ public class DefaultConnectionManager implements ConnectionManager {
       });
 
       Backend backend = backendInfo.getBackend();
-      backend.validateVersion(versionInfo.majorVersion, versionInfo.minorVersion);
-      mc = new ManagedConnection(this, backend, con);
+      backend.validateVersion(versionInfo);
+      mc = createManagedConnection(backend, versionInfo, con);
       if (backendInfo.getBackendTimeout() > 0) {
         mc.setConnectionInactivityTimeoutMs(backendInfo.getBackendTimeout() * Constants.MINUTE_MS);
         mc.setConnectionKeepAliveEnabled(backendInfo.isBackendKeepAliveEnabled());
       }
     }
     catch (RuntimeException rx) {
-      try {
-        con.close();
-      }
-      catch (SQLException sx) {
-        LOGGER.severe("closing connection failed -> ignored", sx);
-      }
+      closeUnmanagedConnection(con);
       throw rx;
     }
 
@@ -692,23 +948,73 @@ public class DefaultConnectionManager implements ConnectionManager {
 
 
   /**
-   * Attaches the session to a connection.
+   * Creates the low-level JDBC connection.
+   *
+   * @param backendInfo the backend info
+   * @return the connection in autocommit mode
+   * @throws SQLException if the connection could not be established
+   */
+  protected Connection connect(BackendInfo backendInfo) throws SQLException {
+    return backendInfo.connect();
+  }
+
+  /**
+   * Wraps a low-level JDBC connection created by {@link #connect(BackendInfo)} into a managed connection.
+   *
+   * @param backend the backend
+   * @param versionInfo the backend's database version
+   * @param connection the low-level connection
+   * @return the managed connection
+   */
+  protected ManagedConnection createManagedConnection(Backend backend, BackendVersionInfo versionInfo, Connection connection) {
+    return new ManagedConnection(this, backend, versionInfo, connection);
+  }
+
+  /**
+   * Closes a low-level JDBC connection created by {@link #connect(BackendInfo)}
+   * that could not be turned into a managed connection.
+   *
+   * @param connection the low-level connection
+   */
+  protected void closeUnmanagedConnection(Connection connection) {
+    try {
+      connection.close();
+    }
+    catch (SQLException sx) {
+      LOGGER.severe("closing connection failed -> ignored", sx);
+    }
+  }
+
+
+  /**
+   * Waits until the connection at the given index is no longer reserved, i.e., verified or cleaned up by another thread.<br>
+   * Must be invoked with the monitor of this manager held.
+   *
+   * @param index the index of the connection in the list
+   */
+  private void awaitNotReserved(int index) {
+    ManagedConnection con;
+    while ((con = conList[index]) != null && con.isReserved()) {
+      try {
+        wait();
+      }
+      catch (InterruptedException ix) {
+        Thread.currentThread().interrupt();
+        throw new PersistenceException(this + ": interrupted while waiting for the verification or cleanup of " + con);
+      }
+    }
+  }
+
+  /**
+   * Attaches the session to a connection.<br>
+   * Must be invoked with the monitor of this manager held.
    *
    * @param session the session
+   * @param con the session's connection, not reserved
+   * @param verified true if the connection has just been verified
    * @return null if attached, the connection if dead or expired and needs to be reopened
    */
-  private synchronized ManagedConnection attachImpl(Db session) {
-    assertSessionBelongsToMe(session);
-    int index = getIndexFromSession(session);
-    ManagedConnection con = conList[index];
-    boolean verified;
-    if (con.isConnectionVerificationNecessary()) {
-      con.verifyConnection();
-      verified = true;
-    }
-    else {
-      verified = false;
-    }
+  private ManagedConnection attachImpl(Db session, ManagedConnection con, boolean verified) {
     if (con.isDead()) {
       if (verified) {
         LOGGER.info("{0}: database closed idle connection {1}", this, con);
@@ -755,7 +1061,7 @@ public class DefaultConnectionManager implements ConnectionManager {
     /**
      * Requests this thread to terminate.<br>
      * The flag belongs to the thread, not to the manager, so that a thread already retired
-     * cannot be revived by re-enabling the attach timeout, which would start a second thread.
+     * cannot be revived by re-enabling the attach-timeout, which would start a second thread.
      */
     void requestTermination() {
       terminationRequested = true;
@@ -792,19 +1098,25 @@ public class DefaultConnectionManager implements ConnectionManager {
           if (con != null && con.isAttached() && (curTime - con.getAttachedSince()) > attachTimeout) {
             Db db = con.getSession();
             if (db != null) {   // still un-synchronized
+              Db releasedDb = null;
               synchronized (mgr) {    // attach/detach is synchronized on me
                 long attachedMillis = curTime - con.getAttachedSince();
-                if (db.getConnection() == con && con.isAttached() &&
+                if (con.getIndex() >= 0 && db.getConnection() == con && con.isAttached() &&
                     attachedMillis > attachTimeout) {   // double check within synchronized block
                   // timed out
-                  try {
-                    LOGGER.warning("detaching timed out connection " + con + " from " + db.getName() +
-                            " (" + attachedMillis + "ms)");
-                    db.forceDetached();
-                  }
-                  catch (RuntimeException rex) {
-                    LOGGER.severe("detaching " + con + " failed", rex);
-                  }
+                  LOGGER.warning("detaching timed out connection " + con + " from " + db.getName() +
+                          " (" + attachedMillis + "ms)");
+                  // released within the same synchronized block: the session cannot re-attach in between
+                  releasedDb = mgr.releaseConnection(con, db);
+                }
+              }
+              if (releasedDb != null) {
+                // the lengthy cleanup without blocking the connection manager
+                try {
+                  mgr.cleanupReleasedConnection(con, releasedDb);
+                }
+                catch (RuntimeException rex) {
+                  LOGGER.severe("detaching " + con + " failed", rex);
                 }
               }
             }

@@ -35,7 +35,7 @@ public class MethodStatisticsKey {
    * Creates a key for given method and optional class.
    *
    * @param method the method
-   * @param servicedClass the serviced class, null if method#getDeclaringClass
+   * @param servicedClass the serviced class, null if {@code method.getDeclaringClass()}
    */
   public MethodStatisticsKey(Method method, Class<?> servicedClass) {
     this.method = method;

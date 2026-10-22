@@ -377,9 +377,10 @@ public class WurbletArgumentParser {
 
                 default:
                   // expression argument
-                  lastOperator = expr.addOperand(lastOperator, operand);
+                  WurbletArgumentOperator operandOperator = expr.addOperand(lastOperator, operand);
+                  lastOperator = null;    // operator consumed
                   expressionArguments.add(operand);
-                  if (lastOperator != WurbletArgumentOperator.AND) {
+                  if (operandOperator != WurbletArgumentOperator.AND) {
                     existsRelations = null;
                     existsComponents = null;
                     existsArguments = null;

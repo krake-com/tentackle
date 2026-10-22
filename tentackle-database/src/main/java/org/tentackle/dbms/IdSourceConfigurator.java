@@ -19,6 +19,7 @@
 package org.tentackle.dbms;
 
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.sql.Backend;
 
 
 interface IdSourceConfiguratorHolder {
@@ -45,12 +46,20 @@ public interface IdSourceConfigurator {
 
 
   /**
-   * Connect to the ID-Source.
+   * Creates the ID source from its configuration.
    *
-   * @param db the session
-   * @param idConfig the configuration
-   * @return the connected IdSource
+   * @param idConfig the configuration, never null
+   * @return the configured IdSource
+   * @see #configure(Backend)
    */
-  IdSource configure(Db db, String idConfig);
+  IdSource configure(String idConfig);
+
+  /**
+   * Creates the backend's default ID source.
+   *
+   * @param backend the backend to derive the default config from
+   * @return the configured IdSource
+   */
+  IdSource configure(Backend backend);
 
 }

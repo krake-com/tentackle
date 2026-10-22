@@ -23,7 +23,7 @@ package org.tentackle.common;
  *
  * @author harald
  */
-public class Constants {
+public final class Constants {
 
   /** {@code META-INF} directory name. */
   public static final String META_INF = "META-INF/";
@@ -43,6 +43,9 @@ public class Constants {
   /** suppress warnings for suspicious stateful domain logic. */
   public static final String SUPPRESS_WARNINGS_STATEFUL_DOMAIN_LOGIC = "stateful-domain-logic";
 
+  /** suppress warnings for bundle getString invocations (see tentackle-check:bundles goal). */
+  public static final String SUPPRESS_WARNINGS_BUNDLE = "bundle";
+
   /** name for "none". */
   public static final String NAME_NONE = "NONE";
 
@@ -58,14 +61,17 @@ public class Constants {
   /** property key for the backend URL. */
   public static final String BACKEND_URL = "url";
 
-  /** explicit driver name and url to load it from &lt;name:url&gt;. */
+  /** explicit driver name and URL to load it from &lt;name:url&gt;. */
   public static final String BACKEND_DRIVER = "driver";
 
   /** database connection inactivity timeout in minutes. */
   public static final String BACKEND_TIMEOUT = "jdbcIdleTimeout";
 
-  /** send a keep alive select every BACKEND_TIMEOUT minutes. */
+  /** send a keep-alive select every BACKEND_TIMEOUT minutes. */
   public static final String BACKEND_KEEP_ALIVE = "jdbcKeepAlive";
+
+  /** optional backend identity to link different URLs to the same physical backend. */
+  public static final String BACKEND_IDENTITY = "identity";
 
   /** property key for the optional schemas. */
   public static final String BACKEND_SCHEMAS = "schemas";
@@ -97,7 +103,7 @@ public class Constants {
    * Useful to define extra technical user credentials for the physical connection, to load JDBC-drivers at runtime or
    * to switch between different backends.
    * <p>
-   * The backend info comes in 3 flavours:
+   * The backend info comes in 3 flavors:
    * <ol>
    *   <li>{@code @user} or {@code @system}: the login dialog allows the user to manage backend parameters
    *   and optional drivers through the UI. The settings are stored in the user-preferences for {@code @user}
@@ -149,32 +155,32 @@ public class Constants {
 
   /** name of class-ID column. */
   public static final String CN_CLASSID = "classid";
-  /** java name class-ID. */
+  /** java name of class-ID. */
   public static final String AN_CLASSID = "classId";
 
   /** name of root-ID column. */
   public static final String CN_ROOTID = "rootid";
-  /** java name root-ID. */
+  /** java name of root-ID. */
   public static final String AN_ROOTID = "rootId";
 
   /** name of root-class-ID column. */
   public static final String CN_ROOTCLASSID = "rootclassid";
-  /** java name root-class-ID. */
+  /** java name of root-class-ID. */
   public static final String AN_ROOTCLASSID = "rootClassId";
 
-  /** the object ID of the user currently editing this object. */
+  /** name of the column holding the object ID of the user currently editing this object. */
   public static final String CN_EDITEDBY = "editedby";
   /** java name of the editing user. */
   public static final String AN_EDITEDBY = "editedBy";
 
-  /** time when editing started. */
+  /** name of the column holding the time when editing started. */
   public static final String CN_EDITEDSINCE = "editedsince";
   /** java name of time editing started. */
   public static final String AN_EDITEDSINCE = "editedSince";
 
-  /** time when "lock token" will expire. */
+  /** name of the column holding the time when the "lock token" will expire. */
   public static final String CN_EDITEDEXPIRY = "editedexpiry";
-  /** java name of time "lock token" will expire. */
+  /** java name of time the "lock token" will expire. */
   public static final String AN_EDITEDEXPIRY = "editedExpiry";
 
   /** column name for the normtext. */

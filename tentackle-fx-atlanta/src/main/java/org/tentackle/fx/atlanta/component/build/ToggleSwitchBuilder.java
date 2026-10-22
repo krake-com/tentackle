@@ -26,7 +26,7 @@ import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.atlanta.component.FxToggleSwitch;
 
 /**
- * Builder to create a ToggleSwitch.
+ * Builder to create an {@link FxToggleSwitch} whenever the FXML references a {@link ToggleSwitch}.
  *
  * @author harald
  */

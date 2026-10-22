@@ -33,11 +33,16 @@ import java.sql.Types;
 /**
  * Datatype for {@link String}.
  * <p>
- * Notice that there are two types of strings. This one is for the SQL type <code>VARCHAR</code>.
+ * Notice that there are four variants of strings: this one for the SQL type <code>VARCHAR</code>,
+ * {@link LargeStringType} for <code>CLOB</code>, {@link XMLType} for <code>XML</code> and {@link JsonType}
+ * for <code>JSON</code>.
  */
 @Service(DataType.class)
-public sealed class StringType extends AbstractDataType<String> permits LargeStringType {
+public sealed class StringType extends AbstractDataType<String> permits LargeStringType, XMLType, JsonType {
 
+  /**
+   * Creates the datatype for {@link String}.
+   */
   public StringType() {
     // see -Xlint:missing-explicit-ctor since Java 16
   }

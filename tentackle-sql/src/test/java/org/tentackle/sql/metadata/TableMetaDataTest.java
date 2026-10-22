@@ -299,7 +299,8 @@ public class TableMetaDataTest {
                         "PKTABLE_NAME", "owner",
                         "PKCOLUMN_NAME", primaryKeyColumn,
                         "UPDATE_RULE", (short) DatabaseMetaData.importedKeyNoAction,
-                        "DELETE_RULE", (short) DatabaseMetaData.importedKeyCascade);
+                        "DELETE_RULE", (short) DatabaseMetaData.importedKeyCascade,
+                        "DEFERRABILITY", (short) DatabaseMetaData.importedKeyNotDeferrable);
   }
 
 }

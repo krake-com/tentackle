@@ -4,6 +4,9 @@
 
 package ${domainImplPackage};
 
+<#if superDomainImplementationPackage != "" && superDomainImplementationPackage != domainImplPackage>
+import ${superDomainImplementationPackage}.${superDomainImplementation};
+</#if>
 import ${operationPackage}.${operationInterface};
 <#if domainPackage != domainImplPackage>
 import ${domainPackage}.${domainInterface};

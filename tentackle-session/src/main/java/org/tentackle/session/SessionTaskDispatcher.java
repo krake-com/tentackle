@@ -22,7 +22,8 @@ import org.tentackle.task.TaskDispatcher;
 import org.tentackle.task.TaskException;
 
 /**
- * A TaskDispatcher using a Session.
+ * A {@link TaskDispatcher} using a {@link Session}.<br>
+ * The tasks are executed serially by the dispatcher thread, which owns the session exclusively.
  *
  * @author harald
  */
@@ -36,16 +37,19 @@ public interface SessionTaskDispatcher extends TaskDispatcher {
   Session getSession();
 
   /**
-   * Sets the session.
+   * Sets the session.<br>
+   * The dispatcher thread itself may change the session at any time. Other threads may
+   * change it only as long as the dispatcher is not running.
    *
    * @param session the session
-   * @throws TaskException if the dispatcher is already running or not invoked from the dispatcher thread
+   * @throws TaskException if invoked from another thread while the dispatcher is running
    */
   void setSession(Session session);
 
   /**
    * Sets the keepalive flag.<br>
-   * If set, setAlive() will be invoked periodically to keep the session alive.
+   * If set, {@link Session#setAlive(boolean)} is invoked whenever the dispatcher is about to sleep,
+   * i.e. periodically while idle, to keep the session alive.
    *
    * @param sessionKeptAlive true if ping enabled
    */

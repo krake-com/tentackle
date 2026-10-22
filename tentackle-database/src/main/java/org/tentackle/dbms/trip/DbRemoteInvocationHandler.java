@@ -25,6 +25,13 @@ import org.tentackle.trip.remote.RemoteInvocationHandler;
 import java.lang.reflect.Method;
 import java.util.UUID;
 
+/**
+ * Client-side invocation handler for {@link RemoteDbDelegate}s.<br>
+ * Translates a missing delegate on the server, which means that the remote session was closed,
+ * into a {@link RemoteSessionClosedException}.
+ *
+ * @see DbTripFactory
+ */
 public class DbRemoteInvocationHandler extends RemoteInvocationHandler {
 
   /**

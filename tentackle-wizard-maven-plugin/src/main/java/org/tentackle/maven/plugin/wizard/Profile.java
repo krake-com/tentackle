@@ -27,7 +27,10 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Base class for pdo- and operation profiles.
+ * Base class for PDO and operation profiles.<br>
+ * A profile describes a group of objects, such as master data or transaction data,
+ * by the target packages of the generated files and the super types they extend.
+ * Each package must map to exactly one module of the reactor.
  */
 public class Profile {
 
@@ -38,25 +41,29 @@ public class Profile {
   private String name;
 
   /**
-   * The super domain interface, null if default.
+   * The super domain interface, null for the default.<br>
+   * The fully qualified name lets the templates import it.
    */
   @Parameter
   private String domainInterface;
 
   /**
-   * The super persistence interface, null for default.
+   * The super persistence interface, null for default.<br>
+   * The fully qualified name lets the templates import it.
    */
   @Parameter
   private String persistenceInterface;
 
   /**
-   * The super domain implementation, null if default.
+   * The super domain implementation, null for the default.<br>
+   * The fully qualified name lets the templates import it.
    */
   @Parameter
   private String domainImplementation;
 
   /**
-   * The super persistence implementation, null if default.
+   * The super persistence implementation, null for the default.<br>
+   * The fully qualified name lets the templates import it.
    */
   @Parameter
   private String persistenceImplementation;
@@ -90,63 +97,128 @@ public class Profile {
   private PackageInfo persistenceImplPackageInfo;
 
 
+  /**
+   * Gets the unique profile name.
+   *
+   * @return the name
+   */
   public String getName() {
     return name;
   }
 
+  /**
+   * Gets the super domain interface.
+   *
+   * @return the interface name, null for the default
+   */
   public String getDomainInterface() {
     return domainInterface;
   }
 
+  /**
+   * Gets the super persistence interface.
+   *
+   * @return the interface name, null for the default
+   */
   public String getPersistenceInterface() {
     return persistenceInterface;
   }
 
+  /**
+   * Gets the super domain implementation.
+   *
+   * @return the class name, null for the default
+   */
   public String getDomainImplementation() {
     return domainImplementation;
   }
 
+  /**
+   * Gets the super persistence implementation.
+   *
+   * @return the class name, null for the default
+   */
   public String getPersistenceImplementation() {
     return persistenceImplementation;
   }
 
+  /**
+   * Gets the package of the domain interface.
+   *
+   * @return the package name
+   */
   public String getDomainPackage() {
     return domainPackage;
   }
 
+  /**
+   * Gets the package of the persistence interface.
+   *
+   * @return the package name
+   */
   public String getPersistencePackage() {
     return persistencePackage;
   }
 
+  /**
+   * Gets the package of the domain implementation.
+   *
+   * @return the package name
+   */
   public String getDomainImplPackage() {
     return domainImplPackage;
   }
 
+  /**
+   * Gets the package of the persistence implementation.
+   *
+   * @return the package name
+   */
   public String getPersistenceImplPackage() {
     return persistenceImplPackage;
   }
 
+  /**
+   * Gets the package info of the domain interface package.
+   *
+   * @return the package info, null if not validated yet
+   */
   public PackageInfo getDomainPackageInfo() {
     return domainPackageInfo;
   }
 
+  /**
+   * Gets the package info of the persistence interface package.
+   *
+   * @return the package info, null if not validated yet
+   */
   public PackageInfo getPersistencePackageInfo() {
     return persistencePackageInfo;
   }
 
+  /**
+   * Gets the package info of the domain implementation package.
+   *
+   * @return the package info, null if not validated yet
+   */
   public PackageInfo getDomainImplPackageInfo() {
     return domainImplPackageInfo;
   }
 
+  /**
+   * Gets the package info of the persistence implementation package.
+   *
+   * @return the package info, null if not validated yet
+   */
   public PackageInfo getPersistenceImplPackageInfo() {
     return persistenceImplPackageInfo;
   }
 
   /**
-   * Validates the profile.
+   * Validates the profile and determines the modules of its packages.
    *
    * @param packageInfoMap the package infos
-   * @throws MojoExecutionException if some package not assigned to a module
+   * @throws MojoExecutionException if a package is not assigned to exactly one module
    */
   public void validate(Map<String, PackageInfo> packageInfoMap) throws MojoExecutionException {
     domainPackageInfo = getPackageInfo(packageInfoMap, domainPackage);

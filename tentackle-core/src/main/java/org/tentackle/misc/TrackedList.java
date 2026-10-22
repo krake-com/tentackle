@@ -23,7 +23,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * A List with the ability to tell whether it has been structurally modified.
+ * A {@link List} with the ability to tell whether it has been structurally modified.
  * <p>
  * {@code TrackedList} distinguishes between additions and removals.
  * A replacement is treated as a removal followed by an addition.
@@ -88,15 +88,15 @@ public interface TrackedList<E> extends List<E>, ImmutableCollection<E>, Snapsho
   /**
    * Sets the modified state.
    *
-   * @param modified is true to set modified to true,
-   *        false to clear all other flags including the list of removed Objects.
+   * @param modified true to set modified to true,
+   *        false to clear all other flags including the list of removed objects
    */
   void setModified(boolean modified);
 
   /**
    * Gets the modification state.<br>
    * Returns whether objects have been added, removed or replaced or
-   * setModified(true) was invoked.
+   * {@code setModified(true)} was invoked.
    *
    * @return true if modified.
    */
@@ -136,9 +136,9 @@ public interface TrackedList<E> extends List<E>, ImmutableCollection<E>, Snapsho
   /**
    * Replaces the element at the specified position in this list with
    * the specified element.<br>
-   * The old element will replace the existing one <em>without</em> affecting the modification state
-   * of the list.
-   * Useful if parts of an object tree are reloaded (for example from the
+   * The new element will replace the existing one <em>without</em> affecting the modification state
+   * of the list, and no listener is notified.
+   * Useful if parts of an object tree are reloaded (for example, from the
    * database backend) and should not change the modification state
    * of the whole object tree.
    *
@@ -157,14 +157,16 @@ public interface TrackedList<E> extends List<E>, ImmutableCollection<E>, Snapsho
   boolean addIfAbsent(E element);
 
   /**
-   * Adds the element to the list but does not mark it modified.
+   * Adds the element to the list but does not mark it modified.<br>
+   * No listener is notified.
    *
    * @param element the element to add
    */
   void addBlunt(E element);
 
   /**
-   * Removes the element from the list but does not mark it modified.
+   * Removes the element from the list but does not mark it modified.<br>
+   * The element is not added to the removed objects and no listener is notified.
    *
    * @param element the element to remove
    * @return true if element removed
@@ -172,7 +174,8 @@ public interface TrackedList<E> extends List<E>, ImmutableCollection<E>, Snapsho
   boolean removeBlunt(E element);
 
   /**
-   * Removes the element at given index from the list but does not mark it modified.
+   * Removes the element at given index from the list but does not mark it modified.<br>
+   * The element is not added to the removed objects and no listener is notified.
    *
    * @param index the index
    * @return the removed element

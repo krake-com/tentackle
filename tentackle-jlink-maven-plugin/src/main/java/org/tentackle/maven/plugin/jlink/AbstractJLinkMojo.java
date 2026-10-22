@@ -18,30 +18,37 @@
 
 package org.tentackle.maven.plugin.jlink;
 
-import org.apache.maven.artifact.Artifact;
+import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.project.artifact.ProjectArtifact;
-import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.zip.ZipArchiver;
 import org.codehaus.plexus.languages.java.jpms.LocationManager;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.resolution.DependencyResolutionException;
+
+import javax.inject.Inject;
+import javax.inject.Named;
 
 import org.tentackle.common.FileHelper;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.ToolRunner;
 import org.tentackle.maven.AbstractTentackleMojo;
+import org.tentackle.maven.ProjectDependencies;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 
 /**
@@ -91,6 +98,29 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    */
   @Parameter
   private List<ClasspathDependency> classpathDependencies;
+
+  /**
+   * Named, isolated {@code ModuleLayer}s for dependencies that must run isolated from each other -
+   * typically because two of them need different, otherwise conflicting versions of the same module.
+   * <p>
+   * If empty (the default), the application is built exactly as without this feature at all: a single,
+   * unlayered boot {@code ModuleLayer}. If not empty, {@link #mainClass} is launched by
+   * {@code org.tentackle.common.LayerBootstrap} instead of directly, which builds the configured
+   * {@code ModuleLayer} graph at startup and then hands off to the real main class. See the
+   * {@code layers.md} documentation.
+   *
+   * @see #leafLayer
+   */
+  @Parameter
+  private List<Layer> layers;
+
+  /**
+   * The name of the layer holding the application's own {@link #mainModule}, used as the {@code leaf}
+   * entry of the generated {@code layers.properties}. Required if {@link #layers} is not empty, and must
+   * not collide with any of their names.
+   */
+  @Parameter
+  private String leafLayer;
 
   /**
    * Controls the behavior if an automatic module is required.
@@ -159,7 +189,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   /**
    * Enables the auto-update feature.
    * <p>
-   * For the <code>jlink</code> gaol an extra update script will be generated
+   * For the <code>jlink</code> goal an extra update script will be generated
    * via the {@link JLinkMojo#getUpdateTemplate()}.
    * The update script will be named <code>bin/update.&lt;extension&gt;</code> where
    * the extension is derived from the platform (<code>cmd</code> on Windows,
@@ -188,6 +218,9 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    * <p>
    * Please notice that this workaround is only available for non-required modules, i.e., modules
    * that "plug in" via the ServiceFinder or some other dependency injection mechanism.
+   * <p>
+   * The main module of a layered application (see {@link #layers}) is always module-path-only,
+   * without being listed here.
    * <p>
    * If all modules must be moved to the <code>mp</code> folder, the single values <code>true</code>,
    * <code>all</code> or <code>*</code> can be used as a shortcut.
@@ -223,10 +256,12 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
 
   /**
    * Compression of resources.<br>
-   * Corresponds to the <code>jlink</code> option <code>--compress</code>.
+   * Corresponds to the <code>jlink</code> option <code>--compress</code>, i.e. <code>zip-0</code> to
+   * <code>zip-9</code> (the legacy values <code>0</code>, <code>1</code> and <code>2</code> are deprecated
+   * since Java 21).
    */
   @Parameter
-  private Integer compress;
+  private String compress;
 
   /**
    * Suppresses a fatal error when signed modular JARs are linked in the runtime image.<br>
@@ -236,7 +271,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   private boolean ignoreSigningInformation;
 
   /**
-   * Suppress the <code>includes</code> directory.<br>
+   * Suppress the <code>include</code> directory.<br>
    * Corresponds to the <code>jlink</code> option <code>--no-header-files</code>.
    */
   @Parameter(defaultValue = "false")
@@ -341,21 +376,21 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   /**
    * JPMS support.
    */
-  @Component
+  @Inject
   private LocationManager locationManager;
 
   /**
    * To attach artifacts with classifier.
    */
-  @Component
+  @Inject
   private MavenProjectHelper projectHelper;
 
   /**
    * The archiver to zip the image.
    */
-  @Component(role = Archiver.class, hint = ZIP_EXTENSION)
+  @Inject
+  @Named(ZIP_EXTENSION)
   private ZipArchiver zipArchiver;
-
 
 
   /**
@@ -421,7 +456,39 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    * @return true if forced to mp folder
    */
   public boolean isModulePathOnly(String moduleName) {
+    if (isLayered() && moduleName.equals(getMainModule())) {
+      // a layered application's own main module can never be linked into the jimage: ModuleLayerBuilder
+      // needs to find it later as a loose file on disk, not baked into the runtime image
+      return true;
+    }
     return modulePathOnly != null && modulePathOnly.contains(moduleName);
+  }
+
+  /**
+   * Gets the configured isolated module layers.
+   *
+   * @return the layers, never null
+   */
+  public List<Layer> getLayers() {
+    return layers == null ? Collections.emptyList() : layers;
+  }
+
+  /**
+   * Returns whether this application uses isolated module layers.
+   *
+   * @return true if {@link #getLayers()} is not empty
+   */
+  public boolean isLayered() {
+    return !getLayers().isEmpty();
+  }
+
+  /**
+   * Gets the name of the layer holding the application's own main module.
+   *
+   * @return the leaf layer name, null if not {@link #isLayered()}
+   */
+  public String getLeafLayer() {
+    return leafLayer;
   }
 
   /**
@@ -436,7 +503,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   /**
    * Gets the template directory.
    *
-   * @return the directory holding the wizard templates
+   * @return the directory holding the script and option templates
    */
   public File getTemplateDir() {
     return templateDir;
@@ -490,7 +557,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   /**
    * Gets the jdeps tool.
    *
-   * @return the file, never null
+   * @return the file, never null once {@link #validate()} succeeded
    */
   public File getJdepsTool() {
     return jdepsTool;
@@ -592,7 +659,15 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   @Override
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
     // analyze project, determine jlink strategy
-    JLinkResolver.Result result = new JLinkResolver(this, getMavenProject().getArtifacts()).resolve();
+    Set<Artifact> artifacts;
+    try {
+      artifacts = new LinkedHashSet<>(ProjectDependencies.resolve(getRepositorySystem(), getMavenSession().getRepositorySession(),
+                                                                  getMavenProject(), ProjectDependencies.RUNTIME_SCOPES));
+    }
+    catch (DependencyResolutionException ex) {
+      throw new MojoExecutionException("resolving the runtime dependencies of " + getMavenProject().getId() + " failed", ex);
+    }
+    JLinkResolver.Result result = new JLinkResolver(this, artifacts).resolve();
     // generate image
     createImage(result);
     // and the shell scripts
@@ -656,7 +731,8 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
       for (ClasspathDependency classpathDependency: classpathDependencies) {
         if (Objects.equals(classpathDependency.getGroupId(), artifact.getGroupId()) &&
             Objects.equals(classpathDependency.getArtifactId(), artifact.getArtifactId()) &&
-            Objects.equals(classpathDependency.getClassifier(), artifact.getClassifier())) {
+            // the resolver's artifact has an empty classifier if none, but the configuration may be null
+            Objects.equals(Objects.toString(classpathDependency.getClassifier(), ""), artifact.getClassifier())) {
           return true;
         }
       }
@@ -673,6 +749,15 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    * @throws MojoExecutionException if generation failed
    */
   abstract protected void generateFiles(JLinkResolver.Result result) throws MojoExecutionException;
+
+
+  /**
+   * Checks the configured template names.<br>
+   * Invoked before {@link #installTemplates(boolean)}, since the names are used as filenames there.
+   *
+   * @throws MojoExecutionException if a template name is missing
+   */
+  abstract protected void validateTemplates() throws MojoExecutionException;
 
 
   /**
@@ -702,6 +787,14 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
 
     // extra directories, if any
     copyExtraDirectories();
+
+    // isolated module layers, if any
+    if (isLayered()) {
+      LayerResolver layerResolver = new LayerResolver(this);
+      layerResolver.copyLeafModulePath(getImageDirectory(), result);
+      layerResolver.resolveAndCopyLayers(new File(getImageDirectory(), DEST_MODULEPATH));
+      layerResolver.writeLayersProperties(new File(getImageDirectory(), DEST_RESOURCES));
+    }
   }
 
   /**
@@ -712,10 +805,9 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    * @throws MojoFailureException if jlink returned an error code
    */
   protected void createJLinkImage(JLinkResolver.Result result) throws MojoExecutionException, MojoFailureException {
-    getLog().info("creating jlink image for a " +
-                  (result.isPlainModular() ? "plain " : "") +
-                  (result.isModular() ? "modular" : "classpath") + " application with Java " + javaRuntimeVersion);
-    getLog().debug(result.toString());
+    getLogger().info("creating jlink image for a {}{} application with Java {}",
+                     result.isPlainModular() ? "plain " : "", result.isModular() ? "modular" : "classpath", javaRuntimeVersion);
+    getLogger().debug(result.toString());
 
     ToolRunner jlinkRunner = new ToolRunner(jlinkTool);
     if (saveOpts != null) {
@@ -725,7 +817,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
     if (stripDebug) {
       jlinkRunner.arg("--strip-debug");
     }
-    if (compress != null) {
+    if (!StringHelper.isAllWhitespace(compress)) {
       jlinkRunner.arg("--compress=" + compress);
     }
     if (ignoreSigningInformation) {
@@ -735,7 +827,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
       jlinkRunner.arg("--no-header-files");
     }
     if (noManPages) {
-      jlinkRunner.arg("--no-man-pages");    // is this implemented in jlink at all???
+      jlinkRunner.arg("--no-man-pages");
     }
     if (jlinkOptions != null) {
       jlinkOptions.forEach(jlinkRunner::arg);
@@ -743,7 +835,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
     result.generateJlinkModulePath(jlinkRunner);
     result.generateJlinkModules(jlinkRunner);
 
-    getLog().debug(jlinkRunner.toString());
+    getLogger().debug(jlinkRunner.toString());
 
     int errCode = jlinkRunner.run().getErrCode();
     if (errCode != 0) {
@@ -768,7 +860,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
           mpDir.mkdir();
           for (ModularArtifact artifact : modulePath) {
             File dest = new File(mpDir, artifact.getFileName());
-            getLog().debug("copying " + artifact.getPath() + " to " + mpDir);
+            getLogger().debug("copying {} to {}", artifact.getPath(), mpDir);
             FileHelper.copy(artifact.getFile(), dest);
           }
         }
@@ -779,9 +871,9 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
         File cpDir = new File(getImageDirectory(), DEST_CLASSPATH);
         cpDir.mkdir();
         for (Artifact artifact : classPath) {
-          File dest = new File(cpDir, artifact.getFile().getName());
-          getLog().debug("copying " + artifact.getFile() + " to " + cpDir);
-          FileHelper.copy(artifact.getFile(), dest);
+          File dest = new File(cpDir, ProjectDependencies.getFile(artifact).getName());
+          getLogger().debug("copying {} to {}", ProjectDependencies.getFile(artifact), cpDir);
+          FileHelper.copy(ProjectDependencies.getFile(artifact), dest);
         }
       }
     }
@@ -826,39 +918,101 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
     }
   }
 
+  /**
+   * Returns whether this goal builds an image.<br>
+   * Only such goals need the <code>jdeps</code> and <code>jlink</code> tools, the templates and the main class.
+   *
+   * @return true if the tools, templates and main class are validated, false if only the common and layer settings
+   */
+  protected boolean isBuildingImage() {
+    return true;
+  }
+
   @Override
   protected boolean validate() throws MojoExecutionException {
     if (super.validate()) {
-      if (jdepsTool == null) {
-        throw new MojoExecutionException("jdeps tool not found");
+      if (isBuildingImage()) {
+        validateImageSettings();
       }
-      getLog().debug("using " + jdepsTool);
-
-      javaRuntimeVersion = determineJavaToolVersion(jdepsTool);
-      javaMajorRuntimeVersion = getMajorVersion(javaRuntimeVersion);
-
-      if (jlinkTool == null) {
-        throw new MojoExecutionException("jlink tool not found");
-      }
-      getLog().debug("using " + jlinkTool);
-
-      if (templateDir.exists()) {
-        if (!templateDir.isDirectory()) {
-          throw new MojoExecutionException(templateDir.getPath() + " is not a directory");
-        }
-      }
-      else {
-        getLog().info("template directory created: " + templateDir.getPath());
-      }
-      installTemplates(false);    // install any missing template
-
-      if (mainClass == null) {
-        throw new MojoExecutionException("mainClass missing");
-      }
-
+      validateLayers();
       return true;
     }
     return false;
+  }
+
+  /**
+   * Validates the tools, templates and the main class of goals building an image.
+   *
+   * @throws MojoExecutionException if invalid
+   */
+  private void validateImageSettings() throws MojoExecutionException {
+    if (jdepsTool == null) {
+      throw new MojoExecutionException("jdeps tool not found");
+    }
+    getLogger().debug("using {}", jdepsTool);
+
+    javaRuntimeVersion = determineJavaToolVersion(jdepsTool);
+    javaMajorRuntimeVersion = getMajorVersion(javaRuntimeVersion);
+
+    if (jlinkTool == null) {
+      throw new MojoExecutionException("jlink tool not found");
+    }
+    getLogger().debug("using {}", jlinkTool);
+
+    if (templateDir.exists()) {
+      if (!templateDir.isDirectory()) {
+        throw new MojoExecutionException(templateDir.getPath() + " is not a directory");
+      }
+    }
+    else {
+      getLogger().info("template directory created: {}", templateDir.getPath());
+    }
+    validateTemplates();        // the names must be valid before they are used as filenames
+    installTemplates(false);    // install any missing template
+
+    if (mainClass == null) {
+      throw new MojoExecutionException("mainClass missing");
+    }
+  }
+
+  /**
+   * Validates the {@link #layers}/{@link #leafLayer} configuration, if any.
+   *
+   * @throws MojoExecutionException if invalid
+   */
+  private void validateLayers() throws MojoExecutionException {
+    if (!isLayered()) {
+      return;
+    }
+    if (StringHelper.isAllWhitespace(getMainModule())) {
+      throw new MojoExecutionException("layered applications must be modular: mainModule missing");
+    }
+    if (StringHelper.isAllWhitespace(leafLayer)) {
+      throw new MojoExecutionException("leafLayer missing: required if layers are configured");
+    }
+    Set<String> names = new HashSet<>();
+    for (Layer layer : getLayers()) {
+      if (StringHelper.isAllWhitespace(layer.getName())) {
+        throw new MojoExecutionException("a layer without a name");
+      }
+      if (layer.getName().equals(leafLayer)) {
+        throw new MojoExecutionException("layer name '" + layer.getName() + "' collides with leafLayer");
+      }
+      if (!names.add(layer.getName())) {
+        throw new MojoExecutionException("duplicate layer name '" + layer.getName() + "'");
+      }
+      if (layer.getDependencies() == null || layer.getDependencies().isEmpty()) {
+        throw new MojoExecutionException("layer '" + layer.getName() + "' has no dependencies");
+      }
+      for (Dependency dependency : layer.getDependencies()) {
+        if (StringHelper.isAllWhitespace(dependency.getGroupId()) ||
+            StringHelper.isAllWhitespace(dependency.getArtifactId()) ||
+            StringHelper.isAllWhitespace(dependency.getVersion())) {
+          throw new MojoExecutionException("layer '" + layer.getName() +
+                                           "' has a dependency without groupId, artifactId or version: " + dependency);
+        }
+      }
+    }
   }
 
   /**
@@ -877,7 +1031,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
       String text = loadResourceFileIntoString(path);
       try (PrintStream ps = new PrintStream(new FileOutputStream(file))) {
         ps.print(text);
-        getLog().info("installed template " + projectTemplate);
+        getLogger().info("installed template {}", projectTemplate);
       }
       catch (IOException e) {
         throw new MojoExecutionException("cannot install template " + path, e);
@@ -893,7 +1047,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   protected void logToolOutput(ToolRunner runner) {
     String out = runner.getOutputAsString();
     if (!out.isEmpty()) {
-      getLog().info(out);
+      getLogger().info(out);
     }
   }
 

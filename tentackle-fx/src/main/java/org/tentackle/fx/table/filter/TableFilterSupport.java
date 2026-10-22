@@ -457,8 +457,7 @@ public class TableFilterSupport<S> {
     // The button lives in the column header, which sorts the column on a mouse click. The factory
     // already opens the popup on (and consumes) the press, but the release and the synthesized click
     // still bubble up to the header and would sort the column, closing the popup again. Swallow the
-    // whole gesture, so a click on the filter icon only opens the popup — sorting is triggered from
-    // the popup alone.
+    // whole gesture, so a click on the filter icon only opens the popup and does not sort the column.
     button.addEventHandler(MouseEvent.MOUSE_RELEASED, MouseEvent::consume);
     button.addEventHandler(MouseEvent.MOUSE_CLICKED, MouseEvent::consume);
     return button;

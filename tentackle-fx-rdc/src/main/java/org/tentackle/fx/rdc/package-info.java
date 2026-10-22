@@ -17,6 +17,9 @@
  */
 
 /**
- * FX rich desktop client API.
+ * FX rich desktop client API.<br>
+ * The {@link org.tentackle.fx.rdc.Rdc} facade, the per-entity {@link org.tentackle.fx.rdc.GuiProvider},
+ * the editor and finder controllers, the PDO tree and table cells, the context menus, the PDO events,
+ * and the utilities for background execution.
  */
 package org.tentackle.fx.rdc;

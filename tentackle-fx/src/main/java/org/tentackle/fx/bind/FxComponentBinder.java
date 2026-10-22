@@ -29,7 +29,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * The Binder that associates form components with object binding paths.
+ * The binder that associates the components of a controller with object binding paths.
  *
  * @author harald
  */
@@ -86,23 +86,23 @@ public interface FxComponentBinder extends Binder {
   FxComponentBinding getBinding(String bindingPath);
 
   /**
-   * Gets the list of all bound components of this form.
+   * Gets the list of all bound components of the controller.
    *
    * @return the list of bound components, never null
    */
   Collection<FxComponent> getBoundComponents();
 
   /**
-   * Gets the list of all unbound components of this form.
+   * Gets the list of all unbound components of the controller.
+   *
    * @return the list of unbound components, never null
    */
   Collection<FxComponent> getUnboundComponents();
 
   /**
-   * Programmatically removes a binding from this view.
+   * Programmatically removes a binding from the controller.
    *
    * @param component the component assigned to the binding
-   *
    * @return the removed binding, null if no such binding found
    */
   FxComponentBinding removeBinding(FxComponent component);
@@ -123,7 +123,8 @@ public interface FxComponentBinder extends Binder {
   List<? extends Binding> getMandatoryBindings();
 
   /**
-   * Request to update the mandatory attribute of all dynamically mandatory components.
+   * Requests to update the mandatory attribute of all dynamically mandatory components.<br>
+   * The update is performed on the next transfer to the view.
    */
   void requestMandatoryUpdate();
 
@@ -135,7 +136,8 @@ public interface FxComponentBinder extends Binder {
   List<? extends Binding> getChangeableBindings();
 
   /**
-   * Request to update the changeable attribute of all dynamically mandatory components.
+   * Requests to update the changeable attribute of all dynamically changeable components.<br>
+   * The update is performed on the next transfer to the view.
    */
   void requestChangeableUpdate();
 

@@ -28,14 +28,16 @@ import org.tentackle.i18n.pdo.StoredBundleKey;
 import org.tentackle.session.Session;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Verifies the bundles stored in the backend against the property resource bundles of the application.<br>
- * The mojo fails if missing translations in the database would raise a {@link java.util.MissingResourceException}.<br>
+ * Reports differing translations (info), obsolete bundles and keys, missing stored bundles, missing
+ * property files and missing translations of non-default locales (warnings).
+ * The mojo fails if missing translations of the default locale would raise a
+ * {@link java.util.MissingResourceException}. The differing translations are counted as updates in the summary.<br>
  * Notice: the application's resource bundles are verified via the <code>tentackle-check-maven-plugin</code> during the build process.
  */
-@Mojo(name = "verify", aggregator = true,
+@Mojo(name = "verify", aggregator = true, threadSafe = true,
       requiresDependencyResolution = ResolutionScope.COMPILE)
 public class VerifyMojo extends AbstractVerifyMojo {
 
@@ -58,7 +60,7 @@ public class VerifyMojo extends AbstractVerifyMojo {
         buf.append(" '").append(translation.key).append("'");
       }
       updates += differingTranslations.size();
-      getLog().info(buf);
+      getLogger().info(buf.toString());
     }
 
 
@@ -69,7 +71,7 @@ public class VerifyMojo extends AbstractVerifyMojo {
         buf.append('\n').append(bundle);
       }
       warnings += obsoleteBundles.size();
-      getLog().warn(buf);
+      getLogger().warn(buf.toString());
     }
 
     if (!obsoleteKeys.isEmpty()) {
@@ -85,10 +87,10 @@ public class VerifyMojo extends AbstractVerifyMojo {
         buf.append(" '").append(bundleKey.getKey()).append("'");
       }
       warnings += obsoleteKeys.size();
-      getLog().warn(buf);
+      getLogger().warn(buf.toString());
     }
 
-    List<String> resourceNames = resourceBundleMap.entrySet().stream().filter(entry -> entry.getValue().isNew()).map(Map.Entry::getKey).toList();
+    List<String> resourceNames = getMissingStoredBundles();
     if (!resourceNames.isEmpty()) {
       StringBuilder buf = new StringBuilder();
       appendCount(buf, resourceNames.size(), " missing stored bundle");
@@ -96,7 +98,7 @@ public class VerifyMojo extends AbstractVerifyMojo {
         buf.append(' ').append(resourceName);
       }
       warnings += resourceNames.size();
-      getLog().warn(buf);
+      getLogger().warn(buf.toString());
     }
 
     List<Translation> missingTrans = missingTranslations.stream().filter(translation -> translation.bundle.getLocale() != null).toList();
@@ -113,7 +115,7 @@ public class VerifyMojo extends AbstractVerifyMojo {
         buf.append(" '").append(translation.key).append("'");
       }
       warnings += missingTrans.size();
-      getLog().warn(buf);
+      getLogger().warn(buf.toString());
     }
 
     missingTrans = missingTranslations.stream().filter(translation -> translation.bundle.getLocale() == null).toList();
@@ -130,7 +132,7 @@ public class VerifyMojo extends AbstractVerifyMojo {
         buf.append(" '").append(translation.key).append("'");
       }
       errors += missingTrans.size();
-      getLog().error(buf);
+      getLogger().error(buf.toString());
     }
   }
 

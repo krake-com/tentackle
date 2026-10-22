@@ -32,6 +32,10 @@ import java.util.logging.Level;
 
 /**
  * Default implementation for the logger factory.
+ * <p>
+ * The logger class is the implementation of {@link Logger} configured as a service, for example by
+ * one of the modules tentackle-log-slf4j or tentackle-log-log4j2v. If there is none, the {@link DefaultLogger}
+ * for {@code java.util.logging} is used.
  *
  * @author harald
  */
@@ -112,7 +116,7 @@ public class DefaultLoggerFactory implements LoggerFactory {
           constructor = (Constructor<Logger>) loggerClass.getConstructor(String.class);
           constructors.put(loggerClass, constructor);
         }
-        catch (NoSuchMethodException | SecurityException e) {
+        catch (NoSuchMethodException e) {
           constructorException = e;
         }
       }

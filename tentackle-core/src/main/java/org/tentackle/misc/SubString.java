@@ -28,8 +28,8 @@ import java.util.Objects;
  * The substring itself is built lazily, thus allowing index computations without
  * string creations.
  * <p>
- * Notice that {@link #equals(Object)} and {@link #hashCode()} refer to the <code>SubString</code> instance
- * and not the segment.
+ * Notice that {@link #equals(Object)} and {@link #hashCode()} refer to the original string and the indexes,
+ * not the segment's contents. Use {@link #equalsSegment(SubString)} to compare the contents.
  */
 public class SubString implements Serializable {
 
@@ -48,6 +48,8 @@ public class SubString implements Serializable {
    * @param string the original string
    * @param beginIndex the beginning index
    * @param endIndex the ending index (exclusive)
+   * @throws NullPointerException if string is null
+   * @throws IndexOutOfBoundsException if the indexes are out of bounds
    */
   public SubString(String string, int beginIndex, int endIndex) {
     this.string = Objects.requireNonNull(string);
@@ -71,6 +73,7 @@ public class SubString implements Serializable {
    *
    * @param string the original string
    * @param beginIndex the beginning index
+   * @throws IndexOutOfBoundsException if beginIndex is out of bounds
    */
   public SubString(String string, int beginIndex) {
     this(string, beginIndex, string.length());
@@ -106,7 +109,7 @@ public class SubString implements Serializable {
   /**
    * Gets the ending index.
    *
-   * @return the ending
+   * @return the ending (exclusive)
    */
   public int getEndIndex() {
     return endIndex;
@@ -122,7 +125,8 @@ public class SubString implements Serializable {
   }
 
   /**
-   * Gets the string segment.
+   * Gets the string segment.<br>
+   * The segment is created on first invocation.
    *
    * @return the segment
    */
@@ -134,11 +138,13 @@ public class SubString implements Serializable {
   }
 
   /**
-   * Creates a new string segment from relative to this segment.
+   * Creates a new string segment relative to this segment.
    *
    * @param ndx the index within this segment
    * @param len the length of the derived segment
    * @return the derived segment
+   * @throws IllegalArgumentException if len is negative
+   * @throws IndexOutOfBoundsException if the derived segment exceeds this segment
    */
   public SubString with(int ndx, int len) {
     if (len < 0) {

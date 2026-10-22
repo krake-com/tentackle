@@ -35,7 +35,7 @@ interface ShortTypeHolder {
 
 
 /**
- * Trip type for {@link Short[]} array.
+ * Trip type for {@code Short[]} array.
  */
 @TripTypeService(Short[].class)
 public final class ShortArrayTripType extends AbstractPredefinedArrayTripType<Short[]> {
@@ -137,17 +137,18 @@ public final class ShortArrayTripType extends AbstractPredefinedArrayTripType<Sh
       int count = 0;
       while (count < length) {
         opCode = stream.receiveOpCode();
-        switch (opCode) {
-          case DefaultOpCode.SKIP -> count += deserializer.deserializeInt();
-          case DefaultOpCode.SKIP2 -> count += deserializer.deserializeShortAsUnsigned();
-          case DefaultOpCode.SKIP1 -> count += deserializer.deserializeByteAsUnsigned();
-          case DefaultOpCode.SHORTN -> {
-            int blockLen = deserializer.deserializeByteAsUnsigned();
-            while (blockLen-- > 0) {
-              result[count++] = (short) deserializer.deserializeByte();
-            }
+        int skip = readSkip(deserializer, opCode);
+        if (skip != NO_SKIP) {
+          count += skip;
+        }
+        else if (opCode == DefaultOpCode.SHORTN) {
+          int blockLen = deserializer.deserializeByteAsUnsigned();
+          while (blockLen-- > 0) {
+            result[count++] = (short) deserializer.deserializeByte();
           }
-          case null, default -> result[count++] = shortTripType.read(stream, opCode);
+        }
+        else {
+          result[count++] = shortTripType.read(stream, opCode);
         }
       }
       stream.addReference(reference, result, false);

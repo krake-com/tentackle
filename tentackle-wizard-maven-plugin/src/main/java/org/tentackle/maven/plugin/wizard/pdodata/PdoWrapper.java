@@ -26,7 +26,7 @@ import java.util.Map;
 
 /**
  * Wrapper for a PDO.<br>
- * Adds the UDK property.
+ * Adds the UDK property and caches the data object tree and the code configuration.
  */
 public class PdoWrapper {
 
@@ -54,20 +54,23 @@ public class PdoWrapper {
   }
 
   /**
-   * Reloads the pdo from the database.
+   * Reloads the PDO from the database.<br>
+   * Clears the cached data object tree, code configuration and UDK.
    */
   public void reload() {
     PersistentDomainObject<?> reloaded = pdo.reload();
     if (reloaded != null) {
       pdo = reloaded;
       dataObject = null;
+      codeConfiguration = null;
+      udk = null;
     }
   }
 
   /**
    * Gets the data object tree.
    *
-   * @param nodeFactory the factory to use for creating the tree
+   * @param nodeFactory the factory to use for creating the tree, only used if not cached yet
    * @return the tree
    */
   public DataObject getDataObject(DataNodeFactory nodeFactory) {
@@ -78,9 +81,10 @@ public class PdoWrapper {
   }
 
   /**
-   * Gets the code configuration.
+   * Gets the code configuration.<br>
+   * Creating the configuration also sets the configuration paths in the data object tree.
    *
-   * @param nodeFactory the factory to use for creating the tree
+   * @param nodeFactory the factory to use for creating the tree, only used if not cached yet
    * @return the config map, empty if no configuration available
    */
   public Map<String, Boolean> getCodeConfiguration(DataNodeFactory nodeFactory) {
@@ -102,9 +106,10 @@ public class PdoWrapper {
 
   /**
    * Gets the unique domain key string.<br>
-   * If the PDO implements {@link ShortLongText}, the long description is added in parentheses.
+   * If the PDO implements {@link ShortLongText}, the short text followed by the long text in parentheses
+   * is returned instead. If the PDO provides no unique domain key, its {@code toString()} is used.
    *
-   * @return the UDK, empty string if none
+   * @return the UDK, empty string if the unique domain key is null
    */
   @Bindable
   public String getUDK() {

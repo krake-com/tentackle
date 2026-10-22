@@ -18,6 +18,7 @@
 
 package org.tentackle.sql;
 
+import org.tentackle.sql.backends.H2;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
@@ -52,5 +53,52 @@ public class NonStandardCommonsTest {
   public void testSequenceNameOnly() {
     assertEquals(NonStandardCommons.sqlCreateSequence("seq", null, null),
                  "CREATE SEQUENCE seq");
+  }
+
+
+  // ---- the COMMENT ON statements -------------------------------------------
+
+  private final Backend backend = new H2();
+
+  @Test
+  public void testCommentOnTable() {
+    assertEquals(NonStandardCommons.sqlCreateCommentOnTable(backend, "foo", "the foo table"),
+                 "COMMENT ON TABLE foo IS 'the foo table';\n");
+    // dropping a table comment means commenting it with the empty string
+    assertEquals(NonStandardCommons.sqlCreateCommentOnTable(backend, "s.foo", null),
+                 "COMMENT ON TABLE s.foo IS '';\n");
+    // a quote in the comment must not end the literal
+    assertEquals(NonStandardCommons.sqlCreateCommentOnTable(backend, "foo", "it's foo"),
+                 "COMMENT ON TABLE foo IS 'it''s foo';\n");
+  }
+
+  @Test
+  public void testCommentOnColumn() {
+    assertEquals(NonStandardCommons.sqlCreateCommentOnColumn(backend, "foo", "name", "the name"),
+                 "COMMENT ON COLUMN foo.name IS 'the name';\n");
+    // a column comment is dropped with NULL, not with an empty string
+    assertEquals(NonStandardCommons.sqlCreateCommentOnColumn(backend, "foo", "name", null),
+                 "COMMENT ON COLUMN foo.name IS NULL;\n");
+  }
+
+  /**
+   * An index lives in the schema of its table, but is not qualified by the table name.
+   */
+  @Test
+  public void testCommentOnIndex() {
+    assertEquals(NonStandardCommons.sqlCreateCommentOnIndex(backend, "foo", "foo_name", "by name"),
+                 "COMMENT ON INDEX foo_name IS 'by name';\n");
+    assertEquals(NonStandardCommons.sqlCreateCommentOnIndex(backend, "s.foo", "foo_name", "by name"),
+                 "COMMENT ON INDEX s.foo_name IS 'by name';\n", "the schema of the table is prepended");
+    assertEquals(NonStandardCommons.sqlCreateCommentOnIndex(backend, "foo", "foo_name", null),
+                 "COMMENT ON INDEX foo_name IS NULL;\n");
+  }
+
+  @Test
+  public void testCommentOnSequence() {
+    assertEquals(NonStandardCommons.sqlCreateCommentOnSequence(backend, "seq", "the sequence"),
+                 "COMMENT ON SEQUENCE seq IS 'the sequence';\n");
+    assertEquals(NonStandardCommons.sqlCreateCommentOnSequence(backend, "s.seq", null),
+                 "COMMENT ON SEQUENCE s.seq IS NULL;\n");
   }
 }

@@ -167,6 +167,30 @@ public class AbstractUpdateServiceImplTest {
   }
 
   /**
+   * An empty checksum file must fail like any other unusable artifact, not with an unchecked
+   * exception escaping the error handling of {@code getUpdateInfo}.
+   */
+  @Test
+  public void rejectsAnEmptyChecksumFile() throws Exception {
+    server.serve(CHECKSUM_PATH, " \n");
+    AbstractUpdateServiceImpl service = new TestUpdateServiceImpl(server.getBaseUrl() + BASE_PATH);
+    IOException ex = expectThrows(IOException.class, () -> service.determineChecksumHash(server.url(CHECKSUM_PATH)));
+    assertTrue(ex.getMessage().startsWith("empty checksum file"), ex.getMessage());
+  }
+
+  /**
+   * The update URL may point to an edge server that redirects to a CDN or mirror.
+   */
+  @Test
+  public void followsARedirectForTheDownloadSize() throws Exception {
+    String redirectPath = BASE_PATH + "redirected.zip";
+    server.serveRedirect(redirectPath, server.getBaseUrl() + ZIP_PATH);
+    AbstractUpdateServiceImpl service = new TestUpdateServiceImpl(server.getBaseUrl() + BASE_PATH);
+    assertEquals(service.determineDownloadSize(server.url(redirectPath)), zipContent.length);
+    assertEquals(server.getRequestCount(ZIP_PATH), 1);
+  }
+
+  /**
    * The size drives the client's progress bar and is taken from the {@code content-length} of a
    * {@code HEAD} request - the ZIP itself is never pulled through the server.
    */

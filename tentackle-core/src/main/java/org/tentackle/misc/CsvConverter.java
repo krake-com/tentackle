@@ -33,12 +33,16 @@ interface CsvConverterHolder {
 /**
  * Converts values to or from a string separated by delimiters.<br>
  * Implements RFC 4180 as well.
+ * <p>
+ * Notice that each CSV line is treated as a separate record, i.e. quoted values must not span lines.
+ * <p>
+ * Replaceable via &#64;{@link Service}.
  */
 @Service(CsvConverter.class)    // defaults to self
 public class CsvConverter {
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */
@@ -64,7 +68,7 @@ public class CsvConverter {
   /**
    * Gets the separator strings automatically tried for export to avoid quoting.
    *
-   * @return the separators in order to try
+   * @return the separators in the order to try: comma, semicolon, blank and tab
    */
   public String[] getSeparators() {
     return SEPARATORS;
@@ -100,7 +104,8 @@ public class CsvConverter {
   }
 
   /**
-   * Determines the separator char to avoid quoting.
+   * Determines the separator to avoid quoting.<br>
+   * Picks the first of {@link #getSeparators()} not contained in any value.
    *
    * @param lines the string values, line by line
    * @return the separator, null if it is impossible to avoid quoting
@@ -128,9 +133,12 @@ public class CsvConverter {
   }
 
   /**
-   * Converts lines of string values to CSV lines.
+   * Converts lines of string values to CSV lines.<br>
+   * Values containing the separator, the quoting character or one of the
+   * {@link #getQuotableCharacters()} are quoted.
    *
-   * @param separator the separator, null to pick automatically
+   * @param separator the separator, null to pick automatically and fall back to RFC 4180 if quoting cannot be avoided
+   * @param lines the string values, line by line
    * @return the CSV lines
    */
   public List<String> toCsv(String separator, Collection<? extends Collection<String>> lines) {
@@ -188,6 +196,7 @@ public class CsvConverter {
    * Converts lines of string values to CSV lines.<br>
    * Conforms to RFC 4180.
    *
+   * @param lines the string values, line by line
    * @return the CSV lines
    */
   public List<String> toCsv(Collection<? extends Collection<String>> lines) {
@@ -198,18 +207,21 @@ public class CsvConverter {
    * Converts lines of string values to CSV lines.<br>
    * Picks the separator automatically to avoid quoting, if possible.
    *
+   * @param lines the string values, line by line
    * @return the CSV lines
+   * @see #determineBestSeparator(Collection)
    */
   public List<String> toCsvLenient(Collection<? extends Collection<String>> lines) {
     return toCsv(null, lines);
   }
 
   /**
-   * Reads CSV lines.
+   * Reads CSV lines.<br>
+   * Quoted values are unquoted, and doubled quoting characters within quoted values are reduced to a single one.
    *
    * @param separator the separator character
    * @param lines the CSV values in lines
-   * @return the values
+   * @return the values, line by line. An empty line results in an empty list of values.
    */
   public List<List<String>> fromCsv(char separator, Collection<String> lines) {
     List<List<String>> values = new ArrayList<>();
@@ -252,7 +264,8 @@ public class CsvConverter {
           }
         }
       }
-      if (!buf.isEmpty()) {
+      if (lineLen > 0) {
+        // the last value, even if empty (for example, "a,b," or "a,\"\"")
         lineValues.add(buf.toString());
         buf.setLength(0);
       }

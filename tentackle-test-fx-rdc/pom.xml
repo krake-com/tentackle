@@ -12,7 +12,7 @@
   <packaging>jar</packaging>
   <name>Tentackle FX RDC Tests</name>
   <description>
-    Test depdendency to support writing FX-RDC-based tests.
+    Test dependency to support writing FX-RDC-based tests.
     This artifact must be included in test-scope only!
   </description>
 
@@ -43,6 +43,17 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
+      <scope>compile</scope>  <!-- override test -->
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
       <optional>true</optional>
     </dependency>
 
@@ -97,17 +108,27 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
+        <!--
+          Override auto detection. The module offers both a TestNG and a JUnit flavor and
+          therefore has both on the classpath, whereupon surefire would pick only the JUnit
+          platform provider and silently skip the TestNG tests. Declaring both providers
+          runs the tests of both flavors, each in its own forked JVM.
+
+          Pinned to the same 3.5.x release as tentackle-test-pdo, kept alongside it until the
+          Surefire 3.6.0 regression described there is fixed upstream; see
+          tentackle-test-pdo/pom.xml.
+        -->
+        <version>${maven.surefire.plugin.pinned.version}</version>
         <dependencies>
-          <!--
-            Override auto detection of junit. The module offers both a TestNG and a JUnit
-            flavor and therefore has both on the classpath, whereupon surefire picks the
-            JUnit platform provider - which finds nothing, because the tests below extend
-            the TestNG base classes.
-          -->
           <dependency>
             <groupId>org.apache.maven.surefire</groupId>
             <artifactId>surefire-testng</artifactId>
-            <version>${maven.surefire.plugin.version}</version>
+            <version>${maven.surefire.plugin.pinned.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.apache.maven.surefire</groupId>
+            <artifactId>surefire-junit-platform</artifactId>
+            <version>${maven.surefire.plugin.pinned.version}</version>
           </dependency>
         </dependencies>
       </plugin>

@@ -20,6 +20,8 @@ package org.tentackle.fx.rdc.poi;
 
 import org.tentackle.bind.Bindable;
 import org.tentackle.common.BMoney;
+import org.tentackle.common.Time;
+import org.tentackle.common.Timestamp;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -56,12 +58,14 @@ public class SpreadsheetRow {
   private Double rate;
   private BMoney price;       // scale 2
   private BMoney discount;    // scale 2 as well: must share the cell style with price
-  private BMoney tax;         // scale 0: needs its own cell style
+  private BMoney tax;         // another scale: needs its own cell style
   private Date date;
   private Calendar calendar;
   private LocalDate localDate;
   private LocalDateTime localDateTime;
   private LocalTime localTime;
+  private Time time;
+  private Timestamp timestamp;
   private Instant instant;
   private OffsetDateTime offsetDateTime;
   private OffsetTime offsetTime;
@@ -301,6 +305,44 @@ public class SpreadsheetRow {
    */
   public void setLocalTime(LocalTime localTime) {
     this.localTime = localTime;
+  }
+
+  /**
+   * Gets the time.
+   *
+   * @return the time
+   */
+  @Bindable
+  public Time getTime() {
+    return time;
+  }
+
+  /**
+   * Sets the time.
+   *
+   * @param time the time
+   */
+  public void setTime(Time time) {
+    this.time = time;
+  }
+
+  /**
+   * Gets the timestamp.
+   *
+   * @return the timestamp
+   */
+  @Bindable
+  public Timestamp getTimestamp() {
+    return timestamp;
+  }
+
+  /**
+   * Sets the timestamp.
+   *
+   * @param timestamp the timestamp
+   */
+  public void setTimestamp(Timestamp timestamp) {
+    this.timestamp = timestamp;
   }
 
   /**

@@ -30,8 +30,11 @@ import java.lang.annotation.Target;
 
 
 /**
- * Annotation to express that the annotated class
- * is a persistence service for PDO.
+ * Annotation to express that the annotated class implements an {@link Interceptable} interface.
+ * <p>
+ * The {@link DefaultInterceptableFactory} maps the interface to the annotated class and uses it
+ * as the delegate of the dynamic proxy created for the interface.
+ * The implementation must provide a public constructor accepting the proxy instance.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -40,7 +43,7 @@ import java.lang.annotation.Target;
 public @interface InterceptionService {
 
   /**
-   * Determines the interceptable interface.<br>
+   * Determines the interceptable interface.
    *
    * @return the interface
    */

@@ -30,7 +30,9 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Binding Workhorse.
+ * Base implementation of a binder.<br>
+ * Manages the binder's listeners, the binding properties, and the validation scope.
+ * Binders are compared by their unique instance number.
  *
  * @author harald
  */
@@ -49,7 +51,8 @@ public abstract class AbstractBinder implements Binder {
 
 
   /**
-   * Creates a binder.
+   * Creates a binder.<br>
+   * The validation scope defaults to the {@link org.tentackle.validate.scope.InteractiveScope}.
    */
   public AbstractBinder() {
     this.instanceNumber = INSTANCE_COUNT.incrementAndGet();
@@ -58,15 +61,6 @@ public abstract class AbstractBinder implements Binder {
   }
 
 
-  /**
-   * Sets a binding property that can be used by components.
-   * <p>
-   * Example: putBindingProperty(DomainContext.class, context);
-   *
-   * @param key the key to locate the property
-   * @param value the property value
-   * @return null if property added, else the replaced property
-   */
   @Override
   public Object putBindingProperty(Object key, Object value) {
     return bindingProperties.put(key, value);
@@ -83,15 +77,6 @@ public abstract class AbstractBinder implements Binder {
     return changed;
   }
 
-  /**
-   * Gets a binding property.<br>
-   * Some components need additional info which is not provided by the bound field.
-   * <p>
-   * Example: context = getBindingProperty(DomainContext.class);
-   *
-   * @param key the key to locate the property
-   * @return the property value, null if no such key
-   */
   @Override
   public Object getBindingProperty(Object key) {
     return bindingProperties.get(key);
@@ -182,7 +167,7 @@ public abstract class AbstractBinder implements Binder {
 
   @Override
   public void fireToModel(Binding binding, Object parent, Object viewValue) throws BindingVetoException {
-    if (toViewListeners != null) {
+    if (toModelListeners != null) {
       BindingEvent evt = null;
       for (ToModelListener l: toModelListeners) {
         if (evt == null) {

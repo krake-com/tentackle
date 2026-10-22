@@ -52,7 +52,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Number Space persistence implementation.
+ * Stored bundle persistence implementation.
  *
  * @author harald
  */
@@ -122,9 +122,9 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
 
 
   /**
-   * Creates a number space.
+   * Creates a stored bundle persistence object.
    *
-   * @param pdo the number space PDO
+   * @param pdo the stored bundle PDO
    * @param context the domain context
    */
   public StoredBundlePersistenceImpl (StoredBundle pdo, DomainContext context)    {
@@ -132,9 +132,9 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   }
 
   /**
-   * Creates a number space with a session only.
+   * Creates a stored bundle persistence object with a session only.
    *
-   * @param pdo the number space PDO
+   * @param pdo the stored bundle PDO
    * @param session the session
    */
   public StoredBundlePersistenceImpl(StoredBundle pdo, Session session) {
@@ -142,16 +142,16 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   }
 
   /**
-   * Creates a number space without domain context or session.
+   * Creates a stored bundle persistence object without domain context or session.
    *
-   * @param pdo the number space PDO
+   * @param pdo the stored bundle PDO
    */
   public StoredBundlePersistenceImpl(StoredBundle pdo) {
     super(pdo);
   }
 
   /**
-   * Creates a number space without domain context or session.
+   * Creates a stored bundle persistence object without PDO, domain context or session.
    */
   public StoredBundlePersistenceImpl() {
     super();

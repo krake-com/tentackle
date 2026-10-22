@@ -19,7 +19,7 @@
 package org.tentackle.task;
 
 /**
- * Lock for the DefaultTaskDispatcher.
+ * Lock for the {@link DefaultTaskDispatcher}.
  *
  * @author harald
  */

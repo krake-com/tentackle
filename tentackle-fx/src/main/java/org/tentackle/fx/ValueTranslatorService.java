@@ -29,6 +29,9 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation for value translators.
+ * <p>
+ * The {@link FxFactory} picks up all annotated translators and selects the one that
+ * best fits a component's view type and the model type of its binding.
  *
  * @author harald
  */

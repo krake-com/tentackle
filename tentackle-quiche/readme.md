@@ -1,38 +1,20 @@
-tentackle-quiche binds the native Cloudflare quiche library, so two things
-have to be arranged that no other Tentackle module needs.
+tentackle-quiche binds the native Cloudflare quiche library, so it needs
+native access, which no other Tentackle transport does.
 
-1. Native access
+Loading and calling libquiche are restricted operations. Add
 
-   Loading and calling libquiche are restricted operations. Add
+    --enable-native-access=org.tentackle.quiche
 
-       --enable-native-access=org.tentackle.quiche
-
-   to the JVM arguments, or the JVM prints a warning per call site today and
-   will refuse the calls in a future release.
-
-2. Module path
-
-   When using the tentackle-jlink-maven-plugin, make sure to move
-   tentackle-quiche and the native library artifact to the module path.
-   Otherwise, _all_ modules would be moved to the module path.
-
-       <plugin>
-         <groupId>org.tentackle</groupId>
-         <artifactId>tentackle-jlink-maven-plugin</artifactId>
-         <configuration>
-           <modulePathOnly>
-             <module>org.tentackle.quiche</module>
-             <module>org.mortbay.jetty.quiche</module>
-           </modulePathOnly>
-           ...
-
-   This is possible since tentackle-quiche itself is not required
-   by any other tentackle module, but instead configures the QUIC transports
-   via `@TransportService`.
+to the JVM arguments (ALL-UNNAMED on the class path), or the JVM prints a
+warning on the first restricted call today and will refuse the calls in a
+future release. For a jlink/jpackage image, add it to the launcher's JVM
+options.
 
 The binaries in org.mortbay.jetty.quiche cover linux-x86-64, linux-aarch64,
 darwin-x86-64, darwin-aarch64 and win32-x86-64. On anything else, point
 
-    -Dtentackle.quiche.library=/path/to/libquiche.so
+    -Dtentackle.quiche.library=/absolute/path/to/libquiche.so
 
 at a locally built library.
+
+See src/main/docs/quiche.md for the full documentation.

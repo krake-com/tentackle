@@ -33,9 +33,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
 
 
@@ -74,12 +74,11 @@ public class DbTransactionFactory {
   private final Queue<Long> finishedTransactions;                               // txIds of finished transactions
   private final TransactionStatistics statistics;
 
-  private TransactionSupervisor transactionSupervisor;
-  private long txIdleInterval = DEFAULT_TX_IDLE_INTERVAL;
-  private int txIdleTimeout = DEFAULT_TX_IDLE_TIMEOUT;
+  private volatile TransactionSupervisor transactionSupervisor;
+  private volatile long txIdleInterval = DEFAULT_TX_IDLE_INTERVAL;
+  private volatile int txIdleTimeout = DEFAULT_TX_IDLE_TIMEOUT;
   private volatile boolean configChanged;
-  private boolean collectingStatistics;
-  private volatile boolean terminationRequested;
+  private volatile boolean collectingStatistics;
 
   // the transaction counter
   private static final AtomicLong TX_COUNT = new AtomicLong();
@@ -118,6 +117,7 @@ public class DbTransactionFactory {
    * @param db the session
    * @param txName the transaction name, null if &lt;unnamed&gt;
    * @param fromRemote true if initiated from the remote client
+   * @return the transaction
    */
   public DbTransaction create(Db db, String txName, boolean fromRemote) {
     DbTransaction transaction = new DbTransaction(db, createVoucher(fromRemote), txName, TX_COUNT.incrementAndGet());
@@ -135,6 +135,7 @@ public class DbTransactionFactory {
    * @param rolledBack true if transaction was rolled back, false if committed
    */
   public void finish(DbTransaction transaction, boolean rolledBack) {
+    transaction.complete();     // not supervised anymore (a commit of a timed out transaction is refused before)
     long txId = transaction.getTxNumber();
     transactions.remove(txId);
     if (collectingStatistics) {
@@ -186,12 +187,14 @@ public class DbTransactionFactory {
    * @param txIdleInterval the check interval
    */
   public void setTxIdleInterval(long txIdleInterval) {
-    configChanged = this.txIdleInterval != txIdleInterval;
-    this.txIdleInterval = txIdleInterval;
+    if (this.txIdleInterval != txIdleInterval) {
+      this.txIdleInterval = txIdleInterval;
+      configChanged = true;   // after the assignment: the volatile write publishes the new value
+    }
   }
 
   /**
-   * Gets the number of check intervals that must elapse to for an idle transaction to time out.
+   * Gets the number of check intervals that must elapse for an idle transaction to time out.
    *
    * @return the idle count
    */
@@ -200,23 +203,39 @@ public class DbTransactionFactory {
   }
 
   /**
-   * Sets the number of check intervals that must elapse to for an idle transaction to time out.
+   * Sets the number of check intervals that must elapse for an idle transaction to time out.
    *
    * @param txIdleTimeout the idle count, &le; 0 to disable
    */
   public void setTxIdleTimeout(int txIdleTimeout) {
-    configChanged = this.txIdleTimeout != txIdleTimeout;
-    this.txIdleTimeout = txIdleTimeout;
+    if (this.txIdleTimeout != txIdleTimeout) {
+      this.txIdleTimeout = txIdleTimeout;
+      configChanged = true;   // after the assignment: the volatile write publishes the new value
+    }
   }
 
   /**
-   * Requests supervisor thread termination.
+   * Requests supervisor thread termination.<br>
+   * If transactions are still running, the supervisor keeps running until they are finished or timed out.
+   * The supervisor is started again when the next transaction is created.
    */
-  public void requestTermination() {
+  public synchronized void requestTermination() {
     if (transactionSupervisor != null) {
-      terminationRequested = true;
-      transactionSupervisor.interrupt();
+      transactionSupervisor.requestTermination();
+      transactionSupervisor.interrupt();    // wake up to re-check promptly
+      if (transactions.isEmpty()) {
+        transactionSupervisor = null;       // nothing to supervise: the next transaction starts a new supervisor
+      }
     }
+  }
+
+  /**
+   * Returns whether the supervisor thread is running.
+   *
+   * @return true if running, false if not started yet or terminated
+   */
+  public synchronized boolean isSupervisorRunning() {
+    return transactionSupervisor != null && transactionSupervisor.isAlive();
   }
 
 
@@ -227,10 +246,10 @@ public class DbTransactionFactory {
    * @return the voucher
    */
   protected long createVoucher(boolean fromRemote) {
-    // create a new commit/rollback voucher
+    ThreadLocalRandom random = ThreadLocalRandom.current();
     long magic;
     do {
-      magic = UUID.randomUUID().getLeastSignificantBits();
+      magic = random.nextLong();
     }
     while (magic == 0);
 
@@ -239,21 +258,67 @@ public class DbTransactionFactory {
   }
 
 
-  private synchronized void ensureSupervisorAlive() {
-    if (transactionSupervisor == null) {
+  /**
+   * Starts the supervisor if not running.<br>
+   * A supervisor that died unexpectedly is replaced as well, see {@link #dropSupervisor(TransactionSupervisor)}.
+   * The new supervisor takes over all running transactions.
+   * <p>
+   * The happy path is lock-free.
+   */
+  private void ensureSupervisorAlive() {
+    TransactionSupervisor supervisor = transactionSupervisor;
+    if (supervisor == null || supervisor.terminationRequested || !supervisor.isAlive()) {
+      startSupervisorIfNotAlive();
+    }
+  }
+
+  /**
+   * Starts the supervisor if not running.
+   */
+  private synchronized void startSupervisorIfNotAlive() {
+    if (transactionSupervisor == null || !transactionSupervisor.isAlive()) {
+      configChanged = true;   // log the configuration when started
       transactionSupervisor = new TransactionSupervisor();
       transactionSupervisor.start();
     }
   }
 
-  private synchronized void supervisorTerminated() {
-    transactionSupervisor = null;
+  /**
+   * Determines whether the supervisor should keep running.<br>
+   * Synchronized with {@link #ensureSupervisorAlive()}, so that a transaction created concurrently
+   * is either picked up by the terminating supervisor or starts a new one.
+   *
+   * @param supervisor the supervisor thread
+   * @return true if keep running, false if terminate
+   */
+  private synchronized boolean keepSupervising(TransactionSupervisor supervisor) {
+    if (transactionSupervisor != supervisor) {
+      return false;   // dropped by requestTermination()
+    }
+    if (supervisor.terminationRequested && transactions.isEmpty()) {
+      transactionSupervisor = null;   // the next transaction starts a new supervisor
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Drops the terminating supervisor, unless already replaced.<br>
+   * If the supervisor died unexpectedly, e.g., due to an {@link Error}, the next transaction starts a new one.
+   * Otherwise, the transactions would not be supervised anymore.
+   *
+   * @param supervisor the supervisor thread
+   */
+  private synchronized void dropSupervisor(TransactionSupervisor supervisor) {
+    if (transactionSupervisor == supervisor) {
+      transactionSupervisor = null;
+    }
   }
 
 
   /**
    * The supervisor finds unreferenced transactions and cleans up.<br>
-   * It also closes sessions with transactions being idle too long.
+   * It also rolls back and closes the JDBC connections of transactions being idle too long.
    * The thread is started when the first transaction (local sessions only!) is created.
    * For remote sessions, the thread will never be started and the {@code DbTransactionFactory} is just dummy,
    * for example, in a remote {@code ServerApplication}.
@@ -286,15 +351,43 @@ public class DbTransactionFactory {
     }
 
     private final Map<Long, TxIdleCounter> idleMap = new HashMap<>();    // idle transactions suspected to time out
+    private volatile boolean terminationRequested;                         // true if this thread should stop
 
     private TransactionSupervisor() {
       super("Transaction Supervisor");
       setDaemon(true);
     }
 
+    /**
+     * Requests this thread to terminate.<br>
+     * The thread terminates as soon as no transactions are running anymore.
+     * The flag belongs to the thread, not to the factory, so that a supervisor started
+     * after the termination of a previous one is not stopped right away.
+     */
+    private void requestTermination() {
+      terminationRequested = true;
+    }
+
     @Override
     public void run() {
-      while (!terminationRequested) {
+      try {
+        supervise();
+      }
+      catch (Throwable t) {
+        LOGGER.severe(getName() + " died -> restarted by the next transaction", t);
+        throw t;
+      }
+      finally {
+        dropSupervisor(this);
+      }
+      LOGGER.info("{0} terminated", getName());
+    }
+
+    /**
+     * Supervises the transactions until terminated.
+     */
+    private void supervise() {
+      while (keepSupervising(this)) {
         if (configChanged) {
           LOGGER.info("{0} running with interval={1} ms, maxIdleCount={2}", getName(), txIdleInterval, txIdleTimeout);
           configChanged = false;
@@ -322,8 +415,7 @@ public class DbTransactionFactory {
               iter.remove();
             }
             else {
-              if (transaction.isAlive()) {
-                transaction.setAlive(false);  // polled (will be setAlive as soon as some I/O happens again)
+              if (transaction.pollAlive()) {   // reset: will be set alive as soon as some I/O happens again
                 idleMap.remove(transaction.getTxNumber());
               }
               else {
@@ -334,10 +426,23 @@ public class DbTransactionFactory {
                   idleMap.remove(transaction.getTxNumber());
                   iter.remove();
                   Db session = transaction.getSession();
-                  ManagedConnection mc = session.getConnection();
+                  ManagedConnection mc;
+                  Connection con = null;
+                  // strictly serialized with attach and detach, which the connection managers synchronize on themselves
+                  synchronized (session.getConnectionManager()) {
+                    if (!transaction.timeOut()) {
+                      continue;   // completed by the session in the meantime
+                    }
+                    mc = session.getConnection();
+                    if (mc != null) {
+                      mc.setDead(true);
+                      if (!mc.isClosed()) {
+                        con = mc.getConnection();
+                      }
+                    }
+                  }
                   if (mc != null) {
                     LOGGER.warning(msg + ":\n" + mc.toDiagnosticString());  // with statements!
-                    Connection con = mc.getConnection();
                     if (con != null) {
                       // do that in a separate thread (if it gets stuck, the supervisor still keeps running!)
                       createTxCleanupThread(mc, con).start();
@@ -355,15 +460,12 @@ public class DbTransactionFactory {
           }
         }
         catch (InterruptedException ix) {
-          // daemon thread is terminated via requestTermination()
+          // daemon thread is terminated via requestTermination() as soon as no transactions are running
         }
         catch (RuntimeException ex) {
           LOGGER.severe("cleanup transactions failed", ex);
         }
       }
-
-      supervisorTerminated();
-      LOGGER.info("{0} terminated", getName());
     }
 
     private static Thread createTxCleanupThread(ManagedConnection mc, Connection con) {

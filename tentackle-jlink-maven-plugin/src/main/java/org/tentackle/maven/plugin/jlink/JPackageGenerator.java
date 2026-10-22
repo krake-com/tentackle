@@ -41,7 +41,7 @@ public class JPackageGenerator extends AbstractGenerator {
   /**
    * Creates the generator.
    *
-   * @param mojo the jlink mojo
+   * @param mojo the jpackage mojo
    * @param result the resolver results
    */
   public JPackageGenerator(JPackageMojo mojo, JLinkResolver.Result result) {
@@ -51,7 +51,8 @@ public class JPackageGenerator extends AbstractGenerator {
   }
 
   /**
-   * Generates the option files.
+   * Generates the option files.<br>
+   * Besides the variables of the {@link TemplateModelFactory}, the model provides <code>runtimeDir</code>.
    *
    * @throws MojoExecutionException if I/O or template error
    */
@@ -73,7 +74,8 @@ public class JPackageGenerator extends AbstractGenerator {
   }
 
   /**
-   * Generates the update script.
+   * Generates the update script into the <code>bin</code> directory of the application image.<br>
+   * The model provides the variables of the {@link TemplateModelFactory} only.
    *
    * @param appImageDir the application image directory
    * @throws MojoExecutionException if I/O or template error
@@ -82,14 +84,14 @@ public class JPackageGenerator extends AbstractGenerator {
     try {
       Configuration cfg = createFreemarkerConfiguration();
       TemplateModel model = TemplateModelFactory.getInstance().create(mojo, result);
-        if (mojo.getPackageUpdateTemplate() != null) {
-          File binDir = new File(appImageDir, "bin");
-          binDir.mkdirs();
-          File scriptFile = new File(binDir, StringHelper.getPlatform().contains("win") ? "update.cmd" : "update.sh");
-          GeneratedFile generatedFile = new GeneratedFile(cfg, model, mojo.getPackageUpdateTemplate(), scriptFile);
-          generatedFile.generate();
-          scriptFile.setExecutable(true);
-        }
+      if (mojo.getPackageUpdateTemplate() != null) {
+        File binDir = new File(appImageDir, "bin");
+        binDir.mkdirs();
+        File scriptFile = new File(binDir, StringHelper.getPlatform().contains("win") ? "update.cmd" : "update.sh");
+        GeneratedFile generatedFile = new GeneratedFile(cfg, model, mojo.getPackageUpdateTemplate(), scriptFile);
+        generatedFile.generate();
+        scriptFile.setExecutable(true);
+      }
     }
     catch (IOException | TemplateException e) {
       throw new MojoExecutionException("generating update script failed", e);

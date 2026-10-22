@@ -55,9 +55,10 @@ public abstract class AbstractIdSource implements IdSource {
 
 
   /**
-   * Assert the correct Db.
+   * Asserts that the session is not remote.
    *
-   * @param db the db
+   * @param db the session
+   * @throws IdSourceException if the session is remote
    */
   protected void assertDbNotRemote(Db db) {
     if (db.isRemote()) {

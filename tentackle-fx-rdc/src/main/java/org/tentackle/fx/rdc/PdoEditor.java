@@ -31,10 +31,12 @@ import java.util.NavigableSet;
 import java.util.TreeSet;
 
 /**
- * FxController to edit a PDO.
+ * Controller to edit a PDO.<br>
+ * Created by {@link GuiProvider#createEditor()} and embedded in a {@link org.tentackle.fx.rdc.crud.PdoCrud},
+ * which provides the toolbar, navigation and persistence actions.
  *
  * @author harald
- * @param <T> the pdo type
+ * @param <T> the PDO type
  */
 public abstract class PdoEditor<T extends PersistentDomainObject<T>> extends AbstractFxController
                 implements PdoController<T>, DomainContextProvider {
@@ -47,7 +49,7 @@ public abstract class PdoEditor<T extends PersistentDomainObject<T>> extends Abs
   }
 
   /**
-   * Requests the initial focus after stage is shown.
+   * Requests the initial focus after the stage is shown.
    */
   public abstract void requestInitialFocus();
 
@@ -97,7 +99,7 @@ public abstract class PdoEditor<T extends PersistentDomainObject<T>> extends Abs
 
   /**
    * Gets the validation root path.<br>
-   * By default, the server returns validation results with a validation path that starts with the entity baseclassname
+   * By default, the server returns validation results with a validation path that starts with the entity's basename
    * (the first character in lowercase). If the bound PDO variable of the editor uses a different name,
    * a {@link ValidationMapper} is necessary to map the results back to the form.<br>
    * This method is provided to reduce the amount of application code.
@@ -127,7 +129,8 @@ public abstract class PdoEditor<T extends PersistentDomainObject<T>> extends Abs
   }
 
   /**
-   * Validates the form before the PDO get saved.<br>
+   * Validates the form before the PDO gets saved.<br>
+   * Invoked within the save transaction, before the PDO is persisted.<br>
    * This can be used for validations that are not covered by the persistence model,
    * for example password confirmation.
    * <p>
@@ -135,7 +138,7 @@ public abstract class PdoEditor<T extends PersistentDomainObject<T>> extends Abs
    * its validation mappers map the persistence operation's validation results of the PDO and not the validation
    * of the form!
    *
-   * @return true if ok
+   * @return true if ok, false to abort saving
    */
   public boolean validateForm() {
     return true;
@@ -150,7 +153,7 @@ public abstract class PdoEditor<T extends PersistentDomainObject<T>> extends Abs
   }
 
   /**
-   * Set the changeable property of the editor's view.
+   * Sets the changeable property of the editor's view.
    *
    * @param changeable true if changeable
    */
@@ -159,7 +162,7 @@ public abstract class PdoEditor<T extends PersistentDomainObject<T>> extends Abs
   }
 
   /**
-   * Get the changeable property of the editor's view.
+   * Gets the changeable property of the editor's view.
    *
    * @return true if changeable
    */

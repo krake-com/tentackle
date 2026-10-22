@@ -22,8 +22,10 @@ package org.tentackle.validate.severity;
 import org.tentackle.validate.ValidationSeverity;
 
 /**
- * The default severity.
- * 
+ * The default severity.<br>
+ * Applies if a validator does not configure a severity.
+ * The default implementation {@link DefaultSeverityImpl} is a {@link MajorSeverity}.
+ *
  * @author harald
  */
 public interface DefaultSeverity extends ValidationSeverity {

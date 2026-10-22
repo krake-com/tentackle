@@ -36,6 +36,9 @@ import javafx.scene.control.TextField;
  */
 public abstract class AbstractTableCellType<T> implements TableCellType<T> {
 
+  /**
+   * The editor, created lazily by {@link #getEditor()}.
+   */
   protected FxComponent editor;
 
   /**
@@ -73,6 +76,11 @@ public abstract class AbstractTableCellType<T> implements TableCellType<T> {
     treeTableCell.setAlignment(alignment);
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The default editor is a text field.
+   */
   @Override
   public FxComponent getEditor() {
     if (editor == null) {

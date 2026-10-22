@@ -24,22 +24,29 @@ import java.io.UncheckedIOException;
 import java.lang.foreign.SymbolLookup;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 
 /**
  * Loads the native Cloudflare quiche library.
  * <p>
- * The binaries ship in the {@code org.mortbay.jetty.quiche} artifact, one directory per platform, and are
+ * The binaries ship in the {@code org.mortbay.jetty.quiche:jetty-quiche-native} artifact (module
+ * {@code org.mortbay.jetty.quiche}), one directory per platform, and are
  * extracted to a temporary file before being loaded: a shared library cannot be loaded out of a jar.
  * The directory names contain a hyphen and are therefore not valid package names, which is what keeps them
  * accessible: resources in a named module are only encapsulated when their directory maps to a package.
  * <p>
- * Setting the system property {@value #LIBRARY_PROPERTY} to the path of a {@code libquiche} bypasses all of
- * this and loads that file instead, for platforms the artifact does not cover or to run against a
+ * Setting the system property {@value #LIBRARY_PROPERTY} to the absolute path of a {@code libquiche} bypasses
+ * all of this and loads that file instead, for platforms the artifact does not cover or to run against a
  * locally built quiche.
+ * <p>
+ * The extracted file is deleted when the JVM exits normally. Windows cannot delete a library that is still
+ * loaded, though, so there &mdash; and after a crash on any platform &mdash; the file stays in the temporary
+ * directory.
  */
 public final class NativeLibrary {
 
@@ -57,9 +64,10 @@ public final class NativeLibrary {
   /**
    * The symbol lookup for the loaded library.
    * <p>
-   * Loading happens exactly once, in this class's initializer, so that a failure surfaces as an
-   * {@link ExceptionInInitializerError} at the first use of any binding instead of being retried
-   * over and over.
+   * Loading happens exactly once, in this class's initializer, so that a failure surfaces at the first use
+   * of any binding instead of being retried over and over: as an {@link ExceptionInInitializerError} if
+   * there is no binary for the platform or it cannot be extracted, as an {@link UnsatisfiedLinkError} if
+   * it cannot be loaded. Every later use fails with a {@link NoClassDefFoundError}.
    */
   private static final SymbolLookup LOOKUP;
 
@@ -80,6 +88,7 @@ public final class NativeLibrary {
    * {@code --enable-native-access=org.tentackle.quiche} acknowledges at runtime.
    *
    * @param library the absolute path of the library
+   * @throws UnsatisfiedLinkError if the library cannot be loaded, or the path is not absolute
    */
   @SuppressWarnings("restricted")
   private static void load(String library) {
@@ -104,7 +113,19 @@ public final class NativeLibrary {
    * @throws UnsupportedOperationException if there is no binary for this platform
    */
   public static String getPlatform() {
-    String osName = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
+    return getPlatform(System.getProperty("os.name", ""), System.getProperty("os.arch", ""));
+  }
+
+  /**
+   * Gets the platform directory for an operating system and an architecture.
+   *
+   * @param osName the value of the system property {@code os.name}
+   * @param osArchitecture the value of the system property {@code os.arch}
+   * @return the directory name
+   * @throws UnsupportedOperationException if there is no binary for the platform
+   */
+  static String getPlatform(String osName, String osArchitecture) {
+    osName = osName.toLowerCase(Locale.ROOT);
     String os;
     if (osName.startsWith("mac") || osName.startsWith("darwin")) {
       os = "darwin";
@@ -117,18 +138,23 @@ public final class NativeLibrary {
     }
     else {
       throw new UnsupportedOperationException(
-        "no quiche binary for operating system '" + System.getProperty("os.name") + "', set -D" +
+        "no quiche binary for operating system '" + osName + "', set -D" +
         LIBRARY_PROPERTY + "=<path to libquiche>");
     }
 
-    String osArch = System.getProperty("os.arch", "").toLowerCase(Locale.ROOT);
-    String arch = switch (osArch) {
+    String arch = switch (osArchitecture.toLowerCase(Locale.ROOT)) {
       case "aarch64", "arm64" -> "aarch64";
       case "amd64", "x86_64", "x86-64" -> "x86-64";
       default -> throw new UnsupportedOperationException(
-        "no quiche binary for architecture '" + System.getProperty("os.arch") + "', set -D" +
+        "no quiche binary for architecture '" + osArchitecture + "', set -D" +
         LIBRARY_PROPERTY + "=<path to libquiche>");
     };
+
+    if ("win32".equals(os) && "aarch64".equals(arch)) {
+      // the only combination of the above the artifact does not cover
+      throw new UnsupportedOperationException(
+        "no quiche binary for Windows on aarch64, set -D" + LIBRARY_PROPERTY + "=<path to quiche.dll>");
+    }
 
     return os + "-" + arch;
   }
@@ -166,7 +192,7 @@ public final class NativeLibrary {
       Path file = Files.createTempFile(TEMPFILE_PREFIX, suffix);
       file.toFile().deleteOnExit();
       restrictToOwner(file);
-      Files.copy(is, file, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+      Files.copy(is, file, StandardCopyOption.REPLACE_EXISTING);
       return file;
     }
     catch (IOException e) {
@@ -186,7 +212,7 @@ public final class NativeLibrary {
    * @throws IOException if opening the resource failed
    */
   private static InputStream open(String resource) throws IOException {
-    java.util.Optional<Module> module = ModuleLayer.boot().findModule("org.mortbay.jetty.quiche");
+    Optional<Module> module = ModuleLayer.boot().findModule("org.mortbay.jetty.quiche");
     if (module.isPresent()) {
       InputStream is = module.get().getResourceAsStream(resource);
       if (is != null) {
@@ -197,11 +223,13 @@ public final class NativeLibrary {
   }
 
   /**
-   * Takes all permissions but the owner's away from the extracted library.
+   * Restricts the extracted library to its owner, adding the execute permission.
    * <p>
-   * The file is executable code loaded into this process: on a system with a shared temp directory,
-   * a world-writable copy would let any local user run code in this JVM. Silently ignored on file
-   * systems without POSIX permissions, where {@link Files#createTempFile} is restrictive anyway.
+   * {@link Files#createTempFile} already creates the file readable and writable by the owner only, which
+   * matters because it holds executable code loaded into this process: on a system with a shared temp
+   * directory, a world-writable copy would let any local user run code in this JVM. Making it executable
+   * is what some systems require to map a shared library. Silently ignored on file systems without POSIX
+   * permissions.
    *
    * @param file the extracted library
    */

@@ -39,7 +39,10 @@ public class DefaultValidationSeverityFactory implements ValidationSeverityFacto
   private DefaultSeverity defaultSeverity;                                                           // to speed up and assert
 
   /**
-   * Creates the factory.
+   * Creates the factory.<br>
+   * Instantiates all severities annotated with &#64;{@link ValidationSeverityService}.
+   *
+   * @throws ValidationRuntimeException if a severity could not be instantiated or the {@link DefaultSeverity} is missing
    */
   public DefaultValidationSeverityFactory() {
     severitiesByIface = new HashMap<>();
@@ -67,7 +70,7 @@ public class DefaultValidationSeverityFactory implements ValidationSeverityFacto
       }
     }
     catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
-           NoSuchMethodException | SecurityException | InvocationTargetException | ValidationRuntimeException nfe) {
+           NoSuchMethodException | InvocationTargetException | ValidationRuntimeException nfe) {
       throw new ValidationRuntimeException("supported severities could not be determined", nfe);
     }
   }

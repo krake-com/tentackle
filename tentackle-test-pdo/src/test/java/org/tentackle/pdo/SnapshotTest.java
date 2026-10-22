@@ -29,6 +29,7 @@ import org.tentackle.session.PersistenceException;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.expectThrows;
 
 /**
  * Tests PDO snapshots and copies.
@@ -86,13 +87,10 @@ public class SnapshotTest extends AbstractPdoTest {
     assertEquals(numberPool.getSerial(), 2);
     assertFalse(numberPool.isModified());
 
-    try {
-      numberPool.revertToSnapshot(snapshot);
-    }
-    catch (PersistenceException px) {
-      // expected exception!
-      assertTrue(px.getMessage().contains("not my snapshot"));
-    }
+    // the snapshot was discarded by the revert above
+    NumberPool pool = numberPool;
+    assertTrue(expectThrows(PersistenceException.class, () -> pool.revertToSnapshot(snapshot))
+                   .getMessage().contains("not my snapshot"));
   }
 
   @Test(groups = "local")

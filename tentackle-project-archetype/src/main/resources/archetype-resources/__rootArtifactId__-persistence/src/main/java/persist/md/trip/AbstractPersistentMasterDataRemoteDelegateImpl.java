@@ -16,18 +16,18 @@ import org.tentackle.persist.trip.AbstractPersistentObjectRemoteDelegateImpl;
 /**
  * Base implementation for master data remote delegates.
  *
- * @param <T> the {@code PersistentDomainObject} class
- * @param <P> the {@code AbstractPersistenObject} class (persistence implementation)
+ * @param <T> the PDO type
+ * @param <P> the persistence implementation type
  */
 public class AbstractPersistentMasterDataRemoteDelegateImpl<T extends MasterData<T>,
                                                             P extends AbstractPersistentMasterData<T,P>>
        extends AbstractPersistentObjectRemoteDelegateImpl<T,P> {
 
   /**
-   * Creates a delegate on the serverSession socket.
+   * Creates the remote delegate.
    *
-   * @param serverSession the TRIP serverSession
-   * @param persistenceClass the subclass of AbstractDbObject
+   * @param serverSession the server-side TRIP session
+   * @param persistenceClass the persistence implementation class
    * @param pdoClass the PDO class (interface)
    */
   public AbstractPersistentMasterDataRemoteDelegateImpl(RemoteDbSessionImpl serverSession,

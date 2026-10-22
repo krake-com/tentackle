@@ -32,11 +32,20 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * The abstract domain operation.
+ * Base domain implementation of an {@link Operation}.
+ * <p>
+ * Every domain delegate of an operation extends this class. It holds a reference to the operation proxy it is
+ * a delegate for and forwards the domain context and session to the persistence delegate, so the domain
+ * logic never accesses the database directly. All business logic lives in the concrete subclasses.
+ * <p>
+ * Subclasses must provide two public constructors: one with the operation as its only argument, used when the
+ * factory creates the operation and its delegates in one go, and a no-args constructor, used when the domain
+ * delegate is created on its own and linked to the operation later via {@link #setOperation(Operation)}.
+ * Both are enforced by the annotation processor for {@code @DomainOperationService}.
  *
- * @author harald
- * @param <T> the operation type
+ * @param <T> the operation type (interface)
  * @param <D> the domain implementation type
+ * @author harald
  */
 @TripReferencable(TripReferencable.NEVER)    // only proxies are referenced, not implementations
 public abstract class AbstractDomainOperation<T extends Operation<T>, D extends AbstractDomainOperation<T,D>>
@@ -46,13 +55,16 @@ public abstract class AbstractDomainOperation<T extends Operation<T>, D extends 
   private static final long serialVersionUID = 1L;
 
 
-  private T operation;   // instance of the operation this is a delegate for
+  /**
+   * The operation proxy this is a delegate for.
+   */
+  private T operation;
 
 
   /**
-   * Creates an operation domain object.
+   * Creates the domain delegate for the given operation.
    *
-   * @param operation the persistent domain object this is a delegate for
+   * @param operation the operation proxy this is a delegate for
    */
   public AbstractDomainOperation(T operation) {
     this.operation = operation;
@@ -60,7 +72,8 @@ public abstract class AbstractDomainOperation<T extends Operation<T>, D extends 
 
 
   /**
-   * Creates an operation domain object.
+   * Creates the domain delegate without an operation.<br>
+   * The operation must be linked later via {@link #setOperation(Operation)}.
    */
   public AbstractDomainOperation() {
   }
@@ -82,19 +95,30 @@ public abstract class AbstractDomainOperation<T extends Operation<T>, D extends 
   }
 
   /**
-   * Sets the operation.<br>
+   * Sets the operation this is a delegate for.<br>
+   * Invoked by {@link DefaultDomainDelegateLinker}.
    *
-   * @param operation the operation
+   * @param operation the operation proxy
    */
   public void setOperation(T operation) {
     this.operation = operation;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Forwarded to the persistence delegate.
+   */
   @Override
   public DomainContext getDomainContext() {
     return operation.getPersistenceDelegate().getDomainContext();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Forwarded to the persistence delegate.
+   */
   @Override
   public Session getSession() {
     return operation.getPersistenceDelegate().getSession();

@@ -31,6 +31,7 @@ import org.tentackle.sql.DataTypeFactory;
 import org.tentackle.sql.SqlType;
 import org.tentackle.sql.datatypes.ZonedDateTimeType;
 import org.tentackle.common.TBinary;
+import org.tentackle.log.Logger;
 
 import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
@@ -39,6 +40,7 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
@@ -65,7 +67,11 @@ import java.util.Map;
  */
 public class PreparedStatementWrapper extends StatementWrapper implements BackendPreparedStatement {
 
+  private static final Logger LOGGER = Logger.get(PreparedStatementWrapper.class);
+
   private static final String INVOCATION_NOT_ALLOWED = "invocation not allowed for prepared statements";
+
+  private static final int PARAMETERS_CAPACITY = 16;   // initial capacity of the parameter map
 
 
   private final StatementKey statementKey;              // the statement key, if not a one-shot statement
@@ -74,6 +80,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   private boolean executionPending;                     // true if next setXXX(1, ...) will invoke addBatch
   private List<Map<Integer,Object>> batchParameters;    // batched execution parameters
   private WeakReference<DbBatch> batchRef;              // set if currently batched (weak since the object just vanishes after tx)
+  private List<Object> lobs;                            // Clobs and SQLXMLs to free after execution, null if none
 
 
   /**
@@ -103,7 +110,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
       setMaxRows(db.getMaxRows());
     }
 
-    parameters = new HashMap<>();
+    parameters = new HashMap<>(PARAMETERS_CAPACITY);
   }
 
 
@@ -118,8 +125,13 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
 
   @Override
   public void close() {
-    super.close();
-    con.removePreparedStatement(this);
+    try {
+      super.close();
+    }
+    finally {
+      freeLobs();
+      con.removePreparedStatement(this);
+    }
   }
 
 
@@ -143,12 +155,17 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
     return statementKey;
   }
 
+  @Override
+  protected boolean isOneShot() {
+    return statementKey == null;
+  }
+
 
   /**
    * Sets the column offset.
    * Useful for eager loading or joining in general.
    *
-   * @param columnOffset (default is 0)
+   * @param columnOffset the offset added to the column index (default is 0)
    */
   public void setColumnOffset(int columnOffset) {
     this.columnOffset = columnOffset;
@@ -166,7 +183,8 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   /**
    * Gets the effective position.<br>
    * The method is invoked immediately before setting the value into the statement, and only for that purpose!
-   * This the p + columnOffset.
+   * This is p + columnOffset.<br>
+   * If the statement is batched and the first parameter is set again, the previous parameter set is added to the batch.
    *
    * @param p the SQL position
    * @return effective position
@@ -196,18 +214,18 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   }
 
   @Override
-  protected void detachSession() {
-    super.detachSession();
+  protected void detachSession(Db db) {
+    freeLobs();   // before detaching: the connection may be attached to another session right after
+    super.detachSession(db);
     // new map because the old reference is held in StatementHistory
     clearParametersImpl();
   }
 
 
   @Override
-  public synchronized void markReady() {
-    if (!isMarkedReady() || !isBatched()) {
-      super.markReady();
-    }
+  protected boolean isMarkReadyAgainAllowed() {
+    // batched statements are marked ready for each batch entry until the batch is executed
+    return isBatched();
   }
 
   /**
@@ -246,6 +264,51 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
 
 
   /**
+   * Registers a LOB created for a parameter to be freed after execution.
+   *
+   * @param lob the {@link Clob} or {@link SQLXML}
+   */
+  private void addLob(Object lob) {
+    if (lobs == null) {
+      lobs = new ArrayList<>();
+    }
+    lobs.add(lob);
+  }
+
+  /**
+   * Frees the LOBs created for the parameters.<br>
+   * Temporary LOBs would otherwise be held by the driver or the database until the connection is closed.
+   */
+  private void freeLobs() {
+    List<Object> pendingLobs = lobs;
+    if (pendingLobs != null) {
+      lobs = null;
+      for (Object lob : pendingLobs) {
+        try {
+          if (lob instanceof Clob clob) {
+            clob.free();
+          }
+          else if (lob instanceof SQLXML sqlxml) {
+            sqlxml.free();
+          }
+        }
+        catch (SQLException | RuntimeException ex) {
+          LOGGER.warning("freeing " + lob.getClass().getName() + " failed for " + this, ex);
+        }
+      }
+    }
+  }
+
+  /**
+   * Returns whether LOBs created for the parameters are pending to be freed.
+   *
+   * @return true if pending
+   */
+  boolean isLobPending() {
+    return lobs != null;
+  }
+
+  /**
    * Clears the current parameter values immediately.
    *
    * @see PreparedStatement#clearParameters()
@@ -264,7 +327,8 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
 
 
   private void clearParametersImpl() {
-    parameters = new HashMap<>();
+    freeLobs();
+    parameters = new HashMap<>(PARAMETERS_CAPACITY);
     batchParameters = null;
     executionPending = false;
   }
@@ -310,7 +374,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
       batch.batch(this);
       return 1;                       // batched statements always affect a single row
     }
-    getSession().executeBatch();      // not a batchable statement -> flush batch
+    getExecutingSession().executeBatch();      // not a batchable statement -> flush batch
     return super.executeUpdate(null);
   }
 
@@ -350,7 +414,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
         batchParameters = new ArrayList<>();
       }
       batchParameters.add(parameters);
-      parameters = new HashMap<>();
+      parameters = new HashMap<>(PARAMETERS_CAPACITY);
       executionPending = true;
       getStatement().addBatch();
     }
@@ -376,7 +440,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
         return super.executeBatch(finish);
       }
       else if (finish) {
-        detachSession();
+        detachSession(getUsingSession());
       }
       return new int[0];
     }
@@ -420,8 +484,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   /**
    * Executes the query.
    *
-   * @param withinTx is true if start a transaction for this query.
-   *
+   * @param withinTx true to run the query within a transaction, committed when the result set is closed
    * @return the result set as a ResultSetWrapper
    */
   public ResultSetWrapper executeQuery (boolean withinTx) {
@@ -508,6 +571,14 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
 
       case CLOB:
         setLargeString(p, object == null ? null : object.toString());
+        break;
+
+      case XML:
+        setSqlxml(p, object == null ? null : object.toString());
+        break;
+
+      case JSON:
+        setJson(p, object == null ? null : object.toString());
         break;
 
       case DECIMAL:
@@ -635,7 +706,8 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
         if (s != null) {
           Clob clob = con.getConnection().createClob();
           clob.setString(1, s);
-          getStatement().setClob(p, clob);
+          addLob(clob);
+          getStatement().setClob(ep, clob);
         }
         else {
           getStatement().setNull(ep, Types.CLOB);
@@ -654,6 +726,60 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   @Override
   public void setLargeString(int p, String s) {
     setLargeString(p, s, false);
+  }
+
+  @Override
+  public void setSqlxml(int p, String s, boolean mapNull) {
+    if (con.getBackend().isSqlxmlSupported()) {
+      try {
+        int ep = effectivePosition(p);
+        // mapNull is not applicable to a native XML column: the empty string is no XML document
+        if (s != null) {
+          SQLXML sqlxml = con.getConnection().createSQLXML();
+          sqlxml.setString(s);
+          addLob(sqlxml);
+          getStatement().setSQLXML(ep, sqlxml);
+        }
+        else {
+          getStatement().setNull(ep, Types.SQLXML);
+        }
+        rememberParameter(ep, s);
+      }
+      catch (SQLException e)  {
+        throw new PersistenceException(getSession(), this.toString(), e);
+      }
+    }
+    else {
+      setString(p, s, mapNull);
+    }
+  }
+
+  @Override
+  public void setSqlxml(int p, String s) {
+    setSqlxml(p, s, false);
+  }
+
+  @Override
+  public void setJson(int p, String s, boolean mapNull) {
+    if (con.getBackend().isJsonSupported()) {
+      try {
+        int ep = effectivePosition(p);
+        // mapNull is not applicable to a native JSON column: the empty string is no JSON document
+        con.getBackend().setJson(getStatement(), ep, s);
+        rememberParameter(ep, s);
+      }
+      catch (SQLException e)  {
+        throw new PersistenceException(getSession(), this.toString(), e);
+      }
+    }
+    else {
+      setString(p, s, mapNull);
+    }
+  }
+
+  @Override
+  public void setJson(int p, String s) {
+    setJson(p, s, false);
   }
 
   @Override
@@ -1042,9 +1168,9 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    * A BMoney will not be stored as a single field but as two fields:
    * <ol>
    * <li>a double representing the value</li>
-   * <li>an int representing the scale</li>
+   * <li>a short representing the scale</li>
    * </ol>
-   * This is due to most DBMS can't store arbitrary scaled decimals in
+   * This is because most DBMS can't store arbitrary scaled decimals in
    * a single column, i.e., all values in the column must have the same scale.
    *
    * @param p the SQL position
@@ -1080,9 +1206,9 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    * A DMoney will not be stored as a single field but as two fields:
    * <ol>
    * <li>a BigDecimal with a scale of 0 representing the value</li>
-   * <li>an int representing the scale</li>
+   * <li>a short representing the scale</li>
    * </ol>
-   * This is due to most DBMS can't store arbitrary scaled decimals in
+   * This is because most DBMS can't store arbitrary scaled decimals in
    * a single column, i.e., all values in the column must have the same scale.
    *
    * @param p the SQL position
@@ -1227,18 +1353,16 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    * Sets the designated parameter to the given {@link Binary} value.
    * The driver converts it to a <code>BLOB</code> value when it sends it to the
    * database.
-   * The implementation translates the Binary into an InputStream and invokes
+   * The implementation translates the binary into an InputStream and invokes
    * {@link PreparedStatement#setBinaryStream(int, java.io.InputStream, long)}.
    *
    * @param p the first parameter is 1, the second is 2, ...
-   * @param b the parameter value, null if the value should be set to SQL NULL
+   * @param b the parameter value, null if the value should be set to SQL NULL (an empty binary is stored as is)
    */
   public void setBinary(int p, Binary<?> b) {
     try {
       int ep = effectivePosition(p);
-      if (b == null || b.getLength() == 0) {
-        // "empty" binaries are treated as null
-        b = null;
+      if (b == null) {
         getStatement().setNull(ep, Types.LONGVARBINARY);
       }
       else {
@@ -1254,21 +1378,42 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   }
 
   /**
-   * Sets the designated parameter to the given {@link TBinary} value.
-   * The driver converts it to a <code>BLOB</code> value when it sends it to the
-   * database.
-   * The implementation translates the Binary into an InputStream and invokes
-   * {@link PreparedStatement#setBinaryStream(int, java.io.InputStream, long)}.
+   * Sets the designated parameter to the given {@code byte[]} value.
+   * The bytes are stored "as is", i.e. an empty array is not treated as null.
    *
    * @param p the first parameter is 1, the second is 2, ...
    * @param b the parameter value, null if the value should be set to SQL NULL
    */
+  public void setBytes(int p, byte[] b) {
+    try {
+      int ep = effectivePosition(p);
+      if (b == null) {
+        getStatement().setNull(ep, Types.LONGVARBINARY);
+      }
+      else {
+        getStatement().setBytes(ep, b);
+      }
+      rememberParameter(ep, b);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(getSession(), this.toString(), e);
+    }
+  }
+
+  /**
+   * Sets the designated parameter to the given {@link TBinary} value.
+   * The driver converts it to a <code>BLOB</code> value when it sends it to the
+   * database.
+   * The implementation translates the binary into an InputStream and invokes
+   * {@link PreparedStatement#setBinaryStream(int, java.io.InputStream, long)}.
+   *
+   * @param p the first parameter is 1, the second is 2, ...
+   * @param b the parameter value, null if the value should be set to SQL NULL (an empty binary is stored as is)
+   */
   public void setTBinary(int p, TBinary<?> b) {
     try {
       int ep = effectivePosition(p);
-      if (b == null || b.getLength() == 0) {
-        // "empty" binaries are treated as null
-        b = null;
+      if (b == null) {
         getStatement().setNull(ep, Types.LONGVARBINARY);
       }
       else {

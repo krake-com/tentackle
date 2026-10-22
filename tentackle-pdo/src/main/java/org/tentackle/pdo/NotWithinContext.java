@@ -27,7 +27,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation to express that the annotated method must not be within a given named context.
+ * Annotation to express that the annotated method must not be within a given named context.<br>
+ * If more than one name is given, the domain context must be within none of them.
+ * Throws a {@link DomainException} if it is.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -38,9 +40,9 @@ public @interface NotWithinContext {
   /**
    * The name(s) that must not be within the current domain context.
    *
-   * @return the context name
+   * @return the context names
    */
-  String[] value() default "";
+  String[] value();
 
 }
 

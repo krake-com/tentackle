@@ -28,7 +28,9 @@ import org.tentackle.fx.FxControl;
 import org.tentackle.fx.container.FxTab;
 
 /**
- * Delegate for FxTab.
+ * Delegate for FxTab.<br>
+ * Since a {@link javafx.scene.control.Tab} is not a node, the parent container is the tab pane,
+ * and the content node is the only component.
  *
  * @author harald
  */

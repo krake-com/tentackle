@@ -21,7 +21,8 @@ package org.tentackle.sql;
 import java.io.Serial;
 
 /**
- * Runtime exception thrown for database backend configuration errors.
+ * Runtime exception thrown for backend-related errors, such as configuration errors,
+ * invalid names, unsupported database versions or failed scripts.
  *
  * @author harald
  */
@@ -31,7 +32,7 @@ public class BackendException extends RuntimeException {
   private static final long serialVersionUID = 1L;
 
 
- /**
+  /**
    * Constructs a new database backend exception
    * with <code>null</code> as its detail message.
    * The cause is not initialized, and may subsequently be
@@ -55,7 +56,7 @@ public class BackendException extends RuntimeException {
   }
 
   /**
-   * Constructs a new database constraint exception without a session with the specified detail message and
+   * Constructs a new database backend exception with the specified detail message and
    * cause.  <p>Note that the detail message associated with
    * <code>cause</code> is <i>not</i> automatically incorporated in
    * this runtime exception's detail message.

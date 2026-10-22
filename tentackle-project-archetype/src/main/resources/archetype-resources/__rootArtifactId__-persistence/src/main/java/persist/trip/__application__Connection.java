@@ -10,7 +10,8 @@ package ${package}.persist.trip;
 import org.tentackle.dbms.trip.RemoteDbConnection;
 
 /**
- * Interface for the appliction specific connection.
+ * Application-specific remote connection.<br>
+ * Implemented on the server by {@code ${application}RemoteDbConnectionImpl}.
  */
 public interface ${application}Connection extends RemoteDbConnection {
 

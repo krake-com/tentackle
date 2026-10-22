@@ -199,11 +199,11 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
   }
 
   /**
-   * Select a PDO by key from db.<br>
+   * Selects a PDO by key from storage.<br>
    * This method needs to be implemented for each index.
    *
    * @param context the domain context to select the object from
-   * @param key the Comparable used to uniquely identify the object (can be null)
+   * @param key the Comparable used to uniquely identify the object (never null)
    *
    * @return the selected object or null if it does not exist.
    */
@@ -257,8 +257,8 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
   }
 
   /**
-   * Maintain the link to the cache.<br>
-   * (package scope because implementation detail that cannot be changed)
+   * Maintains the link to the cache.<br>
+   * This is an implementation detail invoked by {@link PdoCache#addIndex} and {@link PdoCache#removeIndex} only.
    *
    * @param cache the cache to assign this index, null to remove index from the cache
    */
@@ -332,7 +332,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    * @param context the domain context
    * @param key the Comparable that uniquely identifies the object
    *
-   * @return the result holding the PDO and the internal cache key
+   * @return the result holding the PDO and the internal cache key, null if the key is illegal (i.e., null)
    */
   protected CacheResult get(DomainContext context, C key) {
 
@@ -341,7 +341,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
       ck = new CacheKey(cache.processContext(context), key);
     }
     catch (PdoCacheException e)  {
-      // no need to invalidate the whole cache, but a hint to application prob
+      // no need to invalidate the whole cache, but a hint to an application problem
       logInvalidKey(e);
       return null;
     }
@@ -432,6 +432,28 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
       pd.setDomainContextImmutable(true);
       pd.setSessionImmutable(true);
     }
+  }
+
+  /**
+   * Returns whether this index already holds an object with the same key as the given object.<br>
+   * Objects whose key evaluates to {@code null} are never held by the index.
+   *
+   * @param object the object (never null)
+   * @return true if the key is already in use
+   */
+  protected boolean containsKeyOf(T object) {
+    C keyValue = extract(object);
+    if (keyValue != null) {
+      try {
+        // same context processing as in processPdo, but without modifying the object
+        return cacheMap.containsKey(new CacheKey(cache.processContext(object.getPersistenceDelegate().getDomainContext()),
+                                                 keyValue));
+      }
+      catch (PdoCacheException e) {
+        logInvalidKey(e);
+      }
+    }
+    return false;
   }
 
   /**

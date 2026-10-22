@@ -21,9 +21,9 @@ package org.tentackle.session;
 /**
  * Wraps the master serial used by the {@link ModificationTracker}.<br>
  * The tracker of a remote client periodically requests the master serial from the server.
- * This is a long primitive wrapped in an object implementing <code>MasterSerial</code>.
- * This can be a record or some other object representing a {@link MasterSerialEvent}
- * with optional, application-specific payload data.
+ * Instead of a plain {@code long}, the server returns an object implementing <code>MasterSerial</code>:
+ * either a simple record holding the serial, or a {@link MasterSerialEvent}
+ * carrying optional, application-specific payload as well.
  */
 public interface MasterSerial {
 

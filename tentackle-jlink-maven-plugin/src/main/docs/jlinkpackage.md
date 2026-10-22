@@ -13,7 +13,7 @@ Only minimum configuration is required, since the maven project model already pr
 necessary information; platform-specific details are kept out of the poms and live in editable
 [Freemarker templates](#adding-the-plugin-to-your-maven-project) instead.
 
-The plugin provides 3 maven goals:
+The plugin provides 4 maven goals, all with the prefix `tentackle-jlink`:
 
 1. **jlink** — creates a ZIP archive containing a self-contained image of the application: the trimmed modular Java
    runtime, the application's own artifacts, its (optionally filtered) configuration resources, and a generated,
@@ -24,6 +24,8 @@ The plugin provides 3 maven goals:
    jlink to build the runtime first (see [How The Jpackage Goal Works](#how-the-jpackage-goal-works)).
 3. **init** — (re-)installs the defaults of the project-specific templates used to generate the scripts and
    tool-option files, so you can start from a known-good baseline and then customize.
+4. **layers** — materializes the [isolated module layers](#isolated-module-layers) of an application into
+   `target/tentackle-layers`, for running and debugging it from the IDE without building an image.
 
 For per-user installations an optional [auto-update feature](#auto-update-feature) is available that enables a running
 application to download a new image and update itself in place. This is especially useful for desktop applications,
@@ -41,10 +43,11 @@ understanding what the plugin actually does.
 
 ### Prerequisites
 
-Java 11 or newer and Maven 3.6.3 or newer is required. The application and its dependencies
+The plugin requires the same JDK and Maven versions as the rest of the framework
+(JDK >= 25, Maven >= 3.9.10, Maven 4 is supported as well). The application and its dependencies
 may be compiled for older Java versions as long as they don't use deprecated features that were removed
-in the meantime. For jpackage you need at least Java 14. However, you can still create images for Java 11 LTS
-with jpackage by using maven toolchains (see below).
+in the meantime. The JDK the image is linked from can be selected independently of the JDK running the build
+by using maven toolchains (see [below](#using-the-maven-toolchain)).
 
 ### What Jlink Needs From The JPMS
 
@@ -158,6 +161,10 @@ So the image alone never tells the whole story. The dependency analysis produces
 - `modulePath` — whatever had to stay outside the image, in `mp/`
 - `classPath` — whatever runs unnamed, in `cp/`, plus `conf`
 
+(this stops being literally true the moment `<layers>` are configured — see
+[Isolated Module Layers](#isolated-module-layers) below, where module-path and class-path become
+per-layer and the start script launches a bootstrap instead of the real main class)
+
 and the start script is *where those four values become an executable command line*. The script isn't
 documentation of the analysis; it **is** the analysis, materialized. That is also why those same four values are the
 core variables of the [Freemarker template model](#adding-the-plugin-to-your-maven-project): the template is the
@@ -173,6 +180,8 @@ Two details of the generated script are worth knowing:
   `cd` to the image root, so that the relative paths `mp/...`, `cp/...` and `conf/...` resolve no matter where the
   user invoked it from. Symlinks are resolved first (via `readlink -f`, or an equivalent on macOS).
 - Its name comes from its own template (`name.ftl`), so it is `run.cmd` on Windows and `run.sh` elsewhere.
+- It passes its own arguments on to the application (`"$@"`, or `%*` on Windows), and the `sh` variant
+  `exec`s the JVM, so that the application replaces the shell and receives its signals directly.
 
 And the jpackage goal? It faces the very same problem. jpackage builds its own native launcher, so there is no shell
 script to generate — instead the plugin **patches the launcher's `.cfg` file** afterward, writing the module path
@@ -219,7 +228,7 @@ like so:
       <plugin>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-jlink-maven-plugin</artifactId>
-        <version>11.7.1.0</version>
+        <version>${tentackle.version}</version>
         <extensions>true</extensions>
         <configuration>
           <mainClass>com.example.myapp.Main</mainClass>
@@ -264,7 +273,7 @@ like so:
       <plugin>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-jlink-maven-plugin</artifactId>
-        <version>11.7.1.0</version>
+        <version>${tentackle.version}</version>
         <extensions>true</extensions>
         <configuration>
           <mainClass>com.example.Main</mainClass>
@@ -342,12 +351,21 @@ templates. The plugin uses [Freemarker](https://freemarker.apache.org/) as its t
 The templates can and should be modified according to your project-specific needs. 
 The defaults, however, already work for the most basic scenarios.
  
-The templates refer to a _model_ that provides variables. Besides `mainModule`, `mainClass`, `modulePath` and
-`classPath` — the four values [described above](#why-the-plugin-generates-the-start-script) — the model contains the
-system properties, the maven properties and your own `<variables>`, each converted to camelCase (`os.name` becomes
-`osName`). `osName` is the one you'll reach for most, since it is how a template derives the platform.
-For more details, names of the variables, how to define your own, etc... please refer to the
-[plugin docs](https://tentackle.org/tentackle/tentackle-jlink-maven-plugin/plugin-info.html). 
+The templates refer to a _model_ that provides variables:
+
+| Variable                                                  | Meaning                                                                                       |
+|-----------------------------------------------------------|-----------------------------------------------------------------------------------------------|
+| `mainModule`, `mainClass`, `modulePath`, `classPath`      | the four values [described above](#why-the-plugin-generates-the-start-script); `mainModule` is empty for a classpath application |
+| `phase`, `goal`, `id`                                     | the lifecycle phase, the goal (`jlink` or `jpackage`) and the execution id                     |
+| `layered`                                                 | whether [isolated module layers](#isolated-module-layers) are configured                       |
+| `bootstrapModule`, `bootstrapClass`, `layersConfigPath`   | only if layered: the module and class to launch instead of the main class, and the path of the generated `layers.properties` |
+| `runtimeDir`                                              | jpackage option templates only: the platform-specific path of the runtime image               |
+| `runScript`                                               | update script templates of the `jlink` goal only: the name of the run script                   |
+| system properties, maven properties, `<variables>`        | each converted to camelCase (`os.name` becomes `osName`)                                       |
+
+`osName` is the one you'll reach for most, since it is how a template derives the platform. The system properties,
+the maven properties and your own `<variables>` override each other in the order given by `variablesPrecedence`
+(see the [Configuration Reference](#configuration-reference)); the other variables cannot be overridden.
 By using templates, we keep the maven poms free from platform-specific stuff and don't need 
 to fiddle with maven profiles.
 
@@ -437,7 +455,8 @@ myapp/
 ```
 
 `mp` and `cp` only exist if the analysis actually put something there — for a plain modular application, the
-classpath consists of `conf` alone.
+classpath consists of `conf` alone. A [layered](#isolated-module-layers) application additionally gets an
+`mp-leaf/` folder and one `mp/<layer>/` folder per layer.
 
 If you want to force individual artifacts out of the image, the plugin offers escape hatches:
 `<classpathDependencies>` pushes an artifact onto the classpath even if it is a proper module, and
@@ -472,6 +491,9 @@ launcher, and cleans up the jars that jpackage duplicated into the `app` directo
 
 The application image also gets `-DROOTDIR`, `-DAPPDIR` and `-DRUNTIMEDIR` passed as java options, so the
 application — and your own templates, via `${runtimeDir}` — can find its way around the installation.
+A [layered](#isolated-module-layers) application additionally gets `-Dtentackle.layers` and
+`-Dtentackle.layers.basedir`, both pointing into the runtime image, because the native launcher — unlike the start
+script — does not change into the image directory first.
 
 ### "Unrequired" Dependencies
 
@@ -573,7 +595,7 @@ of the current maven build. The Tentackle maven plugin for jlink and jpackage ev
 to select two different toolchains:
 
 - `<jdkToolchain>`: selects the java version for the jlink, jdeps, and jpackage tools. For example, if
-  your maven build runs on Java 11 LTS, but you want to use the latest Java in production, add
+  your maven build runs on the current LTS release, but you want to use the latest Java in production, add
   the following lines (provided `toolchains.xml` is configured properly):
 ```xml
         <jdkToolchain>
@@ -581,12 +603,84 @@ to select two different toolchains:
         </jdkToolchain>
 ```
  
-- `<jpackageToolchain>`: selects the java version for the jpackage tool only. This allows using
-  the plugin's jpackage goal, for example, with Java 11 LTS, even though the jpackage tool was first released 
-  with Java 14. The generated runtime will still be based on Java 11 LTS in this case.
+- `<jpackageToolchain>`: selects the java version for the jpackage tool only, while the runtime is still
+  linked by the tools of `<jdkToolchain>`. This allows building installers for a runtime whose own jpackage
+  tool lacks a feature, or for an older Java runtime without a jpackage tool at all (it was introduced in
+  Java 14). An empty `<jpackageToolchain/>` deselects the toolchain configured by the maven-toolchain-plugin.
+
+If toolchains cannot be used, the tools can be given explicitly via `jdepsTool`, `jlinkTool` and `jpackageTool`
+(user properties of the same name).
 
 Keep in mind that the linked runtime is the JDK the *tools* come from, not the one maven runs on: the toolchain
 you select here is the Java version your users will actually be running.
+
+### Configuration Reference
+
+Besides the parameters explained above (`mainClass`, `mainModule`, `addModules`, `excludeModules`,
+`modulePathOnly`, `classpathDependencies`, `variables`, `withUpdater`, `layers`/`leafLayer`, `jdkToolchain` and
+`jpackageToolchain`), the goals accept the following. Like all Tentackle mojos, they also inherit `verbosity`,
+`skip`, `charset` and `minLogLevel` (see the
+[`tentackle-maven-plugin` docs](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md#common-configuration)).
+
+**Image contents** (`jlink` and `jpackage`):
+
+| Parameter                | Default                             | Meaning                                                                                                 |
+|--------------------------|-------------------------------------|---------------------------------------------------------------------------------------------------------|
+| `resourcesDirectory`     | `${project.build.directory}/classes` | Resources copied to the image's `conf` directory, such as logger configurations or backend properties. Set it to a non-existent directory (e.g. `none`) to copy nothing. |
+| `extraDirectories`       |                                     | Extra directories copied to the image.                                                                  |
+| `extraClasspathElements` |                                     | Extra classpath elements, relative to the image root.                                                   |
+| `failOnAutomaticRequired`| unset                               | What happens if a modular application requires an automatic module: unset logs a warning, `true` fails the build, `false` logs it as info. Ignored for classpath applications. |
+| `templateDir`            | `${project.basedir}/templates`      | The directory holding the templates.                                                                    |
+| `variablesPrecedence`    | `system, maven, variables`          | The order in which system properties, maven properties and the extra `variables` override each other (later wins). Also accepted: `sys`; `mvn`, `properties`, `props`, `pom`; `vars`, `var`, `extras`, `extra`, `template`. |
+
+**jlink options** (`jlink` and `jpackage`):
+
+| Parameter                  | Default | Meaning                                                               |
+|----------------------------|---------|-----------------------------------------------------------------------|
+| `stripDebug`               | `false` | jlink's `--strip-debug`.                                              |
+| `compress`                 |         | jlink's `--compress`: `zip-0` (none) to `zip-9` (best). The legacy values `0`, `1` and `2` are deprecated since Java 21. |
+| `noHeaderFiles`            | `false` | jlink's `--no-header-files`: omit the `include` directory.            |
+| `noManPages`               | `false` | jlink's `--no-man-pages`: omit the `man` directory.                   |
+| `ignoreSigningInformation` | `false` | jlink's `--ignore-signing-information`: allow signed modular jars.   |
+| `saveOpts`                 |         | jlink's `--save-opts`: the file to save the jlink options to.        |
+| `jlinkOptions`             |         | Further jlink options, e.g. platform-specific or hidden ones such as `--upgrade-files`. |
+
+**Output**:
+
+| Parameter         | Goal                | Default                              | Meaning                                              |
+|-------------------|---------------------|--------------------------------------|------------------------------------------------------|
+| `imageDirectory`  | `jlink`, `jpackage` | `${project.build.directory}/jlink`   | The directory jlink creates the image in.            |
+| `zipDirectory`    | `jlink`, `jpackage` | `${project.build.directory}`         | The directory for the ZIP files.                     |
+| `extraClassifier` | `jlink`, `jpackage` |                                      | An additional classifier for the deployed artifacts. |
+| `packageDirectory`| `jpackage`          | `${project.build.directory}/jpackage`| The directory the installers are created in.         |
+| `layersDirectory` | `layers`            | `${project.build.directory}/tentackle-layers` | The directory the layers are materialized into. |
+
+**Templates** — the file names of the templates in `templateDir`:
+
+| Parameter                  | Goal       | Default                 | Template for                                      |
+|----------------------------|------------|-------------------------|---------------------------------------------------|
+| `nameTemplate`             | `jlink`    | `name.ftl`              | the name of the start script, e.g. `run.sh`        |
+| `runTemplate`              | `jlink`    | `run.ftl`               | the start script                                   |
+| `updateTemplate`           | `jlink`    | `update.ftl`            | the update script, if `withUpdater` is set         |
+| `packageImageTemplate`     | `jpackage` | `package-image.ftl`     | the jpackage options creating the application image |
+| `packageInstallerTemplate` | `jpackage` | `package-installer.ftl` | the jpackage options creating the installer        |
+| `packageUpdateTemplate`    | `jpackage` | `package-update.ftl`    | the update script, if `withUpdater` is set         |
+
+**jpackage only**:
+
+- `jpackageOptions`: further jpackage options, e.g. platform-specific or hidden ones.
+- `mainJar`: the jar holding the main class. Only needed for classpath applications, and only if the top-level
+  artifact of the dependency tree is not the main jar. A unique substring is sufficient, e.g. `myapp-server`.
+
+**init only**:
+
+- `copyAll` (default `true`): copy all templates. If `false`, only the templates already present in
+  `templateDir` are overwritten, which restores the defaults of the customized templates without adding the
+  ones the project doesn't use.
+
+The `init` and `layers` goals need none of the jlink, jdeps or jpackage tools.
+
+All goals are thread-safe and run concurrently in a parallel build (`mvn -T …`).
 
 ### Extending the Plugin
 
@@ -600,6 +694,110 @@ assembly, template model) stays in place, an extension only has to override the 
 Likewise, the template model itself is pluggable via a
 [TemplateModelFactory](https://tentackle.org/tentackle/tentackle-jlink-maven-plugin/apidocs/org/tentackle/maven/plugin/jlink/TemplateModelFactory.html)
 if the built-in variables aren't enough for your scripts.
+
+### Isolated Module Layers
+
+Sometimes two parts of the same application genuinely need different, otherwise conflicting versions
+of the same dependency. JPMS resolves one flat `Configuration` per boot, so there is no command-line
+way to put two modules of the same name on one module path — but a `java.lang.ModuleLayer` can hold
+its own, independently-resolved graph, parented on another layer, so a sibling layer can define a
+module of the same name without colliding. See
+[layers.md](../../../../tentackle-common/src/main/docs/layers.md) for the full runtime story
+(`ModuleLayerBuilder`, `LayerBootstrap`, reaching an isolated layer via `ServiceFinder`); this section
+covers only the plugin configuration and packaging layout.
+
+Configure one `<layer>` per isolated dependency group. Each layer's dependencies are resolved
+**independently** of the project's own dependency graph (Maven only ever resolves one version per
+`groupId:artifactId` within a single project, so two versions could never both appear in the
+project's own `<dependencies>` in the first place):
+
+```xml
+<configuration>
+  <mainModule>com.example.app</mainModule>
+  <mainClass>com.example.app.Main</mainClass>
+  <leafLayer>app</leafLayer>
+  <layers>
+    <layer>
+      <name>lib-v1</name>
+      <dependencies>
+        <dependency>
+          <groupId>org.example</groupId>
+          <artifactId>some-lib</artifactId>
+          <version>1.0</version>
+        </dependency>
+      </dependencies>
+    </layer>
+    <layer>
+      <name>lib-v2</name>
+      <leafParent>true</leafParent>
+      <dependencies>
+        <dependency>
+          <groupId>org.example</groupId>
+          <artifactId>some-lib</artifactId>
+          <version>2.0</version>
+        </dependency>
+      </dependencies>
+    </layer>
+  </layers>
+</configuration>
+```
+
+`leafLayer` names the layer holding the application's own main module — required as soon as any
+`<layer>` is configured, and `mainModule` becomes required too (a classpath application has nothing
+for a `ModuleLayer` to hold). A layer marked `<leafParent>true</leafParent>` becomes one of the leaf's
+own parents, i.e. the leaf module may directly `requires` one of its modules; layers not marked this
+way are still built and usable (typically as another layer's own `<parent>`), just not directly
+visible to the leaf. A layer's optional `<parent>` holds the comma-separated names of its own parent
+layers; without it, the layer is parented on the boot layer. Since a single module cannot `requires` two modules of the same name, two
+sibling layers pinning conflicting versions should not both be `leafParent` — instead, give each its
+own dedicated consumer layer and have the leaf reach them via
+`ServiceFactory.getServiceFinder(ModuleLayer, ...)` (see the worked example in `layers.md`).
+
+Packaging layout, once `<layers>` are configured:
+
+- The application's own main module is never linked into the jimage, even if the rest of the
+  application would otherwise qualify as plain-modular: it must remain a loose file so
+  `ModuleLayerBuilder` can find it later, and it must never share a directory with whatever boots
+  `LayerBootstrap`. It goes to its own, dedicated `mp-leaf/` folder instead of the regular `mp/`,
+  together with every other module that would otherwise end up in `mp/` — except
+  `org.tentackle.common`, which hosts `LayerBootstrap` itself. The leaf layer resolves them on its
+  own, so a sibling layer can still hold a different version of any of them. Modules linked into the
+  jimage stay there.
+- Each declared `<layer>` gets its own `mp/<name>/` folder, populated from its independent Aether
+  resolution.
+- A generated `conf/layers.properties` describes the whole graph for `LayerBootstrap` to read at
+  startup.
+- The generated launcher (`run.ftl`, or the native launcher created by jpackage) runs
+  `org.tentackle.common.LayerBootstrap` instead of the real main class, with
+  `-Dtentackle.layers=conf/layers.properties` (jpackage: an absolute path plus
+  `-Dtentackle.layers.basedir`, see [How The Jpackage Goal Works](#how-the-jpackage-goal-works)).
+  `modulePath`/`classPath` (the regular, shared bucket) only ever contain what is needed to boot
+  `LayerBootstrap` itself — `org.tentackle.common` on the module path, plus whatever was put on the
+  class path — never a `<layer>`'s own jars.
+
+For local development and IDE run/debug configurations, the full `jlink`/`jpackage` goals are too
+slow to run on every edit-compile-run cycle, and IDEs don't invoke Maven plugin goals to build their
+auto-generated run configurations anyway. The lightweight `layers` goal (bind it to `process-classes`
+in projects using `<layers>`) materializes the same information into `target/tentackle-layers/`
+instead, with the leaf entry pointing directly at `target/classes` rather than a copy of it (all paths
+in the generated file are absolute):
+
+```xml
+<execution>
+  <goals><goal>layers</goal></goals>
+</execution>
+```
+
+Then create a plain "Application" run/debug configuration by hand (IDEs won't auto-generate this
+one) with main class `org.tentackle.common.LayerBootstrap`, the project's normal module path
+(unaffected by `<layers>`, since their jars were never part of the project's own dependency graph),
+VM option `-Dtentackle.layers=target/tentackle-layers/layers.properties`, and working directory set
+to the project's base directory. Debugging needs no special support beyond that: `LayerBootstrap` and
+the real application run in one JVM, so breakpoints and stepping work normally across every layer's
+classes, exactly as they already do with the framework's other multi-classloader mechanisms (OSGi
+bundles) — the only visible difference is that the process's top-level main class is the bootstrap,
+not the application's own, the same as e.g. a repackaged Spring Boot launcher.
+
 
 ### Auto Update Feature
 
@@ -652,10 +850,13 @@ Again, for a working example, please see this [Quickstart](../../../../src/main/
 [Service and Configuration API](../../../../tentackle-common/src/main/docs/services.md) — the SPI that makes
 "unrequired" dependencies work.
 
+[Isolated Module Layers](../../../../tentackle-common/src/main/docs/layers.md) — running two versions of
+the same dependency in parallel, via `<layers>` and `org.tentackle.common.LayerBootstrap`.
+
 [Java Platform Module System](https://en.wikipedia.org/wiki/Java_Platform_Module_System)
 
-[jlink tool](https://docs.oracle.com/en/java/javase/15/docs/specs/man/jlink.html)
+[jlink tool](https://docs.oracle.com/en/java/javase/25/docs/specs/man/jlink.html)
 
-[jpackage tool](https://docs.oracle.com/en/java/javase/15/docs/specs/man/jpackage.html)
+[jpackage tool](https://docs.oracle.com/en/java/javase/25/docs/specs/man/jpackage.html)
 
-[jdeps tool](https://docs.oracle.com/en/java/javase/15/docs/specs/man/jdeps.html)
+[jdeps tool](https://docs.oracle.com/en/java/javase/25/docs/specs/man/jdeps.html)

@@ -46,7 +46,7 @@ import java.text.MessageFormat;
 
 /**
  * Skin for {@link TableFilterPopup}.<br>
- * Arranges the sort shortcuts, the search field, the value list and the condition editor
+ * Arranges the search field, the value list and the condition editor
  * top down, with the action buttons at the bottom.
  *
  * @param <S> type of the objects contained within the table's or treetable's items list
@@ -209,6 +209,7 @@ public class TableFilterPopupSkin<S,T> implements Skin<TableFilterPopup<S,T>> {
    * @param action the action to run
    * @return the button
    */
+  @SuppressWarnings("bundle")
   protected Button createButton(String bundleKey, String graphicName, Runnable action) {
     Button button = new Button(FxFxBundle.getString(bundleKey));
     if (graphicName != null) {

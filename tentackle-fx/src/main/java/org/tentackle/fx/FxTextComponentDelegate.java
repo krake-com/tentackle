@@ -33,7 +33,9 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 /**
- * Delegate implementing FxComponent.
+ * Delegate implementing {@link FxTextComponent}.<br>
+ * Also serves as the filter of the component's {@link TextFormatter}, which applies
+ * the valid/invalid characters, the filler, the case conversion, the text converter, and the maximum number of columns.
  *
  * @author harald
  */
@@ -46,12 +48,12 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
   private Pos textAlignment;
 
   /**
-   * maximum number of characters.
+   * Maximum number of characters.
    */
   private int maxColumns;
 
   /**
-   * true if autoselect on focus gained
+   * True to select all on focus gained.
    */
   private boolean autoSelect;
 
@@ -61,7 +63,7 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
   private String pattern;
 
   /**
-   * whether parsing to model should be lenient.
+   * Whether parsing to model should be lenient.
    */
   private boolean lenient;
 
@@ -314,6 +316,9 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
         String newText = t.getControlNewText();
         int tooMuch = newText.length() - maxColumns;
         if (tooMuch > 0) {
+          if (!isUpdatingView()) {
+            InputAlert.getInstance().alert(getNode(), InputAlert.Reason.TOO_LONG);
+          }
           // cut in length
           int length = text.length() - tooMuch;
           if (length < 0) {
@@ -342,7 +347,9 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
   }
 
   /**
-   * Filters input characters.
+   * Filters input characters.<br>
+   * Applies the valid characters of the value translator, the valid and invalid characters,
+   * the filler, the case conversion, and the text converter, in this order.
    *
    * @param text the input text, never null
    * @return the filtered text, never null
@@ -433,6 +440,13 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
     }
   }
 
+  /**
+   * Creates the value translator for the given model type.<br>
+   * Invoked from {@link #setType(Class)} unless the application already set a translator.
+   *
+   * @param type the model type
+   * @return the translator
+   */
   protected ValueTranslator<?,?> createValueTranslator(Class<?> type) {
     return FxFactory.getInstance().createValueTranslator(type, String.class, getComponent());
   }

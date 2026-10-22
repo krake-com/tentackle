@@ -29,13 +29,16 @@ import org.tentackle.common.Settings;
 import org.tentackle.common.StringHelper;
 import org.tentackle.maven.AbstractTentackleMojo;
 import org.tentackle.model.Attribute;
+import org.tentackle.model.Deferrability;
 import org.tentackle.model.Entity;
 import org.tentackle.model.EntityAliases;
 import org.tentackle.model.EntityInfo;
+import org.tentackle.model.ForeignKey;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.ModelManager;
+import org.tentackle.model.NameVerifier;
 import org.tentackle.model.Relation;
 import org.tentackle.model.parse.Document;
 import org.tentackle.model.print.EntityPrinter;
@@ -68,14 +71,29 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
 /**
- * Base tentackle sql mojo.
+ * Base class of the SQL mojos working on the model.<br>
+ * Provides the shared configuration: model selection, backend selection, name checks,
+ * and the diagnostic dumps.<br>
+ * The default {@link #executeImpl()} processes the model files once per backend returned by
+ * {@link #getBackendInfosToExecute()} and dumps the model and bundles afterward, if configured.
+ * Goals that override {@code executeImpl}, such as {@code run} and {@code document}, don't create dumps.
  *
  * @author harald
  */
 public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
+
+  /**
+   * Serializes the executions in parallel builds.<br>
+   * The model held by the {@link ModelManager} and the {@link NameVerifier} are singletons of the plugin's
+   * class realm, which is shared by all projects of a build. Each execution configures and loads the model
+   * (defaults, aliases, backends, clearing), so concurrent executions would corrupt each other.
+   */
+  private static final Lock MODEL_LOCK = new ReentrantLock();
 
   /**
    * Explicit filesets given instead of the model directory.
@@ -117,7 +135,21 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   protected boolean mapSchemas;
 
   /**
-   * Directory holding the SQL-generated scripts.
+   * Uses the model found in the resources of the classpath.<br>
+   * Useful to migrate the database tables for dependencies, for example, the Tentackle framework's model.<br>
+   * Requires that the plugin dependencies contain the model resources
+   * (see {@link #dumpModelIndex} and {@link #dumpModelSource}).
+   * <p>
+   * Notice: for the {@code migrate} and {@code validate} goals, the model files in the filesets are ignored
+   * when this flag is true! If only the Tentackle tables should be migrated, make sure to set
+   * {@link #checkReservedTables} to false.<br>
+   * The {@code document} goal loads the classpath model in addition to the local model files.
+   */
+  @Parameter(property = "tentackle.loadModelFromClassPath")
+  protected boolean loadModelFromClassPath;
+
+  /**
+   * Directory holding the generated SQL scripts, one sub-directory per backend.
    */
   @Parameter(defaultValue = "${project.build.directory}/sql",
              property = "tentackle.sqlDir")
@@ -138,11 +170,13 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    *   <li>deprecated: all deprecated backends</li>
    * </ul>
    */
-  @Parameter
+  @Parameter(property = "tentackle.backendNames")
   protected String backendNames;
 
   /**
-   * Backend configuration via pom if not from property files.
+   * Backend configuration via the pom.<br>
+   * Combined with {@link #backendNames} and {@link #backendProperties}.
+   * For the same backend name, these definitions replace the others.
    */
   @Parameter
   protected List<BackendInfoParameter> backends;
@@ -219,7 +253,8 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
 
   /**
    * Use IF EXISTS for drop index, constraint, and column if the backend supports it.<br>
-   * If not supported, a warning will be logged.
+   * If not supported, a warning will be logged.<br>
+   * Applies to the {@code migrate} and {@code validate} goals only.
    */
   @Parameter
   protected boolean useDropIfExists;
@@ -229,6 +264,13 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    */
   @Parameter(defaultValue = "true")
   protected boolean generateHeaderComment;
+
+  /**
+   * Checks the names used in the model via the {@link org.tentackle.model.NameVerifier}.
+   * Turn this off if you want to skip the name checks (to load legacy models, for example).
+   */
+  @Parameter(defaultValue = "true")
+  private boolean checkModelNames;
 
   /**
    * Check for reserved backend-specific names.<br>
@@ -246,8 +288,8 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   protected boolean checkReservedTables;
 
   /**
-   * Optional list of tables names not belonging to the model.<br>
-   * Could be just simple names, but in fact is a regular expression.<br>
+   * Optional list of table names not belonging to the model.<br>
+   * Could be just simple names, but in fact are regular expressions.<br>
    * Must not contain the schema name, only the table name!
    */
   @Parameter
@@ -264,7 +306,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   private Model model;
 
   /**
-   * total number of errors.
+   * Total number of errors.
    */
   protected int totalErrors;
 
@@ -288,7 +330,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   protected File sqlFile;
 
   /**
-   * Output directory for diagnostics
+   * The canonical path of the SQL file's directory.
    */
   protected String sqlDirName;
 
@@ -298,6 +340,11 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   protected Writer sqlWriter;
 
 
+  @Override
+  protected Lock getExecutionLock() {
+    return MODEL_LOCK;
+  }
+
   /**
    * Gets the entity model.
    *
@@ -305,6 +352,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    */
   protected Model getModel() {
     if (model == null) {
+      NameVerifier.getInstance().setEnabled(checkModelNames);
       model = ModelManager.getInstance().getModel(modelName);
     }
     return model;
@@ -408,6 +456,15 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   }
 
   /**
+   * Returns whether this mojo writes SQL scripts and therefore requires the {@link #sqlDir}.
+   *
+   * @return true if sqlDir is required (default)
+   */
+  protected boolean isSqlDirRequired() {
+    return true;
+  }
+
+  /**
    * Process all files in a fileset.
    *
    * @param backendInfo the backend info
@@ -427,11 +484,13 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
       if (modelDir.getPath().contains("${")) {
         throw new MojoExecutionException("undefined variable(s) in modelDir: " + modelDir.getPath());
       }
-      if (sqlDir == null) {
-        throw new MojoExecutionException("missing tentackle.sqlDir");
-      }
-      if (sqlDir.getPath().contains("${")) {
-        throw new MojoExecutionException("undefined variable(s) in sqlDir: " + sqlDir.getPath());
+      if (isSqlDirRequired()) {
+        if (sqlDir == null) {
+          throw new MojoExecutionException("missing tentackle.sqlDir");
+        }
+        if (sqlDir.getPath().contains("${")) {
+          throw new MojoExecutionException("undefined variable(s) in sqlDir: " + sqlDir.getPath());
+        }
       }
 
       backendInfos = new HashMap<>();
@@ -463,7 +522,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
               File propertiesFile = new File(new File(propertiesDirName), filename);
               EncryptedProperties props = new EncryptedProperties();
               try (InputStream is = new FileInputStream(propertiesFile)) {
-                getLog().debug("loading property file " + propertiesFile.getAbsolutePath());
+                getLogger().debug("loading property file {}", propertiesFile.getAbsolutePath());
                 props.load(is);
                 BackendInfo backendInfo = BackendInfoFactory.getInstance().create(props);
                 // props infos will replace those loaded by name only
@@ -527,7 +586,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
     totalErrors = 0;
 
     for (BackendInfo backendInfo : getBackendInfosToExecute()) {
-      getLog().debug("processing " + backendInfo);
+      getLogger().debug("processing {}", backendInfo);
       openResources(backendInfo);
       try {
         // process files
@@ -546,7 +605,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
             processFileSet(backendInfo, fs);
           }
           else {
-            getLog().warn((modelDir.exists() ? "empty modelDir " : "no modelDir ") + modelDir.getAbsolutePath());
+            getLogger().warn("{} {}", modelDir.exists() ? "empty modelDir" : "no modelDir", modelDir.getAbsolutePath());
           }
         }
       }
@@ -672,7 +731,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
               writer.write(dumpedName + "\n");
             }
           }
-          getLog().info("model index created in " + getPathRelativeToBasedir(dumpModelIndex.getAbsolutePath()));
+          getLogger().info("model index created in {}", getPathRelativeToBasedir(dumpModelIndex.getAbsolutePath()));
         }
 
         File file = new File(dumpDir, "_aliases_.txt");
@@ -713,7 +772,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
             writer.newLine();
           }
         }
-        getLog().info("model dump created in " + getPathRelativeToBasedir(dumpDir.getAbsolutePath()));
+        getLogger().info("model dump created in {}", getPathRelativeToBasedir(dumpDir.getAbsolutePath()));
       }
       catch (IOException | ModelException | MojoExecutionException ex) {
         throw new MojoFailureException("creating model dump failed", ex);
@@ -748,7 +807,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
             }
           }
         }
-        getLog().info("bundle property files created in " + getPathRelativeToBasedir(bundleDir.getAbsolutePath()));
+        getLogger().info("bundle property files created in {}", getPathRelativeToBasedir(bundleDir.getAbsolutePath()));
       }
       catch (IOException | ModelException ex) {
         throw new MojoFailureException("creating bundle dump failed", ex);
@@ -757,7 +816,11 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   }
 
   /**
-   * Check for numbered fallback aliases.
+   * Checks for numbered fallback table aliases.<br>
+   * Logs a warning listing the entities whose table alias was generated as a numbered fallback,
+   * since such aliases may change when the model changes.
+   *
+   * @throws MojoFailureException if the model could not be analyzed
    */
   protected void checkFallbackTableAliases() throws MojoFailureException {
     try {
@@ -775,7 +838,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
       }
 
       if (!aliasBuf.isEmpty()) {
-        getLog().warn("consider specifying explicit table aliases for: " + aliasBuf);
+        getLogger().warn("consider specifying explicit table aliases for: {}", aliasBuf);
       }
     }
     catch (ModelException ex) {
@@ -832,10 +895,11 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
 
 
   /**
-   * Returns whether the given table name is reserved and must not be used by the model.
+   * Returns whether the given table name matches one of the {@link #alienTables}.<br>
+   * Alien tables don't belong to the model and must not be used by it.
    *
-   * @param tableName the tablename (without the schema)
-   * @return true if belongs to the alien tables
+   * @param tableName the table name (without the schema)
+   * @return true if an alien table
    */
   protected boolean isAlienTable(String tableName) {
     boolean isOther = false;
@@ -870,14 +934,41 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
     if (checkReservedTables && MetaDataUtilities.getInstance().isReservedTable(plainTableName)) {
       String msg = "table '" + plainTableName + "' of entity " + entity + " is reserved by the Tentackle framework";
       if (entity.getSchemaName() == null) {
-        getLog().error(msg);
+        getLogger().error(msg);
         return true;
       }
       else {
-        getLog().warn(msg + " -> consider renaming");
+        getLogger().warn("{} -> consider renaming", msg);
       }
     }
     return false;
+  }
+
+  /**
+   * Warns once if the model uses deferred/deferrable unique indexes or foreign keys but the
+   * backend does not support deferring constraint checks.<br>
+   * DDL generation itself already degrades gracefully in that case (falling back to plain,
+   * non-deferrable DDL), so this is purely diagnostic.
+   *
+   * @param backend the backend
+   * @param entities the entities to check for deferrable indexes
+   * @param foreignKeys the foreign keys to check for deferrability, null if none available
+   */
+  protected void warnIfDeferredNotSupported(Backend backend, Collection<Entity> entities, Collection<ForeignKey> foreignKeys) {
+    if (!backend.isSetConstraintsDeferredSupported()) {
+      boolean deferredUsed = foreignKeys != null &&
+                             foreignKeys.stream()
+                                        .anyMatch(foreignKey -> foreignKey.getDeferrability() != Deferrability.NOT_DEFERRABLE);
+      if (!deferredUsed && entities != null) {
+        deferredUsed = entities.stream().flatMap(entity -> entity.getIndexes().stream())
+                               .anyMatch(index -> index.getDeferrability() != Deferrability.NOT_DEFERRABLE);
+      }
+      if (deferredUsed) {
+        getLogger().warn("backend {} does not support deferred constraints -> " +
+                         "deferred/deferrable indexes and foreign keys will be created as NOT DEFERRABLE",
+                         backend);
+      }
+    }
   }
 
 }

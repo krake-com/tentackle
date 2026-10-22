@@ -27,7 +27,11 @@ import javafx.util.Callback;
 import java.util.Collection;
 
 /**
- * PDO-aware choice box.
+ * PDO-aware choice box.<br>
+ * If bound to a PDO type, the choice box loads its items itself: all PDOs of that type in the
+ * binding's domain context. The items are reloaded when the entity's modification count changes.
+ * <p>
+ * Created by the FXML loader instead of a {@code ChoiceBox} via {@link org.tentackle.fx.rdc.component.build.RdcChoiceBoxBuilder}.
  *
  * @author harald
  * @param <T> the type
@@ -55,6 +59,7 @@ public class RdcChoiceBox<T> extends FxChoiceBox<T> {
   /**
    * Sets the callback to load all PDOs.<br>
    * Used by {@link PdoComponentAddon#getAllPdos(PersistentDomainObject)}.
+   * The callback receives a proxy PDO of the component's type and returns the items.
    *
    * @param loadAllPdosCallback the callback
    */

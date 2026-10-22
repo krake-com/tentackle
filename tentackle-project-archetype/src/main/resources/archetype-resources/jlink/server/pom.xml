@@ -92,9 +92,13 @@
           <keystore>${symbol_dollar}{cert.dir}/keystore.p12</keystore>
           <file>${symbol_dollar}{cert.file}</file>
           <storepass>${symbol_dollar}{cert.password}</storepass>
-          <keypass>${cert.password}</keypass>
+          <keypass>${symbol_dollar}{cert.password}</keypass>
           <alias>${symbol_dollar}{cert.alias}</alias>
           <dname>${symbol_dollar}{cert.dname}</dname>
+          <exts>
+            <!-- clients verify the host name against it -->
+            <ext>san=dns:${symbol_dollar}{serverHost}</ext>
+          </exts>
           <keyalg>RSA</keyalg>
           <sigalg>SHA256WithRSA</sigalg>
           <keysize>2048</keysize>

@@ -20,6 +20,9 @@ package org.tentackle.trip.remote;
 
 /**
  * Interface for remote responses.
+ *
+ * @see InitialRemoteResponse
+ * @see IdentifiedRemoteResponse
  */
 public interface RemoteResponse {
 

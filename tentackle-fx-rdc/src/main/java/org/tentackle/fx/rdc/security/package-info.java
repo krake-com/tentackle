@@ -17,6 +17,8 @@
  */
 
 /**
- * Security rules editing.
+ * Security rules editing.<br>
+ * The {@link org.tentackle.fx.rdc.security.SecurityDialogFactory} opens the
+ * {@link org.tentackle.fx.rdc.security.SecurityRulesView} to edit the rules for a PDO or a class.
  */
 package org.tentackle.fx.rdc.security;

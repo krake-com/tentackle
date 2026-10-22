@@ -72,9 +72,9 @@ public abstract class Line {
   }
 
   /**
-   * Gets the first linenumber of this line within the document.
+   * Gets the first line number of this line within the document.
    *
-   * @return the linenumber, starting at 1
+   * @return the line number, starting at 1
    */
   public int getLineNumber() {
     return lineNumber;
@@ -117,7 +117,7 @@ public abstract class Line {
    * Sets the line's length.<br>
    * Invoked from within {@link #parse()}.
    *
-   * @param length the line's length, -1 means to end of file
+   * @param length the line's length, a negative value means up to the end of the document
    */
   protected void setLength(int length) {
     this.length = length < 0 ? getDocument().getText().length() - offset : length;
@@ -137,7 +137,7 @@ public abstract class Line {
   /**
    * Gets the source info for this line.
    *
-   * @return the source info
+   * @return the source info, null if the document has none
    */
   public SourceInfo getSourceInfo() {
     SourceInfo sourceInfo = getDocument().getSourceInfo();

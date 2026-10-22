@@ -103,7 +103,9 @@ it. `DefaultBindableElement` implements the actual access logic:
 
 `BindableCache` caches the sorted `BindableElement`s per class (declared-only or
 including inherited), so the relatively expensive reflection scan happens once
-per class.
+per class. Annotated getters, setters, from-methods and fields of the same name
+are merged into one element. For records, the from- or with-method of an annotated
+component is picked up automatically, since the DTO wurblet does not annotate it.
 
 ### From- or with-method — binding immutable members
 
@@ -175,8 +177,8 @@ binding path. Key responsibilities:
   ```
 
 - **Listeners and validation scope** — view/model/validation listeners and the
-  active `ValidationScope` are held at the binder level and shared by its
-  bindings.
+  active `ValidationScope` (the `InteractiveScope` by default) are held at the
+  binder level and shared by its bindings.
 
 `AbstractBinder` provides the bookkeeping (unique instance number for ordering,
 property map, listener lists, scope) and leaves the actual scan,
@@ -202,8 +204,9 @@ The concrete factory adds the toolkit pieces and is discovered as a service.
 1. The binder/binding resolves the parent object by walking the member path from
    the root object.
 2. `getModelValue()` reads the leaf value (getter or field).
-3. `ToViewListener`s registered on both binding and binder fire; any may throw a
-   `BindingVetoException` to suppress the update (optionally requesting a resync).
+3. `ToViewListener`s registered on the binding, then those on the binder, fire; any
+   may throw a `BindingVetoException` to suppress the update (optionally requesting
+   a resync).
 4. Fixed mandatory/changeable validators are evaluated and pushed to the
    component (it may become required or read-only).
 5. `updateView(value)` sets the value into the widget.
@@ -211,7 +214,8 @@ The concrete factory adds the toolkit pieces and is discovered as a service.
 ### To-model (view → model)
 
 1. `getViewValue()` reads the current widget value.
-2. `ToModelListener`s on binding and binder fire; a veto suppresses the write.
+2. `ToModelListener`s on the binding, then those on the binder, fire *before* the
+   model is written; a veto suppresses the write.
 3. `member.setObject(parent, value)` writes the value (setter → from-method →
    field). If a from-method returned a new object, the binding propagates the
    replacement up the parent chain.
@@ -224,8 +228,9 @@ A listener throws `BindingVetoException` to stop a transfer. The exception
 carries two flags:
 
 - `resyncRequested` — re-push the *other* side's current value so model and view
-  stay consistent (e.g., on a rejected to-model write, refresh the view from the
-  model).
+  stay consistent: on a rejected to-model write, the view is refreshed from the
+  model; on a rejected to-view update, the model is updated from the view's
+  current value. The resync itself bypasses the resync logic, so it cannot loop.
 - `rethrowEnabled` — after processing, rethrow as an unchecked `BindingException`
   rather than swallowing silently.
 
@@ -548,7 +553,12 @@ product number is shown in a form field, a table column, or a tree-table column.
 For text components, `@Bindable(options = "...")` (or options set on the
 component) tune input behavior. 
 See [model-definition.md](../../../../tentackle-model/src/main/docs/model-definition.md#binding-options)
-for details.
+for details, and [tentackle-fx](../../../../tentackle-fx/src/main/docs/fx.md#text-input-properties) for the
+component properties they are mapped to.
+
+For views without a model to bind to, the JavaFX controls also accept
+[low-level listeners](../../../../tentackle-fx/src/main/docs/fx.md#low-level-listeners) invoked on every
+transfer between view and model.
 
 ### Table binding
 

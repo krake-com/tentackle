@@ -1,0 +1,8 @@
+## a car
+name := Car
+id := 21
+extends := Vehicle
+
+## attributes
+
+Integer         seats           seats           the number of seats

@@ -22,20 +22,21 @@ import org.tentackle.bind.Bindable;
 import org.tentackle.model.Entity;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
 /**
- * Datanode to be displayed in a tree table.<br>
+ * Data node to be displayed in a tree table.<br>
  * The node can be used in 2 modes:
  * <ol>
- *   <li>to display the pdo tree</li>
- *   <li>to compare two pdo trees</li>
+ *   <li>to display the PDO tree</li>
+ *   <li>to compare two PDO trees</li>
  * </ol>
  */
 public class DataDiff implements DataNode {
 
-  private final DataNode left;           // the left data, null if no such data in right object
+  private final DataNode left;           // the left data, null if no such data in left object
   private final DataNode right;          // the right data, null if no such data in right object
   private final boolean different;       // true if this node or a sub node differs
   private final List<DataDiff> nodes;    // the sub nodes
@@ -43,7 +44,7 @@ public class DataDiff implements DataNode {
   /**
    * Creates a DataDiff.
    *
-   * @param left the left data, null if no such data in right object
+   * @param left the left data, null if no such data in left object
    * @param right the right data, null if no such data in right object
    * @param different true if this node or a sub node differs
    * @param nodes the sub nodes
@@ -74,7 +75,7 @@ public class DataDiff implements DataNode {
   }
 
   /**
-   * Gets true if this node or a sub node differs.
+   * Returns whether this node or a sub node differs.
    *
    * @return true if this node or a sub node differs
    */
@@ -143,6 +144,11 @@ public class DataDiff implements DataNode {
     return right.getNodeType();
   }
 
+  /**
+   * Gets the node to display.
+   *
+   * @return the left node, or the right node if there is no left node
+   */
   @Bindable(ordinal = 1)
   public DataNode getNode() {
     if (left != null) {
@@ -192,7 +198,7 @@ public class DataDiff implements DataNode {
 
   @Override
   public void setConfigurationPath(String configurationPath) {
-    throw new UnsupportedOperationException("no applicable to diffs");
+    throw new UnsupportedOperationException("not applicable to diffs");
   }
 
   @Override
@@ -214,7 +220,7 @@ public class DataDiff implements DataNode {
    * Compares the data of a PDO between two locations.
    *
    * @param left the data of the left location, must not be null
-   * @param right the data of the right location, null if just show the data and don't compare
+   * @param right the data of the right location, null to only show the data without comparing
    * @return the comparison
    */
   public static DataDiff compare(DataObject left, DataObject right) {
@@ -319,9 +325,9 @@ public class DataDiff implements DataNode {
       }
       else {    // DataList
         different = false;
-        // we must sort by ID because collections may be returned in any order
-        List<DataObject> leftObjects = (List<DataObject>) leftNodes;
-        List<DataObject> rightObjects = (List<DataObject>) rightNodes;
+        // merge both lists in the order of compareElements
+        List<DataObject> leftObjects = sortForMerge((List<DataObject>) leftNodes, rightMissing, rootIdDiffers);
+        List<DataObject> rightObjects = sortForMerge((List<DataObject>) rightNodes, rightMissing, rootIdDiffers);
         int leftIndex = 0;
         int rightIndex = 0;
         DataObject nextLeft = null;
@@ -348,22 +354,19 @@ public class DataDiff implements DataNode {
             nextLeft = null;
           }
           else {
-            if (nextLeft.getNmRelation() != null && nextRight.getNmRelation() != null &&
-                nextLeft.getNmRelation().toString().compareTo(nextRight.getNmRelation().toString()) < 0 ||
-                !rootIdDiffers && nextLeft.getId() < nextRight.getId()) {
+            int cmp = compareElements(nextLeft, nextRight, rootIdDiffers);
+            if (cmp < 0) {
               // gap in right list
               diffNode = compareImpl(nextLeft, null, rightMissing, false);
               nextLeft = null;
             }
-            else if (nextLeft.getNmRelation() != null && nextRight.getNmRelation() != null &&
-                     nextLeft.getNmRelation().toString().compareTo(nextRight.getNmRelation().toString()) > 0 ||
-                     !rootIdDiffers && nextLeft.getId() > nextRight.getId()) {
+            else if (cmp > 0) {
               // gap in left list
               diffNode = compareImpl(null, nextRight, rightMissing, false);
               nextRight = null;
             }
             else {
-              // same ID or root ID differs
+              // same ID, same N:M-related PDO, or root ID differs
               diffNode = compareImpl(nextLeft, nextRight, rightMissing, rootIdDiffers);
               nextLeft = null;
               nextRight = null;
@@ -379,10 +382,49 @@ public class DataDiff implements DataNode {
     if (diffNodes != null && diffNodes.isEmpty() &&
         (left == null || left instanceof DataObject) &&
         (right == null || right instanceof DataObject)) {
-      diffNodes = null;   // both missing
+      diffNodes = null;   // no sub nodes: make it a leaf (data lists keep their empty list)
     }
 
     return new DataDiff(left, right, different, diffNodes);
+  }
+
+  /**
+   * Compares two list elements for merging.<br>
+   * Elements of N:M relations are compared by their related PDOs, all others by their IDs.
+   * If the IDs of the root objects differ, the elements are compared by position.
+   *
+   * @param left the left element
+   * @param right the right element
+   * @param rootIdDiffers true if the IDs of the root objects differ
+   * @return &lt; 0 if gap in right list, &gt; 0 if gap in left list, 0 if elements match
+   */
+  static int compareElements(DataObject left, DataObject right, boolean rootIdDiffers) {
+    if (left.getNmRelation() != null && right.getNmRelation() != null) {
+      return left.getNmRelation().toString().compareTo(right.getNmRelation().toString());
+    }
+    return rootIdDiffers ? 0 : Long.compare(left.getId(), right.getId());
+  }
+
+  /**
+   * Sorts the elements of a list to be merged by {@link #compareElements}.<br>
+   * N:M lists are already sorted by the {@link DataNodeFactory}, but the elements of 1:N lists
+   * are in the order of the select, which is not necessarily by ID.
+   *
+   * @param objects the list elements, null if none
+   * @param rightMissing true if just show the data and don't compare
+   * @param rootIdDiffers true if the IDs of the root objects differ
+   * @return the sorted elements, empty if none
+   */
+  private static List<DataObject> sortForMerge(List<DataObject> objects, boolean rightMissing, boolean rootIdDiffers) {
+    if (objects == null) {
+      return List.of();
+    }
+    if (rightMissing || rootIdDiffers || objects.stream().anyMatch(o -> o.getNmRelation() != null)) {
+      return objects;   // keep the order
+    }
+    List<DataObject> sorted = new ArrayList<>(objects);
+    sorted.sort(Comparator.comparingLong(DataObject::getId));
+    return sorted;
   }
 
 }

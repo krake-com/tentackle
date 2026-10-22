@@ -26,7 +26,7 @@ public class Constants {
   /** Java file extension. */
   public static final String JAVA_EXT = ".java";
 
-  /** classID status file extension. */
+  /** class ID status file extension. */
   public static final String CLASSID_EXT = ".classid";
 
   /** template category for PDOs. */

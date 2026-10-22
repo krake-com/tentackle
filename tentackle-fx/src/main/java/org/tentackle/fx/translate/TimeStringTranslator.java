@@ -35,6 +35,11 @@ public class TimeStringTranslator extends ValueStringTranslator<java.sql.Time> {
 
   private final LocalTimeStringTranslator translator;
 
+  /**
+   * Creates a translator.
+   *
+   * @param component the text component
+   */
   public TimeStringTranslator(FxTextComponent component) {
     super(component);
     translator = new LocalTimeStringTranslator(component);

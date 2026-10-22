@@ -26,7 +26,7 @@ import java.io.Serial;
  * Exception thrown if a resource has been reconnected.<br>
  * When an application catches this exception, it indicates that
  * the resource has been reconnected while the cause holds
- * the exception that triggers the reconnection, i.e. the original resource failure.
+ * the exception that triggers the reconnection, i.e., the original resource failure.
  * <p>
  * Notice that a ReconnectedException only makes sense for
  * a blocking {@link ReconnectionPolicy}. For an example, see {@code DbModificationTracker#lockInternal}.
@@ -40,6 +40,15 @@ public class ReconnectedException extends TentackleRuntimeException {
 
   @Serial
   private static final long serialVersionUID = 1L;
+
+  /**
+   * Constructs a new reconnected exception with <code>null</code> as its detail message.
+   * The cause is not initialized and may subsequently be initialized by a call to
+   * {@link #initCause}.
+   */
+  public ReconnectedException() {
+    super();
+  }
 
   /**
    * Constructs a new reconnected exception with the specified detail message and

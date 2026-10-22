@@ -17,6 +17,6 @@
  */
 
 /**
- * Persistence implementation for security rules.
+ * Persistence implementation for the security rule PDO.
  */
 package org.tentackle.persist.security;

@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class ImageGraphicProvider implements GraphicProvider {
 
   /**
-   * File type EXTENSIONS to try.
+   * The file extensions to try, in this order.
    */
   private static final String[] EXTENSIONS = new String[] { ".png", ".gif", ".jpg" };
 
@@ -57,7 +57,7 @@ public abstract class ImageGraphicProvider implements GraphicProvider {
   /**
    * Creates an image provider.
    *
-   * @param imagePath the image path, null if {@code "<package>/images/"}.
+   * @param imagePath the image path, null for {@code "<package>/images/"}
    */
   public ImageGraphicProvider(String imagePath) {
     imageMap = new ConcurrentHashMap<>();
@@ -93,7 +93,9 @@ public abstract class ImageGraphicProvider implements GraphicProvider {
   }
 
   /**
-   * Returns the cached image.
+   * Gets an image.<br>
+   * Path and file extension of the name, if any, are ignored.
+   * The image is loaded on first access and cached.
    *
    * @param name the image name
    * @return the image, null if no such image found

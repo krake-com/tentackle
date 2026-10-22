@@ -24,17 +24,26 @@ import org.tentackle.log.Logger.Level;
 
 import java.io.Serial;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
-import java.util.Iterator;
+import java.util.ListIterator;
+import java.util.Objects;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
 /**
  * An enhanced {@link ArrayList}.<br>
- * Implements {@link Immutable}.<br>
- * Also differs from {@link ArrayList} the way equals() and hashCode() is implemented:
- * if simpleEqualsAndHashCode==true, those methods refer to the list instance and don't check the elements.
- * Useful if the list is contained in another collection.<br>
+ * Implements {@link Immutable}.
+ * <p>
+ * Also differs from {@link ArrayList} in the way {@code equals()} and {@code hashCode()} are implemented:
+ * if {@code simpleEqualsAndHashCode==true}, those methods refer to the list instance and don't check the elements.
+ * Useful if the list is contained in another collection.
+ * <p>
  * Notice that despite its name, {@link ImmutableArrayList}s are mutable by default. {@link #setImmutable} must be invoked
  * to make it immutable.<br>
+ * Operations that would not change the list, such as replacing an element by the same instance or
+ * removing elements that are not in the list, are allowed even if the list is immutable.
+ * Sorting is not considered a modification.<br>
  * Cloning an immutable list returns a mutable copy.
  *
  * @author harald
@@ -50,17 +59,20 @@ public class ImmutableArrayList<E> extends ArrayList<E> implements ImmutableColl
 
   private final int hash = new Object().hashCode();   // some hashcode
 
-  protected boolean simpleEqualsAndHashCode;          // true if equals and hashcode refer to the list instance, not its contents
-  protected boolean immutable;                        // true if the list is immutable
-  protected boolean finallyImmutable;                 // true if the list is finally immutable
-  protected Level immutableLoggingLevel;              // optional logging for immutable violations instead of exception
+  /** true if equals and hashcode refer to the list instance, not its contents. */
+  protected boolean simpleEqualsAndHashCode;
+  /** true if the list is immutable. */
+  protected boolean immutable;
+  /** true if the list is finally immutable. */
+  protected boolean finallyImmutable;
+  /** optional logging for immutable violations instead of an exception. */
+  protected Level immutableLoggingLevel;
 
 
   /**
    * Constructs an empty list with the specified initial capacity.
-   * <p>
+   *
    * @param initialCapacity the initial capacity of the list
-   * <p>
    * @throws IllegalArgumentException if the specified initial capacity is negative
    */
   public ImmutableArrayList(int initialCapacity) {
@@ -70,9 +82,8 @@ public class ImmutableArrayList<E> extends ArrayList<E> implements ImmutableColl
   /**
    * Constructs a list containing the elements of the specified collection, in the order they are returned by the
    * collection's iterator.
-   * <p>
+   *
    * @param c the collection whose elements are to be placed into this list
-   * <p>
    * @throws NullPointerException if the specified collection is null
    */
   public ImmutableArrayList(Collection<? extends E> c) {
@@ -87,21 +98,11 @@ public class ImmutableArrayList<E> extends ArrayList<E> implements ImmutableColl
   }
 
 
-  /**
-   * Sets whether the equals() and hashCode() methods should refer to the list instance alone.
-   *
-   * @param simpleEqualsAndHashCode true if instance alone, false if check list contents as well
-   */
   @Override
   public void setSimpleEqualsAndHashCode(boolean simpleEqualsAndHashCode) {
     this.simpleEqualsAndHashCode = simpleEqualsAndHashCode;
   }
 
-  /**
-   * Returns whether the equals() and hashCode() methods should refer to the list instance alone.
-   *
-   * @return true if instance alone, false if check list contents as well (default)
-   */
   @Override
   public boolean isSimpleEqualsAndHashCode() {
     return simpleEqualsAndHashCode;
@@ -126,12 +127,6 @@ public class ImmutableArrayList<E> extends ArrayList<E> implements ImmutableColl
     return list;
   }
 
-  /**
-   * Defines whether this list or any objects of this list may be changed.
-   *
-   * @param immutable true if the object is immutable
-   * @param withElements true if set elements as well if they implement {@link Immutable}
-   */
   @Override
   public void setImmutable(boolean immutable, boolean withElements) {
     if (!immutable && finallyImmutable) {
@@ -236,19 +231,54 @@ public class ImmutableArrayList<E> extends ArrayList<E> implements ImmutableColl
   }
 
   @Override
+  public E removeLast() {
+    assertMutable();
+    return super.removeLast();
+  }
+
+  @Override
+  public boolean removeAll(Collection<?> collection) {
+    Objects.requireNonNull(collection);
+    return removeIndexes(matchIndexes(collection::contains));
+  }
+
+  @Override
   public boolean retainAll(Collection<?> collection) {
-    // re-implemented here to catch removed objects
-    boolean someRemoved = false;
-    Iterator<E> iter = iterator();
-    while (iter.hasNext()) {
-      E obj = iter.next();
-      if (!collection.contains(obj)) {
-        iter.remove();
-        assertMutable();
-        someRemoved = true;
-      }
+    Objects.requireNonNull(collection);
+    return removeIndexes(matchIndexes(element -> !collection.contains(element)));
+  }
+
+  @Override
+  public boolean removeIf(Predicate<? super E> filter) {
+    Objects.requireNonNull(filter);
+    return removeIndexes(matchIndexes(filter));
+  }
+
+  @Override
+  public void clear() {
+    if (!isEmpty()) {
+      assertMutable();
     }
-    return someRemoved;
+    super.clear();
+  }
+
+  @Override
+  protected void removeRange(int fromIndex, int toIndex) {
+    // invoked by subList(...).clear()
+    if (toIndex > fromIndex) {
+      assertMutable();
+    }
+    super.removeRange(fromIndex, toIndex);
+  }
+
+  @Override
+  public void replaceAll(UnaryOperator<E> operator) {
+    // re-implemented via the list iterator, whose set() invokes set(int, E) and thus checks mutability
+    Objects.requireNonNull(operator, "operator");
+    ListIterator<E> iter = listIterator();
+    while (iter.hasNext()) {
+      iter.set(operator.apply(iter.next()));
+    }
   }
 
   @Override
@@ -268,7 +298,57 @@ public class ImmutableArrayList<E> extends ArrayList<E> implements ImmutableColl
 
 
   /**
-   * Asserts that the object is mutable.
+   * Determines the indexes of the elements matching a filter.<br>
+   * The filter is evaluated exactly once per element.
+   *
+   * @param filter the filter
+   * @return the indexes of the matching elements, null if none
+   */
+  protected BitSet matchIndexes(Predicate<? super E> filter) {
+    BitSet indexes = null;
+    int size = size();
+    for (int i = 0; i < size; i++) {
+      if (filter.test(super.get(i))) {
+        if (indexes == null) {
+          indexes = new BitSet(size);
+        }
+        indexes.set(i);
+      }
+    }
+    return indexes;
+  }
+
+  /**
+   * Removes the elements at the given indexes in a single pass.<br>
+   * Asserts the list is mutable if there is anything to remove.
+   * <p>
+   * Unlike removing them one by one via {@link #remove(int)} or an iterator, which shifts the
+   * remaining elements each time, this takes linear time. The overridden mutators are bypassed.
+   *
+   * @param indexes the indexes, null if none
+   * @return true if elements were removed
+   */
+  protected boolean removeIndexes(BitSet indexes) {
+    if (indexes == null) {
+      return false;
+    }
+    assertMutable();
+    int size = size();
+    int target = indexes.nextSetBit(0);
+    for (int source = target + 1; source < size; source++) {
+      if (!indexes.get(source)) {
+        super.set(target++, super.get(source));
+      }
+    }
+    super.removeRange(target, size);
+    return true;
+  }
+
+  /**
+   * Asserts that the object is mutable.<br>
+   * If an immutable logging level is set, the violation is only logged.
+   *
+   * @throws ImmutableException if the list is immutable and no logging level is set
    */
   protected void assertMutable() {
     if (isImmutable()) {

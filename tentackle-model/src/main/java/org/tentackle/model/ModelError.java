@@ -74,7 +74,7 @@ public class ModelError {
   /**
    * Gets the related element.
    *
-   * @return the model element
+   * @return the model element, null if none
    */
   public ModelElement getElement() {
     return element;

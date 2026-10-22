@@ -39,7 +39,7 @@ public class ColumnMigrator {
   private final Entity entity;                // the entity to migrate
   private final Attribute attribute;          // the model's attribute
   private final Backend backend;              // the backend
-  private final ColumnMetaData[] columns;     // the database's column (more than one if multi-column attribute)
+  private final ColumnMetaData[] columns;     // the database's columns (more than one if multi-column attribute)
 
 
 
@@ -49,7 +49,7 @@ public class ColumnMigrator {
   private String comment;               // the column's comment
   private SqlType sqlType;              // the SQL type
   private int columnSize;               // the column size/width
-  private int columnScale;              // the scale/precision
+  private int columnScale;              // the numeric scale
   private Object defaultValue;          // the default
 
 
@@ -111,9 +111,9 @@ public class ColumnMigrator {
   }
 
   /**
-   * Gets the database's column meta data.
+   * Gets the database's column metadata.
    *
-   * @return the database's column(s)
+   * @return the database's column(s), null if the attribute is new
    */
   public ColumnMetaData[] getColumns() {
     return columns;
@@ -133,8 +133,9 @@ public class ColumnMigrator {
       DataType dataType = attribute.getEffectiveDataType();
 
       /*
-       * round 1: only add missing columns and migrate only those with exact name match
-       * round 2: migrate the rest
+       * The database columns are consumed in order.
+       * round 1: add missing columns and migrate a column only if the next unconsumed database column has the same name
+       * round 2: pair the rest by position (i.e. renames)
        */
       int migratedColumnIndex = 0;
       boolean[] migrated = new boolean[dataType.getColumnCount(backend)];
@@ -180,7 +181,7 @@ public class ColumnMigrator {
   /**
    * Adds the current column.
    *
-   * @return the sql code
+   * @return the SQL code
    * @throws ModelException if failed
    */
   private String addColumn() throws ModelException {
@@ -202,7 +203,7 @@ public class ColumnMigrator {
    * Drops a column.
    *
    * @param column the column to drop
-   * @return the sql code
+   * @return the SQL code
    */
   private String dropColumn(ColumnMetaData column) {
     return backend.sqlDropColumn(entity.getTableName(), column.getColumnName());
@@ -212,7 +213,7 @@ public class ColumnMigrator {
   /**
    * Migrates the current column.
    *
-   * @return the sql code
+   * @return the SQL code
    * @throws ModelException if failed
    */
   private String migrateColumn() throws ModelException {
@@ -232,6 +233,7 @@ public class ColumnMigrator {
           break;
 
         case TYPE_WARNING:
+          // emit as comment for manual review (possible data loss)
           buf.append(backend.getSingleLineComment()).append(' ').append(alterType());
           break;
 
@@ -263,9 +265,10 @@ public class ColumnMigrator {
 
 
   /**
-   * Alters the type, size and/or scale of current column.
+   * Alters the type, size and/or scale of the current column.
    *
-   * @return sql code
+   * @return the SQL code
+   * @throws ModelException if failed
    */
   private String alterType() throws ModelException {
     return toNonNullString(backend.sqlAlterColumnType(
@@ -278,7 +281,7 @@ public class ColumnMigrator {
    * Updates the current column to a non-null value.
    *
    * @param migrated true if column is migrated, false if added
-   * @return sql code
+   * @return the SQL code
    */
   private String updateToNotNull(boolean migrated) {
     return toNonNullString(backend.sqlUpdateToNotNull(
@@ -288,7 +291,7 @@ public class ColumnMigrator {
   /**
    * Alters the null constraint only.
    *
-   * @return sql code
+   * @return the SQL code
    * @throws ModelException if failed
    */
   private String alterNull() throws ModelException {
@@ -300,13 +303,19 @@ public class ColumnMigrator {
   /**
    * Renames a column.
    *
-   * @return sql code
+   * @return the SQL code
    */
   private String alterName() {
     return toNonNullString(backend.sqlRenameColumn(
             entity.getTableName(), column.getColumnName(), columnName));
   }
 
+  /**
+   * Renames a column and alters its type.
+   *
+   * @return the SQL code
+   * @throws ModelException if failed
+   */
   private String alterNameAndType() throws ModelException {
     return toNonNullString(backend.sqlRenameAndAlterColumnType(
             entity.getTableName(), column.getColumnName(), columnName,
@@ -315,9 +324,9 @@ public class ColumnMigrator {
   }
 
   /**
-   * Alter the comment.
+   * Alters the comment.
    *
-   * @return sql code
+   * @return the SQL code
    */
   private String alterComment() {
     return toNonNullString(backend.sqlAlterColumnComment(
@@ -326,6 +335,8 @@ public class ColumnMigrator {
 
   /**
    * Alters the default.
+   *
+   * @return the SQL code
    */
   private String alterDefault() {
     return toNonNullString(backend.sqlAlterColumnDefault(
@@ -334,10 +345,10 @@ public class ColumnMigrator {
 
 
   /**
-   * Assert that SQL code from backend is not null.
+   * Converts null SQL code from the backend to an empty string.
    *
-   * @param sql the sql code
-   * @return the sql code
+   * @param sql the SQL code, may be null
+   * @return the SQL code, never null
    */
   private String toNonNullString(String sql) {
     if (sql == null) {

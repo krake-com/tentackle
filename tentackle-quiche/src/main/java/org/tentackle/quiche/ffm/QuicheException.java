@@ -34,6 +34,14 @@ public class QuicheException extends RuntimeException {
   private final long errorCode;
 
   /**
+   * Creates an exception with {@code null} as its detail message and no error code.
+   */
+  public QuicheException() {
+    super();
+    this.errorCode = 0;
+  }
+
+  /**
    * Creates an exception.
    *
    * @param message the message

@@ -23,6 +23,8 @@ import org.testng.annotations.Test;
 import org.tentackle.log.Logger;
 
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -79,6 +81,36 @@ public class ImmutableArrayListTest {
     assertThrows(ImmutableException.class, () -> list.remove("a"));
     assertThrows(ImmutableException.class, () -> list.removeFirst());
     assertEquals(list, List.of("a", "b", "c"));
+  }
+
+  /**
+   * The bulk operations of {@link java.util.ArrayList} bypass {@code remove(int)} and {@code set(int, E)}.
+   */
+  @Test
+  public void testImmutableBlocksBulkOperations() {
+    ImmutableArrayList<String> list = sample();
+    list.setImmutable(true);
+    assertThrows(ImmutableException.class, () -> list.removeLast());
+    assertThrows(ImmutableException.class, () -> list.removeAll(List.of("a")));
+    assertThrows(ImmutableException.class, () -> list.removeIf("b"::equals));
+    assertThrows(ImmutableException.class, list::clear);
+    assertThrows(ImmutableException.class, () -> list.subList(0, 2).clear());
+    assertThrows(ImmutableException.class, () -> list.replaceAll(String::toUpperCase));
+    // nothing changed
+    assertEquals(list, List.of("a", "b", "c"));
+  }
+
+  @Test
+  public void testImmutableAllowsBulkOperationsWithoutEffect() {
+    ImmutableArrayList<String> list = sample();
+    list.setImmutable(true);
+    assertFalse(list.removeAll(List.of("x")));
+    assertFalse(list.removeIf("x"::equals));
+    list.replaceAll(s -> s);    // same instances
+    assertEquals(list, List.of("a", "b", "c"));
+    ImmutableArrayList<String> empty = new ImmutableArrayList<>();
+    empty.setImmutable(true);
+    empty.clear();
   }
 
   @Test
@@ -202,5 +234,37 @@ public class ImmutableArrayListTest {
     assertFalse(inner.isImmutable());
     inner.add("d");
     assertEquals(inner, List.of("a", "b", "c", "d"));
+  }
+
+  @Test
+  public void testBulkRemovals() {
+    ImmutableArrayList<Integer> list = new ImmutableArrayList<>(List.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9));
+    assertTrue(list.removeAll(List.of(1, 3, 5)));
+    assertEquals(list, List.of(0, 2, 4, 6, 7, 8, 9));
+    assertFalse(list.removeAll(List.of(42)));
+    assertTrue(list.retainAll(Set.of(0, 2, 4, 6)));
+    assertEquals(list, List.of(0, 2, 4, 6));
+    AtomicInteger evaluations = new AtomicInteger();
+    assertTrue(list.removeIf(e -> {
+      evaluations.incrementAndGet();
+      return e > 3;
+    }));
+    assertEquals(list, List.of(0, 2));
+    assertEquals(evaluations.get(), 4, "predicate must be evaluated once per element");
+    assertFalse(list.removeIf(e -> false));
+  }
+
+  @Test
+  public void testBulkRemovalsWhenImmutable() {
+    ImmutableArrayList<Integer> list = new ImmutableArrayList<>(List.of(1, 2, 3));
+    list.setImmutable(true);
+    assertThrows(ImmutableException.class, () -> list.removeAll(List.of(2)));
+    assertThrows(ImmutableException.class, () -> list.retainAll(List.of(2)));
+    assertThrows(ImmutableException.class, () -> list.removeIf(e -> e == 2));
+    assertEquals(list, List.of(1, 2, 3));
+    // nothing to remove is not a modification
+    assertFalse(list.removeAll(List.of(42)));
+    assertFalse(list.retainAll(List.of(1, 2, 3)));
+    assertFalse(list.removeIf(e -> false));
   }
 }

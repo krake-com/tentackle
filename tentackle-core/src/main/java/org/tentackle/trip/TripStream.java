@@ -32,10 +32,10 @@ public interface TripStream {
 
   /**
    * Returns the dictionary entry for the given ordinal.<br>
-   * Throws a {@link TripRuntimeException} if the ordinal is invalid.
    *
    * @param ordinal the ordinal of the entry
    * @return the entry
+   * @throws TripRuntimeException if the ordinal is invalid
    */
   DictionaryEntry getDictionaryEntry(int ordinal);
 
@@ -51,12 +51,11 @@ public interface TripStream {
    * Gets the TripType for the given class.<br>
    * If there is a predefined or application-specific TripType, that is returned.
    * Otherwise, the type will be created dynamically by the best matching TripTypeBuilder.
-   * <p>
-   * Throws {@link TripRuntimeException} if no matching TripType could be found.
    *
    * @param clazz the class of the data type
    * @return the trip type, never null
    * @param <T> the data type
+   * @throws TripRuntimeException if no matching TripType could be found
    */
   <T> TripType<T> getType(Class<? extends T> clazz);
 
@@ -79,6 +78,7 @@ public interface TripStream {
    * If de-duplicatable, the reference will be mapped by the object's equals() method.
    * Otherwise, the reference will be mapped by an IdentityHashMap.
    *
+   * @param <T> the object's type
    * @param object the object to check
    * @param deduplicate true if the object is de-duplicatable, false otherwise
    * @return the reference, never null
@@ -91,6 +91,7 @@ public interface TripStream {
    * Adds a reference to the stream.<br>
    * The method is invoked by the receiver to add an object received from the sender.
    *
+   * @param <T> the object's type
    * @param reference the reference to add
    * @param object the object the reference belongs to
    * @param deduplicate true if the object is de-duplicatable, false otherwise
@@ -99,13 +100,12 @@ public interface TripStream {
 
   /**
    * Gets the reference for the given reference id.
-   * <p>
-   * Throws a {@link TripRuntimeException} if the reference id is invalid.
    *
    * @param <T> the reference type
    * @param clazz the referenced object's class
    * @param referenceId the reference id
    * @return the reference, never null
+   * @throws TripRuntimeException if the reference id is invalid
    */
   <T> Reference<T> getReference(Class<T> clazz, int referenceId);
 
@@ -134,6 +134,23 @@ public interface TripStream {
    * only the reference number is sent back without the referenced value.
    */
   void clearModifiable();
+
+  /**
+   * Sets the filter deciding which components of an object are serialized.<br>
+   * The filter applies to writing only and is not reset by {@link #clear()}.
+   * Since the stream is usually shared, a filter set for a single object or message
+   * should be removed afterward, preferably in a {@code finally} block.
+   *
+   * @param filter the filter, null to serialize all components (default)
+   */
+  void setFilter(TripFilter filter);
+
+  /**
+   * Gets the filter deciding which components of an object are serialized.
+   *
+   * @return the filter, null if all components are serialized
+   */
+  TripFilter getFilter();
 
   /**
    * Writes a component ordinal to the stream.
@@ -229,7 +246,8 @@ public interface TripStream {
   /**
    * Receives the next OpCode from the stream.
    * <p>
-   * Checks for the {@code }
+   * If the OpCode denotes an error, the remote stack trace is read and thrown as a
+   * {@link org.tentackle.trip.impl.TripError}.
    *
    * @return the OpCode
    */

@@ -34,7 +34,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * Component provider for {@link Throwable}.
+ * Component provider for {@link Throwable}.<br>
+ * The message, cause and stack trace are accessed via their getters, since the JDK's fields are not accessible.
+ * Further fields of subclasses are serialized as usual, see {@link #addField}.
  *
  * @param <T> the throwable type
  */

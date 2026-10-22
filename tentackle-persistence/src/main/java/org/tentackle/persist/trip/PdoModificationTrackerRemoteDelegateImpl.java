@@ -32,6 +32,12 @@ public class PdoModificationTrackerRemoteDelegateImpl<T extends PdoModificationT
              extends DbModificationTrackerRemoteDelegateImpl<T>
              implements PdoModificationTrackerRemoteDelegate {
 
+  /**
+   * Creates the remote delegate for the modification tracker.
+   *
+   * @param session the TRIP session
+   * @param clazz the modification tracker class
+   */
   public PdoModificationTrackerRemoteDelegateImpl(RemoteDbSessionImpl session, Class<T> clazz) {
     super(session, clazz);
   }

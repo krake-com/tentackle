@@ -57,14 +57,16 @@ registers the [`AnalyzeProcessor`](../java/org/tentackle/buildsupport/AnalyzePro
 
 [`AbstractTentackleProcessor`](../java/org/tentackle/buildsupport/AbstractTentackleProcessor.java) extends
 `javax.annotation.processing.AbstractProcessor` and adds the cross-cutting concerns shared by Tentackle's
-processors: the source directory, a per-directory `ResourceManager` cache,
-verbosity handling (the `verbosity` processor option, `info`/`debug`), and a `cleanup()` that flushes all open
-resources. It always reports `SourceVersion.latest()`.
+processors: a per-directory `ResourceManager` cache, verbosity handling (the `verbosity` processor option,
+`info`/`debug`), and a `cleanup()` that closes all open resources. It always reports `SourceVersion.latest()`.
+It also carries an optional source directory, which neither the processors of this module nor the Tentackle
+Maven plugins use.
 
 ### `AnalyzeProcessor` and the `@Analyze` meta-annotation
 
-[`AnalyzeProcessor`](../java/org/tentackle/buildsupport/AnalyzeProcessor.java) claims *all* annotations
-(`@SupportedAnnotationTypes("*")`). For each annotation type it encounters it walks the annotation's own
+[`AnalyzeProcessor`](../java/org/tentackle/buildsupport/AnalyzeProcessor.java) supports *all* annotations
+(`@SupportedAnnotationTypes("*")`) and claims those it found a handler for.
+For each annotation type it encounters it walks the annotation's own
 annotations — **recursively** — looking for the
 [`@Analyze`](../../../../tentackle-common/src/main/docs/services.md) meta-annotation
 (`org.tentackle.common.Analyze`). `@Analyze` carries the **class name of a handler as a `String`** (not a
@@ -76,10 +78,15 @@ handlers:
 public @interface Service { ... }
 ```
 
-Because the scan is recursive, an annotation only has to be marked `@Analyze` once; any annotation 
+Because the scan is recursive, an annotation only has to be marked `@Analyze` once; any annotation
 itself meta-annotated with it (directly or through several levels) is routed to the same handler. Loops are
-guarded by depth and handler-count limits. For every match the processor loads the named handler class,
-instantiates it, injects itself, and calls `processAnnotation(...)`.
+guarded by a limit on the nesting level of meta-annotations (100) and on the number of handlers (1000).
+For every match the processor loads the named handler class, instantiates it, injects itself, and calls
+`processAnnotation(...)`. A new handler instance is created for each annotation type and round.
+
+The handler classes — and the annotation classes a handler needs to load, such as `@RemoteMethod` — are loaded via
+the processor's *processing classloader*. The Maven plugin sets it to a classloader that also searches the
+project's classpath; without one, the processor falls back to its own classloader.
 
 ### `AnalyzeHandler` / `AbstractAnalyzeHandler`
 
@@ -87,14 +94,15 @@ instantiates it, injects itself, and calls `processAnnotation(...)`.
 `processAnnotation(annotationType, roundEnv)` plus the processor accessors.
 [`AbstractAnalyzeHandler`](../java/org/tentackle/buildsupport/AbstractAnalyzeHandler.java) adds two conveniences:
 `getDirectory(baseDir, className)` (maps a dotted class name to a directory tree under the analyze dir) and a
-`print(kind, msg, element)` that emits compiler diagnostics tagged with the handler name. A handler "can do
-whatever is appropriate" — its purpose is not restricted to services.
+`print(kind, msg, element)` that emits compiler diagnostics tagged with the handler name. A handler can do
+whatever is appropriate — its purpose is not restricted to services.
 
 ### `ResourceManager` — writing the output
 
 [`ResourceManager`](../java/org/tentackle/buildsupport/ResourceManager.java) owns a base directory and hands out
-lazily-created, cached `PrintWriter`s/`Reader`s for relative resource names (creating intermediate directories as
-needed, using the project's configured encoding). Each processor keeps one `ResourceManager` per output
+lazily created, cached `PrintWriter`s/`Reader`s for slash-separated relative resource names (creating
+intermediate directories as needed, using the encoding configured by `Settings`). It remembers the names of all
+resources it handed out, even after `close()`. Each processor keeps one `ResourceManager` per output
 directory, so handlers simply ask for `getResourceManager(serviceDir)` or `getResourceManager(analyzeDir)` and
 append to the right file. The Maven layer later collects the service-directory resource names to build the
 optional `RESOURCE-INDEX.LIST`, and writes an `error.log` marker (`AnalyzeProcessor.COMPILE_ERROR_LOG`) when the
@@ -106,21 +114,25 @@ analyze compilation reported errors, signaling downstream phases that the analyz
 
 Each handler reacts to one family of annotations and emits the appropriate descriptor and/or analyze file.
 
-| Handler                                                                                                        | Reacts to                                                                                      | Produces                                                                                                                                |
-|----------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
-| [`ServiceAnalyzeHandler`](../java/org/tentackle/buildsupport/ServiceAnalyzeHandler.java)                       | `@Service` / `@ServiceName` (direct or as meta-annotations; honours `value`, `meta`, `method`) | a `META-INF/services/<servicedClass>` descriptor in the services dir, plus a `service.log` under the servicing class in the analyze dir |
-| [`MappedServiceAnalyzeHandler`](../java/org/tentackle/buildsupport/MappedServiceAnalyzeHandler.java)           | `@MappedService`                                                                               | a mapped-service descriptor (interface → implementation) for the `ServiceFinder`                                                        |
-| [`TableNameAnalyzeHandler`](../java/org/tentackle/buildsupport/TableNameAnalyzeHandler.java)                   | `@TableName`                                                                                   | a mapped-service-style descriptor; needs its own handler to deal with `mapSchema` and the table prefix (see [Table Names](../../../../tentackle-session/src/main/docs/table-names.md))  |
-| [`BundleAnalyzeHandler`](../java/org/tentackle/buildsupport/BundleAnalyzeHandler.java)                         | `@Bundle`                                                                                      | the resource-bundle name associated with a class (for i18n)                                                                             |
-| [`FxControllerBundleAnalyzeHandler`](../java/org/tentackle/buildsupport/FxControllerBundleAnalyzeHandler.java) | `@FxControllerService`                                                                         | the bundle name for an FX controller, resolving an overridden `resources` value (or none); subclass of `BundleAnalyzeHandler`           |
-| [`InterceptionAnalyzeHandler`](../java/org/tentackle/buildsupport/InterceptionAnalyzeHandler.java)             | `org.tentackle.reflect.Interception` (on annotations)                                          | registers the matching interceptor annotation processor for the interception type (`ALL` / `PUBLIC` / `HIDDEN`)                         |
-| [`RemoteMethodAnalyzeHandler`](../java/org/tentackle/buildsupport/RemoteMethodAnalyzeHandler.java)             | `@RemoteMethod`                                                                                | a `.remote` info file (`RemoteMethodInfo`) describing the method, later consumed by the `RemoteMethod` wurblet                          |
-| [`RecordDTOAnalyzeHandler`](../java/org/tentackle/buildsupport/RecordDTOAnalyzeHandler.java)                   | `@RecordDTO`                                                                                   | a `record.info` file (`RecordDTOInfo`) describing a record DTO, used for DTO generation                                                 |
+| Handler                                                                                                        | Reacts to                                                                                            | Produces                                                                                                                                                                                                                                                 |
+|----------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`ServiceAnalyzeHandler`](../java/org/tentackle/buildsupport/ServiceAnalyzeHandler.java)                       | `@Service` / `@ServiceName` (direct or as meta-annotations; honors `value`, `meta`, `method`)        | the servicing class appended to `META-INF/services/<serviced class>` (or `META-INF/meta-services/…` if `meta = true`)                                                                                                                                    |
+| [`MappedServiceAnalyzeHandler`](../java/org/tentackle/buildsupport/MappedServiceAnalyzeHandler.java)           | `@MappedService` (as a meta-annotation)                                                              | a line `<annotated class> = <key>` in `META-INF/mapped-services/<service>`, the key being taken from the annotated annotation's element named by `method`                                                                                                |
+| [`TableNameAnalyzeHandler`](../java/org/tentackle/buildsupport/TableNameAnalyzeHandler.java)                   | `@TableName`                                                                                         | a line `<class> = "<table>"` in `META-INF/mapped-services/org.tentackle.session.TableName`; needs its own handler to apply `mapSchema` and `prefix` (see [Table Names](../../../../tentackle-session/src/main/docs/table-names.md))                      |
+| [`BundleAnalyzeHandler`](../java/org/tentackle/buildsupport/BundleAnalyzeHandler.java)                         | `@Bundle` and similar annotations (e.g. `@GuiProviderService`, `@TableConfigurationProviderService`) | a line `<bundle> [= <class>]` in `META-INF/bundles/<annotation>`; the bundle name defaults to the class name and is overridden by `value`, `noBundle = true` suppresses the line (for i18n)                                                              |
+| [`FxControllerBundleAnalyzeHandler`](../java/org/tentackle/buildsupport/FxControllerBundleAnalyzeHandler.java) | `@FxControllerService`                                                                               | like `BundleAnalyzeHandler` (its subclass), but the bundle name comes from `resources`, and `RESOURCES_NONE` means no bundle                                                                                                                             |
+| [`InterceptionAnalyzeHandler`](../java/org/tentackle/buildsupport/InterceptionAnalyzeHandler.java)             | annotations annotated with `org.tentackle.reflect.Interception`                                      | the interceptor annotation appended to `META-INF/services/org.tentackle.apt.<Type>InterceptorAnnotationProcessor` for the interception type (`ALL` / `PUBLIC` / `HIDDEN`), which registers it with the matching annotation processor of `tentackle-core` |
+| [`RemoteMethodAnalyzeHandler`](../java/org/tentackle/buildsupport/RemoteMethodAnalyzeHandler.java)             | `@RemoteMethod`                                                                                      | an info file `<class>/<method>.remote` (`RemoteMethodInfo`) describing the method, later consumed by the `RemoteMethod` wurblet; the annotation's `value` overrides the file name                                                                        |
+| [`RecordDTOAnalyzeHandler`](../java/org/tentackle/buildsupport/RecordDTOAnalyzeHandler.java)                   | `@RecordDTO`                                                                                         | an info file `<record>/record.info` (`RecordDTOInfo`) describing a record DTO, used for DTO generation                                                                                                                                                   |
 
-> **Dependency discipline.** Handlers reference other Tentackle layers only by string (e.g.,
+The descriptors go to the services directory, the info files to the analyze directory. All handlers that write
+descriptors except the bundle handlers also append a line to `<class>/service.log` in the analyze directory — a
+trail of what was registered for which class, useful when debugging a missing service.
+
+> **Dependency discipline.** Handlers reference Tentackle layers above `tentackle-common` only by string (e.g.,
 > `InterceptionAnalyzeHandler` names `org.tentackle.reflect.Interception` and its APT classes as literals, and
-> `AnnotationProcessingHelper` re-implements a couple of `StringHelper` methods locally) so that this module
-> stays free of dependencies on `tentackle-core` and the rest of the stack.
+> `TableNameAnalyzeHandler` never refers to `TableName`) so that this module stays free of dependencies on
+> `tentackle-core` and the rest of the stack.
 
 ---
 
@@ -131,13 +143,15 @@ small record into an info file that a wurblet deserializes in a later build step
 
 - [`RemoteMethodInfo`](../java/org/tentackle/buildsupport/RemoteMethodInfo.java) (with
   [`RemoteMethodInfoParameter`](../java/org/tentackle/buildsupport/RemoteMethodInfoParameter.java)) — gathers the
-  signature of a `@RemoteMethod` (return type, parameters, modifiers, …) into versioned files ending in
-  `.remote`. The `RemoteMethod` wurblet reads these to generate the [TRIP](../../../../tentackle-core/src/main/docs/trip.md)
+  signature of a `@RemoteMethod` (return type and its generic part, superclass, parameters, modifiers, varargs) into
+  versioned files ending in `.remote`. It also classifies the return type and each parameter: whether it is a
+  `Session`, a `DomainContext`, a PDO or low-level db object, a collection of those, or a cursor. The `RemoteMethod`
+  wurblet reads these files to generate the [TRIP](../../../../tentackle-core/src/main/docs/trip.md)
   remote-delegate code.
 - [`RecordDTOInfo`](../java/org/tentackle/buildsupport/RecordDTOInfo.java) (with
   [`RecordDTOInfoParameter`](../java/org/tentackle/buildsupport/RecordDTOInfoParameter.java)) — captures a record
   DTO's components into a `record.info` file used for DTO generation. See
-  [The DTO Wurblet and `@RecordDTO`](../../../tentackle-wurblets/src/main/docs/dto-wurblet.md#what-recorddto-actually-does)
+  [The DTO Wurblet and `@RecordDTO`](../../../../tentackle-wurblets/src/main/docs/dto-wurblet.md#what-recorddto-actually-does)
   for how the wurblet consumes it.
 
 Each info type defines its own `INFO_FILE_VERSION`, writes itself through a `PrintWriter` and reads itself back
@@ -155,8 +169,10 @@ introduced, and a stale `target/analyze` from an older build still reads correct
 ## Code Generation Helpers (`codegen`)
 
 The [`org.tentackle.buildsupport.codegen`](../java/org/tentackle/buildsupport/codegen) sub-package is a thin
-wrapper over [FreeMarker](https://freemarker.apache.org/) used by build-time code generators (for instance the
-generation of TRIP remote interfaces/implementations):
+wrapper over [FreeMarker](https://freemarker.apache.org/) used by the build-time code generators of the
+[SQL](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md),
+[wizard](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) and
+[jlink](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md) Maven plugins:
 
 | Class                                                                                    | Role                                                                                                                          |
 |------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
@@ -170,19 +186,23 @@ generation of TRIP remote interfaces/implementations):
 ## Supporting pieces
 
 - [`AnnotationProcessingHelper`](../java/org/tentackle/buildsupport/AnnotationProcessingHelper.java) — static
-  utilities for processors: reading/checking `Modifier`s, joining object arrays, and a recursive
+  utilities for processors: escaping info-file tokens, reading/checking `Modifier`s, joining object arrays with
+  their plain `toString()` (unlike `StringHelper.objectArrayToString`, which formats for logging), and a recursive
   `isTypeInstanceOf(...)` that walks `TypeMirror` super-types (with optional generic-argument matching).
-- [`ClassNames.properties`](../resources/org/tentackle/buildsupport/ClassNames.properties) — a handful of
-  fully-qualified class-name constants (e.g. `Session`, `DomainContext`, `PersistentDomainObject`,
-  `ScrollableResource`) referenced by string from the build-time code, again to avoid hard dependencies.
+- [`ClassNames.properties`](../resources/org/tentackle/buildsupport/ClassNames.properties) — the fully-qualified
+  class names `RemoteMethodInfo` classifies types against (`Collection`, `Session`, `AbstractDbObject`,
+  `ScrollableResource`, `DomainContext`, `PersistentDomainObject`), referenced by string to avoid hard dependencies.
+  Being a resource bundle, it can be overridden by derived frameworks to point at their own base classes. Since a
+  stale name would silently never match, `AnalyzeClassNamesTest` in `tentackle-test-pdo` verifies that the
+  classes still exist.
 
 ---
 
 ## Module Dependencies
 
 - **[`tentackle-common`](../../../../tentackle-common/src/main/docs/common.md)** — for the `@Analyze`, `@Service`,
-  `@ServiceName`, `@MappedService`, `@RemoteMethod` annotations, `Constants`, `Settings`, `StringHelper` and the
-  `ServiceFinder` contracts the descriptors feed.
+  `@ServiceName`, `@MappedService`, `@RemoteMethod` annotations, `Constants` (the `META-INF` paths), `Settings`
+  (the encoding), `StringHelper` and the `ServiceFinder` contracts the descriptors feed.
 - **[FreeMarker](https://freemarker.apache.org/)** — the template engine behind the `codegen` package.
 
 This is a **build-time only** module: it runs on the annotation-processor / plugin classpath and is never part of

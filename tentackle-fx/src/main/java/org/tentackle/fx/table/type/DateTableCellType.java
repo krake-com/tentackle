@@ -29,6 +29,7 @@ import java.util.Date;
  * {@link Date} cell type.<br>
  * Applies to java.util.Date, java.sql.Date and org.tentackle.common.Date.
  *
+ * @param <T> the date type
  * @author harald
  */
 @TableCellTypeService(Date.class)

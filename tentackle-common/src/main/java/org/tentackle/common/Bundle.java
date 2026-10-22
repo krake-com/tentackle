@@ -26,6 +26,12 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation to express that the annotated class corresponds to a resource bundle.
+ * <p>
+ * The bundle's base name is the name of the annotated class, i.e., the {@code .properties} files
+ * reside in the same package as the class (usually in {@code src/main/resources}).
+ * The analyze goal of the tentackle-maven-plugin registers the bundle in
+ * {@code META-INF/bundles/org.tentackle.common.Bundle}, so that the {@link BundleFactory}
+ * can load it from the module it belongs to (see {@link BundleSupport}).
  *
  * @author harald
  */
@@ -36,10 +42,12 @@ import java.lang.annotation.Target;
 public @interface Bundle {
 
   /**
-   * The optional bundle name.<br>
-   * Empty string if annotated class.
+   * The optional key name.<br>
+   * If given, the bundle of the annotated class can also be loaded via this name.
+   * The registration then reads {@code <value> = <annotated class>}.
+   * Empty string to register the bundle under the name of the annotated class only.
    *
-   * @return bundle name
+   * @return the key name, empty if none
    */
   String value() default "";
 

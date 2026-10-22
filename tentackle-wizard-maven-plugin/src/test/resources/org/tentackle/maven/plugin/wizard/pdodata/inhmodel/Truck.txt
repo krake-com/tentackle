@@ -1,0 +1,8 @@
+## a truck
+name := Truck
+extends := Vehicle
+inheritance := single
+
+## attributes
+
+Integer         payload         payload         the payload in kg

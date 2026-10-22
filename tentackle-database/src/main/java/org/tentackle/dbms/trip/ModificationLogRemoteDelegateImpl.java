@@ -27,7 +27,7 @@ import java.text.ParseException;
 import java.util.List;
 
 /**
- * Remote delegate implementation  for {@link ModificationLog}.
+ * Remote delegate implementation for {@link ModificationLog}.
  *
  * @author  harald
  */
@@ -70,8 +70,8 @@ public class ModificationLogRemoteDelegateImpl
   }
 
   @Override
-  public ModificationLog selectFirstUnprocessedGreater(long id) {
-    return newInstance().selectFirstUnprocessedGreater(id);
+  public ModificationLog selectLatestReset() {
+    return newInstance().selectLatestReset();
   }
 
   @Override
@@ -85,17 +85,7 @@ public class ModificationLogRemoteDelegateImpl
   }
 
   @Override
-  public List<ModificationLog> selectByObject(int objectClassId, long objectId) {
-    return dbObject.selectByObject(objectClassId, objectId);
-  }
-
-  @Override
-  public List<ModificationLog> selectByUserAndType(long userId, ModificationType modType) {
-    return dbObject.selectByUserAndType(userId, modType);
-  }
-
-  @Override
-  public boolean isReferencingUser(long userId) {
+  public boolean isReferencingUser(Long userId) {
     return dbObject.isReferencingUser(userId);
   }
 
@@ -115,28 +105,23 @@ public class ModificationLogRemoteDelegateImpl
   }
 
   @Override
-  public List<? extends ModificationLog> selectByTxId(long txId) {
+  public List<? extends ModificationLog> selectByTxId(Long txId) {
     return dbObject.selectByTxId(txId);
   }
 
   @Override
-  public int updateUnprocessedByTxId(Timestamp processed, long txId) {
+  public int updateUnprocessedByTxId(Timestamp processed, Long txId) {
     return dbObject.updateUnprocessedByTxId(processed, txId);
   }
 
   @Override
-  public int deleteByTxId(long txId) {
+  public int deleteByTxId(Long txId) {
     return dbObject.deleteByTxId(txId);
   }
 
   @Override
   public int deleteProcessed(Timestamp processed) {
     return dbObject.deleteProcessed(processed);
-  }
-
-  @Override
-  public List<ModificationLog> selectUpTo(Timestamp processed) {
-    return dbObject.selectUpTo(processed);
   }
 
   @Override

@@ -69,7 +69,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
   private static final Method GETDOMAINDELEGATE_METHOD;
   private static final Method GETPERSISTENCEDELEGATE_METHOD;
 
-  // preloaded methods of PdoHolder
+  // preloaded methods of Identifiable and PdoProvider
   private static final Method TOGENERICSTRING_METHOD;
   private static final Method GETPDO_METHOD;
   private static final Method ON_METHOD;
@@ -257,7 +257,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
 
 
   /**
-   * Creates the delegates for the given proxy instance, a session and domain delegate.
+   * Sets the delegates for the given proxy instance.
    *
    * @param pdo the dynamic proxy instance
    * @param persistenceDelegate the persistence delegate

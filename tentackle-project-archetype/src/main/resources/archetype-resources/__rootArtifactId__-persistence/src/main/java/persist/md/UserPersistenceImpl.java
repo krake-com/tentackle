@@ -111,8 +111,8 @@ public class UserPersistenceImpl extends OrgUnitPersistenceImpl<User, UserPersis
   /*
    * Implements the handling of passwords. The hash is not part of the PDO and thus
    * not transferred over the wire along with user PDOs.
-   * It is recommended to use SSL at least during authentication/login and for User-PDOs in general.
-   * This will encrypt the TRIP calls below.
+   * Use a TLS-secured TRIP service (trips://) to encrypt the TRIP calls below,
+   * as the generated jlink images do.
    */
 
   private static final StatementId SELECT_PASSWORD_STMT = new StatementId();
