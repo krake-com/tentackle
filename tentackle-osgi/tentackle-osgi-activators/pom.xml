@@ -8,7 +8,7 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent-osgi</artifactId>
-    <version>25.2.0</version>
+    <version>25.3.0</version>
   </parent>
 
   <artifactId>tentackle-parent-osgi-activators</artifactId>

@@ -7,7 +7,7 @@
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent</artifactId>
-  <version>25.19.0.0</version>
+  <version>25.20.0.0</version>
   <packaging>pom</packaging>
 
   <name>Tentackle Parent</name>
@@ -161,7 +161,7 @@
     <tentackle.testServiceDir>${project.build.directory}/generated-test-resources</tentackle.testServiceDir>
     <tentackle.manifestDirectory>${project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
 
-    <wurbelizer.version>25.6.5.0</wurbelizer.version>
+    <wurbelizer.version>25.7.0.0</wurbelizer.version>
     <!-- override the default wurbelDir for multi-module project -->
     <wurbel.wurbelDir>${rootBasedir}/target/wurbel</wurbel.wurbelDir>
 
