@@ -128,7 +128,9 @@ and a poor deal for others, so here is the honest filter.
   [Technical and Scientific Applications](src/main/docs/technical-scientific.md).
 - **You need a real desktop client** — tables, trees, master/detail forms, keyboard
   workflows, auto-update — not a web page. `tentackle-fx-rdc` is a first-class
-  citizen here, not an afterthought.
+  citizen here, not an afterthought. In-house applications are a good candidate:
+  the users are employees working with the system all day, not anonymous visitors
+  who must get by without installing anything.
 - **Being wrong is expensive.** Money, materials, measurements, regulated records:
   domains where a quietly corrupted row costs more than a night of downtime. See
   [Correctness First](src/main/docs/correctness-first.md).
