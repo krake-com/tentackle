@@ -26,6 +26,11 @@ requires Java 11.
 
 ## [Unreleased]
 
+
+## Java 25 line (25.x)
+
+### [25.20.0.0] – 2026-10-23
+
 ### Added
 
 - `tentackle-jta`: JTA/XA support for global transactions.
@@ -91,8 +96,6 @@ requires Java 11.
 
 - Usages of the obsolete `java.lang.SecurityException`.
 - `MAPNULL` support for `SQLXMLType`.
-
-## Java 25 line (25.x)
 
 ### [25.19.0.0] – 2026-08-19
 
@@ -1293,7 +1296,8 @@ Java 8 maintenance release with backports from 2.2.
 The first release in the public git history.
 For what it already contained, see [The History of Tentackle](src/main/docs/history.md#origins-20012015).
 
-[Unreleased]: https://github.com/krake-com/tentackle/compare/25.19.0.0...develop
+[Unreleased]: https://github.com/krake-com/tentackle/compare/25.20.0.0...develop
+[25.20.0.0]: https://github.com/krake-com/tentackle/releases/tag/25.20.0.0
 [25.19.0.0]: https://github.com/krake-com/tentackle/releases/tag/25.19.0.0
 [25.18.2.1]: https://github.com/krake-com/tentackle/releases/tag/25.18.2.1
 [25.18.2.0]: https://github.com/krake-com/tentackle/releases/tag/25.18.2.0
