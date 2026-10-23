@@ -39,7 +39,7 @@ stay in sync:
 
 ```xml
 <properties>
-  <tentackle.version></tentackle.version>
+  <tentackle.version>25.20.0.0</tentackle.version>
 </properties>
 
 <dependencyManagement>
