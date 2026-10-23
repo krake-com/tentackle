@@ -328,7 +328,7 @@ cross-file structure visible without chasing it through the other PDO sources â€
 
 Tentackle does not generate code into separate files you must not touch. Instead it **weaves generated code into
 guarded regions inside your own source files**. A guard looks like a comment marker; the
-[Wurbelizer](https://www.wurbelizer.org/) replaces the region's body on each build, while leaving your hand-written
+[Wurbelizer](https://wurbelizer.org/) replaces the region's body on each build, while leaving your hand-written
 code between regions untouched. In `MessagePersistenceImpl.java` you can see the seams:
 
 ```java

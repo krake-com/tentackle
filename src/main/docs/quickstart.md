@@ -42,7 +42,7 @@ and `java8` reached end-of-life._
 
 ## Project Setup
 Generate your project via the Tentackle Maven archetype
-(use the latest [release on Maven Central](https://search.maven.org/search?q=org.tentackle)
+(use the latest [release on Maven Central](https://central.sonatype.com/namespace/org.tentackle)
 as the `archetypeVersion`):
 
 ```
@@ -51,7 +51,7 @@ mvn archetype:generate \
     -DarchetypeArtifactId=tentackle-project-archetype \
     -DarchetypeVersion=25.20.0.0
 ```
-When all dependencies have been pulled from [Maven Central](https://search.maven.org/search?q=org.tentackle),
+When all dependencies have been pulled from [Maven Central](https://central.sonatype.com/namespace/org.tentackle),
 you will be asked for:
 
 * **groupId**: the group-ID of your project.

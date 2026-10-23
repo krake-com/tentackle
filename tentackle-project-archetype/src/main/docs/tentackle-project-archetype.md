@@ -185,7 +185,7 @@ modules only declare the plugins they need. Per module, the plugins run in this 
 1. [**tentackle-maven-plugin**](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md) —
    `analyze` (`generate-sources`) generates the service descriptors and analyze metadata; declared in the root
    POM, so it runs in every module.
-2. [**wurbelizer-maven-plugin**](https://www.wurbelizer.org/) — `wurbel` runs the
+2. [**wurbelizer-maven-plugin**](https://wurbelizer.org/) — `wurbel` runs the
    [persistence wurblets](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md) over
    the PDO interfaces, facet interfaces, implementations, and remote delegates (selected by the configured
    `<filesets>`), weaving generated code into the guarded regions and emitting the model under

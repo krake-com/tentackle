@@ -12,7 +12,7 @@ implementation classes instead, because the code depends only on the model, not 
 *implementation* side — it turns the application
 [model](../../../../tentackle-model/src/main/docs/model-definition.md) into compilable Java.
 
-The generators are **wurblets**: templates written for the [Wurbelizer](https://wurbelizer.org/how-it-works/)
+The generators are **wurblets**: templates written for the [Wurbelizer](https://wurbelizer.org/)
 engine. A wurblet is a `.wrbl` file mixing literal output with embedded Java; at build time the
 `wurbelizer-maven-plugin` runs each wurblet (the compiled templates; "wurbiled" in Wurbelizer lingo), weaving the generated text into
 **guarded regions** of your handwritten source files. The author keeps full control of the surrounding class; the
@@ -48,7 +48,7 @@ Arguments starting with `$` are wurbelizer variables, such as `$tablename` or `$
 them as `name = value` lines in its leading comment block, next to the here-document holding the entity's model;
 others, such as `$model`, come from the wurbelizer configuration. The anchor itself may carry wurbelizer
 parameters in parentheses, e.g. `// @wurblet(fold=expanded) modelComment ModelComment`, which keeps the generated
-fold expanded in the IDE. See the [Wurbelizer documentation](https://wurbelizer.org/how-it-works/) for the full
+fold expanded in the IDE. See the [Wurbelizer source syntax](https://wurbelizer.org/source-syntax/) for the full
 anchor syntax.
 
 ### Why generate the interfaces?
@@ -317,4 +317,4 @@ running application.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — `DataType`/`Backend` used during generation.
 - [Tentackle Maven Plugin](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md) — drives wurblet execution during the build.
 - [Tentackle SQL Maven Plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) — generates DDL from the same model.
-- [Wurbelizer — How it works](https://wurbelizer.org/how-it-works/) — the underlying code-generation engine.
+- [Wurbelizer](https://wurbelizer.org/) — the underlying code-generation engine.
