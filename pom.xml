@@ -111,7 +111,7 @@
     <jboss.logging.version>3.6.1.Final</jboss.logging.version>
     <plexus.archiver.version>4.14.0</plexus.archiver.version>
     <plexus.java.version>1.6.0</plexus.java.version>
-    <poi.version>5.5.1</poi.version>
+    <poi.version>6.0.0</poi.version>
     <postgresql.version>42.7.14</postgresql.version>
     <quiche.native.version>0.29.3</quiche.native.version>
     <slf4j.version>2.0.20</slf4j.version>

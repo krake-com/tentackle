@@ -86,11 +86,11 @@ index. Invisible columns don't count. Exports that big need one of the OOXML for
 
 ## JPMS / POI caveat
 
-Apache POI 5.x ships a `module-info` (`org.apache.poi.poi`), but it requires `commons-math3`, which
-is still a filename-based automatic module. A module depending on POI therefore must not be published
-as a real JPMS module, so this one deliberately has **no `module-info.java`**. Its manifest declares
-the `Automatic-Module-Name` `org.tentackle.fx.rdc.poi` instead, and the service relies on
-`@ClasspathFirst`.
+Since version 5, Apache POI ships a `module-info` (`org.apache.poi.poi`), but it requires
+`commons-math3`, which is still a filename-based automatic module. A module depending on POI
+therefore must not be published as a real JPMS module, so this one deliberately has
+**no `module-info.java`**. Its manifest declares the `Automatic-Module-Name`
+`org.tentackle.fx.rdc.poi` instead, and the service relies on `@ClasspathFirst`.
 
 If you build a distribution image with the
 [jlink/jpackage plugin](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md), keep
