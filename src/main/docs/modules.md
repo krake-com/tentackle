@@ -32,7 +32,7 @@ derives the right packaging category for each artifact by itself. An application
 otherwise conflicting versions of the same dependency at once can additionally declare
 [isolated `ModuleLayer`s](../../../tentackle-common/src/main/docs/layers.md) via that same plugin.
 
-All artifacts are on [Maven Central](https://search.maven.org/search?q=tentackle).
+All artifacts are on [Maven Central](https://central.sonatype.com/namespace/org.tentackle).
 A [BOM](../../../tentackle-bom/src/main/docs/bom.md), a [project archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md)
 and the test-support modules ([tentackle-pdo-mock](../../../tentackle-pdo-mock/src/main/docs/pdo-mock.md),
 [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md),
@@ -88,7 +88,7 @@ scripting — [tentackle-script-groovy](../../../tentackle-script-groovy/src/mai
 | [tentackle-mcp-maven-plugin](../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md)                                                                                     | Serves the model to coding agents over MCP, exactly as the code generators see it.                                                        |
 | [tentackle-build-support](../../../tentackle-build-support/src/main/docs/build-support.md) · [tentackle-maven-support](../../../tentackle-maven-support/src/main/docs/tentackle-maven-support.md) | Build helpers (Maven-independent and Maven-specific) used by the plugins.                                                                 |
 | [tentackle-model](../../../tentackle-model/src/main/docs/tentackle-model.md)                                                                                                                      | The model API describing entities and relationships; consumed by the wurblets, the PDO wizard and the SQL plugin.                         |
-| [tentackle-wurblets](../../../tentackle-wurblets/src/main/docs/wurblets.md) · [tentackle-persistence-wurblets](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md)     | [Wurblets](https://wurbelizer.org/how-it-works/) generating the PDO/operation interfaces and DTOs, and their persistence implementations. |
+| [tentackle-wurblets](../../../tentackle-wurblets/src/main/docs/wurblets.md) · [tentackle-persistence-wurblets](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md)     | [Wurblets](https://wurbelizer.org/) generating the PDO/operation interfaces and DTOs, and their persistence implementations. |
 
 ### Further modules with documentation
 

@@ -84,7 +84,7 @@ generate, migrate, check, package, and update an application.
 ### 2016–2017: the 2.x line
 
 - **2016-01** — 2.0.0 is released. Development switches to git-flow, and the artifacts are published
-  to [Maven Central](https://search.maven.org/search?q=org.tentackle) via Sonatype OSSRH.
+  to [Maven Central](https://central.sonatype.com/namespace/org.tentackle) via Sonatype OSSRH.
 - **2016-04** — database-backed resource bundles move into the new
   [`tentackle-i18n`](../../../tentackle-i18n/src/main/docs/i18n.md) module, together with the
   [i18n maven plugin](../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md).

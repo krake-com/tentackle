@@ -41,7 +41,7 @@ by, the running application — its `package-info` simply reads *"Support for Te
 
 It depends on `maven-core` (which also provides SLF4J), the Maven Resolver API (`maven-resolver-api`),
 `maven-plugin-annotations`, `javax.inject` and the Maven Shared `file-management` (filesets), on
-[Wurbelizer](https://www.wurbelizer.org/) (for `Verbosity`/`Constants`/`Settings`) and on
+[Wurbelizer](https://wurbelizer.org/) (for `Verbosity`/`Constants`/`Settings`) and on
 [`tentackle-build-support`](../../../../tentackle-build-support/src/main/docs/build-support.md) (which transitively
 pulls in [`tentackle-common`](../../../../tentackle-common/src/main/docs/common.md) for `Settings`, `ToolRunner`
 and `ToolFinder`).

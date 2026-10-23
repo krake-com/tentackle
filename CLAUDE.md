@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Tentackle** is a comprehensive Java application framework for building modular, enterprise-grade multi-tier applications with a single, location-transparent programming model — from a JDBC/SQL database up to a JavaFX desktop client — with full JPMS (Java Platform Module System) support.
 
 - Website: https://tentackle.org/
-- Artifacts: [Maven Central](https://search.maven.org/search?q=org.tentackle)
+- Artifacts: [Maven Central](https://central.sonatype.com/namespace/org.tentackle)
 - License: LGPL 2.1
 - Developer: Krake Softwaretechnik (https://krake.de/)
 

@@ -739,5 +739,5 @@ override `isThreadSafe()` to return `false`. See [Parallel builds](wurblets.md#p
   [Model Definition Syntax](../../../../tentackle-model/src/main/docs/model-definition.md) — the API and DSL these
   classes read.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — `DataType` and `Backend`.
-- [Wurbelizer — How it works](https://wurbelizer.org/how-it-works/) — `AbstractWurblet`, `AbstractJavaWurblet`,
+- [Wurbelizer — Writing Wurblets](https://wurbelizer.org/writing-wurblets/) — `AbstractWurblet`, `AbstractJavaWurblet`,
   the `Wurbler` runtime and guarded regions.

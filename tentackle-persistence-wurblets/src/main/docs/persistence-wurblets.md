@@ -14,7 +14,7 @@ implementations, and the DDL produced by the
 [SQL Maven plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) all agree on
 the schema.
 
-Like its sibling, this module is built on the [Wurbelizer](https://wurbelizer.org/how-it-works/) engine: each
+Like its sibling, this module is built on the [Wurbelizer](https://wurbelizer.org/) engine: each
 generator is a `.wrbl` template that the `wurbelizer-maven-plugin` compiles into a Java class and runs at build
 time, weaving the generated text into **guarded regions** of the application's source files (the
 `//GEN-BEGIN:<tag>` … `//GEN-END:<tag>` fold blocks that follow a `// @wurblet <tag> <Name>` anchor). The
@@ -388,4 +388,4 @@ running application.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — `DataType`/`Backend` used to build the SQL and bind parameters.
 - [TRIP](../../../../tentackle-core/src/main/docs/trip.md) — the remoting protocol behind the generated remote delegates.
 - [Tentackle Maven Plugin](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md) — drives wurblet execution during the build.
-- [Wurbelizer — How it works](https://wurbelizer.org/how-it-works/) — the underlying code-generation engine.
+- [Wurbelizer](https://wurbelizer.org/) — the underlying code-generation engine.
