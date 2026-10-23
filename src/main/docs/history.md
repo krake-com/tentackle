@@ -127,7 +127,7 @@ The framework grows a set of maven plugins that take care of the repetitive part
 ### The version scheme
 
 In January 2019, 8.2.2.0 and 11.2.3.0 were released on the same day. Since then, the first number of
-a Tentackle version denotes the Java LTS release it is built for, followed by the feature, minor, and
+a Tentackle version denotes the Java LTS release it is built for, followed by the major, minor, and
 patch numbers. The development line follows every new Java release as a snapshot (`14.0-SNAPSHOT`,
 `16.0-SNAPSHOT`, …), but releases are cut for LTS versions only. Older LTS lines are maintained on
 their own branches (`java8`, `java11`, `java17`, `java21`).
