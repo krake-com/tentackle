@@ -26,6 +26,11 @@ requires Java 11.
 
 ## [Unreleased]
 
+### Fixed
+
+- `tentackle-jlink-maven-plugin`: jlink of Java 27 refuses to link a resource directory found in more than one
+  module, such as `OSGI-INF` in ikonli 12.4.0. The new parameter `excludeResources` (jlink's `--exclude-resources`)
+  excludes `**/OSGI-INF/**` by default.
 
 ## Java 25 line (25.x)
 

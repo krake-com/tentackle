@@ -78,6 +78,13 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    */
   public static final String ZIP_EXTENSION = "zip";
 
+  /**
+   * The default resources excluded from the jlink image.<br>
+   * OSGi descriptors are useless in a jlink image, and since Java 27 jlink refuses to link
+   * the same resource directory from more than one module (e.g. ikonli 12.4.0).
+   */
+  public static final List<String> DEFAULT_EXCLUDE_RESOURCES = List.of("**/OSGI-INF/**");
+
 
 
   /**
@@ -283,6 +290,25 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    */
   @Parameter(defaultValue = "false")
   private boolean noManPages;
+
+  /**
+   * Resources to exclude from the image.<br>
+   * Corresponds to the <code>jlink</code> option <code>--exclude-resources</code>.
+   * Each entry is a pattern as accepted by jlink, i.e. a glob (the default) or <code>regex:</code>.
+   * <p>
+   * Defaults to {@link #DEFAULT_EXCLUDE_RESOURCES}. If configured, the list replaces the default.
+   * Blank entries are ignored, so a single empty <code>&lt;excludeResource/&gt;</code> excludes nothing.
+   * <p>
+   * Example:
+   * <pre>
+   *   &lt;excludeResources&gt;
+   *     &lt;excludeResource&gt;**&#47;OSGI-INF/**&lt;/excludeResource&gt;
+   *     &lt;excludeResource&gt;*.jcov&lt;/excludeResource&gt;
+   *   &lt;/excludeResources&gt;
+   * </pre>
+   */
+  @Parameter
+  private List<String> excludeResources;
 
   /**
    * The directory holding extra resources, such as logger configurations or database
@@ -828,6 +854,12 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
     }
     if (noManPages) {
       jlinkRunner.arg("--no-man-pages");
+    }
+    List<String> excludes = (excludeResources == null ? DEFAULT_EXCLUDE_RESOURCES : excludeResources)
+        .stream().filter(pattern -> !StringHelper.isAllWhitespace(pattern)).toList();
+    if (!excludes.isEmpty()) {
+      // jlink accepts the plugin option only once
+      jlinkRunner.arg("--exclude-resources=" + String.join(",", excludes));
     }
     if (jlinkOptions != null) {
       jlinkOptions.forEach(jlinkRunner::arg);
