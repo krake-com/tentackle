@@ -7,7 +7,7 @@
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent</artifactId>
-  <version>25.0-SNAPSHOT</version>
+  <version>27.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Tentackle Parent</name>
@@ -88,7 +88,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <dependency.locations.enabled>false</dependency.locations.enabled>
     <javac.lint>all,-processing,-this-escape,-module</javac.lint>
-    <javac.version>25</javac.version>
+    <javac.version>27</javac.version>
 
     <asm.version>9.11.1</asm.version>
     <atlantafx.version>3.0.0</atlantafx.version>
@@ -161,7 +161,7 @@
     <tentackle.testServiceDir>${project.build.directory}/generated-test-resources</tentackle.testServiceDir>
     <tentackle.manifestDirectory>${project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
 
-    <wurbelizer.version>25.0-SNAPSHOT</wurbelizer.version>
+    <wurbelizer.version>27.0-SNAPSHOT</wurbelizer.version>
     <!-- override the default wurbelDir for multi-module project -->
     <wurbel.wurbelDir>${rootBasedir}/target/wurbel</wurbel.wurbelDir>
 
