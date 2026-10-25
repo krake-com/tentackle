@@ -396,7 +396,7 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
     catch (RuntimeException ex) {   // not a file in the default file system
       fileName = sourceFile.getName();
     }
-    long pos = trees.getSourcePositions().getStartPosition(unit, tree);
+    long pos = trees.getSourcePositions().getStartPosition(tree);
     if (pos == Diagnostic.NOPOS) {
       return fileName;
     }
