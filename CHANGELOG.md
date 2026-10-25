@@ -26,6 +26,16 @@ requires Java 11.
 
 ## [Unreleased]
 
+### Changed
+
+- Faster PDO and operation invocation handlers: `hashCode`, `equals`, `compareTo` and `toString` are dispatched
+  without `Method.equals` chains, and `getEffectiveSuperClasses()` is computed once per class (and is now unmodifiable).
+- `Mixin` is now an immutable descriptor shared by all proxies of the same type (`Mixin.get`, `Mixin.forImplementation`).
+  It no longer holds the delegate: the invocation handlers hold their delegates directly, which saves two objects per
+  PDO and one indirection per method call, and TRIP transfers the delegates instead of the mixins.
+  `setDelegate`/`getDelegate` and the dummy constructor `Mixin(Class, Class)` were removed, and `createDelegate` now
+  returns the delegate.
+
 ### Fixed
 
 - `tentackle-jlink-maven-plugin`: jlink of Java 27 refuses to link a resource directory found in more than one

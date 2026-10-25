@@ -18,7 +18,10 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.reflect.CanonicalConstructor;
+import org.tentackle.reflect.CanonicalField;
 import org.tentackle.reflect.ClassMapper;
+import org.tentackle.reflect.DummyDelegate;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.reflect.Interceptable;
 import org.tentackle.reflect.InterceptableMethod;
@@ -50,65 +53,49 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
   public static final InterceptableMethodInvoker INVOKER = new InterceptableMethodInvoker("OPN");
 
 
-  // preloaded methods of java.lang.Object
-  private static final Method HASHCODE_METHOD;
-  private static final Method EQUALS_METHOD;
-  private static final Method TOSTRING_METHOD;
-  private static final Method CLONE_METHOD;
-
-  // preloaded methods of java.lang.Comparable
-  private static final Method COMPARETO_METHOD;
-
-  // preloaded methods of Operation
-  private static final Method GETDOMAINDELEGATE_METHOD;
-  private static final Method GETPERSISTENCEDELEGATE_METHOD;
-
-  // preloaded methods of OperationProvider
-  private static final Method GETOPERATION_METHOD;
-  private static final Method OP_METHOD;
-
-  // preloaded methods of EffectiveClassProvider
-  private static final Method GETEFFECTIVECLASS_METHOD;
-  private static final Method GETEFFECTIVESUPERCLASSES_METHOD;
-
-  static {
-    try {
-      HASHCODE_METHOD = Object.class.getDeclaredMethod("hashCode");
-      EQUALS_METHOD = Object.class.getDeclaredMethod("equals", Object.class);
-      TOSTRING_METHOD = Object.class.getDeclaredMethod("toString");
-      CLONE_METHOD = Object.class.getDeclaredMethod("clone");
-      COMPARETO_METHOD = Comparable.class.getDeclaredMethod("compareTo", Object.class);
-      GETDOMAINDELEGATE_METHOD = Operation.class.getDeclaredMethod("getDomainDelegate");
-      GETPERSISTENCEDELEGATE_METHOD = Operation.class.getDeclaredMethod("getPersistenceDelegate");
-      GETOPERATION_METHOD = OperationProvider.class.getDeclaredMethod("getOperation");
-      OP_METHOD = OperationProvider.class.getDeclaredMethod("op");
-      GETEFFECTIVECLASS_METHOD = EffectiveClassProvider.class.getDeclaredMethod("getEffectiveClass");
-      GETEFFECTIVESUPERCLASSES_METHOD = EffectiveClassProvider.class.getDeclaredMethod("getEffectiveSuperClasses");
+  /**
+   * The effective super classes per operation class, computed once.
+   */
+  private static final ClassValue<List<Class<?>>> EFFECTIVE_SUPER_CLASSES = new ClassValue<>() {
+    @Override
+    protected List<Class<?>> computeValue(Class<?> type) {
+      List<Class<?>> list = new ArrayList<>();
+      for (Class<?> ifClass: type.getInterfaces()) {
+        if (Operation.class.isAssignableFrom(ifClass)) {
+          list.add(ifClass);
+        }
+      }
+      return List.copyOf(list);
     }
-    catch (NoSuchMethodException e) {
-      throw new NoSuchMethodError(e.getMessage());
-    }
-  }
+  };
 
 
   // the following methods are an OperationInvocation, mapped by OperationMethodCache
 
   @SuppressWarnings("rawtypes")
   private static Object invokePersistence(OperationInvocationHandler invocationHandler, InterceptableMethod method, Object[] args) throws Throwable {
-    return INVOKER.invoke(invocationHandler.persistenceMixin.getDelegate(), method, args);
+    return INVOKER.invoke(invocationHandler.persistenceDelegate, method, args);
   }
 
   @SuppressWarnings("rawtypes")
   private static Object invokeDomain(OperationInvocationHandler invocationHandler, InterceptableMethod method, Object[] args) throws Throwable {
-    return INVOKER.invoke(invocationHandler.domainMixin.getDelegate(), method, args);
+    return INVOKER.invoke(invocationHandler.domainDelegate, method, args);
   }
 
 
-  private final Class<T> clazz;                                 // the operation class
-  private Mixin<T,PersistentOperation<T>> persistenceMixin;     // the persistence mixin
-  private Mixin<T,DomainOperation<T>> domainMixin;              // the domain mixin
+  @CanonicalField(ordinal = 1)
+  private final Class<T> clazz;                                       // the operation class
+  // The delegates are not canonical: they back-reference the proxy, which cannot be
+  // created before the handler exists. Hence, they are set by TRIP after construction.
+  private PersistentOperation<T> persistenceDelegate;                 // the persistence delegate, null if dummy
+  private DomainOperation<T> domainDelegate;                          // the domain delegate, null if dummy
 
-  private transient OperationMethodCache<T> methodCache;        // the method cache (not serialized!)
+  // the mixins are shared by all operations of the same class (not serialized!)
+  private transient Mixin<T,PersistentOperation<T>> persistenceMixin; // the persistence mixin
+  private transient Mixin<T,DomainOperation<T>> domainMixin;          // the domain mixin
+
+  private transient OperationMethodCache<T> methodCache;              // the method cache (not serialized!)
+
 
   /**
    * Creates an invocation handler.
@@ -125,14 +112,14 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
     this.clazz = clazz;
 
     try {
-      persistenceMixin = new Mixin<>(persistenceMapper, clazz, PersistentOperation.class);
+      persistenceMixin = Mixin.get(persistenceMapper, clazz, PersistentOperation.class);
     }
     catch (ClassNotFoundException e) {
       // no persistence implementation is ok
     }
 
     try {
-      domainMixin = new Mixin<>(domainMapper, clazz, DomainOperation.class);
+      domainMixin = Mixin.get(domainMapper, clazz, DomainOperation.class);
     }
     catch (ClassNotFoundException e) {
       // no domain implementation is ok
@@ -143,21 +130,25 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
     }
     else if (persistenceMixin == null) {
       // create dummy persistence mixin
-      persistenceMixin = new Mixin<>(clazz, PersistentOperation.class);
+      persistenceMixin = Mixin.forImplementation(clazz, null, PersistentOperation.class);
     }
     else if (domainMixin == null) {
       // create dummy domain mixin
-      domainMixin = new Mixin<>(clazz, DomainOperation.class);
+      domainMixin = Mixin.forImplementation(clazz, null, DomainOperation.class);
     }
   }
 
   /**
-   * No-args constructor provided for TRIP.
+   * Constructor provided for TRIP.<br>
+   * The delegates are deserialized after the handler is created, because they
+   * back-reference the proxy, which needs the handler to exist (see {@code ProxyTripType}).
+   * The mixins are derived from the delegates when needed.
+   *
+   * @param clazz the operation declaring interface
    */
-  public OperationInvocationHandler() {
-    this.clazz = null;
-    this.persistenceMixin = null;
-    this.domainMixin = null;
+  @CanonicalConstructor
+  public OperationInvocationHandler(Class<T> clazz) {
+    this.clazz = clazz;
   }
 
 
@@ -174,11 +165,11 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
   public void setupDelegates(T operation, DomainContext context)
          throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
-    persistenceMixin.createDelegate(new Class<?>[] { Operation.class, DomainContext.class },
-                                    new Object[] { operation, context });
+    persistenceDelegate = persistenceMixin.createDelegate(new Class<?>[] { Operation.class, DomainContext.class },
+                                                          new Object[] { operation, context });
 
-    domainMixin.createDelegate(new Class<?>[] { Operation.class },
-                               new Object[] { operation });
+    domainDelegate = domainMixin.createDelegate(new Class<?>[] { Operation.class },
+                                                new Object[] { operation });
   }
 
 
@@ -197,11 +188,11 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
   public void setupDelegates(T operation, Session session)
          throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
-    persistenceMixin.createDelegate(new Class<?>[] { Operation.class, Session.class },
-                                    new Object[] { operation, session });
+    persistenceDelegate = persistenceMixin.createDelegate(new Class<?>[] { Operation.class, Session.class },
+                                                          new Object[] { operation, session });
 
-    domainMixin.createDelegate(new Class<?>[] { Operation.class },
-                               new Object[] { operation });
+    domainDelegate = domainMixin.createDelegate(new Class<?>[] { Operation.class },
+                                                new Object[] { operation });
   }
 
 
@@ -221,10 +212,10 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
          throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
     PersistenceDelegateLinker.getInstance().linkPersistentOperation(operation, persistenceDelegate);
-    persistenceMixin.setDelegate(persistenceDelegate);
+    this.persistenceDelegate = persistenceDelegate;
 
-    domainMixin.createDelegate(new Class<?>[] { Operation.class },
-                               new Object[] { operation });
+    domainDelegate = domainMixin.createDelegate(new Class<?>[] { Operation.class },
+                                                new Object[] { operation });
   }
 
 
@@ -242,16 +233,16 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
   public void setupDelegates(T operation, DomainContext context, DomainOperation<T> domainDelegate)
          throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
-    persistenceMixin.createDelegate(new Class<?>[] { Operation.class, DomainContext.class },
-                                    new Object[] { operation, context });
+    persistenceDelegate = persistenceMixin.createDelegate(new Class<?>[] { Operation.class, DomainContext.class },
+                                                          new Object[] { operation, context });
 
     DomainDelegateLinker.getInstance().linkDomainOperation(operation, domainDelegate);
-    domainMixin.setDelegate(domainDelegate);
+    this.domainDelegate = domainDelegate;
   }
 
 
   /**
-   * Creates the delegates for the given proxy instance, a session and domain delegate.
+   * Creates the delegates for the given proxy instance, a session, and domain delegate.
    *
    * @param operation the dynamic proxy instance
    * @param session the session
@@ -264,11 +255,11 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
   public void setupDelegates(T operation, Session session, DomainOperation<T> domainDelegate)
          throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
-    persistenceMixin.createDelegate(new Class<?>[] { Operation.class, Session.class },
-                                    new Object[] { operation, session });
+    persistenceDelegate = persistenceMixin.createDelegate(new Class<?>[] { Operation.class, Session.class },
+                                                          new Object[] { operation, session });
 
     DomainDelegateLinker.getInstance().linkDomainOperation(operation, domainDelegate);
-    domainMixin.setDelegate(domainDelegate);
+    this.domainDelegate = domainDelegate;
   }
 
 
@@ -281,9 +272,9 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
    */
   public void setupDelegates(T operation, PersistentOperation<T> persistenceDelegate, DomainOperation<T> domainDelegate) {
     PersistenceDelegateLinker.getInstance().linkPersistentOperation(operation, persistenceDelegate);
-    persistenceMixin.setDelegate(persistenceDelegate);
+    this.persistenceDelegate = persistenceDelegate;
     DomainDelegateLinker.getInstance().linkDomainOperation(operation, domainDelegate);
-    domainMixin.setDelegate(domainDelegate);
+    this.domainDelegate = domainDelegate;
   }
 
 
@@ -299,11 +290,11 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
   public void setupDelegates(T operation)
          throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
-    persistenceMixin.createDelegate(new Class<?>[] { Operation.class },
-                                    new Object[] { operation });
+    persistenceDelegate = persistenceMixin.createDelegate(new Class<?>[] { Operation.class },
+                                                          new Object[] { operation });
 
-    domainMixin.createDelegate(new Class<?>[] { Operation.class },
-                               new Object[] { operation });
+    domainDelegate = domainMixin.createDelegate(new Class<?>[] { Operation.class },
+                                                new Object[] { operation });
   }
 
 
@@ -312,91 +303,90 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
-    // a few methods should never be caught by an interceptor and are always executed directly
+    // a few methods should never be caught by an interceptor and are always executed directly.
+    // The methods are identified by their declaring class and name rather than Method.equals,
+    // which is safe because none of those methods is overloaded.
     Class<?> declaringClass = method.getDeclaringClass();
 
     if (declaringClass == Object.class) {
-      if (method.equals(HASHCODE_METHOD)) {
-        return persistenceMixin.isDummy() ? domainMixin.getDelegate().hashCode() : persistenceMixin.getDelegate().hashCode();
-      }
-      else if (method.equals(EQUALS_METHOD)) {
+      // the proxy dispatches only hashCode, equals and toString of Object, see java.lang.reflect.Proxy
+      if (args != null) {   // equals(Object) is the only one with an argument
         Object obj = args[0];
         if (obj instanceof Operation) {
-          if (persistenceMixin.isDummy()) {   // persistence delegate takes precedence over domain for equals
-            return domainMixin.getDelegate().equals(((Operation) obj).getDomainDelegate());
+          if (isPersistenceDummy()) {   // persistence delegate takes precedence over domain for equals
+            return domainDelegate.equals(((Operation) obj).getDomainDelegate());
           }
           else {
             // at least one of the domain- or persistence delegate is present
-            return persistenceMixin.getDelegate().equals(((Operation) obj).getPersistenceDelegate());
+            return persistenceDelegate.equals(((Operation) obj).getPersistenceDelegate());
           }
         }
         else  {
           return false;
         }
       }
-      else if (method.equals(TOSTRING_METHOD)) {
-        // domain delegate takes precedence over persistence for toString
-        return domainMixin.isDummy() ? persistenceMixin.getDelegate().toString() : domainMixin.getDelegate().toString();
+      else if (method.getReturnType() == int.class) {
+        return isPersistenceDummy() ? domainDelegate.hashCode() : persistenceDelegate.hashCode();
       }
-      else if (method.equals(CLONE_METHOD)) {
-        throw new CloneNotSupportedException("operations are not cloneable");
+      else {
+        // domain delegate takes precedence over persistence for toString
+        return isDomainDummy() ? persistenceDelegate.toString() : domainDelegate.toString();
       }
     }
     else if (declaringClass == Comparable.class) {
-      if (method.equals(COMPARETO_METHOD)) {
-        Object obj = args[0];
-        if (obj instanceof Operation) {
-          // persistence delegate takes precedence over domain for compareTo
-          if (persistenceMixin.isDummy()) {
-            return ((Comparable) domainMixin.getDelegate()).compareTo(((Operation) obj).getDomainDelegate());
-          }
-          else {
-            return ((Comparable) persistenceMixin.getDelegate()).compareTo(((Operation) obj).getPersistenceDelegate());
-          }
+      // compareTo is the only method of Comparable
+      Object obj = args[0];
+      if (obj instanceof Operation) {
+        // persistence delegate takes precedence over domain for compareTo
+        if (isPersistenceDummy()) {
+          return ((Comparable) domainDelegate).compareTo(((Operation) obj).getDomainDelegate());
         }
-        else  {
-          return Integer.MAX_VALUE;
+        else {
+          return ((Comparable) persistenceDelegate).compareTo(((Operation) obj).getPersistenceDelegate());
         }
+      }
+      else  {
+        return Integer.MAX_VALUE;
       }
     }
     else if (declaringClass == Operation.class) {
-      if (method.equals(GETDOMAINDELEGATE_METHOD)) {
-        return domainMixin.getDelegate();
-      }
-      else if (method.equals(GETPERSISTENCEDELEGATE_METHOD)) {
-        return persistenceMixin.getDelegate();
+      switch (method.getName()) {
+        case "getDomainDelegate" -> {
+          return domainDelegate;
+        }
+        case "getPersistenceDelegate" -> {
+          return persistenceDelegate;
+        }
+        default -> {}
       }
     }
     else if (declaringClass == EffectiveClassProvider.class) {
-      if (method.equals(GETEFFECTIVECLASS_METHOD)) {
-        return clazz;
-      }
-      else if (method.equals(GETEFFECTIVESUPERCLASSES_METHOD)) {
-        List<Class<?>> list = new ArrayList<>();
-        for (Class<?> ifClass: clazz.getInterfaces()) {
-          if (Operation.class.isAssignableFrom(ifClass)) {
-            list.add(ifClass);
-          }
+      switch (method.getName()) {
+        case "getEffectiveClass" -> {
+          return clazz;
         }
-        return list;
+        case "getEffectiveSuperClasses" -> {
+          return EFFECTIVE_SUPER_CLASSES.get(clazz);
+        }
+        default -> {}
       }
     }
-    else if (declaringClass == OperationProvider.class &&
-             !method.equals(OP_METHOD)) {    // op() should be executed via mixin below, if overridden
-      if (method.equals(GETOPERATION_METHOD)) {
+    else if (declaringClass == OperationProvider.class) {
+      // op() and op(String) should be executed via the method cache below, if overridden
+      if (method.getName().equals("getOperation")) {
         return proxy;
       }
     }
 
     if (methodCache == null) {
-      if (persistenceMixin.isDummy()) {
+      if (isPersistenceDummy()) {
         // use the global cache map
         methodCache = OperationMethodCache.getCache(clazz);
       }
       else {  // faster, but needs persistence delegate
         // all persistence delegates must implement OperationMethodCacheProvider, but we don't
         // want PersistentOperation to extend that because that's an implementation detail
-        methodCache = ((OperationMethodCacheProvider<T>) persistenceMixin.getDelegate()).getOperationMethodCache();
+        methodCache = ((OperationMethodCacheProvider<T>) persistenceDelegate).getOperationMethodCache();
       }
     }
 
@@ -417,19 +407,67 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
 
     Class<?> declaringClass = method.getDeclaringClass();
 
-    if (persistenceMixin.matches(declaringClass)) {
+    if (getPersistenceMixin().matches(declaringClass)) {
       invocation = OperationInvocationHandler::invokePersistence;
-      delegateClass = persistenceMixin.getDelegate().getClass();
+      delegateClass = persistenceDelegate.getClass();
     }
-    else if (domainMixin.matches(declaringClass)) {
+    else if (getDomainMixin().matches(declaringClass)) {
       invocation = OperationInvocationHandler::invokeDomain;
-      delegateClass = domainMixin.getDelegate().getClass();
+      delegateClass = domainDelegate.getClass();
     }
     else {
       throw new PdoRuntimeException("no delegate found for " + method);
     }
 
     return new OperationMethodCacheInfo(invocation, delegateClass);
+  }
+
+
+
+  /**
+   * Returns whether the persistence side is a dummy.
+   *
+   * @return true if no persistence delegate or a {@link DummyDelegate}
+   */
+  private boolean isPersistenceDummy() {
+    return persistenceDelegate == null || persistenceDelegate instanceof DummyDelegate;
+  }
+
+  /**
+   * Returns whether the domain side is a dummy.
+   *
+   * @return true if no domain delegate or a {@link DummyDelegate}
+   */
+  private boolean isDomainDummy() {
+    return domainDelegate == null || domainDelegate instanceof DummyDelegate;
+  }
+
+  /**
+   * Gets the persistence mixin.<br>
+   * After deserialization, the mixin is derived from the delegate.
+   *
+   * @return the mixin
+   */
+  private Mixin<T,PersistentOperation<T>> getPersistenceMixin() {
+    if (persistenceMixin == null) {
+      persistenceMixin = Mixin.forImplementation(clazz, persistenceDelegate == null ? null : persistenceDelegate.getClass(),
+                                                 PersistentOperation.class);
+    }
+    return persistenceMixin;
+  }
+
+  /**
+   * Gets the domain mixin.<br>
+   * After deserialization, the mixin is derived from the delegate.
+   *
+   * @return the mixin
+   */
+  private Mixin<T,DomainOperation<T>> getDomainMixin() {
+    if (domainMixin == null) {
+      domainMixin = Mixin.forImplementation(clazz, domainDelegate == null ? null : domainDelegate.getClass(),
+                                            DomainOperation.class);
+    }
+    return domainMixin;
   }
 
 }

@@ -89,22 +89,32 @@ menus.
 Java has single inheritance. A PDO needs two implementations — persistence and domain — behind one
 interface. [`Mixin<T,M>`](../java/org/tentackle/reflect/Mixin.java) is the piece that closes the gap.
 
-A mixin binds three things: the **declaring interface**, the **implementation class** found through
-a `ClassMapper`, and the **delegate** instance it creates. Given a PDO interface, the constructor
-maps leniently to the implementation, then identifies which of that implementation's interfaces
-extends the expected super-interface — that becomes the declaring class, and it is how the invocation
-handler later decides whether a method belongs to this mixin.
+A mixin binds two things: the **declaring interface** and the **implementation class** found through
+a `ClassMapper`. Given a PDO interface, it maps leniently to the implementation, then identifies which
+of that implementation's interfaces extends the expected super-interface — that becomes the declaring
+class, and it is how the invocation handler later decides whether a method belongs to this mixin.
+The mixin also creates the **delegate** instances (`createDelegate`), but does not hold them.
 
+Mixins are immutable, so all proxies of the same type share them: `Mixin.get(mapper, clazz, superInterface)`
+creates a mixin once and caches it. The invocation handler holds the delegates itself, which saves two
+objects per proxy and one indirection per method call.
 [`PdoInvocationHandler`](../../../../tentackle-pdo/src/main/java/org/tentackle/pdo/PdoInvocationHandler.java)
-holds exactly two:
+uses exactly two:
 
 ```java
-private final Mixin<T,PersistentObject<T>> persistenceMixin;
-private final Mixin<T,DomainObject<T>> domainMixin;
+private PersistentObject<T> persistenceDelegate;
+private DomainObject<T> domainDelegate;
+private transient Mixin<T,PersistentObject<T>> persistenceMixin;
+private transient Mixin<T,DomainObject<T>> domainMixin;
 ...
-persistenceMixin = new Mixin<>(persistenceMapper, clazz, PersistentObject.class);
-domainMixin      = new Mixin<>(domainMapper,      clazz, DomainObject.class);
+persistenceMixin = Mixin.get(persistenceMapper, clazz, PersistentObject.class);
+domainMixin      = Mixin.get(domainMapper,      clazz, DomainObject.class);
+...
+persistenceDelegate = persistenceMixin.createDelegate(...);
 ```
+
+Only the delegates travel with the proxy via TRIP. The receiving handler derives its mixins from the
+delegates' classes when it needs them (`Mixin.forImplementation`).
 
 Each call on the proxy is routed to the delegate whose declaring interface declares the method. The
 result is an object that *is* both its persistence and its domain implementation — see
@@ -112,10 +122,10 @@ result is an object that *is* both its persistence and its domain implementation
 [modules.md](../../../../src/main/docs/modules.md) for why the two implementations live in separate
 modules that never see each other.
 
-Mixins cache aggressively: constructors are looked up once per (implementation class, parameter
-types) pair, and a static match cache remembers, per class pair, whether a class implements a given
-declaring interface. `@TripReferencable(NEVER)` marks them as never referenced on the wire — the
-proxy is what travels, not its mixins.
+Mixins cache aggressively: the mixins themselves are shared per (class mapper, interface,
+super-interface), constructors are looked up once per (implementation class, parameter types) pair,
+and a static match cache remembers, per class pair, whether a class implements a given declaring
+interface. Mixins are never serialized — the proxy and its delegates are what travels.
 
 [`DummyDelegate`](../java/org/tentackle/reflect/DummyDelegate.java) is a marker letting a mixin with
 a real delegate class be treated as a dummy — used where a proxy needs the shape but not the

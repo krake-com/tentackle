@@ -20,6 +20,7 @@ package org.tentackle.pdo;
 
 import org.testng.annotations.Test;
 
+import org.tentackle.dbms.AbstractDbObject;
 import org.tentackle.pdo.pdofactory.SomeOperation;
 import org.tentackle.pdo.pdofactory.SomeOperationPersistence;
 import org.tentackle.reflect.ClassMapper;
@@ -44,9 +45,10 @@ import java.util.function.LongSupplier;
  *   mvn -pl :tentackle-test-pdo -Pbenchmark test -Dtentackle.reflect.methodHandles=false
  * </pre>
  * Tunable via system properties: {@code pdo.bench.warmupMillis} (default 5000),
- * {@code pdo.bench.measureMillis} (default 2000) and {@code pdo.bench.runs} (default 7).
+ * {@code pdo.bench.measureMillis} (default 2000), {@code pdo.bench.runs} (default 7) and
+ * {@code pdo.bench.instances} (default 50000, the number of PDOs of the "many" workloads).
  * The reported figure is the median of the runs in nanoseconds per call; the minimum is printed as well.
- * Each workload runs its own loop of {@value #BATCH} calls, so the workloads do not share a call site.
+ * Each workload runs its own loop, so the workloads do not share a call site.
  */
 @SuppressWarnings("missing-explicit-ctor")
 public class PdoInvocationBenchmark {
@@ -55,6 +57,7 @@ public class PdoInvocationBenchmark {
   private static final long MEASURE_MILLIS = Long.getLong("pdo.bench.measureMillis", 2000);
   private static final int RUNS = Integer.getInteger("pdo.bench.runs", 7);
   private static final int BATCH = 1000;
+  private static final int MANY = Integer.getInteger("pdo.bench.instances", 50_000);
 
   /** consumes results so that the JIT cannot eliminate the work. */
   @SuppressWarnings("unused")
@@ -72,6 +75,24 @@ public class PdoInvocationBenchmark {
     measure("direct isAllowed()", () -> loopIsAllowed(persistence));
     measure("PDO isAllowed()", () -> loopIsAllowed(security));
     measure("PDO getClassId()", () -> loopGetClassId(security));
+
+    // the special methods handled by the invocation handler itself
+    ((AbstractDbObject<?>) persistence).setId(1);
+    Security other = Pdo.create(Security.class);
+    ((AbstractDbObject<?>) other.getPersistenceDelegate()).setId(2);
+    measure("PDO hashCode()", () -> loopHashCode(security));
+    measure("PDO equals(PDO)", () -> loopEquals(security, other));
+    measure("PDO compareTo(PDO)", () -> loopCompareTo(security, other));
+    measure("PDO toString()", () -> loopToString(security));
+
+    // many instances: exposes the cost of the indirections that a single, cached instance hides
+    Security[] securities = new Security[MANY];
+    for (int i = 0; i < MANY; i++) {
+      securities[i] = Pdo.create(Security.class);
+      ((AbstractDbObject<?>) securities[i].getPersistenceDelegate()).setId(i + 1);
+    }
+    measure("PDO isAllowed() many", MANY, () -> loopIsAllowedMany(securities));
+    measure("PDO hashCode() many", MANY, () -> loopHashCodeMany(securities));
   }
 
   @Test(groups = "benchmark")
@@ -129,6 +150,58 @@ public class PdoInvocationBenchmark {
     return sum;
   }
 
+  private static long loopHashCode(Security security) {
+    long sum = 0;
+    for (int i = 0; i < BATCH; i++) {
+      sum += security.hashCode();
+    }
+    return sum;
+  }
+
+  private static long loopEquals(Security security, Security other) {
+    long sum = 0;
+    for (int i = 0; i < BATCH; i++) {
+      if (security.equals((i & 1) == 0 ? security : other)) {
+        sum++;
+      }
+    }
+    return sum;
+  }
+
+  private static long loopCompareTo(Security security, Security other) {
+    long sum = 0;
+    for (int i = 0; i < BATCH; i++) {
+      sum += security.compareTo((i & 1) == 0 ? security : other);
+    }
+    return sum;
+  }
+
+  private static long loopToString(Security security) {
+    long sum = 0;
+    for (int i = 0; i < BATCH; i++) {
+      sum += security.toString().length();
+    }
+    return sum;
+  }
+
+  private static long loopIsAllowedMany(Security[] securities) {
+    long sum = 0;
+    for (Security security : securities) {
+      if (security.isAllowed()) {
+        sum++;
+      }
+    }
+    return sum;
+  }
+
+  private static long loopHashCodeMany(Security[] securities) {
+    long sum = 0;
+    for (Security security : securities) {
+      sum += security.hashCode();
+    }
+    return sum;
+  }
+
   private static long loopEcho(SomeOperationPersistence operation) {
     long sum = 0;
     for (int i = 0; i < BATCH; i++) {
@@ -143,12 +216,23 @@ public class PdoInvocationBenchmark {
   }
 
   /**
+   * Runs a batch of {@link #BATCH} calls repeatedly and prints the median and minimum nanoseconds per call.
+   *
+   * @param name the workload's name
+   * @param batch the batch of calls
+   */
+  private static void measure(String name, LongSupplier batch) {
+    measure(name, BATCH, batch);
+  }
+
+  /**
    * Runs a batch of calls repeatedly and prints the median and minimum nanoseconds per call.
    *
    * @param name the workload's name
-   * @param batch the batch of {@link #BATCH} calls
+   * @param calls the number of calls per batch
+   * @param batch the batch of calls
    */
-  private static void measure(String name, LongSupplier batch) {
+  private static void measure(String name, int calls, LongSupplier batch) {
     long warmupEnd = System.nanoTime() + WARMUP_MILLIS * 1_000_000L;
     long warmupBatches = 0;
     while (System.nanoTime() < warmupEnd) {
@@ -162,7 +246,7 @@ public class PdoInvocationBenchmark {
       for (long b = 0; b < batches; b++) {
         sink = batch.getAsLong();
       }
-      results[r] = (System.nanoTime() - start) / (double) (batches * BATCH);
+      results[r] = (System.nanoTime() - start) / (double) (batches * calls);
     }
     Arrays.sort(results);
     System.out.printf("%-28s median=%7.2f ns/call   min=%7.2f ns/call%n", name, results[RUNS / 2], results[0]);
