@@ -43,15 +43,15 @@ public class IgnoreDuplicatesPersistenceVisitorTest {
     ModificationLog obj1 = new ModificationLog();
     ModificationLog obj2 = new ModificationLog();
 
-    visitor.visit(obj1, 'I');
+    visitor.visit(obj1, DbModificationType.INSERT);
     assertTrue(visitor.isPersistenceOperationAllowed(obj1, DbModificationType.INSERT),
                "the first visit of an object must be allowed");
 
-    visitor.visit(obj1, 'U');
+    visitor.visit(obj1, DbModificationType.UPDATE);
     assertFalse(visitor.isPersistenceOperationAllowed(obj1, DbModificationType.UPDATE),
                 "a second visit of the same object must be reported as a duplicate");
 
-    visitor.visit(obj2, 'I');
+    visitor.visit(obj2, DbModificationType.INSERT);
     assertTrue(visitor.isPersistenceOperationAllowed(obj2, DbModificationType.INSERT),
                "a distinct object must not be affected by another object's duplicate");
   }

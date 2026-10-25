@@ -35,6 +35,17 @@ requires Java 11.
   PDO and one indirection per method call, and TRIP transfers the delegates instead of the mixins.
   `setDelegate`/`getDelegate` and the dummy constructor `Mixin(Class, Class)` were removed, and `createDelegate` now
   returns the delegate.
+- TRIP no longer mutates final fields (JEP-500). Deserializing a final field that is not passed to a canonical
+  constructor fails with a `TripRuntimeException`. The migration aid `-Dtentackle.trip.mutateFinalFields=true`
+  (plus `--enable-final-field-mutation=org.tentackle.core`) restores the old behavior.
+  Canonical members are now also matched against superclass fields.
+- Final fields that were deserialized are now passed to canonical constructors (`CopyOnWriteCollection`,
+  `CopyOnWriteList`, `CopyOnWriteSet`, `FailedValidationResult`, `InfoValidationResult`,
+  `VersionIncompatibleException`, `RebuildEpochException`), transient (`ImmutableArrayList`'s hash) or no longer final (`DbPreferences`, `ParameterString`,
+  `IgnoreDuplicatesPersistenceVisitor`, `ScriptRunnerException`). The protected no-arg constructors of the validation results were replaced
+  by constructors taking the serialized values.
+- Binding treats final fields without a setter as read-only, and the NoFXML linker refuses to inject into final
+  fields.
 
 ### Fixed
 

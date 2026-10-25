@@ -73,19 +73,21 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
 
   private static final Logger LOGGER = Logger.get(DbPreferences.class);
 
-  private final DbPreferences root;                     // the root of this node ("this" if this is a root)
-  private final DbPreferences parent;                   // the parent node, null if this is a root
-  private final String absolutePath;                    // the absolute path
-  private final String name;                            // the name relative to the parent
-  private final DbPreferencesNode prefNode;             // the persistent node
+  // The fields are effectively final but must not be declared final, since they are deserialized by TRIP
+  // and the tree's back-references to parent and root rule out a canonical constructor (JEP-500).
+  private DbPreferences root;                           // the root of this node ("this" if this is a root)
+  private DbPreferences parent;                         // the parent node, null if this is a root
+  private String absolutePath;                          // the absolute path
+  private String name;                                  // the name relative to the parent
+  private DbPreferencesNode prefNode;                   // the persistent node
   @SuppressWarnings("serial")
-  private final Map<String,DbPreferences> childMap;     // children of this node <subname:node>
+  private Map<String,DbPreferences> childMap;           // children of this node <subname:node>
   @SuppressWarnings("serial")
-  private final Map<String,DbPreferencesKey> keyMap;    // keys of this node <key:value>
+  private Map<String,DbPreferencesKey> keyMap;          // keys of this node <key:value>
 
 
   /**
-   * Creates a preferences node.
+   * Creates a preference node.
    *
    * @param parent the parent node, null if this is a root node
    * @param prefNode the persistent node
@@ -135,13 +137,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
    * components of this object contain back-references to itself.
    */
   public DbPreferences() {
-    this.root = null;
-    this.parent = null;
-    this.absolutePath = null;
-    this.name = null;
-    this.prefNode = null;
-    this.childMap = null;
-    this.keyMap = null;
+    // TRIP sets all fields
   }
 
 

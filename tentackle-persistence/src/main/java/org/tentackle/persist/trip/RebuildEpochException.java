@@ -18,6 +18,8 @@
 
 package org.tentackle.persist.trip;
 
+import org.tentackle.reflect.CanonicalConstructor;
+import org.tentackle.reflect.CanonicalName;
 import org.tentackle.session.PersistenceException;
 
 import java.io.Serial;
@@ -43,7 +45,9 @@ public class RebuildEpochException extends PersistenceException {
    * @param epoch the epoch to rebuild
    * @param message the detail message
    */
-  public RebuildEpochException(long epoch, String message) {
+  @CanonicalConstructor
+  public RebuildEpochException(@CanonicalName("epoch") long epoch,
+                               @CanonicalName("message") String message) {
     super(message);
     this.epoch = epoch;
   }

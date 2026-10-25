@@ -254,6 +254,12 @@ generates exactly this shape.
 *delayed construction*: components are deserialized first, then the object is built in one shot.
 Without a canonical constructor or a no-arg constructor, a class is simply not serializable by TRIP
 — which is why [trip.md](trip.md) recommends adding one as the first remedy.
+A final field that is not passed to the canonical constructor is refused when deserialized, just like
+any other final field (see [JEP-500](trip.md#final-fields-jep-500)): make it `transient` or map it to a
+constructor parameter.
+
+Canonical members are matched against fields declared in the class or one of its superclasses, so a
+subclass's canonical constructor can take the values of its superclass's final fields.
 
 ### Delayed construction and back-references
 

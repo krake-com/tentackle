@@ -38,7 +38,7 @@ import java.util.ResourceBundle;
 
 /**
  * The default implementation of a {@link NoFXMLLinker}.<br>
- * Injects the nodes, resources, invokes initialize and sets the view into the controller.
+ * Injects the nodes, resources, invokes initialize() and sets the view into the controller.
  * <p>
  * Notice that the old {@link javafx.fxml.Initializable} interface is not supported
  * and the initialize() method must be annotated with {@link javafx.fxml.FXML} to be invoked, even if public.
@@ -148,6 +148,10 @@ public class DefaultNoFXMLLinker implements NoFXMLLinker {
   }
 
   private void setField(Field field, Object object, Object value) throws IllegalAccessException {
+    if (Modifier.isFinal(field.getModifiers())) {
+      // never mutate final fields reflectively (JEP-500)
+      throw new FxRuntimeException("cannot inject into final field " + field);
+    }
     try {
       field.set(object, value);
     }

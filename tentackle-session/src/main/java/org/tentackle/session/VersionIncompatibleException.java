@@ -18,6 +18,9 @@
 
 package org.tentackle.session;
 
+import org.tentackle.reflect.CanonicalConstructor;
+import org.tentackle.reflect.CanonicalName;
+
 import java.io.Serial;
 
 /**
@@ -51,7 +54,10 @@ public class VersionIncompatibleException extends LoginFailedException {
    * @param clientVersion the client version
    * @param serverVersion the server version
    */
-  public VersionIncompatibleException(String message, String clientVersion, String serverVersion) {
+  @CanonicalConstructor
+  public VersionIncompatibleException(@CanonicalName("message") String message,
+                                      @CanonicalName("clientVersion") String clientVersion,
+                                      @CanonicalName("serverVersion") String serverVersion) {
     super(message);
     this.clientVersion = clientVersion;
     this.serverVersion = serverVersion;

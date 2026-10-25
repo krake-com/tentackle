@@ -319,7 +319,7 @@ Component implementations:
 
 | Type                     | Implementation                 | Access mechanism                                 |
 |--------------------------|--------------------------------|--------------------------------------------------|
-| Fields                   | `FieldTripComponent`           | `VarHandle` (fast) or `Field.set` (final fields) |
+| Fields                   | `FieldTripComponent`           | `VarHandle` (final fields are refused, see [JEP-500](#final-fields-jep-500)) |
 | Fields of primitive type | `PrimitiveFieldTripComponent`  | `VarHandle`, invoked with a primitive signature  |
 | Getters/setters          | `MethodTripComponent`          | Reflective `Method.invoke`                       |
 | Record components        | `RecordTripComponent`          | `MethodHandle` bound to the accessor             |
@@ -900,6 +900,30 @@ The defense against broken invariants is routing every component value through v
 These defenses address the *broken invariants* risk for classes you control. They cannot address
 the *gadget class* risk, because an attacker chooses the class — which is where the allowlist
 comes in.
+
+### Final fields (JEP-500)
+
+TRIP never writes a final field. A final field can only be written reflectively, and
+[JEP-500](https://openjdk.org/jeps/500) deprecates that: Java 26 and later warn about it, and a
+future release will deny it. So when a class is created through its no-arg constructor (or a
+`TripInstanceCreator` that does not create from values), deserializing one of its final fields fails
+with a `TripRuntimeException` that names the field. The same applies to the final fields of a
+`@CanonicalConstructor` class that are not passed to the constructor, and to the final fields of an
+exception that has no canonical constructor.
+
+The remedies, in order of preference:
+
+- pass the value to a [`@CanonicalConstructor`](reflect.md#canonical-construction) or `@CanonicalBuilder`,
+  or turn the class into a record;
+- make the field `transient` (or annotate it with `@TripIgnore`) if it is derived or local state;
+- create the instance from the values with a [`@TripInstanceCreator`](#tripinstancecreator) whose
+  `isCreationFromValuesSupported` returns `true`;
+- drop the `final` modifier if neither is possible, for example, when components back-reference the
+  object (see [delayed construction](reflect.md#delayed-construction-and-back-references)).
+
+As a migration aid, `-Dtentackle.trip.mutateFinalFields=true` (or
+`FieldTripComponent.setFinalFieldMutationEnabled(true)`) restores the reflective write. The JVM
+then also needs `--enable-final-field-mutation=org.tentackle.core` to suppress the JEP-500 warnings.
 
 ### Allowlisting: `DisallowedTripType`
 

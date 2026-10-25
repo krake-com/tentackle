@@ -18,8 +18,11 @@
 
 package org.tentackle.trip.impl;
 
+import org.tentackle.trip.TripComponent;
 import org.tentackle.trip.TripInstanceCreator;
 import org.tentackle.trip.TripInstanceCreatorService;
+
+import java.util.Map;
 
 @TripInstanceCreatorService(NoNoArgsInstantiatable.class)
 @SuppressWarnings("missing-explicit-ctor")
@@ -28,6 +31,27 @@ public class NoNoArgsInstanceCreator implements TripInstanceCreator<NoNoArgsInst
   @Override
   public NoNoArgsInstantiatable create(Class<NoNoArgsInstantiatable> clazz) {
     return new NoNoArgsInstantiatable(null, 0);
+  }
+
+  @Override
+  public NoNoArgsInstantiatable create(Class<NoNoArgsInstantiatable> clazz,
+                                       Map<TripComponent<NoNoArgsInstantiatable, ?>, Object> values) {
+    // the fields are final: create the instance from the values (JEP-500)
+    String name = null;
+    int age = 0;
+    for (Map.Entry<TripComponent<NoNoArgsInstantiatable, ?>, Object> entry : values.entrySet()) {
+      switch (entry.getKey().getName()) {
+        case "name" -> name = (String) entry.getValue();
+        case "age" -> age = (Integer) entry.getValue();
+        default -> {}
+      }
+    }
+    return new NoNoArgsInstantiatable(name, age);
+  }
+
+  @Override
+  public boolean isCreationFromValuesSupported(Class<NoNoArgsInstantiatable> clazz) {
+    return true;
   }
 
 }

@@ -39,8 +39,9 @@ public class IgnoreDuplicatesPersistenceVisitor extends PersistenceVisitor {
   private static final Logger LOGGER = Logger.get(IgnoreDuplicatesPersistenceVisitor.class);
 
 
+  // not final: deserialized by TRIP (JEP-500)
   @SuppressWarnings("serial")
-  private final Set<AbstractDbObject<?>> objectSet;   // all persisted objects so far
+  private Set<AbstractDbObject<?>> objectSet;         // all persisted objects so far
   private boolean persistenceOperationAllowed;        // true if allowed
 
   /**
@@ -59,7 +60,7 @@ public class IgnoreDuplicatesPersistenceVisitor extends PersistenceVisitor {
    * @param object the object
    * @param modType the modification type
    */
-  public void visit(AbstractDbObject<?> object, Character modType) {
+  public void visit(AbstractDbObject<?> object, ModificationType modType) {
     persistenceOperationAllowed = objectSet.add(object);
   }
 

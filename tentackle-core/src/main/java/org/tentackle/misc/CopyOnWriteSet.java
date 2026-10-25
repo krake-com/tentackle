@@ -18,6 +18,9 @@
 
 package org.tentackle.misc;
 
+import org.tentackle.reflect.CanonicalConstructor;
+import org.tentackle.reflect.CanonicalName;
+
 import java.io.Serial;
 import java.util.HashSet;
 import java.util.Set;
@@ -50,7 +53,9 @@ public class CopyOnWriteSet<E> extends CopyOnWriteCollection<E> implements Set<E
    * @param set the set
    * @param iteratorModifying true if iterators will be modifying, else readonly (avoids copy)
    */
-  public CopyOnWriteSet(Set<E> set, boolean iteratorModifying) {
+  @CanonicalConstructor
+  public CopyOnWriteSet(@CanonicalName("collection") Set<E> set,
+                        @CanonicalName("iteratorModifying") boolean iteratorModifying) {
     super(set, iteratorModifying);
   }
 

@@ -18,6 +18,9 @@
 
 package org.tentackle.misc;
 
+import org.tentackle.reflect.CanonicalConstructor;
+import org.tentackle.reflect.CanonicalName;
+
 import java.io.Serial;
 import java.util.Collection;
 import java.util.Comparator;
@@ -70,7 +73,10 @@ public class CopyOnWriteList<E> extends CopyOnWriteCollection<E> implements List
    * @param listIteratorModifying true if list-iterators will be modifying, else readonly (avoids copy)
    * @throws IllegalArgumentException if the list is not cloneable
    */
-  public CopyOnWriteList(List<E> list, boolean iteratorModifying, boolean listIteratorModifying) {
+  @CanonicalConstructor
+  public CopyOnWriteList(@CanonicalName("collection") List<E> list,
+                         @CanonicalName("iteratorModifying") boolean iteratorModifying,
+                         @CanonicalName("listIteratorModifying") boolean listIteratorModifying) {
     super(list, iteratorModifying);
     this.listIteratorModifying = listIteratorModifying;
   }

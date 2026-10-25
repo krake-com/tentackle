@@ -41,8 +41,8 @@ import java.util.function.UnaryOperator;
  * <p>
  * Notice that despite its name, {@link ImmutableArrayList}s are mutable by default. {@link #setImmutable} must be invoked
  * to make it immutable.<br>
- * Operations that would not change the list, such as replacing an element by the same instance or
- * removing elements that are not in the list, are allowed even if the list is immutable.
+ * Operations which would not change the list, such as replacing an element by the same instance or
+ * removing elements which are not in the list, are allowed even if the list is immutable.
  * Sorting is not considered a modification.<br>
  * Cloning an immutable list returns a mutable copy.
  *
@@ -57,7 +57,7 @@ public class ImmutableArrayList<E> extends ArrayList<E> implements ImmutableColl
   private static final Logger LOGGER = Logger.get(ImmutableArrayList.class);
 
 
-  private final int hash = new Object().hashCode();   // some hashcode
+  private final transient int hash = new Object().hashCode();   // some hashcode (transient: never mutate final fields)
 
   /** true if equals and hashcode refer to the list instance, not its contents. */
   protected boolean simpleEqualsAndHashCode;

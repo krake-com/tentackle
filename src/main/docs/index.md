@@ -98,6 +98,7 @@ topic-grouped listing of every document, see the
 ## F
 
 - **FFM API (native bindings)** — [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md), [OS Credential Stores](../../../tentackle-keyring/src/main/docs/platform-keyring.md)
+- **Final fields / JEP-500 (deserialization)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#final-fields-jep-500), [Reflection](../../../tentackle-core/src/main/docs/reflect.md#canonical-construction)
 - **Fetch size / `FetchList` (fetching cursor rows in blocks)** — [Cursors](../../../tentackle-persistence/src/main/docs/cursors.md#fetching-in-blocks-fetch)
 - **Filtering (column autofilter in table headers)** — [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md#column-filters-autofilter)
 - **Firebird (backend peculiarities)** — [The Firebird Backend](../../../tentackle-sql/src/main/docs/firebird.md)

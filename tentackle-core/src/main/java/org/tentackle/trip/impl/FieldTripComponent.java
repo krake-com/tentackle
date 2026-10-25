@@ -32,11 +32,45 @@ import java.util.Objects;
 
 /**
  * A TripComponent implementation for fields.
+ * <p>
+ * Final fields are never written during deserialization (JEP-500), unless the fallback is enabled
+ * via {@link #setFinalFieldMutationEnabled(boolean)} or the system property {@value #MUTATE_FINAL_FIELDS_PROPERTY}.
+ * Classes with final fields should provide a {@link org.tentackle.reflect.CanonicalConstructor} instead.
  *
  * @param <P> the parent type
  * @param <T> the component type
  */
 public class FieldTripComponent<P, T> implements TripComponent<P, T> {
+
+  /**
+   * System property to enable the reflective mutation of final fields.
+   */
+  public static final String MUTATE_FINAL_FIELDS_PROPERTY = "tentackle.trip.mutateFinalFields";
+
+  private static volatile boolean finalFieldMutationEnabled = Boolean.getBoolean(MUTATE_FINAL_FIELDS_PROPERTY);
+
+  /**
+   * Returns whether final fields may be mutated reflectively during deserialization.
+   *
+   * @return true if enabled, false if a final field causes a {@link TripRuntimeException} (default)
+   */
+  public static boolean isFinalFieldMutationEnabled() {
+    return finalFieldMutationEnabled;
+  }
+
+  /**
+   * Enables or disables the reflective mutation of final fields during deserialization.
+   * <p>
+   * This is a migration aid only. Since Java 26, the JVM additionally requires
+   * {@code --enable-final-field-mutation=org.tentackle.core} to suppress the JEP-500 warnings,
+   * and future Java versions will deny the mutation altogether.
+   *
+   * @param enabled true to enable, false to refuse final fields (default)
+   */
+  public static void setFinalFieldMutationEnabled(boolean enabled) {
+    finalFieldMutationEnabled = enabled;
+  }
+
 
   private final TripType<P> parentType;
   private final int ordinal;
@@ -68,7 +102,6 @@ public class FieldTripComponent<P, T> implements TripComponent<P, T> {
     componentClass = (Class<T>) field.getType();
     componentName = field.getName();
     isFinalField = Modifier.isFinal(field.getModifiers());
-    // CAUTION: Java >= 26 requires "--enable-final-field-mutation=org.tentackle.core"
     if (!this.getClass().getModule().canRead(field.getDeclaringClass().getModule())) {
       // MethodHandles.lookup() is caller-sensitive: make the field's module readable by this module.
       this.getClass().getModule().addReads(field.getDeclaringClass().getModule());
@@ -88,6 +121,7 @@ public class FieldTripComponent<P, T> implements TripComponent<P, T> {
       throw new TripRuntimeException("cannot get VarHandle for " + field, e);
     }
   }
+
 
   @Override
   public TripType<P> getParentType() {
@@ -122,26 +156,6 @@ public class FieldTripComponent<P, T> implements TripComponent<P, T> {
     return field;
   }
 
-  /**
-   * Gets the handle to access the field.
-   *
-   * @return the var handle, never null
-   */
-  protected VarHandle getHandle() {
-    return handle;
-  }
-
-  /**
-   * Returns whether the field is final.
-   * <p>
-   * A final field cannot be written through the {@link VarHandle}, see {@link #setValue}.
-   *
-   * @return true if the field is final
-   */
-  protected boolean isFinalField() {
-    return isFinalField;
-  }
-
   @Override
   public String getName() {
     return componentName;
@@ -156,8 +170,14 @@ public class FieldTripComponent<P, T> implements TripComponent<P, T> {
   @Override
   public void setValue(P parent, T value) {
     if (isFinalField) {
-      // VarHandle throws UnsupportedOperationException for final fields, while Field#set does not.
-      // TODO: this must be replaced in Java26 with jdk.internal.reflect.FieldAccessor due to JEP-500!
+      // VarHandle throws UnsupportedOperationException for final fields, while Field#set does not, but
+      // mutating final fields is deprecated by JEP-500 and is supported only as a migration aid.
+      if (!finalFieldMutationEnabled) {
+        throw new TripRuntimeException(
+          "cannot deserialize final " + field + " (JEP-500): provide a @CanonicalConstructor or @CanonicalBuilder, " +
+          "make the field transient, non-final or @TripIgnore, use a @TripInstanceCreator, " +
+          "or enable the mutation via -D" + MUTATE_FINAL_FIELDS_PROPERTY + "=true");
+      }
       try {
         try {
           field.set(parent, value);
@@ -189,6 +209,27 @@ public class FieldTripComponent<P, T> implements TripComponent<P, T> {
   @Override
   public String toString() {
     return "field " + field + " of " + parentType + " at ordinal " + ordinal;
+  }
+
+
+  /**
+   * Gets the handle to access the field.
+   *
+   * @return the var handle, never null
+   */
+  protected VarHandle getHandle() {
+    return handle;
+  }
+
+  /**
+   * Returns whether the field is final.
+   * <p>
+   * A final field cannot be written through the {@link VarHandle}, see {@link #setValue}.
+   *
+   * @return true if the field is final
+   */
+  protected boolean isFinalField() {
+    return isFinalField;
   }
 
 }
