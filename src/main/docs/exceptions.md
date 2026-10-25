@@ -178,17 +178,18 @@ itself.
 first `PersistenceException` in it; `DomainException.extractDomainException(Throwable)` does the same
 for the domain side.
 
-### Aligning the cause
+### Driver-specific exceptions
 
-A JDBC driver's own exception class (`oracle.jdbc.OracleDatabaseException`, …) is on the *server's*
-class path, not on a remote client's. Deserializing it there would fail — and the client would see a
-class-loading error instead of the real problem.
+A JDBC driver's own exception class (`org.postgresql.util.PSQLException`, `oracle.jdbc.OracleDatabaseException`, …)
+is on the *server's* class path, not on a remote client's. Deserializing it there would fail — and the client would
+see a class-loading error instead of the real problem.
 
-`SessionUtilities.alignExceptionCause(Throwable)` is the hook that prevents this. The base
-implementation does nothing; `DbSessionUtilities` replaces any non-`java.sql` `SQLException` (or one
-with a cause) by a plain `java.sql.SQLException` that keeps the message, SQL state, error code and
-stack trace, and recurses into `getNextException()`. Every `PersistenceException` constructor that
-takes a cause runs it, so the rewrite is automatic.
+TRIP therefore never sends a driver's class (see
+[JDK exceptions](../../../tentackle-core/src/main/docs/trip.md#jdk-exceptions)). A driver-specific `SQLException` is
+sent as its nearest JDK superclass, with the driver's class name appended to the message. It keeps its SQL state,
+error code, next exception and stack trace. A driver-specific cause that is not an `SQLException`, such as
+`OracleDatabaseException`, is replaced by a plain `Exception` carrying the original class name, message and stack
+trace. Locally, the exception stays as thrown by the driver, so the backend can still classify it (see below).
 
 ### Aligning the temporary status
 
@@ -324,10 +325,13 @@ Three consequences are worth remembering:
 
 - **The session does not travel.** `PersistenceException.getSession()` is `transient` and is `null`
   on the client. Call [`evaluate()`](#lazy-messages) on the server if the message must mention it.
-- **Causes are rewritten**, so a client never needs the JDBC driver on its class path
-  (see [Aligning the cause](#aligning-the-cause)).
+- **Driver classes are not sent**, so a client never needs the JDBC driver on its class path
+  (see [Driver-specific exceptions](#driver-specific-exceptions)).
 - **Every exception type crossing the wire must be reachable by TRIP** — the same
   `opens`/registration rules as any other transmitted type apply.
+- **The JDK's exceptions** travel via their getters and public constructors, since their packages
+  are not open. Common ones arrive with all their values, any other with at least its message, cause
+  and stack trace — see [JDK exceptions](../../../tentackle-core/src/main/docs/trip.md#jdk-exceptions).
 
 ---
 

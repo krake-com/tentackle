@@ -31,8 +31,7 @@ import java.io.Serial;
  * the first invocation of {@link #getMessage()} and extended by the identifiable and session, if any,
  * see {@link SessionUtilities#createLazyExceptionMessage(String, Throwable, Identifiable, Session)}.
  * <p>
- * The constructors with a cause pass it through {@link SessionUtilities#alignExceptionCause(Throwable)}.
- * Those with a session or identifiable additionally determine the temporary status via
+ * The constructors with a cause and a session or identifiable determine the temporary status via
  * {@link SessionUtilities#alignTemporaryExceptionStatus(PersistenceException)}.
  *
  * @author harald
@@ -98,7 +97,7 @@ public class PersistenceException extends TentackleRuntimeException {
    * @param  cause the cause
    */
   public PersistenceException(Session session, String message, Throwable cause) {
-    super(message, SessionUtilities.getInstance().alignExceptionCause(cause));
+    super(message, cause);
     setSession(session);
     SessionUtilities.getInstance().alignTemporaryExceptionStatus(this);
   }
@@ -111,7 +110,7 @@ public class PersistenceException extends TentackleRuntimeException {
    * @param  cause the cause
    */
   public PersistenceException(Session session, Throwable cause) {
-    super(SessionUtilities.getInstance().alignExceptionCause(cause));
+    super(cause);
     setSession(session);
     SessionUtilities.getInstance().alignTemporaryExceptionStatus(this);
   }
@@ -147,7 +146,7 @@ public class PersistenceException extends TentackleRuntimeException {
    * @param  cause the cause
    */
   public PersistenceException(Identifiable object, String message, Throwable cause) {
-    super(message, SessionUtilities.getInstance().alignExceptionCause(cause));
+    super(message, cause);
     setIdentifiable(object);
     SessionUtilities.getInstance().alignTemporaryExceptionStatus(this);
   }
@@ -160,7 +159,7 @@ public class PersistenceException extends TentackleRuntimeException {
    * @param  cause the cause
    */
   public PersistenceException(Identifiable object, Throwable cause) {
-    super(SessionUtilities.getInstance().alignExceptionCause(cause));
+    super(cause);
     setIdentifiable(object);
     SessionUtilities.getInstance().alignTemporaryExceptionStatus(this);
   }
@@ -190,7 +189,7 @@ public class PersistenceException extends TentackleRuntimeException {
    * @param  cause the cause
    */
   public PersistenceException(String message, Throwable cause) {
-    super(message, SessionUtilities.getInstance().alignExceptionCause(cause));
+    super(message, cause);
   }
 
   /**
@@ -200,7 +199,7 @@ public class PersistenceException extends TentackleRuntimeException {
    * @param  cause the cause
    */
   public PersistenceException(Throwable cause) {
-    super(SessionUtilities.getInstance().alignExceptionCause(cause));
+    super(cause);
   }
 
 

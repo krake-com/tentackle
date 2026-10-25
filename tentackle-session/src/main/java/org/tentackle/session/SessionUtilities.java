@@ -264,19 +264,6 @@ public class SessionUtilities {
   }
 
   /**
-   * Replaces an exception cause that is probably not in the classpath of another (usually remote) JVM
-   * when the exception gets deserialized there.<br>
-   * Invoked by the constructors of {@link PersistenceException} with a cause.
-   *
-   * @param t the throwable
-   * @return the probably replaced throwable
-   */
-  public Throwable alignExceptionCause(Throwable t) {
-    // the default does nothing
-    return t;
-  }
-
-  /**
    * Sets the temporary flag according to the exception's cause and the session.<br>
    * Invoked by the constructors of {@link PersistenceException} with a cause and a session or identifiable.
    *

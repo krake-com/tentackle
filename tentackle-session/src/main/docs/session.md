@@ -285,8 +285,7 @@ source-code order.
 - **Keep-alive** — `keepAliveIntervalChanged(session)` starts the `SessionKeepAliveDaemon` on demand. Should the
   daemon have died, the next call starts a new one and hands all registered sessions over to it.
   `terminateHelperThreads()` stops it.
-- **Exception hooks** — `alignExceptionCause` (replace driver-specific causes a remote JVM cannot deserialize),
-  `alignTemporaryExceptionStatus` (flag transient database errors as temporary), `isSilentRollbackSufficient`
+- **Exception hooks** — `alignTemporaryExceptionStatus` (flag transient database errors as temporary), `isSilentRollbackSufficient`
   and `createLazyExceptionMessage`, used by `PersistenceException`. See
   [Exceptions and Error Handling](../../../../src/main/docs/exceptions.md).
 

@@ -52,10 +52,10 @@ public class InvocationTargetExceptionInstanceCreator implements TripInstanceCre
     StackTraceElement[] stackTrace = null;
     for (Map.Entry<TripComponent<InvocationTargetException, ?>, Object> entry : values.entrySet()) {
       switch (entry.getKey().getName()) {
-        case "target":
+        case "targetException":   // see InvocationTargetExceptionComponentProvider
           target = (Throwable) entry.getValue();
           break;
-        case "detailMessage":
+        case "message":
           message = (String) entry.getValue();
           break;
         case "stackTrace":

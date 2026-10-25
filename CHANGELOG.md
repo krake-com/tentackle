@@ -46,9 +46,33 @@ requires Java 11.
   by constructors taking the serialized values.
 - Binding treats final fields without a setter as read-only, and the NoFXML linker refuses to inject into final
   fields.
+- TRIP transfers the JDK's exceptions via their getters and public constructors instead of their inaccessible fields.
+  An exception that cannot be serialized no longer fails the whole response: it arrives with its message, cause and
+  stack trace, either as its own class or, without a usable constructor, as `TripInstantiationException`.
+  New instance creators transfer `FileSystemException` (and subclasses), `DateTimeParseException`, `ParseException`,
+  `URISyntaxException`, `PatternSyntaxException`, `InvalidPathException` and `MissingResourceException` completely.
+  The new base class `AbstractThrowableInstanceCreator` supports application-specific ones.
+
+### Removed
+
+- `SessionUtilities#alignExceptionCause` (overridden by `DbSessionUtilities`): TRIP no longer sends the classes of
+  JDBC drivers, so the cause of a `PersistenceException` stays as thrown.
 
 ### Fixed
 
+- TRIP lost the target and the message of an `InvocationTargetException`.
+- TRIP transferred the next exception of an `SQLException` as its cause, dropped the actual cause, and turned
+  its subclasses, such as `SQLIntegrityConstraintViolationException`, into plain `SQLException`s.
+  The update counts of a `BatchUpdateException` broke the transfer.
+- TRIP could not send a driver-specific `SQLException`, such as PostgreSQL's `PSQLException`, and would have sent
+  the driver's class to a client that doesn't have the driver. It is now sent as its nearest JDK superclass,
+  with the driver's class name appended to the message. A driver-specific cause that is not an `SQLException`
+  is sent as a plain `Exception`.
+- `PersistenceException` replaced a driver-specific `SQLException` cause, and any `SQLException` with a cause,
+  by a plain `SQLException` already locally. That lost the subclass, so a `SQLTransactionRollbackException`
+  (or a driver's subclass of it) was no longer recognized as temporary unless its SQL state was `40001`.
+- `UncheckedIOException`, `ExecutionException`, `CompletionException` and `AssertionError` could not be transferred
+  via TRIP.
 - `tentackle-jlink-maven-plugin`: jlink of Java 27 refuses to link a resource directory found in more than one
   module, such as `OSGI-INF` in ikonli 12.4.0. The new parameter `excludeResources` (jlink's `--exclude-resources`)
   excludes `**/OSGI-INF/**` by default.

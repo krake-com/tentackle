@@ -19,15 +19,22 @@
 package org.tentackle.dbms.trip;
 
 import org.tentackle.common.Service;
+import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TripFactory;
+import org.tentackle.trip.TripType;
 import org.tentackle.trip.impl.DefaultTripFactory;
 
 import java.lang.reflect.InvocationHandler;
+import java.sql.SQLException;
 import java.util.UUID;
 
 /**
  * Extended TRIP factory aware of database-related remote delegates.
+ * <p>
+ * Driver-specific {@link SQLException}s are transferred as their nearest superclass provided by the JDK,
+ * since the client usually doesn't have the JDBC driver on its classpath.
+ * See also {@link SQLExceptionComponentProvider} for the message and cause.
  */
 @Service(TripFactory.class)
 public class DbTripFactory extends DefaultTripFactory {
@@ -47,6 +54,33 @@ public class DbTripFactory extends DefaultTripFactory {
       }
     }
     return super.createInvocationHandler(remoteId, transport, clazz);
+  }
+
+  @Override
+  public <T> TripType<T> getType(Class<? extends T> clazz) {
+    if (SQLException.class.isAssignableFrom(clazz)) {
+      clazz = getTransferredClass(clazz);
+    }
+    return super.getType(clazz);
+  }
+
+
+  /**
+   * Gets the class an {@link SQLException} is transferred as.<br>
+   * Returns the nearest superclass provided by the JDK, for example, {@link SQLException} for
+   * {@code org.postgresql.util.PSQLException}.
+   *
+   * @param clazz the exception class
+   * @return the class to transfer
+   * @param <T> the type
+   */
+  @SuppressWarnings("unchecked")
+  protected <T> Class<? extends T> getTransferredClass(Class<? extends T> clazz) {
+    Class<?> transferredClass = clazz;
+    while (!ReflectionHelper.isJdkClass(transferredClass)) {
+      transferredClass = transferredClass.getSuperclass();
+    }
+    return (Class<? extends T>) transferredClass;
   }
 
 }

@@ -539,6 +539,17 @@ public final class ReflectionHelper {
   }
 
   /**
+   * Returns whether a class is provided by the JDK.
+   *
+   * @param clazz the class to check
+   * @return true if loaded by the bootstrap or platform class loader
+   */
+  public static boolean isJdkClass(Class<?> clazz) {
+    ClassLoader loader = clazz.getClassLoader();
+    return loader == null || loader == ClassLoader.getPlatformClassLoader();
+  }
+
+  /**
    * Determines the name a class is mapped by.<br>
    * Member classes must keep the {@code $xxx} of their binary name to stay loadable by
    * {@code Class.forName()}. Arrays are named by their component class, followed by the

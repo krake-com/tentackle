@@ -556,6 +556,44 @@ their backing collection or type token — copy them into a regular collection b
 - `Collections.checked*`,
 - `Map.entry` (`java.util.KeyValueHolder`) and `BitSet`, which are neither collections nor maps.
 
+### JDK exceptions
+
+The JDK does not open its packages, so TRIP cannot access the private fields and non-public
+constructors of the JDK's exceptions — and many of those fields are final anyway (see
+[Final fields](#final-fields-jep-500)). The
+[`ThrowableComponentProvider`](../java/org/tentackle/trip/provider/ThrowableComponentProvider.java)
+therefore never reads a field declared in a `java.*` class directly (except a public non-final one, such as
+`InterruptedIOException.bytesTransferred`): the message, cause and stack trace go through their accessors, and
+any other field through its public getter of the same name, if there is one. Such a getter-only value cannot be
+written back; it is meant for an instance creator that passes it to the constructor.
+
+**Arrive with message, cause and stack trace** — any exception that has a usable constructor taking the
+message and/or the cause. The cause parameter may be of any type the cause is an instance of, such as
+`UncheckedIOException(String, IOException)`, and constructors that are not accessible, such as the protected
+`ExecutionException(String)`, are skipped.
+
+**Arrive with all their values** — created by a predefined instance creator from the getter values
+(see [`AbstractThrowableInstanceCreator`](../java/org/tentackle/trip/creators/AbstractThrowableInstanceCreator.java)):
+
+- `InvocationTargetException` (with its target),
+- `FileSystemException` and its subclasses, such as `NoSuchFileException` and `AccessDeniedException`,
+- `DateTimeParseException`, `ParseException`,
+- `URISyntaxException`, `PatternSyntaxException`, `InvalidPathException`,
+- `MissingResourceException`,
+- with tentackle-database: `SQLException` and its subclasses, including the next exception, the update
+  counts of a `BatchUpdateException`, the values of a `DataTruncation` and the failed properties of an
+  `SQLClientInfoException`. A driver-specific exception, such as PostgreSQL's `PSQLException`, is sent as its
+  nearest superclass provided by the JDK, since the client usually doesn't have the JDBC driver on its classpath.
+
+**Arrive as `TripInstantiationException`** — an exception without any usable constructor. It carries the original
+message, cause and stack trace, and names the original class. The type is never refused, so a non-transferable
+exception, even as the cause of another one, no longer breaks the response. Provide an instance creator
+(extending `AbstractThrowableInstanceCreator`) and, for values without a getter of the same name, a component
+provider (extending `ThrowableComponentProvider` and overriding `getAdditionalGetterNames`) to transfer such an
+exception completely.
+
+Suppressed exceptions are not transferred.
+
 ### Annotation-driven customization
 
 TRIP's annotations let you tweak serialization behavior without writing custom `TripType` code.
@@ -705,27 +743,21 @@ It can create a bare instance, and — by overriding `isCreationFromValuesSuppor
 — build the object from the already-deserialized component values:
 
 ```java
-@TripInstanceCreatorService(SQLException.class)
-public class SQLExceptionInstanceCreator implements TripInstanceCreator<SQLException> {
+@TripInstanceCreatorService(ParseException.class)
+public class ParseExceptionInstanceCreator<T extends ParseException>
+       extends AbstractThrowableInstanceCreator<T> {
 
   @Override
-  public SQLException create(Class<SQLException> clazz) {
-    return new SQLException();
-  }
-
-  @Override
-  public SQLException create(Class<SQLException> clazz,
-                             Map<TripComponent<SQLException, ?>, Object> values) {
-    // map "message", "errorCode", "sQLState", "nextException", "stackTrace" → constructor
-    ...
-  }
-
-  @Override
-  public boolean isCreationFromValuesSupported(Class<SQLException> clazz) {
-    return true;
+  protected T create(Class<T> clazz, Values values) throws ReflectiveOperationException {
+    // the values of the getters by component name → public constructor of the actual class
+    return newInstance(clazz, new Class<?>[] { String.class, int.class },
+                       values.get("message"), values.getInt("errorOffset", 0));
   }
 }
 ```
+
+`AbstractThrowableInstanceCreator` returns `true` for `isCreationFromValuesSupported`, initializes the cause
+and applies the stack trace. See [JDK exceptions](#jdk-exceptions).
 
 #### `@TripComponentProvider`
 

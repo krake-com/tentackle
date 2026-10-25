@@ -92,6 +92,7 @@ topic-grouped listing of every document, see the
 - **`ExceptionHelper` (searching and handling exception chains)** — [Exceptions and Error Handling](./exceptions.md#exceptionhelper--working-with-chains)
 - **Exceptions (hierarchy, `TentackleRuntimeException`, `PersistenceException`)** — [Exceptions and Error Handling](./exceptions.md)
 - **Exceptions across tiers (remoting a `Throwable`)** — [Exceptions and Error Handling](./exceptions.md#exceptions-across-tiers), [TRIP](../../../tentackle-core/src/main/docs/trip.md)
+- **Exceptions of the JDK (transfer via TRIP)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#jdk-exceptions), [Exceptions and Error Handling](./exceptions.md#exceptions-across-tiers)
 - **Expandable text areas (one-liner expanding to a multi-line editor)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#expandable-one-line-text-areas)
 - **Environment variables (overriding properties)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md#properties)
 
