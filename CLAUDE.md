@@ -178,7 +178,8 @@ FXML, CSS, and `.properties` files are co-located with their Controller classes 
     children it spawns.
 - **PostgreSQL is opt-in** via `mvn -Ppostgres test`, which adds the `postgres` TestNG group.
   It holds `PostgresScriptRunnerTest` in `tentackle-test-pdo` (cancelling a statement needs a
-  server that can sleep) and `PostgresObjectIdSavepointTest` in `tentackle-database` (PostgreSQL
+  server that can sleep), `RemotePostgresExceptionTest` in `tentackle-test-pdo` (a real driver
+  exception crosses TRIP as a plain `SQLException`) and `PostgresObjectIdSavepointTest` in `tentackle-database` (PostgreSQL
   releases row locks on a rollback to a savepoint). That run needs a `tentackle` database created from the generated DDL beforehand; its
   credentials come from the `dbUrl`/`dbUser`/`dbPasswd` properties, filtered into the test
   modules' `postgres.properties`.
