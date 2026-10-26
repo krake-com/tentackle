@@ -612,21 +612,19 @@ public class JPackageMojo extends AbstractJLinkMojo {
           buf.append(getImagePathPrefix()).append('/').append(DEST_CLASSPATH).append('/').append(mainJarName);
           mainJarPatched = true;
         }
+        if (patchClassPath && !classPathPatched && line.equals(JAVA_OPTIONS) && jpackageMajorRuntimeVersion >= 15) {
+          // missing app.classpath (beginning with java 15): insert it before the [JavaOptions] section.
+          buf.setLength(buf.length() - JAVA_OPTIONS.length() - 2);
+          buf.append('\n').append(APP_CLASSPATH).append(result.generateClassPath())
+             .append("\n\n").append(JAVA_OPTIONS);
+          classPathPatched = true;
+        }
         if (patchModulePath) {
           if (line.equals(JAVA_OPTIONS)) {
             if (modulePathPatched) {
               throw new MojoExecutionException("more than one '" + JAVA_OPTIONS + "' found in " + configFile);
             }
-            if (jpackageMajorRuntimeVersion >= 15) {
-              if (patchClassPath && !classPathPatched) {
-                // missing app.classpath (beginning with java 15): insert it before the [JavaOptions] section
-                buf.setLength(buf.length() - JAVA_OPTIONS.length() - 2);
-                buf.append('\n').append(APP_CLASSPATH).append(result.generateClassPath())
-                   .append("\n\n").append(JAVA_OPTIONS);
-                classPathPatched = true;
-              }
-            }
-            else {
+            if (jpackageMajorRuntimeVersion < 15) {
               // insert the module path
               buf.append("\n-p\n").append(result.generateModulePath());
               modulePathPatched = true;

@@ -62,6 +62,7 @@ requires Java 11.
   by a plain `SQLException` so that clients could deserialize a remote exception without the driver on the classpath.
   This logic moved to `SQLExceptionComponentProvider` and was enhanced, so that TRIP now transfers a driver-specific exception as 
   its **nearest** JDK superclass. A driver-specific cause that is not an `SQLException` is sent as a plain `Exception`.
+- `FileHelper.unzip` (used by the auto-update) now restores the modification times of the extracted files, if present.
 
 ### Removed
 
@@ -71,6 +72,8 @@ requires Java 11.
 
 - `UncheckedIOException`, `ExecutionException`, `CompletionException` and `AssertionError` could not be transferred
   via TRIP.
+- `tentackle-jlink-maven-plugin`: the jpackage goal failed with "could not patch classpath" for a plain modular
+  application with resources, i.e. a classpath but no module path.
 
 
 ## Java 25 line (25.x)

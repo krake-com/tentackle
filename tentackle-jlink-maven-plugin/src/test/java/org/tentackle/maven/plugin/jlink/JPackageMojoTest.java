@@ -261,6 +261,24 @@ public class JPackageMojoTest {
   }
 
   /**
+   * A plain modular application has no module path, but still needs the classpath for its resources.
+   */
+  @Test
+  public void plainModularConfigFileGetsTheClassPathInserted() throws Exception {
+    File configFile = JLinkTestSupport.writeFile(tempDir, "app.cfg", MODULAR_CONFIG);
+    JLinkTestSupport.setField(mojo, "jpackageMajorRuntimeVersion", 25);
+    System.setProperty("os.name", "Linux");
+
+    patchConfigFile(configFile, result(true, List.of(), List.of("conf/resources.jar")), null);
+
+    String patched = JLinkTestSupport.readString(configFile);
+    assertTrue(patched.contains("app.classpath=" + LINUX_PREFIX + "/conf/resources.jar"), patched);
+    assertTrue(patched.indexOf("app.classpath=") < patched.indexOf("[JavaOptions]"),
+               "the classpath belongs into the application section: " + patched);
+    assertTrue(!patched.contains("-p\n") && !patched.contains("--module-path"), patched);
+  }
+
+  /**
    * For a classpath application the main jar and the classpath are redirected into the runtime
    * image, and the classpath order becomes the maven dependency order.
    */
