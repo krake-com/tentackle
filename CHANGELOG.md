@@ -26,6 +26,12 @@ requires Java 11.
 
 ## [Unreleased]
 
+### Added
+
+- `tentackle-jlink-maven-plugin`: jlink of Java 27 refuses to link a resource directory found in more than one
+  module, such as `OSGI-INF` in ikonli 12.4.0. The new parameter `excludeResources` (jlink's `--exclude-resources`)
+  excludes `**/OSGI-INF/**` by default.
+
 ### Changed
 
 - Faster PDO and operation invocation handlers: `hashCode`, `equals`, `compareTo` and `toString` are dispatched
@@ -52,30 +58,20 @@ requires Java 11.
   New instance creators transfer `FileSystemException` (and subclasses), `DateTimeParseException`, `ParseException`,
   `URISyntaxException`, `PatternSyntaxException`, `InvalidPathException` and `MissingResourceException` completely.
   The new base class `AbstractThrowableInstanceCreator` supports application-specific ones.
+- Formerly, `PersistenceException` replaced a driver-specific `SQLException`
+  by a plain `SQLException` so that clients could deserialize a remote exception without the driver on the classpath.
+  This logic moved to `SQLExceptionComponentProvider` and was enhanced, so that TRIP now transfers a driver-specific exception as 
+  its **nearest** JDK superclass. A driver-specific cause that is not an `SQLException` is sent as a plain `Exception`.
 
 ### Removed
 
-- `SessionUtilities#alignExceptionCause` (overridden by `DbSessionUtilities`): TRIP no longer sends the classes of
-  JDBC drivers, so the cause of a `PersistenceException` stays as thrown.
+- `SessionUtilities#alignExceptionCause` (overridden by `DbSessionUtilities`): no more necessary (see above).
 
 ### Fixed
 
-- TRIP lost the target and the message of an `InvocationTargetException`.
-- TRIP transferred the next exception of an `SQLException` as its cause, dropped the actual cause, and turned
-  its subclasses, such as `SQLIntegrityConstraintViolationException`, into plain `SQLException`s.
-  The update counts of a `BatchUpdateException` broke the transfer.
-- TRIP could not send a driver-specific `SQLException`, such as PostgreSQL's `PSQLException`, and would have sent
-  the driver's class to a client that doesn't have the driver. It is now sent as its nearest JDK superclass,
-  with the driver's class name appended to the message. A driver-specific cause that is not an `SQLException`
-  is sent as a plain `Exception`.
-- `PersistenceException` replaced a driver-specific `SQLException` cause, and any `SQLException` with a cause,
-  by a plain `SQLException` already locally. That lost the subclass, so a `SQLTransactionRollbackException`
-  (or a driver's subclass of it) was no longer recognized as temporary unless its SQL state was `40001`.
 - `UncheckedIOException`, `ExecutionException`, `CompletionException` and `AssertionError` could not be transferred
   via TRIP.
-- `tentackle-jlink-maven-plugin`: jlink of Java 27 refuses to link a resource directory found in more than one
-  module, such as `OSGI-INF` in ikonli 12.4.0. The new parameter `excludeResources` (jlink's `--exclude-resources`)
-  excludes `**/OSGI-INF/**` by default.
+
 
 ## Java 25 line (25.x)
 
