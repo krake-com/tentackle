@@ -293,6 +293,9 @@ public final class FileHelper {
    * Each entry is verified to resolve to a location inside the destination directory
    * before anything is written ("zip slip" protection). The consumer, if given, is invoked
    * for every verified entry, directories included, before the entry is extracted.
+   * <p>
+   * The modification time of each extracted file is restored from its entry, if the entry carries one.
+   * This matters for files whose timestamp is validated, such as the jars recorded in an AOT cache.
    *
    * @param zipFile the zip file
    * @param destDir the destination directory
@@ -327,6 +330,10 @@ public final class FileHelper {
             while ((len = zipStream.read(buffer)) > 0) {
               outputStream.write(buffer, 0, len);
             }
+          }
+          long time = zipEntry.getTime();
+          if (time != -1) {
+            destFile.setLastModified(time);
           }
         }
       }
