@@ -9,12 +9,12 @@ For the story behind the releases, see [The History of Tentackle](src/main/docs/
 
 ## Versioning
 
-Since 8.2.2.0, a version reads `<java>.<feature>.<minor>.<patch>`:
+Since 8.2.2.0, a version reads `<java>.<major>.<minor>.<patch>`:
 
 - **java** — the minimum JDK the release requires (8, 11, 17, 21, 25).
-- **feature** — the feature level. Since the Java 11 line, each new Java line continues with the
-  next feature level (11.7 → 17.8, 17.14 → 21.15, 21.16 → 25.17). The Java 8 line counts on its own.
-- **minor**, **patch** — enhancements and fixes within a feature level.
+- **major** — the major level. Since the Java 11 line, each new Java line continues with the
+  next major level (11.7 → 17.8, 17.14 → 21.15, 21.16 → 25.17). The Java 8 line counts on its own.
+- **minor**, **patch** — enhancements and fixes within a major level.
 
 Older Java lines are maintained on their own branches (`java8`, `java11`, `java17`, `java21`) and
 still receive maintenance releases. The releases are therefore grouped by Java line below, newest
