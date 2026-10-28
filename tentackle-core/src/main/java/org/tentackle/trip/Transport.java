@@ -66,7 +66,8 @@ public interface Transport {
   /**
    * Gets the transport key.<br>
    * Although transports are created using a URI, they are unique
-   * by their TransportKey since the URI-path is maintained by the transport's registry.
+   * by their TransportKey, i.e., scheme, host, and port, since the URI-path is maintained by the
+   * transport's registry and the query parameters configure the transport.
    *
    * @return the transport key
    */

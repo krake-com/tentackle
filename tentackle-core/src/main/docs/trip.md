@@ -77,7 +77,11 @@ Transport serverTransport = TransportManager.getInstance().requestTransport(
 serverTransport.accept();
 ```
 
-`TransportManager` is a singleton that deduplicates transports: calling `requestTransport(URI)` with the same scheme, host, port and query string returns the same `Transport` instance. Transports are reference-counted via a lease pattern — they close automatically when the last lease is released.
+`TransportManager` is a singleton that deduplicates transports: calling `requestTransport(URI)` with the same scheme, host and port 
+returns the same `Transport` instance. The query parameters configure the transport and are not part of its identity: 
+there is only one transport per endpoint, so requesting it again with different query parameters (their order doesn't matter) 
+fails with a `TripRuntimeException`. Transports are reference-counted via a lease pattern — 
+they close automatically when the last lease is released.
 The server uses virtual threads to handle multiple connections concurrently.
 
 **Built-in transports:**

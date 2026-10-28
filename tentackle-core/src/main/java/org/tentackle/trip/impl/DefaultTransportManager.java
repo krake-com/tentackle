@@ -31,7 +31,9 @@ import java.util.Map;
 /**
  * Default implementation of a {@link TransportManager}.<br>
  * Transports are leased: each request increments a lease counter, each release decrements it.
- * The transport is closed when the last lease is released.
+ * The transport is closed when the last lease is released.<br>
+ * Transports are unique by scheme, host, and port. Requesting a transport for an endpoint already in use
+ * with different query parameters fails with a {@link TripRuntimeException}.
  */
 public class DefaultTransportManager implements TransportManager {
 
@@ -47,8 +49,16 @@ public class DefaultTransportManager implements TransportManager {
   @Override
   public synchronized Transport requestTransport(URI uri) {
     TransportKey key = new TransportKey(uri);
-    return transports.computeIfAbsent(
-      key, _ -> new TransportLease(TripFactory.getInstance().createTransport(uri))).request();
+    TransportLease lease = transports.get(key);
+    if (lease == null) {
+      lease = new TransportLease(TripFactory.getInstance().createTransport(uri));
+      transports.put(key, lease);
+    }
+    else if (!lease.getTransport().getTransportKey().isSameQuery(key)) {
+      // key.toString() does not reveal the query parameters
+      throw new TripRuntimeException("transport " + key + " already in use with different query parameters");
+    }
+    return lease.request();
   }
 
   @Override
