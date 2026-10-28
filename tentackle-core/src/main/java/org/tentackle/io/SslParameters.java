@@ -51,7 +51,7 @@ import java.util.Map;
  * Unlike the default {@link javax.net.ssl.SSLServerSocketFactory}, which always presents the
  * <em>first</em> suitable certificate found in the keystore, this configuration allows selecting
  * the server (or client) certificate by its <b>alias</b> and tuning the SSL options
- * (enabled protocols, cipher suites, client authentication, etc.).
+ * (enabled protocols, cipher suites, key-exchange groups, client authentication, etc.).
  * <p>
  * Each configuration value is resolved from up to three sources, in order of precedence:
  * <ol>
@@ -75,6 +75,7 @@ import java.util.Map;
  *   <tr><td>{@code protocol}</td><td>{@code protocol}</td><td>&mdash;</td><td>{@link SSLContext} protocol (default {@code TLS})</td></tr>
  *   <tr><td>{@code protocols}</td><td>{@code protocols}</td><td>&mdash;</td><td>comma-separated list of enabled protocols, e.g. {@code TLSv1.3,TLSv1.2}</td></tr>
  *   <tr><td>{@code ciphers}</td><td>{@code cipherSuites}</td><td>&mdash;</td><td>comma-separated list of enabled cipher suites</td></tr>
+ *   <tr><td>{@code namedgroups}</td><td>{@code namedGroups}</td><td>&mdash;</td><td>comma-separated list of enabled key-exchange groups in preference order, e.g. {@code X25519MLKEM768}</td></tr>
  *   <tr><td>{@code clientauth}</td><td>{@code clientAuth}</td><td>&mdash;</td><td>server-side client-certificate policy: {@code none} (default), {@code want} or {@code need}</td></tr>
  *   <tr><td>{@code endpointid}</td><td>{@code endpointIdentification}</td><td>&mdash;</td><td>client-side endpoint identification algorithm (default: {@code HTTPS})</td></tr>
  *   <tr><td>{@code hostcheck}</td><td>{@code hostCheck}</td><td>&mdash;</td><td>client-side check of the server's host name against its certificate (default: {@code true}); any value but {@code true} turns it off</td></tr>
@@ -83,6 +84,11 @@ import java.util.Map;
  * The client verifies the server's certificate against the host name of the URI by default, just like the
  * QUIC transports do. A client that connects to a server by an address its certificate is not issued for
  * (e.g. by IP address) can opt out with {@code hostcheck=false}; the certificate chain is still verified.
+ * <p>
+ * The JDK negotiates the post-quantum hybrid group {@code X25519MLKEM768} by default when both ends support it,
+ * but silently falls back to a classical group otherwise. Restricting {@code namedgroups} to post-quantum groups
+ * only (e.g. {@code namedgroups=X25519MLKEM768}) turns such a downgrade into a handshake failure.
+ * If no group is configured, the JDK default applies (see the {@code jdk.tls.namedGroups} system property).
  * <p>
  * Client certificates are supported by simply providing a keystore (and, if the certificate should be
  * chosen explicitly, an alias) on the client side.
@@ -116,6 +122,7 @@ public class SslParameters {
   private final String protocol;                // SSLContext protocol, null for "TLS"
   private final String[] enabledProtocols;      // enabled protocols, null for JDK default
   private final String[] enabledCipherSuites;   // enabled cipher suites, null for JDK default
+  private final String[] namedGroups;           // enabled key-exchange groups, null for JDK default
   private final ClientAuth clientAuth;          // server-side client-certificate policy
   private final String endpointIdentification;  // client-side endpoint identification algorithm
   private final boolean hostCheck;              // true if the client verifies the server's host name
@@ -133,24 +140,25 @@ public class SslParameters {
     this.uri = uri;
     this.query = UriHelper.getQueryParameters(uri.getQuery(), String::valueOf);
 
-    keyStoreFile     = resolve("ksfile",  "keyStore",         "javax.net.ssl.keyStore");
-    keyStorePassword = resolve("kspass",  "keyStorePassword", "javax.net.ssl.keyStorePassword");
-    keyStoreType     = resolve("kstype",  "keyStoreType",     "javax.net.ssl.keyStoreType");
-    keyStoreAlias    = resolve("ksalias", "keyStoreAlias",    null);
-    keyPassword      = resolve("kmpass",  "keyPassword",      "javax.net.ssl.keyPassword");
+    keyStoreFile = resolve("ksfile", "keyStore", "javax.net.ssl.keyStore");
+    keyStorePassword = resolve("kspass", "keyStorePassword", "javax.net.ssl.keyStorePassword");
+    keyStoreType = resolve("kstype", "keyStoreType", "javax.net.ssl.keyStoreType");
+    keyStoreAlias = resolve("ksalias", "keyStoreAlias", null);
+    keyPassword = resolve("kmpass", "keyPassword", "javax.net.ssl.keyPassword");
 
-    trustStoreFile     = resolve("tsfile", "trustStore",         "javax.net.ssl.trustStore");
+    trustStoreFile = resolve("tsfile", "trustStore", "javax.net.ssl.trustStore");
     trustStorePassword = resolve("tspass", "trustStorePassword", "javax.net.ssl.trustStorePassword");
-    trustStoreType     = resolve("tstype", "trustStoreType",     "javax.net.ssl.trustStoreType");
+    trustStoreType = resolve("tstype", "trustStoreType", "javax.net.ssl.trustStoreType");
 
-    protocol               = resolve("protocol",   "protocol",               null);
-    enabledProtocols       = split(resolve("protocols",  "protocols",         null));
-    enabledCipherSuites    = split(resolve("ciphers",    "cipherSuites",      null));
-    clientAuth             = parseClientAuth(resolve("clientauth", "clientAuth", null));
-    String endpointId      = resolve("endpointid", "endpointIdentification", null);
+    protocol = resolve("protocol", "protocol", null);
+    enabledProtocols = split(resolve("protocols", "protocols", null));
+    enabledCipherSuites = split(resolve("ciphers", "cipherSuites", null));
+    namedGroups = split(resolve("namedgroups", "namedGroups", null));
+    clientAuth = parseClientAuth(resolve("clientauth", "clientAuth", null));
+    String endpointId = resolve("endpointid", "endpointIdentification", null);
     endpointIdentification = endpointId == null ? "HTTPS" : endpointId;
-    String hostCheckValue  = resolve("hostcheck",  "hostCheck",              null);
-    hostCheck              = hostCheckValue == null || Boolean.parseBoolean(hostCheckValue);
+    String hostCheckValue = resolve("hostcheck", "hostCheck", null);
+    hostCheck = hostCheckValue == null || Boolean.parseBoolean(hostCheckValue);
   }
 
 
@@ -279,6 +287,16 @@ public class SslParameters {
   }
 
   /**
+   * Gets the enabled key-exchange groups.<br>
+   * Used by the transports with a TLS stack of their own, such as QUIC, to apply the same restriction.
+   *
+   * @return the group names in preference order, or null if not configured and the default applies
+   */
+  public String[] getNamedGroups() {
+    return namedGroups == null ? null : namedGroups.clone();
+  }
+
+  /**
    * Returns whether the client verifies the server's host name against its certificate.
    *
    * @return true if the host name is verified (the default), false if only the certificate chain is
@@ -289,7 +307,7 @@ public class SslParameters {
 
   /**
    * Configures a freshly created server socket with the resolved SSL options.<br>
-   * Applies the enabled protocols and cipher suites and the client-certificate policy.
+   * Applies the enabled protocols, cipher suites and key-exchange groups and the client-certificate policy.
    *
    * @param socket the SSL server socket to configure
    */
@@ -300,6 +318,11 @@ public class SslParameters {
     if (enabledCipherSuites != null) {
       socket.setEnabledCipherSuites(enabledCipherSuites);
     }
+    if (namedGroups != null) {
+      SSLParameters params = socket.getSSLParameters();
+      params.setNamedGroups(namedGroups);
+      socket.setSSLParameters(params);
+    }
     switch (clientAuth) {
       case NEED -> socket.setNeedClientAuth(true);
       case WANT -> socket.setWantClientAuth(true);
@@ -309,8 +332,8 @@ public class SslParameters {
 
   /**
    * Configures a freshly created client socket with the resolved SSL options.<br>
-   * Applies the enabled protocols and cipher suites and, unless {@code hostcheck} is turned off, the
-   * endpoint identification algorithm used to verify the server's certificate against the host name.
+   * Applies the enabled protocols, cipher suites and key-exchange groups and, unless {@code hostcheck} is
+   * turned off, the endpoint identification algorithm used to verify the server's certificate against the host name.
    *
    * @param socket the SSL socket to configure
    */
@@ -321,9 +344,14 @@ public class SslParameters {
     if (enabledCipherSuites != null) {
       socket.setEnabledCipherSuites(enabledCipherSuites);
     }
-    if (hostCheck) {
+    if (hostCheck || namedGroups != null) {
       SSLParameters params = socket.getSSLParameters();
-      params.setEndpointIdentificationAlgorithm(endpointIdentification);
+      if (hostCheck) {
+        params.setEndpointIdentificationAlgorithm(endpointIdentification);
+      }
+      if (namedGroups != null) {
+        params.setNamedGroups(namedGroups);
+      }
       socket.setSSLParameters(params);
     }
   }

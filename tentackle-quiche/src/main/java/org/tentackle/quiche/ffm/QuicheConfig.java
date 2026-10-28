@@ -113,6 +113,10 @@ public class QuicheConfig implements AutoCloseable {
     Quiche.downcall("quiche_config_set_cc_algorithm_name",
                     FunctionDescriptor.of(ValueLayouts.INT, ValueLayouts.POINTER, ValueLayouts.POINTER));
 
+  private static final MethodHandle SET_CURVES_LIST =
+    Quiche.downcall("quiche_config_set_curves_list",
+                    FunctionDescriptor.of(ValueLayouts.INT, ValueLayouts.POINTER, ValueLayouts.POINTER));
+
   private static final MethodHandle GREASE =
     Quiche.downcall("quiche_config_grease", FunctionDescriptor.ofVoid(ValueLayouts.POINTER, ValueLayouts.BOOL));
 
@@ -446,6 +450,30 @@ public class QuicheConfig implements AutoCloseable {
     }
     catch (Throwable t) {
       throw new QuicheException("quiche_config_grease failed", t);
+    }
+    return this;
+  }
+
+  /**
+   * Sets the key-exchange groups, in preference order.<br>
+   * The names are BoringSSL's, for example {@code X25519MLKEM768}, {@code X25519}, {@code P-256}
+   * or {@code P-384}. Without this, BoringSSL's default applies.
+   *
+   * @param curves the colon-separated list of group names
+   * @return this configuration
+   * @throws QuicheException if a group is unknown or not supported
+   */
+  public QuicheConfig setCurvesList(String curves) {
+    MemorySegment segment = arena.allocateFrom(curves);
+    try {
+      int result = (int) SET_CURVES_LIST.invokeExact(getSegment(), segment);
+      if (result < 0) {
+        throw new QuicheException("unsupported key-exchange group(s) in '" + curves + "'", result);
+      }
+    }
+    catch (Throwable t) {
+      throw t instanceof RuntimeException e ? e
+                                            : new QuicheException("quiche_config_set_curves_list failed", t);
     }
     return this;
   }

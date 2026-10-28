@@ -83,6 +83,22 @@ public class QuicTripTransportTest {
   }
 
   @Test(timeOut = 60000)
+  public void acceptsWithNamedGroups() throws Exception {
+    Reporter.log("acceptsWithNamedGroups", true);
+    // the KWIK server cannot restrict the groups: it only warns
+    int port = QuicTestSupport.freeUdpPort();
+    QuicTripTransport transport = new QuicTripTransport(URI.create(
+      "tripq://localhost:" + port + "?namedgroups=X25519MLKEM768&" + QuicTestSupport.keyStoreParameters(keyStore)));
+    try {
+      transport.accept();
+      assertTrue(transport.isAccepting());
+    }
+    finally {
+      transport.close();
+    }
+  }
+
+  @Test(timeOut = 60000)
   public void refusesToAcceptWithoutPort() {
     Reporter.log("refusesToAcceptWithoutPort", true);
     QuicTripTransport transport = new QuicTripTransport(URI.create(

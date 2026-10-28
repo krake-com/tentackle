@@ -82,18 +82,18 @@ The server uses virtual threads to handle multiple connections concurrently.
 
 **Built-in transports:**
 
-| Scheme   | Description                                                                    |
-|----------|--------------------------------------------------------------------------------|
-| `trip`   | Plain TCP sockets                                                              |
-| `trips`  | TCP with SSL/TLS encryption                                                    |
-| `tripe`  | TCP with pre-shared key (PSK) encryption                                       |
-| `tripc`  | TCP with deflate compression                                                   |
-| `tripcs` | TCP with both SSL and compression                                              |
-| `tripce` | TCP with both PSK and compression                                              |
-| `tripq`  | UDP QUIC protocol (provided by `tentackle-quic` module)                        |
-| `tripcq` | UDP QUIC protocol with compression                                             |
-| `tripj`  | UDP QUIC protocol on Cloudflare quiche (provided by `tentackle-quiche` module) |
-| `tripcj` | UDP QUIC protocol on Cloudflare quiche, with compression                       |
+| Scheme     | Description                                                                                                                               |
+|------------|-------------------------------------------------------------------------------------------------------------------------------------------|
+| `trip`     | Plain TCP sockets                                                                                                                         |
+| `trips`    | TCP with SSL/TLS encryption                                                                                                               |
+| `tripe`    | TCP with pre-shared key (PSK) encryption                                                                                                  |
+| `tripc`    | TCP with deflate compression                                                                                                              |
+| `tripcs`   | TCP with both SSL and compression                                                                                                         |
+| `tripce`   | TCP with both PSK and compression                                                                                                         |
+| `tripq`    | UDP QUIC protocol (provided by `tentackle-quic` module)                                                                                   |
+| `tripcq`   | UDP QUIC protocol with compression                                                                                                        |
+| `tripj`    | UDP QUIC protocol on Cloudflare quiche (provided by `tentackle-quiche` module)                                                            |
+| `tripcj`   | UDP QUIC protocol on Cloudflare quiche, with compression                                                                                  |
 | `loopback` | In-memory transport for tests: no socket, accepts a single connection, but runs the server side in separate threads like a real transport |
 
 The compressing and PSK-encrypting variants are built from the packet-framed streams in
@@ -142,22 +142,23 @@ value is resolved from up to three sources, in order of precedence:
 3. the standard JSSE **system property** `javax.net.ssl.<name>` as a fallback, so existing
    configurations (e.g. in `backend.properties`) keep working.
 
-| Query key    | `tentackle.ssl.` suffix  | `javax.net.ssl.` fallback | Side   | Description                                                                                 |
-|--------------|--------------------------|---------------------------|--------|---------------------------------------------------------------------------------------------|
-| `ksfile`     | `keyStore`               | `keyStore`                | both   | keystore holding the own certificate(s); a client sets it to present a client cert          |
-| `kspass`     | `keyStorePassword`       | `keyStorePassword`        | both   | keystore password                                                                           |
-| `kstype`     | `keyStoreType`           | `keyStoreType`            | both   | keystore type (default: JDK default, usually `PKCS12`)                                      |
-| `ksalias`    | `keyStoreAlias`          | —                         | both   | **alias of the certificate to present** (optional if the keystore holds a single key entry) |
-| `kmpass`     | `keyPassword`            | `keyPassword`             | both   | private key password (default: keystore password)                                           |
-| `tsfile`     | `trustStore`             | `trustStore`              | both   | truststore verifying the peer (default: JSSE default trust store)                           |
-| `tspass`     | `trustStorePassword`     | `trustStorePassword`      | both   | truststore password                                                                         |
-| `tstype`     | `trustStoreType`         | `trustStoreType`          | both   | truststore type                                                                             |
-| `protocol`   | `protocol`               | —                         | both   | `SSLContext` protocol (default `TLS`)                                                       |
-| `protocols`  | `protocols`              | —                         | both   | comma-separated enabled protocols, e.g. `TLSv1.3,TLSv1.2`                                   |
-| `ciphers`    | `cipherSuites`           | —                         | both   | comma-separated enabled cipher suites                                                       |
-| `clientauth` | `clientAuth`             | —                         | server | client-certificate policy: `none` (default), `want` or `need`                               |
-| `endpointid` | `endpointIdentification` | —                         | client | endpoint identification algorithm (default `HTTPS`)                                         |
-| `hostcheck`  | `hostCheck`              | —                         | client | verify the server's host name against its certificate (default `true`)                      |
+| Query key     | `tentackle.ssl.` suffix  | `javax.net.ssl.` fallback | Side   | Description                                                                                 |
+|---------------|--------------------------|---------------------------|--------|---------------------------------------------------------------------------------------------|
+| `ksfile`      | `keyStore`               | `keyStore`                | both   | keystore holding the own certificate(s); a client sets it to present a client cert          |
+| `kspass`      | `keyStorePassword`       | `keyStorePassword`        | both   | keystore password                                                                           |
+| `kstype`      | `keyStoreType`           | `keyStoreType`            | both   | keystore type (default: JDK default, usually `PKCS12`)                                      |
+| `ksalias`     | `keyStoreAlias`          | —                         | both   | **alias of the certificate to present** (optional if the keystore holds a single key entry) |
+| `kmpass`      | `keyPassword`            | `keyPassword`             | both   | private key password (default: keystore password)                                           |
+| `tsfile`      | `trustStore`             | `trustStore`              | both   | truststore verifying the peer (default: JSSE default trust store)                           |
+| `tspass`      | `trustStorePassword`     | `trustStorePassword`      | both   | truststore password                                                                         |
+| `tstype`      | `trustStoreType`         | `trustStoreType`          | both   | truststore type                                                                             |
+| `protocol`    | `protocol`               | —                         | both   | `SSLContext` protocol (default `TLS`)                                                       |
+| `protocols`   | `protocols`              | —                         | both   | comma-separated enabled protocols, e.g. `TLSv1.3,TLSv1.2`                                   |
+| `ciphers`     | `cipherSuites`           | —                         | both   | comma-separated enabled cipher suites                                                       |
+| `namedgroups` | `namedGroups`            | —                         | both   | comma-separated enabled key-exchange groups in preference order, e.g. `X25519MLKEM768`      |
+| `clientauth`  | `clientAuth`             | —                         | server | client-certificate policy: `none` (default), `want` or `need`                               |
+| `endpointid`  | `endpointIdentification` | —                         | client | endpoint identification algorithm (default `HTTPS`)                                         |
+| `hostcheck`   | `hostCheck`              | —                         | client | verify the server's host name against its certificate (default `true`)                      |
 
 The client verifies the server's certificate against the host name of the URI by default, just like
 the QUIC transports `tripq` and `tripj` do. A client connecting by an address the certificate is not
@@ -174,6 +175,35 @@ trips://0.0.0.0:18000/myapp?ksfile=server.p12&kspass=secret&ksalias=server&tsfil
 
 Client certificates are supported symmetrically: a client presents one by providing `ksfile`
 (and, to pick a specific one, `ksalias`).
+
+#### Post-quantum key exchange
+
+Since Java 27 ([JEP 527](https://openjdk.org/jeps/527)), TLS 1.3 negotiates the hybrid post-quantum
+key exchange `X25519MLKEM768` automatically when both ends support it. This protects recorded TRIP
+traffic against "harvest now, decrypt later" attacks. Nothing has to be configured for that.
+
+However, the JDK silently falls back to a classical group (`x25519`, `secp256r1`, …) when the peer
+does not support it — a client or server on an older JDK, for example. A site that must not accept
+such a downgrade restricts the enabled groups with `namedgroups`:
+
+```
+trips://0.0.0.0:18000/myapp?ksfile=server.p12&kspass=secret&namedgroups=X25519MLKEM768
+```
+
+A peer without post-quantum support then fails the handshake ("No common named group") instead of
+quietly negotiating a classical key exchange. The option can be set on either side, or on both, and
+applies via `SSLParameters#setNamedGroups`. If it is not set, the JDK default applies, which in turn
+can be changed JVM-wide by the `jdk.tls.namedGroups` system property. The certificates and signatures
+remain classical, which is fine against "harvest now, decrypt later": only the key exchange must
+withstand a future quantum computer.
+
+The QUIC transports bring their own TLS stacks.
+[`tripq`/`tripcq`](../../../tentackle-quic/src/main/docs/quic.md#post-quantum-key-exchange) use KWIK
+with the post-quantum key exchanges of `agent15-pqc`: its client honors `namedgroups` as well, but
+offers only classical groups unless it is set, and its server cannot restrict the groups at all, so it
+only logs a prominent warning when `namedgroups` is set.
+[`tripj`/`tripcj`](../../../tentackle-quiche/src/main/docs/quiche.md#post-quantum-key-exchange) use
+BoringSSL, which offers `X25519MLKEM768` by default, and honor `namedgroups` on both ends.
 
 ### Remote and RemoteDelegate
 
@@ -317,12 +347,12 @@ A `TripComponent<P, T>` (`org.tentackle.trip.TripComponent`) describes one seria
 
 Component implementations:
 
-| Type                     | Implementation                 | Access mechanism                                 |
-|--------------------------|--------------------------------|--------------------------------------------------|
-| Fields                   | `FieldTripComponent`           | `VarHandle` (final fields are refused, see [JEP-500](#final-fields-jep-500)) |
-| Fields of primitive type | `PrimitiveFieldTripComponent`  | `VarHandle`, invoked with a primitive signature  |
-| Getters/setters          | `MethodTripComponent`          | Reflective `Method.invoke`                       |
-| Record components        | `RecordTripComponent`          | `MethodHandle` bound to the accessor             |
+| Type                     | Implementation                | Access mechanism                                                             |
+|--------------------------|-------------------------------|------------------------------------------------------------------------------|
+| Fields                   | `FieldTripComponent`          | `VarHandle` (final fields are refused, see [JEP-500](#final-fields-jep-500)) |
+| Fields of primitive type | `PrimitiveFieldTripComponent` | `VarHandle`, invoked with a primitive signature                              |
+| Getters/setters          | `MethodTripComponent`         | Reflective `Method.invoke`                                                   |
+| Record components        | `RecordTripComponent`         | `MethodHandle` bound to the accessor                                         |
 
 Two further implementations serve internal purposes: `EnumTripComponent` represents a single enum
 constant, and `ClassTripComponent` represents an interface of a dynamic proxy or the component
@@ -1042,11 +1072,11 @@ The `Transport` interface defines the core contract:
 
 Three base classes handle different levels of boilerplate:
 
-| Class                                        | What it provides                                                     | Best for                                        |
-|----------------------------------------------|----------------------------------------------------------------------|-------------------------------------------------|
-| `AbstractTransport`                          | UUID generation, thread pools, dictionary management, lease tracking | New protocol from scratch (e.g., QUIC)          |
-| `TcpTransport`                               | Socket-based client connections and server listening                 | Adding a layer on top of TCP (SSL, compression) |
-| `SslTransport` / `EncryptedTransport` / `CompressedTransport` | Subclasses of `TcpTransport`                        | Adding SSL, PSK encryption or compression to TCP |
+| Class                                                         | What it provides                                                     | Best for                                         |
+|---------------------------------------------------------------|----------------------------------------------------------------------|--------------------------------------------------|
+| `AbstractTransport`                                           | UUID generation, thread pools, dictionary management, lease tracking | New protocol from scratch (e.g., QUIC)           |
+| `TcpTransport`                                                | Socket-based client connections and server listening                 | Adding a layer on top of TCP (SSL, compression)  |
+| `SslTransport` / `EncryptedTransport` / `CompressedTransport` | Subclasses of `TcpTransport`                                         | Adding SSL, PSK encryption or compression to TCP |
 
 The only abstract method in `AbstractTransport` is:
 

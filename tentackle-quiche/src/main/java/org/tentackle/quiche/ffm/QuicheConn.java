@@ -203,6 +203,12 @@ public class QuicheConn implements AutoCloseable {
   private static final MethodHandle PATH_EVENT_CLOSED = pathEventAddresses("quiche_path_event_closed");
   private static final MethodHandle PATH_EVENT_PEER_MIGRATED =
     pathEventAddresses("quiche_path_event_peer_migrated");
+  private static final MethodHandle PATH_EVENT_PMTU_UPDATED =
+    Quiche.downcall("quiche_path_event_pmtu_updated",
+                    FunctionDescriptor.ofVoid(ValueLayouts.POINTER,
+                                              ValueLayouts.POINTER, ValueLayouts.POINTER,
+                                              ValueLayouts.POINTER, ValueLayouts.POINTER,
+                                              ValueLayouts.POINTER));
 
   private static final MethodHandle CONN_STATS =
     Quiche.downcall("quiche_conn_stats",
@@ -261,7 +267,7 @@ public class QuicheConn implements AutoCloseable {
    * <p>
    * Quiche fills in the whole structure, not just the prefix read here, and a later quiche version may
    * append fields. Too small a buffer would be a silent heap overflow, so it is sized well beyond both
-   * structures (208 and 448 bytes as of quiche 0.29).
+   * structures (208 and 448 bytes as of quiche 0.30).
    */
   private static final long STATS_BUFFER_SIZE = 1024;
 
@@ -813,8 +819,20 @@ public class QuicheConn implements AutoCloseable {
           case FAILED_VALIDATION -> PATH_EVENT_FAILED_VALIDATION;
           case CLOSED -> PATH_EVENT_CLOSED;
           case PEER_MIGRATED -> PATH_EVENT_PEER_MIGRATED;
-          case REUSED_SOURCE_CONNECTION_ID -> null;
+          case REUSED_SOURCE_CONNECTION_ID, PMTU_UPDATED -> null;
         };
+        if (type == PathEvent.Type.PMTU_UPDATED) {
+          // same addresses as the others, plus the new PMTU, which is of no interest here
+          try (Arena confined = Arena.ofConfined()) {
+            MemorySegment local = confined.allocate(SockAddr.STORAGE);
+            MemorySegment localLength = confined.allocate(ValueLayouts.SOCKLEN_T);
+            MemorySegment peer = confined.allocate(SockAddr.STORAGE);
+            MemorySegment peerLength = confined.allocate(ValueLayouts.SOCKLEN_T);
+            MemorySegment pmtu = confined.allocate(ValueLayouts.SIZE_T);
+            PATH_EVENT_PMTU_UPDATED.invokeExact(event, local, localLength, peer, peerLength, pmtu);
+            return new PathEvent(type, SockAddr.decode(local), SockAddr.decode(peer));
+          }
+        }
         if (accessor == null) {
           return new PathEvent(type, null, null);
         }

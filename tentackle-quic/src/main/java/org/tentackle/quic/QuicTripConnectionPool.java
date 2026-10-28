@@ -18,6 +18,7 @@
 
 package org.tentackle.quic;
 
+import tech.kwik.agent15.TlsConstants.NamedGroup;
 import tech.kwik.core.QuicClientConnection;
 import tech.kwik.core.QuicStream;
 
@@ -40,6 +41,8 @@ import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -104,6 +107,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
   private final int connectTimeoutSeconds;
   private final int streamTimeoutSeconds;
   private final X509TrustManager trustManager;    // checks the server certificate, null if certcheck is disabled
+  private final List<NamedGroup> namedGroups;     // the key-exchange groups to offer, null for the KWIK default
   private QuicClientConnection connection;
 
   /**
@@ -112,7 +116,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
    * @param transport     the transport associated with this pool
    * @param dictionary    the dictionary associated with this pool
    * @throws IllegalArgumentException if the URI has no port &gt; 0, or {@code connecttimeout} or
-   *         {@code streamtimeout} is not &gt; 0
+   *         {@code streamtimeout} is not &gt; 0, or {@code namedgroups} names an unknown group
    * @throws TripRuntimeException if the QUIC connection cannot be established
    */
   public QuicTripConnectionPool(QuicTripTransport transport, Dictionary dictionary) {
@@ -150,6 +154,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     streamWindow = transport.getStreamWindow();   // validated here rather than by every connect attempt
     trustManager = Boolean.parseBoolean(queryParameters.getOrDefault("certcheck", "true")) ?
                    createTrustManager(uri) : null;
+    namedGroups = toNamedGroups(new SslParameters(uri).getNamedGroups(), uri);
 
     connect();
   }
@@ -413,6 +418,10 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     else {
       builder.customTrustManager(attemptTrustManager);
     }
+    if (namedGroups != null) {
+      // KWIK sends a key share for the first group and falls back to a HelloRetryRequest for the others
+      builder.supportedGroups(namedGroups);
+    }
     QuicClientConnection quicConnection = builder.build();
     try {
       quicConnection.connect();
@@ -422,6 +431,33 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
       closeQuietly(quicConnection);
       throw e;
     }
+  }
+
+  /**
+   * Converts the configured key-exchange group names to KWIK's named groups.<br>
+   * The names are the standard TLS names, as used by the JDK as well (e.g. {@code X25519MLKEM768}).
+   * Whether a known group is also supported is checked by KWIK when connecting: the post-quantum
+   * hybrid groups, for example, are provided by {@code agent15-pqc}.
+   *
+   * @param names the group names, null if not configured
+   * @param uri the transport URI (for diagnostics)
+   * @return the named groups, null if not configured
+   * @throws IllegalArgumentException if a name is unknown
+   */
+  private static List<NamedGroup> toNamedGroups(String[] names, URI uri) {
+    if (names == null) {
+      return null;
+    }
+    List<NamedGroup> groups = new ArrayList<>(names.length);
+    for (String name : names) {
+      try {
+        groups.add(NamedGroup.valueOf(name));
+      }
+      catch (IllegalArgumentException ix) {
+        throw new IllegalArgumentException("unknown named group '" + name + "' in " + uri, ix);
+      }
+    }
+    return groups;
   }
 
   /**

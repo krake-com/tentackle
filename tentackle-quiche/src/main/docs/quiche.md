@@ -259,19 +259,34 @@ tripj://host:port/service?parameter=value&...
 | `quicidle`       | both   | 30                                             | QUIC max idle timeout in **seconds**; 0 disables the timeout (and the derived keep-alive)       |
 | `keepalive`      | client | -1                                             | keep-alive interval in seconds; negative derives it from `quicidle`, 0 disables                 |
 | `migrate`        | client | 2                                              | probe timeouts without any acknowledgment before migrating, >= 0; 0 disables                    |
+| `namedgroups`    | both   | `tentackle.ssl.namedGroups` / BoringSSL's      | key-exchange groups in preference order, e.g. `X25519MLKEM768`; see below                       |
 | `mincompress`    | both   | 1024                                           | smallest block to compress (`tripcj` only)                                                      |
 
-The keystore and truststore parameters are resolved by the shared
+The keystore and truststore parameters and `namedgroups` are resolved by the shared
 [`SslParameters`](../../../../tentackle-core/src/main/docs/trip.md#ssltls-configuration), exactly as for
 `tripq`: each also honors a `tentackle.ssl.<name>` system property and, as a fallback, the standard
-`javax.net.ssl.<name>` property. An invalid `maxstreams`, `streamwindow` or `migrate` fails with a
-`TripRuntimeException`. On the client, a port that is not > 0 or a `connecttimeout` that is not > 0
+`javax.net.ssl.<name>` property. An invalid `maxstreams`, `streamwindow`, `migrate` or `namedgroups` fails
+with a `TripRuntimeException`. On the client, a port that is not > 0 or a `connecttimeout` that is not > 0
 fails the creation of the connection pool with an `IllegalArgumentException`. The pool parameters
 (`initial`, `increment`, `minimum`, `maximum`, `idle`, `usage`) are described in
 [trip.md](../../../../tentackle-core/src/main/docs/trip.md).
 
 Note that `keepalive` is the *interval* between keep-alive packets here, whereas `tentackle-quic` hands it
 to KWIK as the *duration* for which the connection is kept alive.
+
+### Post-quantum key exchange
+
+The BoringSSL inside quiche 0.30.0 offers and accepts the post-quantum hybrid group `X25519MLKEM768` by
+default: a client sends key shares for `X25519MLKEM768` and `x25519`, so it gets a post-quantum key exchange
+from every server that supports it (including `tripq` and the JDK's TLS) and a classical one from the others.
+
+`namedgroups` restricts the groups on either end, just like for the TCP transports (see
+[TRIP](../../../../tentackle-core/src/main/docs/trip.md#post-quantum-key-exchange)). With
+`namedgroups=X25519MLKEM768`, a peer without post-quantum support fails the handshake instead of
+downgrading. The names are the standard TLS names the JDK uses as well. They are translated to BoringSSL's
+spelling (`x25519` → `X25519`, `secp256r1` → `P-256`, `secp384r1` → `P-384`, `secp521r1` → `P-521`) and
+handed to `quiche_config_set_curves_list`. A group BoringSSL does not implement, such as `x448` or the
+other hybrids `SecP256r1MLKEM768` and `SecP384r1MLKEM1024`, fails the configuration.
 
 ## Idle timeout and keep-alive
 
@@ -380,7 +395,9 @@ otherwise. The file is deleted when the JVM exits — except on Windows, which c
 still loaded, so there the extracted DLL stays in the temporary directory.
 
 Set `-Dtentackle.quiche.library=<absolute path>` to use a different library — a locally built one, or one
-for a platform the artifact does not cover, such as Windows on aarch64 or one of the BSDs.
+for a platform the artifact does not cover, such as Windows on aarch64 or one of the BSDs. It must be
+quiche 0.30.0 or later: older versions lack `quiche_config_set_curves_list`, which fails the binding with a
+`QuicheException` naming the missing function.
 
 **`--enable-native-access=org.tentackle.quiche` is required.** Without it, the JVM warns on the first
 restricted call, and a future release will refuse them. On the class path, use

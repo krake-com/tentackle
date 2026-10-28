@@ -152,6 +152,59 @@ public class QuicTripConnectionPoolTest {
    * wrapping the original {@link CertificateException}. This is what
    * {@code LoginFailedWithUpdateHandler} looks for to trigger the client auto-update.
    */
+  @Test(timeOut = 30000)
+  public void rejectsUnknownNamedGroup() {
+    Reporter.log("rejectsUnknownNamedGroup", true);
+    // the obsolete draft group is not known to KWIK
+    QuicTripTransport transport = new QuicTripTransport(URI.create(
+      "tripq://localhost:12345?namedgroups=X25519MLKEM768,X25519Kyber768Draft00"));
+    try {
+      IllegalArgumentException exception =
+        expectThrows(IllegalArgumentException.class, () -> new QuicTripConnectionPool(transport, dictionary()));
+      assertTrue(exception.getMessage().contains("unknown named group 'X25519Kyber768Draft00'"),
+                 "unexpected message: " + exception.getMessage());
+    }
+    finally {
+      transport.close();
+    }
+  }
+
+  /**
+   * A client offering nothing but the post-quantum hybrid group {@code X25519MLKEM768} connects to a
+   * server with the default configuration. Since there is no other group to fall back to, the successful
+   * handshake proves that agent15-pqc is present on both ends and the hybrid key exchange was negotiated.
+   */
+  @Test(timeOut = 60000)
+  public void negotiatesPostQuantumKeyExchange() throws Exception {
+    Reporter.log("negotiatesPostQuantumKeyExchange", true);
+    Path serverKeyStore = QuicTestSupport.createKeyStore();
+    try {
+      int port = QuicTestSupport.freeUdpPort();
+      QuicTripTransport server = new QuicTripTransport(URI.create(
+        "tripq://localhost:" + port + "?" + QuicTestSupport.keyStoreParameters(serverKeyStore)));
+      try {
+        server.accept();
+        Thread.sleep(1000);   // let the server start accepting connections
+
+        QuicTripTransport client = new QuicTripTransport(URI.create(
+          "tripq://localhost:" + port + "?certcheck=false&namedgroups=X25519MLKEM768"));
+        try {
+          QuicTripConnectionPool pool = new QuicTripConnectionPool(client, dictionary());
+          pool.shutdown();
+        }
+        finally {
+          client.close();
+        }
+      }
+      finally {
+        server.close();
+      }
+    }
+    finally {
+      Files.deleteIfExists(serverKeyStore);
+    }
+  }
+
   @Test(timeOut = 60000)
   public void rejectsUntrustedCertificateWithCertcheck() throws Exception {
     Reporter.log("rejectsUntrustedCertificateWithCertcheck", true);

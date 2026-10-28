@@ -31,9 +31,19 @@ requires Java 11.
 - `tentackle-jlink-maven-plugin`: jlink of Java 27 refuses to link a resource directory found in more than one
   module, such as `OSGI-INF` in ikonli 12.4.0. The new parameter `excludeResources` (jlink's `--exclude-resources`)
   excludes `**/OSGI-INF/**` by default.
+- `SslParameters`: the new option `namedgroups` (`tentackle.ssl.namedGroups`) restricts the TLS key-exchange
+  groups of `trips`/`tripcs`, e.g. `namedgroups=X25519MLKEM768` to enforce a post-quantum key exchange (JEP 527)
+  instead of silently falling back to a classical one.
+- `tentackle-quic`: depends on `tech.kwik:agent15-pqc`, so `tripq`/`tripcq` support the post-quantum hybrid key
+  exchanges (`X25519MLKEM768` etc.). The client honors `namedgroups`; the server, which cannot restrict the groups,
+  logs a prominent warning if `namedgroups` is set.
+- `tentackle-quiche`: `tripj`/`tripcj` honor `namedgroups` on both ends (via `quiche_config_set_curves_list`).
 
 ### Changed
 
+- The native quiche library (`jetty-quiche-native`) was upgraded from 0.29.3 to 0.30.0. Its BoringSSL offers the
+  post-quantum hybrid key exchange `X25519MLKEM768` by default. A library set via `tentackle.quiche.library` must be
+  0.30.0 or later.
 - Faster PDO and operation invocation handlers: `hashCode`, `equals`, `compareTo` and `toString` are dispatched
   without `Method.equals` chains, and `getEffectiveSuperClasses()` is computed once per class (and is now unmodifiable).
 - `Mixin` is now an immutable descriptor shared by all proxies of the same type (`Mixin.get`, `Mixin.forImplementation`).

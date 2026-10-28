@@ -34,6 +34,7 @@ import java.nio.file.Path;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.expectThrows;
 
 /**
  * Runs this module's transport against the KWIK-based one of {@code tentackle-quic}.
@@ -97,6 +98,33 @@ public class QuicheKwikInteropTest {
     exchange(QuicheTripTransport.PROTOCOL, KWIK_SCHEME);
   }
 
+  @Test(timeOut = 90000)
+  public void testPostQuantumOnlyKwikClientAgainstPostQuantumOnlyQuicheServer() throws Exception {
+    Reporter.log("a KWIK client offering only X25519MLKEM768 calls a quiche server accepting only that", true);
+    // neither end has another group to fall back to, so the two implementations agreed on ML-KEM
+    exchange(QuicheTripTransport.PROTOCOL, "&namedgroups=X25519MLKEM768", KWIK_SCHEME, "&namedgroups=X25519MLKEM768");
+  }
+
+  @Test(timeOut = 90000)
+  public void testPostQuantumOnlyQuicheClientAgainstKwikServer() throws Exception {
+    Reporter.log("a quiche client offering only X25519MLKEM768 calls a KWIK server", true);
+    exchange(KWIK_SCHEME, "", QuicheTripTransport.PROTOCOL, "&namedgroups=X25519MLKEM768");
+  }
+
+  @Test(timeOut = 90000)
+  public void testPostQuantumOnlyQuicheServerRejectsClassicalKwikClient() {
+    Reporter.log("a quiche server accepting only X25519MLKEM768 rejects a KWIK client offering classical groups", true);
+    RuntimeException exception =
+      expectThrows(RuntimeException.class,
+                   () -> exchange(QuicheTripTransport.PROTOCOL, "&namedgroups=X25519MLKEM768",
+                                  KWIK_SCHEME, "&namedgroups=x25519,secp256r1"));
+    StringBuilder chain = new StringBuilder();
+    for (Throwable t = exception; t != null; t = t.getCause()) {
+      chain.append(t).append('\n');
+    }
+    assertTrue(chain.toString().contains("Handshake"), "not a handshake failure: " + chain);
+  }
+
 
   /**
    * Starts a server of one implementation and calls it with a client of the other.
@@ -106,12 +134,26 @@ public class QuicheKwikInteropTest {
    * @throws Exception if the endpoints could not be set up
    */
   private void exchange(String serverScheme, String clientScheme) throws Exception {
+    exchange(serverScheme, "", clientScheme, "");
+  }
+
+  /**
+   * Starts a server of one implementation and calls it with a client of the other.
+   *
+   * @param serverScheme the scheme of the server transport
+   * @param serverParameters additional URI parameters of the server, each starting with {@code &}
+   * @param clientScheme the scheme of the client transport
+   * @param clientParameters additional URI parameters of the client, each starting with {@code &}
+   * @throws Exception if the endpoints could not be set up
+   */
+  private void exchange(String serverScheme, String serverParameters, String clientScheme, String clientParameters)
+          throws Exception {
     int port = QuicheTestSupport.freeUdpPort();
     EchoServiceImpl service = new EchoServiceImpl("interop");
 
     Transport server = TripFactory.getInstance().createTransport(URI.create(
       serverScheme + "://localhost:" + port + "?alpnid=" + ALPN + "&" +
-      QuicheTestSupport.keyStoreParameters(keyStore)));
+      QuicheTestSupport.keyStoreParameters(keyStore) + serverParameters));
     try {
       server.accept();
       // wait for the server to start accepting connections, otherwise the client will fail to connect
@@ -121,7 +163,7 @@ public class QuicheKwikInteropTest {
 
       // this test is not about certificate checking, and the server's certificate is self-signed
       Transport client = TripFactory.getInstance().createTransport(URI.create(
-        clientScheme + "://localhost:" + port + "?alpnid=" + ALPN + "&idle=1&connecttimeout=60&certcheck=false"));
+        clientScheme + "://localhost:" + port + "?alpnid=" + ALPN + "&idle=1&connecttimeout=60&certcheck=false" + clientParameters));
       try {
         EchoService remote = client.lookup(EchoService.class, "echo");
         assertEquals(remote.getName(), "interop");

@@ -60,6 +60,8 @@ public class QuicTripTransport extends AbstractTransport {
    */
   public static final String PROTOCOL = "tripq";
 
+  private static final org.tentackle.log.Logger LOGGER = org.tentackle.log.Logger.get(QuicTripTransport.class);
+
   /**
    * The default QUIC max idle timeout in seconds, applied if the URI does not specify {@code quicidle}.
    */
@@ -146,6 +148,23 @@ public class QuicTripTransport extends AbstractTransport {
     if (keyStore == null || certificateAlias == null) {
       throw new TripRuntimeException(
         "keystore-file (ksfile) and certificate-alias (ksalias, or a single-entry keystore) must be specified");
+    }
+    if (sslParameters.getNamedGroups() != null) {
+      // KWIK cannot restrict the groups: accept anyway, but make sure the gap cannot be overlooked
+      LOGGER.warning("""
+
+        ****************************************************************************************
+        ***
+        ***  namedgroups (tentackle.ssl.namedGroups) is set to {0}
+        ***  for {1},
+        ***  but the KWIK server CANNOT RESTRICT the key-exchange groups!
+        ***
+        ***  Clients offering only classical groups are still accepted, so a post-quantum
+        ***  key exchange cannot be verified on this server. Use tripj (quiche) to enforce it.
+        ***
+        ****************************************************************************************""",
+        String.join(",", sslParameters.getNamedGroups()),
+        uri.getScheme() + "://" + uri.getRawAuthority());   // not the query: it may hold passwords
     }
 
     int streamWindow = getStreamWindow();

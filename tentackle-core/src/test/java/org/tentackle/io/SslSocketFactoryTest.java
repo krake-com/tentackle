@@ -22,6 +22,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 import java.io.OutputStream;
@@ -34,6 +35,7 @@ import java.security.cert.X509Certificate;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
@@ -41,7 +43,8 @@ import static org.testng.Assert.fail;
  * Tests for the SSL-aware TCP socket factories.<br>
  * Verifies that the server presents the certificate selected by its alias &mdash; the feature the
  * default JSSE factories lack &mdash; and that the configuration is resolved from the URI query
- * parameters as well as the {@code javax.net.ssl.*} system-property fallback.
+ * parameters as well as the {@code javax.net.ssl.*} system-property fallback, and that restricting the
+ * key-exchange groups to post-quantum ones rejects a classical peer instead of silently downgrading.
  */
 @SuppressWarnings({ "exports", "missing-explicit-ctor" })
 public class SslSocketFactoryTest {
@@ -111,15 +114,56 @@ public class SslSocketFactoryTest {
     }
   }
 
+  @Test
+  public void postQuantumOnlyServerAcceptsDefaultClient() throws Exception {
+    // the JDK offers X25519MLKEM768 by default (JEP 527), so an unconfigured client gets through
+    assertEquals(handshakeAndGetServerCn(serverParametersForAlias("alpha", "X25519MLKEM768"), clientParameters()),
+                 "alpha");
+  }
+
+  @Test
+  public void postQuantumOnlyOnBothEnds() throws Exception {
+    assertEquals(handshakeAndGetServerCn(serverParametersForAlias("alpha", "X25519MLKEM768"),
+                                         clientParameters("X25519MLKEM768")), "alpha");
+  }
+
+  @Test
+  public void postQuantumOnlyServerRejectsClassicalClient() {
+    // no common group: the handshake must fail rather than fall back to a classical key exchange
+    // (the JDK reports "No common named group" with an unexpected_message alert, hence SSLException)
+    assertThrows(SSLException.class,
+                 () -> handshakeAndGetServerCn(serverParametersForAlias("alpha", "X25519MLKEM768"),
+                                               clientParameters("x25519,secp256r1")));
+  }
+
+  @Test
+  public void postQuantumOnlyClientRejectsClassicalServer() {
+    assertThrows(SSLException.class,
+                 () -> handshakeAndGetServerCn(serverParametersForAlias("alpha", "x25519, secp256r1"),
+                                               clientParameters("X25519MLKEM768")));
+  }
+
 
   private SslParameters serverParametersForAlias(String alias) {
     return new SslParameters(URI.create(
       "trips://localhost:0?ksfile=" + uriPath(keyStoreFile) + "&kspass=" + STORE_PASSWORD + "&ksalias=" + alias));
   }
 
+  private SslParameters serverParametersForAlias(String alias, String namedGroups) {
+    return new SslParameters(URI.create(
+      "trips://localhost:0?ksfile=" + uriPath(keyStoreFile) + "&kspass=" + STORE_PASSWORD + "&ksalias=" + alias +
+      "&namedgroups=" + namedGroups.replace(" ", "%20")));
+  }
+
   private SslParameters clientParameters() {
     return new SslParameters(URI.create(
       "trips://localhost:0?tsfile=" + uriPath(trustStoreFile) + "&tspass=" + STORE_PASSWORD));
+  }
+
+  private SslParameters clientParameters(String namedGroups) {
+    return new SslParameters(URI.create(
+      "trips://localhost:0?tsfile=" + uriPath(trustStoreFile) + "&tspass=" + STORE_PASSWORD +
+      "&namedgroups=" + namedGroups));
   }
 
   /**

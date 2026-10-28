@@ -64,7 +64,12 @@ public record PathEvent(Type type, InetSocketAddress local, InetSocketAddress pe
     /**
      * The peer moved its traffic to a validated path. Server side only.
      */
-    PEER_MIGRATED;
+    PEER_MIGRATED,
+
+    /**
+     * The path MTU discovery found a new maximum packet size. Only if PMTU discovery is enabled.
+     */
+    PMTU_UPDATED;
 
     /**
      * Maps the native enum value.

@@ -30,7 +30,7 @@ import java.net.Socket;
  * In <em>plain</em> mode (default constructor) it creates ordinary TCP sockets.
  * In <em>SSL</em> mode (constructed with {@link SslParameters}) it creates {@link SSLSocket}s
  * from an {@link javax.net.ssl.SSLContext} and honors the configured SSL options (enabled protocols,
- * cipher suites, endpoint identification). A client certificate is presented when the SSL parameters
+ * cipher suites, key-exchange groups, endpoint identification). A client certificate is presented when the SSL parameters
  * provide a keystore; its alias can be selected explicitly.
  *
  * @see SslParameters

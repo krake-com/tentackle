@@ -198,6 +198,9 @@ establishes its QUIC connection right away:
 4. Each pool slot (`createSlot`) opens a new **bidirectional** QUIC stream
    (`connection.createStream(true)`) and wraps it in a `QuicTripConnection`.
 
+The key-exchange groups the client offers can be restricted with `namedgroups`,
+see [Post-quantum key exchange](#post-quantum-key-exchange).
+
 So one QUIC *connection* carries many TRIP *connections*, each being one QUIC
 *stream* — taking direct advantage of QUIC's multiplexing without head-of-line
 blocking. Pool sizing (`initial`, `increment`, `minimum`, `maximum`, `idle`,
@@ -319,11 +322,12 @@ shape is used on both client and server (with host `0` / `0.0.0.0` selecting the
 server bind-all case).
 
 ```
-tripq://<host>:<port>?ksfile=...&kspass=...&ksalias=...[&kstype=...][&kmpass=...][&tsfile=...][&tspass=...][&tstype=...][&alpnid=...][&maxstreams=...][&streamwindow=...][&certcheck=...][&connecttimeout=...][&streamtimeout=...][&quicidle=...][&keepalive=...]
+tripq://<host>:<port>?ksfile=...&kspass=...&ksalias=...[&kstype=...][&kmpass=...][&tsfile=...][&tspass=...][&tstype=...][&alpnid=...][&maxstreams=...][&streamwindow=...][&certcheck=...][&connecttimeout=...][&streamtimeout=...][&quicidle=...][&keepalive=...][&namedgroups=...]
 tripcq://<host>:<port>?...same as tripq...&mincompress=1024
 ```
 
-The keystore/truststore parameters (`ksfile`, `kspass`, `ksalias`, `kstype`, `kmpass`, `tsfile`, `tspass`, `tstype`) are
+The keystore/truststore parameters (`ksfile`, `kspass`, `ksalias`, `kstype`, `kmpass`, `tsfile`, `tspass`, `tstype`)
+and `namedgroups` are
 resolved by the shared
 [`SslParameters`](../../../../tentackle-core/src/main/docs/trip.md#ssltls-configuration), so each
 also honors a `tentackle.ssl.<name>` system property and, as a fallback, the standard
@@ -347,13 +351,43 @@ also honors a `tentackle.ssl.<name>` system property and, as a fallback, the sta
 | `streamtimeout`  | client          | `10`                                                                          | Seconds to wait for the peer to grant the credits to open another stream. Must be > 0. See below.                                                                                  |
 | `quicidle`       | both            | `30`                                                                          | QUIC max idle timeout in **seconds**. See below.                                                                                                                                   |
 | `keepalive`      | client          | unlimited                                                                     | How many seconds to keep the QUIC connection alive. `0` disables the keep-alive. See below.                                                                                        |
+| `namedgroups`    | client          | `tentackle.ssl.namedGroups` / KWIK default                                    | Comma-separated key-exchange groups to offer, e.g. `X25519MLKEM768`. A server cannot enforce it and logs a warning if set. See [Post-quantum key exchange](#post-quantum-key-exchange). |
 | `mincompress`    | both (`tripcq`) | `1024`                                                                        | Minimum block size in bytes before deflate compression is applied.                                                                                                                 |
 
 > On the server, if the keystore file (`ksfile`) or the certificate alias (`ksalias`, unless the
 > keystore holds a single key entry) cannot be resolved, `accept()` throws a
 > `TripRuntimeException`. The port must be in the range `0..65535`. On the client, a port that is
-> not > 0, or a `connecttimeout` or `streamtimeout` that is not > 0, fails the creation of the
-> connection pool with an `IllegalArgumentException`.
+> not > 0, or a `connecttimeout` or `streamtimeout` that is not > 0, or an unknown group in
+> `namedgroups`, fails the creation of the connection pool with an `IllegalArgumentException`.
+
+### Post-quantum key exchange
+
+KWIK's TLS library, agent15, implements the post-quantum hybrid groups of RFC 10024
+(`X25519MLKEM768`, `SecP256r1MLKEM768` and `SecP384r1MLKEM1024`) in the separate
+artifact `tech.kwik:agent15-pqc`, which agent15 finds via the `ServiceLoader`. This module
+depends on it, so both ends of `tripq`/`tripcq` support these groups:
+
+- The **server** accepts every group it supports, the hybrid groups included, and picks the
+  first key share of the client it supports. A client offering `X25519MLKEM768` first, such as
+  `tripj`, therefore gets a post-quantum key exchange.
+  KWIK provides no way to restrict the groups of the server. If `namedgroups` (or
+  `tentackle.ssl.namedGroups`) is set, `accept()` therefore logs a prominent warning, framed in
+  asterisks, that the server still accepts classical clients and cannot verify a post-quantum key
+  exchange. Enforce it on the client side, or use
+  [`tripj`](../../../tentackle-quiche/src/main/docs/quiche.md#post-quantum-key-exchange) for the
+  server.
+- The **client** offers KWIK's classical default groups unless `namedgroups` is set. With
+  `namedgroups=X25519MLKEM768`, it offers nothing else, so a server without post-quantum support
+  fails the handshake instead of downgrading. With a list, e.g.
+  `namedgroups=X25519MLKEM768,x25519`, it sends a key share for the first group and lets the
+  server ask for another one via a HelloRetryRequest. The names are the standard TLS names, the
+  same as for the TCP transports (see
+  [TRIP](../../../../tentackle-core/src/main/docs/trip.md#post-quantum-key-exchange)).
+  An unknown name fails the creation of the connection pool.
+
+Since agent15 loads the key exchanges via the `ServiceLoader`, `agent15-pqc` must be present at
+runtime: on the module path, the descriptor's `requires tech.kwik.agent15.pqc` takes care of that,
+including jlink images; on the class path, its jar must be there as well.
 
 ### Idle timeout and keep-alive
 
@@ -445,6 +479,10 @@ The module declares its dependencies as:
   <groupId>tech.kwik</groupId>
   <artifactId>kwik</artifactId>
 </dependency>
+<dependency>
+  <groupId>tech.kwik</groupId>
+  <artifactId>agent15-pqc</artifactId>   <!-- the post-quantum key exchanges -->
+</dependency>
 ```
 
 ### JPMS descriptor
@@ -454,6 +492,8 @@ module org.tentackle.quic {
   exports org.tentackle.quic;
   opens   org.tentackle.quic to org.tentackle.core;   // TRIP instantiates the transport reflectively
   requires transitive tech.kwik.core;
+  requires tech.kwik.agent15;                         // the named groups
+  requires tech.kwik.agent15.pqc;                     // the post-quantum key exchanges
   requires transitive org.tentackle.core;
   provides org.tentackle.common.ModuleHook with org.tentackle.quic.service.Hook;
 }

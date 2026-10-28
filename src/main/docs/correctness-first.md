@@ -316,6 +316,12 @@ identically in modular and non-modular deployments, deterministic interceptor or
 cached PDOs, the whole stack behaves **reproducibly** — the same inputs produce the same result regardless of how
 the application happens to be packaged or how many tiers separate it from the database.
 
+The same rule applies to confidentiality. On Java 27, TRIP over TLS negotiates a post-quantum key exchange whenever
+both ends can, but TLS would quietly fall back to a classical one when a peer cannot. Restricting the
+[`namedgroups`](../../../tentackle-core/src/main/docs/trip.md#post-quantum-key-exchange) of the transport to
+post-quantum groups turns that silent downgrade into a handshake failure, so traffic that must stay confidential
+for years is never sent under weaker protection by accident.
+
 ---
 
 ## The pattern, in one table
@@ -335,6 +341,7 @@ the safe behavior the default, and fail loudly when the safe path is violated.
 | Forgotten transaction / permission check           | [Interceptors](../../../tentackle-core/src/main/docs/interceptors.md)                  | Declarative, deterministically ordered, compile-time-verified placement                                                  |
 | Mapping drifts from schema                         | [Model + Wurbelizer](../../../tentackle-model/src/main/docs/model-definition.md)       | Single definition generates classes, DDL and migrations together                                                         |
 | Silent corruption across versions                  | [TRIP](../../../tentackle-core/src/main/docs/trip.md)                                  | Version check + type dictionary fail clearly at connect, not mid-stream                                                  |
+| Silent downgrade to classical key exchange         | [TRIP `namedgroups`](../../../tentackle-core/src/main/docs/trip.md#post-quantum-key-exchange) | Post-quantum-only groups make a classical peer fail the handshake instead of negotiating a weaker group           |
 
 ---
 

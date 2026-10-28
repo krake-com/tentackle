@@ -24,6 +24,10 @@
       <groupId>tech.kwik</groupId>
       <artifactId>kwik</artifactId>
     </dependency>
+    <dependency>
+      <groupId>tech.kwik</groupId>
+      <artifactId>agent15-pqc</artifactId>
+    </dependency>
 
   </dependencies>
 

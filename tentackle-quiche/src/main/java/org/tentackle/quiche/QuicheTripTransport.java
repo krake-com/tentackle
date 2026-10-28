@@ -26,6 +26,7 @@ import org.tentackle.quiche.engine.QuicheServer;
 import org.tentackle.quiche.engine.QuicheStream;
 import org.tentackle.quiche.ffm.PemExporter;
 import org.tentackle.quiche.ffm.QuicheConfig;
+import org.tentackle.quiche.ffm.QuicheException;
 import org.tentackle.trip.Connection;
 import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.TransportService;
@@ -327,7 +328,8 @@ public class QuicheTripTransport extends AbstractTransport {
    */
   QuicheConfig createConfig(String alpnId) {
     int streamWindow = getStreamWindow();
-    return new QuicheConfig()
+    String[] namedGroups = new SslParameters(getUri()).getNamedGroups();
+    QuicheConfig config = new QuicheConfig()
       .setApplicationProtocols(alpnId)
       .setMaxIdleTimeout(getMaxIdleSeconds() * 1000L)
       .setInitialMaxData((long) streamWindow * CONNECTION_WINDOW_FACTOR)
@@ -338,6 +340,42 @@ public class QuicheTripTransport extends AbstractTransport {
       .setInitialMaxStreamsUni(0)
       // spare connection IDs are what a client migrates to a new source port with
       .setActiveConnectionIdLimit(ACTIVE_CONNECTION_ID_LIMIT);
+    if (namedGroups != null) {
+      try {
+        config.setCurvesList(toCurvesList(namedGroups));
+      }
+      catch (QuicheException e) {
+        config.close();
+        throw new TripRuntimeException("invalid namedgroups in URI " + getUri(), e);
+      }
+    }
+    return config;
+  }
+
+  /**
+   * Translates the key-exchange group names to BoringSSL's curves list.<br>
+   * The names are the standard TLS names the JDK uses as well, so that {@code namedgroups} means the same for
+   * all transports. BoringSSL accepts most of them, but not {@code secp256r1}, and prefers its own spelling.
+   * Other names are passed as they are, and BoringSSL rejects the ones it does not support.
+   *
+   * @param namedGroups the group names in preference order
+   * @return the colon-separated curves list
+   */
+  static String toCurvesList(String[] namedGroups) {
+    StringBuilder buf = new StringBuilder();
+    for (String group : namedGroups) {
+      if (!buf.isEmpty()) {
+        buf.append(':');
+      }
+      buf.append(switch (group) {
+        case "x25519" -> "X25519";
+        case "secp256r1" -> "P-256";
+        case "secp384r1" -> "P-384";
+        case "secp521r1" -> "P-521";
+        default -> group;
+      });
+    }
+    return buf.toString();
   }
 
   /**

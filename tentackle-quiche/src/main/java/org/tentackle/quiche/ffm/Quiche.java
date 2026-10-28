@@ -217,7 +217,7 @@ public final class Quiche {
   /**
    * Gets the version of the native quiche library.
    *
-   * @return the version string, for example {@code 0.29.3}
+   * @return the version string, for example {@code 0.30.0}
    */
   @SuppressWarnings("restricted")   // reinterpret: the C string's length is only known from its NUL
   public static String version() {

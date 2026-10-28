@@ -187,6 +187,7 @@ topic-grouped listing of every document, see the
 
 ## N
 
+- **Named groups (TLS key exchange, `namedgroups`)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#post-quantum-key-exchange)
 - **Naming rules (derived class names, `NamingRules`)** — [Naming Rules](../../../tentackle-common/src/main/docs/naming-rules.md)
 - **NoBundle (bundle look-alikes, excluded from `tentackle-check:bundles`)** — [Resource Bundles and Internationalization](../../../tentackle-common/src/main/docs/bundle.md#the-bundle-convention), [Checker Maven Plugin](../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md#the-bundles-goal)
 - **N:M relations** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
@@ -218,6 +219,7 @@ topic-grouped listing of every document, see the
 - **Permissions / grantees** — [Security](../../../tentackle-pdo/src/main/docs/security.md)
 - **Persistence layer** — [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md)
 - **Pooling (resources, sessions)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
+- **Post-quantum key exchange (`X25519MLKEM768`, `namedgroups`)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#post-quantum-key-exchange), [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md#post-quantum-key-exchange), [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md#post-quantum-key-exchange)
 - **PostgreSQL (backend peculiarities, `JSON`/`JSONB`)** — [The PostgreSQL Backend](../../../tentackle-sql/src/main/docs/postgres.md)
 - **Printing (tables, tree tables)** — [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#table-popup-export-and-printing)
 - **Projection queries (plain data instead of PDOs)** — [The Query DSL](../../../tentackle-database/src/main/docs/query-dsl.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md)
