@@ -288,7 +288,7 @@ public class TripServer {
     for (Map.Entry<String, URI> serviceEntry : services.entrySet()) {
       String name = serviceEntry.getKey();
       URI uri = serviceEntry.getValue();
-      LOGGER.info("starting transport" + (name.isEmpty() ? ": " : (" '" + name + "': ")) + uri);
+      LOGGER.info("starting transport" + (name.isEmpty() ? ": " : (" '" + name + "': ")) + UriHelper.uriToSafeString(uri));
       try {
         Transport transport = TransportManager.getInstance().requestTransport(uri);
         if (!transport.isAccepting()) {

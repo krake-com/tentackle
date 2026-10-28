@@ -40,6 +40,25 @@ public class UriHelper {
 
   private static final Logger LOGGER = Logger.get(UriHelper.class);
 
+  /**
+   * Gets a safe string representation of a URI that can be logged
+   * with sensitive information removed.
+   *
+   * @param uri the URI
+   * @return the URI as string, never null
+   */
+  public static String uriToSafeString(URI uri) {
+    if (uri != null) {
+      StringBuilder buf = new StringBuilder();
+      buf.append(uri.getScheme()).append("://").append(uri.getRawAuthority());
+      String path = uri.getPath();
+      if (path != null) {
+        buf.append(path);
+      }
+      return buf.toString();
+    }
+    return "";
+  }
 
   /**
    * Gets a map of key-value pairs from a URI's query string.<br>

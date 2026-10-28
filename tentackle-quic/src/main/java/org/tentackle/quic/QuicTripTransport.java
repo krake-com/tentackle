@@ -164,7 +164,7 @@ public class QuicTripTransport extends AbstractTransport {
         ***
         ****************************************************************************************""",
         String.join(",", sslParameters.getNamedGroups()),
-        uri.getScheme() + "://" + uri.getRawAuthority());   // not the query: it may hold passwords
+        UriHelper.uriToSafeString(uri));   // not the query: it may hold passwords
     }
 
     int streamWindow = getStreamWindow();

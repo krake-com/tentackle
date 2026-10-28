@@ -60,9 +60,7 @@ public record TransportKey(String scheme, String host, int port, String queryPar
     else {
       buf.append('*');
     }
-    if (!StringHelper.isAllWhitespace(queryParameters)) {
-      buf.append('?').append(queryParameters);
-    }
+    // not the query parameters: they may hold passwords
     return buf.toString();
   }
 

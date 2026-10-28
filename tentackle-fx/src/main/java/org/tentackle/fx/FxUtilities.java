@@ -37,6 +37,7 @@ import org.tentackle.fx.component.Note;
 import org.tentackle.fx.component.auto.AutoCompletionController;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.io.UriHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.ConcurrencyHelper;
 import org.tentackle.misc.Holder;
@@ -325,7 +326,7 @@ public class FxUtilities {
    */
   public void browse(URI uri) {
     try {
-      LOGGER.info("launching browser for {0}", uri);
+      LOGGER.info("launching browser for {0}", UriHelper.uriToSafeString(uri));
       Desktop.getDesktop().browse(uri);
     }
     catch (IOException ex) {

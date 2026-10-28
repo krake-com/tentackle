@@ -21,6 +21,7 @@ package org.tentackle.update;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.io.UriHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TransportManager;
@@ -76,7 +77,7 @@ public class ServerUpdateUtilities {
    */
   public void startUpdateService(String serviceUrlName, String updateUrlName, Class<? extends UpdateService> updateServiceImplClass) {
     URI uri = URI.create(serviceUrlName);
-    LOGGER.info("starting update service {0}", uri);
+    LOGGER.info("starting update service {0}", UriHelper.uriToSafeString(uri));
     try {
       Transport transport = TransportManager.getInstance().requestTransport(uri);
       if (!transport.isAccepting()) {

@@ -176,10 +176,10 @@ public class SslParameters {
         SSLContext context = SSLContext.getInstance(protocol == null ? "TLS" : protocol);
         context.init(createKeyManagers(), createTrustManagers(), null);
         sslContext = context;
-        LOGGER.fine("created SSL context {0} for {1}", context.getProtocol(), uri);
+        LOGGER.fine("created SSL context {0} for {1}", context.getProtocol(), UriHelper.uriToSafeString(uri));
       }
       catch (GeneralSecurityException | IOException e) {
-        throw new TentackleRuntimeException("cannot create SSL context for " + uri, e);
+        throw new TentackleRuntimeException("cannot create SSL context for " + UriHelper.uriToSafeString(uri), e);
       }
     }
     return sslContext;

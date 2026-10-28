@@ -225,7 +225,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     QuicClientConnection quicConnection = connection;
     if (quicConnection == null || !quicConnection.isConnected()) {
       // idle timeout, peer restarted, network loss, ... (or a previous connect attempt failed)
-      LOGGER.info("QUIC connection to {0} is gone -> reconnecting", getTransport().getUri());
+      LOGGER.info("QUIC connection to {0} is gone -> reconnecting", UriHelper.uriToSafeString(getTransport().getUri()));
       connect();
       quicConnection = connection;
     }
@@ -552,7 +552,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
         quicConnection.close();
       }
       catch (RuntimeException e) {
-        LOGGER.warning("closing the QUIC connection to " + getTransport().getUri() + " failed", e);
+        LOGGER.warning("closing the QUIC connection to " + UriHelper.uriToSafeString(getTransport().getUri()) + " failed", e);
       }
     }
   }
@@ -567,7 +567,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
       quicConnection.close();
     }
     catch (RuntimeException e) {
-      LOGGER.warning("closing the QUIC connection to " + getTransport().getUri() + " failed", e);
+      LOGGER.warning("closing the QUIC connection to " + UriHelper.uriToSafeString(getTransport().getUri()) + " failed", e);
     }
   }
 
