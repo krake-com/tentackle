@@ -74,8 +74,8 @@ interface CryptorHolder {
  * Notice that if the constructor of the application's cryptor throws a {@link TentackleRuntimeException},
  * {@link #getInstance()} silently returns null, as if no cryptor were configured.
  * <p>
- * Texts, salts and passphrases are converted to bytes via {@link Settings#getEncodingCharset()}.
- *
+ * Texts, salts, and passphrases are converted to bytes via {@link Settings#getEncodingCharset()}.
+ * <p>
  * Cryptor also implements a {@link Function}{@code <String,String>} to encrypt strings like passwords to base64
  * and thus can directly be used by the tentackle-maven-plugin to generate properties for filtered resources.
  * <p>
@@ -85,8 +85,8 @@ interface CryptorHolder {
  * <p>
  * Cryptors are thread-safe. Since {@link Cipher} is stateful and <em>not</em> thread-safe, each thread gets
  * its own cipher, created lazily via {@link #getCipher()} (or, for {@link #Cryptor(SecretKey, Cipher)}, from the
- * given template cipher). This is essential, because the cryptor is usually a singleton shared by all threads,
- * for example by the encrypted transports of a server.
+ * given template cipher). This is essential because the cryptor is usually a singleton shared by all threads,
+ * for example, by the encrypted transports of a server.
  */
 public class Cryptor implements Function<String, String> {
 
@@ -458,7 +458,7 @@ public class Cryptor implements Function<String, String> {
 
   /**
    * Creates a cipher from a template.<br>
-   * Same algorithm and provider as the template, but a separate instance.
+   * The same algorithm and provider as the template, but a separate instance.
    *
    * @param template the cipher to derive the new instance from
    * @return the cipher
