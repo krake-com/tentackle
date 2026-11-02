@@ -175,7 +175,7 @@ public class FieldTripComponent<P, T> implements TripComponent<P, T> {
       if (!finalFieldMutationEnabled) {
         throw new TripRuntimeException(
           "cannot deserialize final " + field + " (JEP-500): provide a @CanonicalConstructor or @CanonicalBuilder, " +
-          "make the field transient, non-final or @TripIgnore, use a @TripInstanceCreator, " +
+          "make the field transient, non-final or @TripIgnore, use @TripInstanceCreatorService/@TripComponentProviderService, " +
           "or enable the mutation via -D" + MUTATE_FINAL_FIELDS_PROPERTY + "=true");
       }
       try {
