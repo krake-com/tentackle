@@ -77,15 +77,15 @@ RuntimeException
 A few types deliberately stand *outside* the `TentackleRuntimeException` tree, because they are not
 about a running application tier and must not be mistaken for one:
 
-| Exception                    | Package                  | Why it is outside                                                                           |
-|------------------------------|--------------------------|---------------------------------------------------------------------------------------------|
-| `BackendException`           | `org.tentackle.sql`      | The [SQL backend layer](../../../tentackle-sql/src/main/docs/sql.md) is used at build time too. |
-| `ScriptRunnerException`      | `org.tentackle.sql`      | Subclass of `BackendException`, thrown by the DDL/script runner.                             |
-| `BindingException`           | `org.tentackle.bind`     | [Binding](../../../tentackle-core/src/main/docs/binding.md) is a standalone concern.         |
-| `ScriptRuntimeException`     | `org.tentackle.script`   | [Scripting](../../../tentackle-core/src/main/docs/scripting.md) is a standalone concern.     |
-| `ValidationRuntimeException` | `org.tentackle.validate` | A *validator* is illegal for the annotated element — a programming error, not a failed check. |
-| `ValidationFailedException`  | `org.tentackle.validate` | Carries `ValidationResult`s; see [Validation](../../../tentackle-core/src/main/docs/validation.md). |
-| `InterruptedRuntimeException`| `org.tentackle.common`   | A wrapped `InterruptedException`; see [Interrupts](#interrupts).                             |
+| Exception                     | Package                  | Why it is outside                                                                                   |
+|-------------------------------|--------------------------|-----------------------------------------------------------------------------------------------------|
+| `BackendException`            | `org.tentackle.sql`      | The [SQL backend layer](../../../tentackle-sql/src/main/docs/sql.md) is used at build time too.     |
+| `ScriptRunnerException`       | `org.tentackle.sql`      | Subclass of `BackendException`, thrown by the DDL/script runner.                                    |
+| `BindingException`            | `org.tentackle.bind`     | [Binding](../../../tentackle-core/src/main/docs/binding.md) is a standalone concern.                |
+| `ScriptRuntimeException`      | `org.tentackle.script`   | [Scripting](../../../tentackle-core/src/main/docs/scripting.md) is a standalone concern.            |
+| `ValidationRuntimeException`  | `org.tentackle.validate` | A *validator* is illegal for the annotated element — a programming error, not a failed check.       |
+| `ValidationFailedException`   | `org.tentackle.validate` | Carries `ValidationResult`s; see [Validation](../../../tentackle-core/src/main/docs/validation.md). |
+| `InterruptedRuntimeException` | `org.tentackle.common`   | A wrapped `InterruptedException`; see [Interrupts](#interrupts).                                    |
 
 > **`ValidationFailedException` is not the normal path.** Validation ordinarily *returns*
 > `ValidationResult`s so a UI can show all of them at once. The exception exists to (a) hold the
@@ -98,7 +98,8 @@ about a running application tier and must not be mistaken for one:
 ## `TentackleRuntimeException` — the Root
 
 The root adds exactly one thing to `RuntimeException`: a boolean `temporary` flag with
-`isTemporary()` / `setTemporary(boolean)`.
+`isTemporary()` / `setTemporary(boolean)`, plus the fluent `temporary()` for
+`throw new TentackleRuntimeException(...).temporary()`.
 
 ### The `temporary` flag
 
@@ -114,7 +115,7 @@ keys on. It is set:
   held by someone else expires on its own;
 - by the pooling and connection-management code when a resource is momentarily unavailable
   (`AbstractPool`, `MultiUserDbPool`, `DefaultConnectionManager`, `MpxConnectionManager`);
-- by application code that knows better: `setTemporary(true)` on any `TentackleRuntimeException`
+- by application code that knows better: `temporary()` or `setTemporary(true)` on any `TentackleRuntimeException`
   makes an enclosing `@Transaction(retry = true)` retry the unit of work.
 
 The flag also drives **rollback logging**. `SessionUtilities.isSilentRollbackSufficient(Throwable)`
@@ -136,10 +137,10 @@ made.
 Everything that can go wrong while talking to a backend is a `PersistenceException` or a subclass of
 it. Beyond the `temporary` flag it carries two references:
 
-| Property                  | Meaning                                                                                                    |
-|---------------------------|------------------------------------------------------------------------------------------------------------|
-| `getSession()`            | The [session](../../../tentackle-session/src/main/docs/session.md) the failure happened on. `transient` — it does not travel over the wire. |
-| `getIdentifiable()`       | The object the failure belongs to, as an `Identifiable`. Usually the PDO or its persistence delegate.       |
+| Property            | Meaning                                                                                                                                     |
+|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| `getSession()`      | The [session](../../../tentackle-session/src/main/docs/session.md) the failure happened on. `transient` — it does not travel over the wire. |
+| `getIdentifiable()` | The object the failure belongs to, as an `Identifiable`. Usually the PDO or its persistence delegate.                                       |
 
 The constructors take either of them; passing an `Identifiable` that is also a `SessionProvider`
 sets the session too. `updateDbObject(Identifiable)` fills the object in later, for code that throws
@@ -201,19 +202,19 @@ SQL-state knowledge enters the generic layers.
 
 ### The specific persistence exceptions
 
-| Exception                      | Thrown when                                                                                                       |
-|--------------------------------|---------------------------------------------------------------------------------------------------------------------|
-| `ConstraintException`          | A database constraint was violated (unique, foreign key, check).                                                    |
+| Exception                      | Thrown when                                                                                                                                                                                                                                                                                   |
+|--------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `ConstraintException`          | A database constraint was violated (unique, foreign key, check).                                                                                                                                                                                                                              |
 | `NotFoundException`            | A row that must exist is not there. `getPersistedSerial()` returns the object's serial in the database, `-1` if the row is gone, `0` if unknown — this is what turns a zero-row `UPDATE` into a precise [optimistic-lock](../../../tentackle-persistence/src/main/docs/locking.md) diagnosis. |
-| `NotRemovableException`        | A `delete()` was refused, e.g. because the object is still referenced.                                             |
-| `SessionClosedException`       | The session is already closed. `RemoteSessionClosedException` is its remote variant.                               |
-| `LoginFailedException`         | Authentication or connection setup failed — see [Authentication](../../../tentackle-session/src/main/docs/authentication.md). |
-| `VersionIncompatibleException` | Client and server versions do not match; carries both versions, so the client can name them. Thrown at *connect* time, never mid-stream. |
-| `SecurityException`            | A [permission](../../../tentackle-pdo/src/main/docs/security.md) was denied.                                        |
-| `LockException`                | A [token lock](../../../tentackle-persistence/src/main/docs/locking.md) is held by someone else; carries the `TokenLockInfo` (`editedBy`, `editedSince`, `editedExpiry`) and the context name. Temporary by default. |
-| `IdSourceException`            | The technical [id source](../../../tentackle-database/src/main/docs/database.md) failed; `IdSourceEmptyException` if it ran dry. |
-| `PdoRuntimeException`          | An unspecified PDO-level problem — a missing session, an unexpected session on a component.                        |
-| `PdoCacheException`            | The [PDO cache](../../../tentackle-pdo/src/main/docs/cache.md) was misused or is inconsistent.                     |
+| `NotRemovableException`        | A `delete()` was refused, e.g. because the object is still referenced.                                                                                                                                                                                                                        |
+| `SessionClosedException`       | The session is already closed. `RemoteSessionClosedException` is its remote variant.                                                                                                                                                                                                          |
+| `LoginFailedException`         | Authentication or connection setup failed — see [Authentication](../../../tentackle-session/src/main/docs/authentication.md).                                                                                                                                                                 |
+| `VersionIncompatibleException` | Client and server versions do not match; carries both versions, so the client can name them. Thrown at *connect* time, never mid-stream.                                                                                                                                                      |
+| `SecurityException`            | A [permission](../../../tentackle-pdo/src/main/docs/security.md) was denied.                                                                                                                                                                                                                  |
+| `LockException`                | A [token lock](../../../tentackle-persistence/src/main/docs/locking.md) is held by someone else; carries the `TokenLockInfo` (`editedBy`, `editedSince`, `editedExpiry`) and the context name. Temporary by default.                                                                          |
+| `IdSourceException`            | The technical [id source](../../../tentackle-database/src/main/docs/database.md) failed; `IdSourceEmptyException` if it ran dry.                                                                                                                                                              |
+| `PdoRuntimeException`          | An unspecified PDO-level problem — a missing session, an unexpected session on a component.                                                                                                                                                                                                   |
+| `PdoCacheException`            | The [PDO cache](../../../tentackle-pdo/src/main/docs/cache.md) was misused or is inconsistent.                                                                                                                                                                                                |
 
 `StatementTraceException` is the odd one out: **it is not an error.** It is constructed purely to
 capture a stack trace for SQL statement tracing, so a slow or unexpected statement can be traced back
@@ -241,16 +242,16 @@ Because framework code wraps causes as they cross layers, catching one type is r
 [`ExceptionHelper`](../../../tentackle-common/src/main/java/org/tentackle/common/ExceptionHelper.java)
 is the toolbox for the chain:
 
-| Method                                                | Purpose                                                                                    |
-|-------------------------------------------------------|----------------------------------------------------------------------------------------------|
-| `extractException(Class<T>, boolean first, Throwable)` | The first or last exception of a type in the chain, `null` if none.                          |
-| `extractException(boolean first, Throwable, Class…)`   | The same for several candidate types at once.                                                |
-| `extractTemporaryException(boolean first, Throwable)`  | The first/last `TentackleRuntimeException` flagged [temporary](#the-temporary-flag).          |
-| `getMessage(Throwable)`                                | The first non-empty message in the chain — skips wrappers that add nothing.                  |
-| `concatenateMessages(Throwable)`                       | All messages of the chain, joined — what a user-facing dialog should show.                   |
+| Method                                                 | Purpose                                                                                                      |
+|--------------------------------------------------------|--------------------------------------------------------------------------------------------------------------|
+| `extractException(Class<T>, boolean first, Throwable)` | The first or last exception of a type in the chain, `null` if none.                                          |
+| `extractException(boolean first, Throwable, Class…)`   | The same for several candidate types at once.                                                                |
+| `extractTemporaryException(boolean first, Throwable)`  | The first/last `TentackleRuntimeException` flagged [temporary](#the-temporary-flag).                         |
+| `getMessage(Throwable)`                                | The first non-empty message in the chain — skips wrappers that add nothing.                                  |
+| `concatenateMessages(Throwable)`                       | All messages of the chain, joined — what a user-facing dialog should show.                                   |
 | `handleException(boolean first, Throwable, Handler…)`  | Type-dispatch over a chain: the first matching `Handler<T>` consumes it. Returns `false` if nothing matched. |
-| `getStackTraceAsString(Throwable)`                     | The trace as a printable string.                                                             |
-| `filterStackTrace(StackTraceElement[])`                | The trace with the noise removed (see below).                                                |
+| `getStackTraceAsString(Throwable)`                     | The trace as a printable string.                                                                             |
+| `filterStackTrace(StackTraceElement[])`                | The trace with the noise removed (see below).                                                                |
 
 `handleException` replaces the "catch, `instanceof`-cascade, rethrow" pattern:
 
@@ -285,10 +286,10 @@ would drown the server log in noise that is not the server's problem.
 [`Loggable`](../../../tentackle-core/src/main/java/org/tentackle/log/Loggable.java) lets an exception
 say how it wants to be logged:
 
-| Method             | Default | Meaning                                    |
-|--------------------|---------|---------------------------------------------|
+| Method             | Default | Meaning                                      |
+|--------------------|---------|----------------------------------------------|
 | `getLogLevel()`    | `INFO`  | The level; `null` means *do not log at all*. |
-| `withStacktrace()` | `true`  | Whether the trace is worth printing.        |
+| `withStacktrace()` | `true`  | Whether the trace is worth printing.         |
 
 `LockException`, `SecurityException` and `LoginFailedException` implement it. The remote invocation
 handler
@@ -351,10 +352,10 @@ shutdown signal, not a temporary backend failure, and must never be mistaken for
 
 ## The Two Checked Exceptions
 
-| Exception              | Module                                                                 | Why it is checked                                                                                                                                |
-|------------------------|------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| Exception              | Module                                                                       | Why it is checked                                                                                                                                                                                                                          |
+|------------------------|------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `ModelException`       | [tentackle-model](../../../tentackle-model/src/main/docs/tentackle-model.md) | A malformed [model definition](../../../tentackle-model/src/main/docs/model-definition.md) is a *build* failure. The wurblets and the Maven plugins must handle it and turn it into a readable build error, so the compiler enforces that. |
-| `BindingVetoException` | [tentackle-core](../../../tentackle-core/src/main/docs/binding.md)      | A binding listener vetoes a model↔view transfer. Vetoing is an ordinary outcome, not an error, and the binding code must deal with it at the point of transfer. |
+| `BindingVetoException` | [tentackle-core](../../../tentackle-core/src/main/docs/binding.md)           | A binding listener vetoes a model↔view transfer. Vetoing is an ordinary outcome, not an error, and the binding code must deal with it at the point of transfer.                                                                            |
 
 Everything else is unchecked, by design.
 
@@ -362,16 +363,16 @@ Everything else is unchecked, by design.
 
 ## Where Exceptions End Up
 
-| Layer                                                                            | What happens                                                                                                                                              |
-|----------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`@Transaction`](../../../tentackle-pdo/src/main/docs/transaction.md)             | Rolls back; silently for [temporary](#the-temporary-flag) causes, with statement logging otherwise. With `retry = true` a temporary failure re-runs the whole unit of work, and only the last one is rethrown. |
-| [Validation](../../../tentackle-core/src/main/docs/validation.md)                 | Returns `ValidationResult`s rather than throwing; `ValidationFailedException` carries them where a return value is impossible.                             |
-| Remote server                                                                     | Logs per [`Loggable`](#loggable-how-much-of-an-exception-to-log), filters the trace, and sends the exception back — see [Exceptions Across Tiers](#exceptions-across-tiers). |
-| `AbstractApplication`                                                             | Installs a default uncaught-exception handler that logs at `SEVERE`. See [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md).      |
-| [`DesktopApplication`](../../../tentackle-fx-rdc/src/main/java/org/tentackle/fx/rdc/app/DesktopApplication.java) | Overrides it for *all* threads and the FX thread: logs, then shows `Fx.error(...)`. If even that fails, the application terminates with exit code 99 rather than continuing in an unknown state. |
-| [InteractiveError](../../../tentackle-fx/src/main/docs/interactive-error.md)      | Turns a `ValidationResult` — including one produced on a server — back into a marked control on screen.                                                    |
-| [`Rdc.bg(...)`](../../../tentackle-fx-rdc/src/main/docs/background-execution.md)  | Captures the runner's `RuntimeException` and hands it to the `failedUI` consumer on the FX thread (logged as `SEVERE` if there is none). Non-`RuntimeException`s are wrapped in a `TentackleRuntimeException` — which is why background runners should throw runtime exceptions. |
-| [Tasks and daemons](../../../tentackle-core/src/main/docs/tasks-daemon.md)        | `TaskException` for dispatcher problems; the [modification tracker](../../../tentackle-session/src/main/docs/modification-tracking.md) thread is non-daemon on purpose — if it dies, the application dies with it. |
+| Layer                                                                                                            | What happens                                                                                                                                                                                                                                                                     |
+|------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`@Transaction`](../../../tentackle-pdo/src/main/docs/transaction.md)                                            | Rolls back; silently for [temporary](#the-temporary-flag) causes, with statement logging otherwise. With `retry = true` a temporary failure re-runs the whole unit of work, and only the last one is rethrown.                                                                   |
+| [Validation](../../../tentackle-core/src/main/docs/validation.md)                                                | Returns `ValidationResult`s rather than throwing; `ValidationFailedException` carries them where a return value is impossible.                                                                                                                                                   |
+| Remote server                                                                                                    | Logs per [`Loggable`](#loggable-how-much-of-an-exception-to-log), filters the trace, and sends the exception back — see [Exceptions Across Tiers](#exceptions-across-tiers).                                                                                                     |
+| `AbstractApplication`                                                                                            | Installs a default uncaught-exception handler that logs at `SEVERE`. See [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md).                                                                                                                           |
+| [`DesktopApplication`](../../../tentackle-fx-rdc/src/main/java/org/tentackle/fx/rdc/app/DesktopApplication.java) | Overrides it for *all* threads and the FX thread: logs, then shows `Fx.error(...)`. If even that fails, the application terminates with exit code 99 rather than continuing in an unknown state.                                                                                 |
+| [InteractiveError](../../../tentackle-fx/src/main/docs/interactive-error.md)                                     | Turns a `ValidationResult` — including one produced on a server — back into a marked control on screen.                                                                                                                                                                          |
+| [`Rdc.bg(...)`](../../../tentackle-fx-rdc/src/main/docs/background-execution.md)                                 | Captures the runner's `RuntimeException` and hands it to the `failedUI` consumer on the FX thread (logged as `SEVERE` if there is none). Non-`RuntimeException`s are wrapped in a `TentackleRuntimeException` — which is why background runners should throw runtime exceptions. |
+| [Tasks and daemons](../../../tentackle-core/src/main/docs/tasks-daemon.md)                                       | `TaskException` for dispatcher problems; the [modification tracker](../../../tentackle-session/src/main/docs/modification-tracking.md) thread is non-daemon on purpose — if it dies, the application dies with it.                                                               |
 
 ---
 

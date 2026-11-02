@@ -195,8 +195,7 @@ public class SessionUtilitiesTest {
     assertTrue(utilities.isSilentRollbackSufficient(temporary));
 
     // a temporary cause anywhere in the chain is enough
-    TentackleRuntimeException temporaryCause = new TentackleRuntimeException("temporary cause");
-    temporaryCause.setTemporary(true);
+    TentackleRuntimeException temporaryCause = new TentackleRuntimeException("temporary cause").temporary();
     assertTrue(utilities.isSilentRollbackSufficient(new PersistenceException("outer", temporaryCause)));
   }
 

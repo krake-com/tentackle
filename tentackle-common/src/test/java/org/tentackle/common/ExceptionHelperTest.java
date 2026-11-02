@@ -77,10 +77,8 @@ public class ExceptionHelperTest {
 
   @Test
   public void testExtractTemporaryException() {
-    TentackleRuntimeException temp1 = new TentackleRuntimeException("temp1");
-    temp1.setTemporary(true);
-    TentackleRuntimeException temp2 = new TentackleRuntimeException("temp2", temp1);
-    temp2.setTemporary(true);
+    TentackleRuntimeException temp1 = new TentackleRuntimeException("temp1").temporary();
+    TentackleRuntimeException temp2 = new TentackleRuntimeException("temp2", temp1).temporary();
     Throwable head = new IllegalStateException("head", temp2);
 
     assertSame(ExceptionHelper.extractTemporaryException(true, head), temp2);

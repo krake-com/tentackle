@@ -321,11 +321,10 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
       return quicConnection.openStream();
     }
     catch (StreamLimitException e) {
-      TripRuntimeException tex = new TripRuntimeException(
+      // may well succeed again once a pooled connection is returned and closed
+      throw new TripRuntimeException(
         "no QUIC stream available on " + getTransport().getUri() +
-        ": the peer grants fewer than the configured " + transport.getMaxStreams() + " streams", e);
-      tex.setTemporary(true);   // may well succeed again once a pooled connection is returned and closed
-      throw tex;
+        ": the peer grants fewer than the configured " + transport.getMaxStreams() + " streams", e).temporary();
     }
     catch (QuicheException e) {
       throw new TripRuntimeException("creating QUIC stream failed", e);

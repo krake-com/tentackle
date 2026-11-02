@@ -621,10 +621,9 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
         if (freeCount > 0) {
           return;   // maximum size reached, but there are still some free slots left
         }
-        TentackleRuntimeException pex = createException("cannot create more resource instances, max. pool size " + maximumSize + " reached");
-        pex.setTemporary(true);   // may go away if just a misconfiguration, hence temporary
         logSlotCountPerThread(Logger.Level.WARNING);   // could be a sign of a resource leak as well, hence log it
-        throw pex;
+        // may go away if just a misconfiguration, hence temporary
+        throw createException("cannot create more resource instances, max. pool size " + maximumSize + " reached").temporary();
       }
       PoolSlot<T>[] nPool  = new PoolSlot[nSize];
       int[] nFreeList   = new int[nSize];

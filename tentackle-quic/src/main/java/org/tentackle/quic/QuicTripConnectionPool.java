@@ -275,11 +275,10 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     }
     catch (TimeoutException e) {
       creator.interrupt();                // KWIK aborts a blocked createStream when interrupted
-      TripRuntimeException tex = new TripRuntimeException(
+      // may well succeed again once a pooled connection is returned and closed
+      throw new TripRuntimeException(
         "no QUIC stream available on " + getTransport().getUri() + " within " + streamTimeoutSeconds +
-        " seconds: the peer grants fewer than the configured " + transport.getMaxStreams() + " streams", e);
-      tex.setTemporary(true);   // may well succeed again once a pooled connection is returned and closed
-      throw tex;
+        " seconds: the peer grants fewer than the configured " + transport.getMaxStreams() + " streams", e).temporary();
     }
     catch (ExecutionException e) {
       throw new TripRuntimeException("creating QUIC stream failed", e.getCause());
