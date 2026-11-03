@@ -197,21 +197,21 @@ A couple of details worth knowing:
 
 ## What the wurblet generates, mode by mode
 
-| Generated element                         | Property-model DTO                      | `@RecordDTO` record                                  |
-|-------------------------------------------|-----------------------------------------|------------------------------------------------------|
-| Private fields                            | **Yes** (the wurblet owns the body)     | No — the record declares them                        |
-| Constructor                               | all immutable properties as arguments, or a `protected` constructor taking the `Builder` in builder mode | only in builder mode: a `protected` constructor taking the `Builder` and delegating to the canonical one |
-| Getters                                   | **Yes** (`getX` / `isX`)                | No — the record's accessors (`x()`) are used         |
-| Setters                                   | For `=` / `~` properties                | n/a (records are immutable)                           |
-| `--names` constants (`PN_*`)              | **Yes**                                 | **Yes**                                              |
-| `--builder`                               | **Yes**                                 | **Yes** (builder feeds the canonical constructor)    |
-| `--from` / `--with` copy factories        | per-property `+` prefix                 | **all** components by default                         |
-| `toBuilder()` (`--builder` with `--from`/`--with`) | **Yes**                        | **Yes**                                              |
-| Annotations on generated methods          | `[@Anno]` per property, global `[...]` line | none                                             |
-| `--equals` / `--hashCode`                 | **Yes**                                 | **Rejected** (records already have them)             |
-| `--validate`                              | **Yes** (needs `Validateable`)          | **Rejected** (use a compact canonical constructor)   |
-| `--nofinal` (serialization-friendly)      | **Yes**                                 | Not rejected, but do not use: the generated no-args constructor does not compile in a record |
-| `^` super-constructor forwarding          | **Yes**                                 | n/a                                                  |
+| Generated element                                  | Property-model DTO                                                                                       | `@RecordDTO` record                                                                                      |
+|----------------------------------------------------|----------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|
+| Private fields                                     | **Yes** (the wurblet owns the body)                                                                      | No — the record declares them                                                                            |
+| Constructor                                        | all immutable properties as arguments, or a `protected` constructor taking the `Builder` in builder mode | only in builder mode: a `protected` constructor taking the `Builder` and delegating to the canonical one |
+| Getters                                            | **Yes** (`getX` / `isX`)                                                                                 | No — the record's accessors (`x()`) are used                                                             |
+| Setters                                            | For `=` / `~` properties                                                                                 | n/a (records are immutable)                                                                              |
+| `--names` constants (`PN_*`)                       | **Yes**                                                                                                  | **Yes**                                                                                                  |
+| `--builder`                                        | **Yes**                                                                                                  | **Yes** (builder feeds the canonical constructor)                                                        |
+| `--from` / `--with` copy factories                 | per-property `+` prefix                                                                                  | **all** components by default                                                                            |
+| `toBuilder()` (`--builder` with `--from`/`--with`) | **Yes**                                                                                                  | **Yes**                                                                                                  |
+| Annotations on generated methods                   | `[@Anno]` per property, global `[...]` line                                                              | none                                                                                                     |
+| `--equals` / `--hashCode`                          | **Yes**                                                                                                  | **Rejected** (records already have them)                                                                 |
+| `--validate`                                       | **Yes** (needs `Validateable`)                                                                           | **Rejected** (use a compact canonical constructor)                                                       |
+| `--nofinal` (serialization-friendly)               | **Yes**                                                                                                  | Not rejected, but do not use: the generated no-args constructor does not compile in a record             |
+| `^` super-constructor forwarding                   | **Yes**                                                                                                  | n/a                                                                                                      |
 
 The options themselves are shared and documented in
 [wurblets.md → The DTO wurblet](wurblets.md#the-dto-wurblet) and in the wurblet's

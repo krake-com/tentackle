@@ -334,11 +334,11 @@ public final class BookkeeperPermissionImpl
 The base class decides what kind of object the permission applies to, through
 `Permission.appliesTo(Class)`:
 
-| Base class                                                                            | Applies to                                                                                       |
-|---------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
-| [`AbstractPdoPermission`](../java/org/tentackle/security/permissions/AbstractPdoPermission.java)       | PDO classes — like the built-in `READ`, `VIEW`, `WRITE` and `EDIT`                              |
-| [`AbstractNonPdoPermission`](../java/org/tentackle/security/permissions/AbstractNonPdoPermission.java) | everything else: operations, remote services, UI features — like the built-in `EXEC`           |
-| [`AbstractPermission`](../java/org/tentackle/security/permissions/AbstractPermission.java)             | implement `appliesTo` yourself; the built-in `ALL` applies to any class                         |
+| Base class                                                                                             | Applies to                                                                           |
+|--------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
+| [`AbstractPdoPermission`](../java/org/tentackle/security/permissions/AbstractPdoPermission.java)       | PDO classes — like the built-in `READ`, `VIEW`, `WRITE` and `EDIT`                   |
+| [`AbstractNonPdoPermission`](../java/org/tentackle/security/permissions/AbstractNonPdoPermission.java) | everything else: operations, remote services, UI features — like the built-in `EXEC` |
+| [`AbstractPermission`](../java/org/tentackle/security/permissions/AbstractPermission.java)             | implement `appliesTo` yourself; the built-in `ALL` applies to any class              |
 
 `SecurityFactory.getPermissionInterfaces(clazz)` returns only the permissions applicable to a class,
 and the [security rules editor](../../../../tentackle-fx-rdc/src/main/docs/rdc.md#security-and-administration)

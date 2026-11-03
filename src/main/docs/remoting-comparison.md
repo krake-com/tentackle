@@ -77,18 +77,18 @@ view; the next two sections are about what the other approaches require to reach
 
 REST between your own tiers is not one decision; it is a per-operation tax. For `approve()` you write:
 
-| # | Artifact                                      | Why it exists                                                            |
-|---|-----------------------------------------------|--------------------------------------------------------------------------|
-| 1 | `InvoiceService.approve(id)` on the server     | the real logic                                                           |
-| 2 | `POST /invoices/{id}/approval` controller      | a route, a verb, and a status-code policy for every outcome              |
-| 3 | `ApproveRequest` / `InvoiceResponse` DTOs      | entities are unsafe to expose (see [PDOs vs. ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)) |
-| 4 | JSON mapping for both                          | dates, `BigDecimal` scale, enums, nulls, absent-vs-null                 |
-| 5 | A client-side HTTP call                        | URL building, headers, timeouts, retries                                |
-| 6 | Client-side DTOs (or a shared module)          | either duplication, or the coupling REST was supposed to avoid          |
-| 7 | Exception → status → client-exception mapping  | `409`? `422`? and how does the *message* survive?                       |
-| 8 | Auth-token propagation                          | the user identity has to be re-established on every hop                 |
-| 9 | A versioning policy for the endpoint            | because the two sides now deploy on their own schedules — in theory     |
-| 10| Contract tests                                  | nothing in the compiler checks steps 2–8                                |
+| #  | Artifact                                      | Why it exists                                                                                           |
+|----|-----------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| 1  | `InvoiceService.approve(id)` on the server    | the real logic                                                                                          |
+| 2  | `POST /invoices/{id}/approval` controller     | a route, a verb, and a status-code policy for every outcome                                             |
+| 3  | `ApproveRequest` / `InvoiceResponse` DTOs     | entities are unsafe to expose (see [PDOs vs. ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)) |
+| 4  | JSON mapping for both                         | dates, `BigDecimal` scale, enums, nulls, absent-vs-null                                                 |
+| 5  | A client-side HTTP call                       | URL building, headers, timeouts, retries                                                                |
+| 6  | Client-side DTOs (or a shared module)         | either duplication, or the coupling REST was supposed to avoid                                          |
+| 7  | Exception → status → client-exception mapping | `409`? `422`? and how does the *message* survive?                                                       |
+| 8  | Auth-token propagation                        | the user identity has to be re-established on every hop                                                 |
+| 9  | A versioning policy for the endpoint          | because the two sides now deploy on their own schedules — in theory                                     |
+| 10 | Contract tests                                | nothing in the compiler checks steps 2–8                                                                |
 
 Ten artifacts for one verb, of which exactly one is the feature. None of them are hard; that is the
 problem. They are easy, endless, and the compiler cannot help you with a single one.
@@ -312,21 +312,21 @@ permanently disabled.
 
 ### Summary table
 
-| Dimension                      | Hand-rolled REST between tiers        | RMI / Spring Remoting                   | Tentackle                                        |
-|--------------------------------|---------------------------------------|-----------------------------------------|--------------------------------------------------|
-| Unit that crosses the wire     | A DTO you wrote                       | A serialized copy, inert on arrival     | The PDO, fully functional on arrival             |
-| Per-operation work             | ~10 artifacts (route, DTOs, mapping…) | A method on a remote interface          | None — it is just a method                       |
-| Parallel wire model            | Yes, maintained by hand               | Usually still yes (detached entities)   | No                                               |
-| Lazy relation on the far tier  | Impossible — pre-serialize it         | `LazyInitializationException`           | Always works; the exception type does not exist  |
-| Fetch plans / `?expand=`       | Hand-rolled, untyped                  | Required (`@EntityGraph`, fetch joins)  | Not needed; [eager relations](../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md) are an optimization, not a correctness device |
-| Transaction across the hop     | No — coarsen the endpoint, or a saga  | Yours to propagate                      | `@Transaction`, executed on the DB-connected tier |
-| Infrastructure in signatures   | HTTP status codes, everywhere         | `throws RemoteException`                | None — `Remote` is a marker only                 |
-| Adding a tier                  | Re-implement every endpoint           | Not a supported shape                   | Change one URL                                   |
-| Caching between tiers          | HTTP caching, if the semantics fit    | Yours to build                          | Per-tier PDO cache, invalidation ripples down    |
-| Works behind NAT / SD-WAN      | Yes                                   | RMI: painful (stub leaks host/port)     | Yes — no address ever travels downstream         |
-| Error fidelity across the wire | Status code + whatever you encode     | Java exception, wrapped                 | Original `Throwable`, with a `temporary` flag    |
-| Non-Java clients               | **Yes** — its main strength           | No                                      | No — put a [web node](../../../tentackle-web/src/main/docs/web.md) at the edge |
-| Public / versioned contract    | **Yes** — its other main strength     | No                                      | No — same answer                                 |
+| Dimension                      | Hand-rolled REST between tiers        | RMI / Spring Remoting                  | Tentackle                                                                                                                                             |
+|--------------------------------|---------------------------------------|----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Unit that crosses the wire     | A DTO you wrote                       | A serialized copy, inert on arrival    | The PDO, fully functional on arrival                                                                                                                  |
+| Per-operation work             | ~10 artifacts (route, DTOs, mapping…) | A method on a remote interface         | None — it is just a method                                                                                                                            |
+| Parallel wire model            | Yes, maintained by hand               | Usually still yes (detached entities)  | No                                                                                                                                                    |
+| Lazy relation on the far tier  | Impossible — pre-serialize it         | `LazyInitializationException`          | Always works; the exception type does not exist                                                                                                       |
+| Fetch plans / `?expand=`       | Hand-rolled, untyped                  | Required (`@EntityGraph`, fetch joins) | Not needed; [eager relations](../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md) are an optimization, not a correctness device |
+| Transaction across the hop     | No — coarsen the endpoint, or a saga  | Yours to propagate                     | `@Transaction`, executed on the DB-connected tier                                                                                                     |
+| Infrastructure in signatures   | HTTP status codes, everywhere         | `throws RemoteException`               | None — `Remote` is a marker only                                                                                                                      |
+| Adding a tier                  | Re-implement every endpoint           | Not a supported shape                  | Change one URL                                                                                                                                        |
+| Caching between tiers          | HTTP caching, if the semantics fit    | Yours to build                         | Per-tier PDO cache, invalidation ripples down                                                                                                         |
+| Works behind NAT / SD-WAN      | Yes                                   | RMI: painful (stub leaks host/port)    | Yes — no address ever travels downstream                                                                                                              |
+| Error fidelity across the wire | Status code + whatever you encode     | Java exception, wrapped                | Original `Throwable`, with a `temporary` flag                                                                                                         |
+| Non-Java clients               | **Yes** — its main strength           | No                                     | No — put a [web node](../../../tentackle-web/src/main/docs/web.md) at the edge                                                                        |
+| Public / versioned contract    | **Yes** — its other main strength     | No                                     | No — same answer                                                                                                                                      |
 
 ---
 
@@ -388,14 +388,14 @@ Beyond the above, the trade is real and worth naming:
 
 ## Choosing
 
-| If your seam is…                                                              | Use                                              |
-|--------------------------------------------------------------------------------|--------------------------------------------------|
-| Between your own Java tiers, both of which you build and deploy                | Tentackle — the seam disappears                  |
-| Between a JVM pinned to hardware and a central database across a fixed network | Tentackle — see [technical & scientific](./technical-scientific.md) |
+| If your seam is…                                                               | Use                                                                               |
+|--------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| Between your own Java tiers, both of which you build and deploy                | Tentackle — the seam disappears                                                   |
+| Between a JVM pinned to hardware and a central database across a fixed network | Tentackle — see [technical & scientific](./technical-scientific.md)               |
 | Between your application and a browser, a mobile app, or another team          | REST, at a [web node](../../../tentackle-web/src/main/docs/web.md) in the cascade |
-| A public, versioned, long-supported contract                                   | REST (or gRPC) — the DTO layer is the point      |
-| Between polyglot services on infrastructure you don't control                   | Not Tentackle                                    |
-| An existing RMI deployment that works and isn't growing                        | Leave it; [migrate](./migrate_rmi_trip.md) when it stops working |
+| A public, versioned, long-supported contract                                   | REST (or gRPC) — the DTO layer is the point                                       |
+| Between polyglot services on infrastructure you don't control                  | Not Tentackle                                                                     |
+| An existing RMI deployment that works and isn't growing                        | Leave it; [migrate](./migrate_rmi_trip.md) when it stops working                  |
 
 ---
 

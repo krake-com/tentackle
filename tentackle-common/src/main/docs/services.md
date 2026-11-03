@@ -55,13 +55,13 @@ the same machinery carries, and how nearly every pluggable point in Tentackle is
 There are only two places to find an annotation: in the bytecode at runtime, or in the source at
 build time.
 
-| | **Classpath scanning** | **Build-time analysis** |
-|---|---|---|
-| When | Application startup | Compile time |
-| How | Open every jar, read every candidate class | Annotation processing via the compiler API |
-| Cost | Seconds on a large application | Paid once, by the build |
-| Side effects | Loads annotated classes *and their annotation types* just to read them | None at runtime |
-| Used by | Most classic frameworks | Newer microservice frameworks — and Tentackle |
+|              | **Classpath scanning**                                                 | **Build-time analysis**                       |
+|--------------|------------------------------------------------------------------------|-----------------------------------------------|
+| When         | Application startup                                                    | Compile time                                  |
+| How          | Open every jar, read every candidate class                             | Annotation processing via the compiler API    |
+| Cost         | Seconds on a large application                                         | Paid once, by the build                       |
+| Side effects | Loads annotated classes *and their annotation types* just to read them | None at runtime                               |
+| Used by      | Most classic frameworks                                                | Newer microservice frameworks — and Tentackle |
 
 Scanning is dynamic and needs no build step, and it pays for that at startup. It defeats lazy class
 loading, and it sits badly with ahead-of-time deployment formats such as
@@ -100,10 +100,10 @@ fast, deterministic, and free of the analysis code entirely — the handlers liv
 Three annotations cover almost everything. All three are markers for the same underlying mechanism;
 they differ in what they write and what shape of question it answers.
 
-| Annotation | Written to | Answers |
-|---|---|---|
-| [`@Service`](../java/org/tentackle/common/Service.java) | `META-INF/services/` | "Who implements this interface?" |
-| [`@ServiceName`](../java/org/tentackle/common/ServiceName.java) | `META-INF/services/` | The same, but keyed by an arbitrary **string** |
+| Annotation                                                          | Written to                  | Answers                                            |
+|---------------------------------------------------------------------|-----------------------------|----------------------------------------------------|
+| [`@Service`](../java/org/tentackle/common/Service.java)             | `META-INF/services/`        | "Who implements this interface?"                   |
+| [`@ServiceName`](../java/org/tentackle/common/ServiceName.java)     | `META-INF/services/`        | The same, but keyed by an arbitrary **string**     |
 | [`@MappedService`](../java/org/tentackle/common/MappedService.java) | `META-INF/mapped-services/` | "Which class serves *which other class or value*?" |
 
 ### `@Service` — one implementation for an interface
@@ -300,16 +300,16 @@ ServiceFinder mapped = ServiceFactory.getServiceFinder(Constants.MAPPED_SERVICE_
 
 The API splits along two axes — *first vs. unique vs. all*, and *configuration vs. loaded class*:
 
-| Method | Returns |
-|---|---|
-| `findFirstServiceProvider(Class)` | The first provider class along the path. **This is the override path** — an application's own provider shadows the framework's. |
-| `findUniqueServiceProvider(Class)` | The provider, verifying it is declared **exactly once**. For factories and singletons where two would be a bug. |
-| `findServiceProviders(Class)` | **All** provider classes, in path order. |
-| `findFirstServiceConfiguration(String)` / `findUniqueServiceConfiguration(String)` / `findServiceConfigurations(String)` | The raw name → URL entries, **without loading anything**. |
-| `findServiceURLs(String)` | The resource URLs backing a service. |
-| `createNameMap(String)` | `value → provider` for mapped services; first along the path wins. |
-| `createNameMapToAll(String)` | `value → all providers` (an unordered set), for cases where every contribution counts. |
-| `getClassLoader()` / `getServicePath()` / `getModuleLayer()` | The finder's classloader, its normalized service path (no leading, but a trailing slash), and its module layer (`null` unless [layer-based](#modulelayers)). |
+| Method                                                                                                                   | Returns                                                                                                                                                      |
+|--------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `findFirstServiceProvider(Class)`                                                                                        | The first provider class along the path. **This is the override path** — an application's own provider shadows the framework's.                              |
+| `findUniqueServiceProvider(Class)`                                                                                       | The provider, verifying it is declared **exactly once**. For factories and singletons where two would be a bug.                                              |
+| `findServiceProviders(Class)`                                                                                            | **All** provider classes, in path order.                                                                                                                     |
+| `findFirstServiceConfiguration(String)` / `findUniqueServiceConfiguration(String)` / `findServiceConfigurations(String)` | The raw name → URL entries, **without loading anything**.                                                                                                    |
+| `findServiceURLs(String)`                                                                                                | The resource URLs backing a service.                                                                                                                         |
+| `createNameMap(String)`                                                                                                  | `value → provider` for mapped services; first along the path wins.                                                                                           |
+| `createNameMapToAll(String)`                                                                                             | `value → all providers` (an unordered set), for cases where every contribution counts.                                                                       |
+| `getClassLoader()` / `getServicePath()` / `getModuleLayer()`                                                             | The finder's classloader, its normalized service path (no leading, but a trailing slash), and its module layer (`null` unless [layer-based](#modulelayers)). |
 
 The `…Configuration` methods are the ones that make this more than a `ServiceLoader` clone: they let
 the framework read registrations as *data*. That is how `@ClassId` resolves without touching a class,
@@ -479,18 +479,18 @@ without loading a single entity class.
 The pattern repeats across the framework. `@Service` for singletons and factories, `@MappedService`
 where a type must be related to a type:
 
-| Feature | Registration | What gets plugged in |
-|---|---|---|
-| [Logging](../../../../tentackle-core/src/main/docs/logging.md) | `@Service(Logger.class)` | `tentackle-log-slf4j` or `tentackle-log-log4j2v`, chosen by what is on the path (`LoggerFactory` is itself a replaceable `@Service`) |
-| [Scripting](../../../../tentackle-core/src/main/docs/scripting.md) | `@Service(ScriptingLanguage.class)` | `tentackle-script-groovy` / `-ruby` / `-jsr` |
-| [TRIP](../../../../tentackle-core/src/main/docs/trip.md) | `@TripTypeService`, `@TripComponentProviderService`, `@TripInstanceCreatorService` | Wire types and their (de)serializers |
-| [TRIP transports](../../../../tentackle-core/src/main/docs/io.md) | `@TransportService(PROTOCOL)`, `@RemoteService` | Transports keyed by **protocol string** — `trip`, `tripe`, `tripce`, and [QUIC](../../../../tentackle-quic/src/main/docs/quic.md), each a drop-in |
-| [Interceptors](../../../../tentackle-core/src/main/docs/interceptors.md) | `@InterceptionService` | Interceptable implementations, resolved like any mapped service |
-| [Validation](../../../../tentackle-core/src/main/docs/validation.md) | `@ValidationScopeService`, `@ValidationSeverityService`, `@ValidationScriptConverter` | Scopes, severities and script converters |
-| [Security](../../../../tentackle-pdo/src/main/docs/security.md) | `@PermissionService` | Permission types |
-| [FX](../../../../tentackle-fx/src/main/docs/fx.md) / [RDC](../../../../tentackle-fx-rdc/src/main/docs/rdc.md) | `@GuiProviderService`, `@TableCellTypeService`, `@TableConfigurationProviderService`, `@BuilderService`, `@ConfiguratorService`, `@Pdo*ContextMenuItemService` | GUI providers, cell types, table configs, context menus |
-| [Secrets](cryptor.md) | `@Service(Cryptor.class)` | The application's own `Cryptor`, resolved identically at build time and runtime |
-| [Bundles and i18n](bundle.md) | `META-INF/bundles/` + `ModuleHook` | Bundle discovery in both modes |
+| Feature                                                                                                       | Registration                                                                                                                                                   | What gets plugged in                                                                                                                              |
+|---------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| [Logging](../../../../tentackle-core/src/main/docs/logging.md)                                                | `@Service(Logger.class)`                                                                                                                                       | `tentackle-log-slf4j` or `tentackle-log-log4j2v`, chosen by what is on the path (`LoggerFactory` is itself a replaceable `@Service`)              |
+| [Scripting](../../../../tentackle-core/src/main/docs/scripting.md)                                            | `@Service(ScriptingLanguage.class)`                                                                                                                            | `tentackle-script-groovy` / `-ruby` / `-jsr`                                                                                                      |
+| [TRIP](../../../../tentackle-core/src/main/docs/trip.md)                                                      | `@TripTypeService`, `@TripComponentProviderService`, `@TripInstanceCreatorService`                                                                             | Wire types and their (de)serializers                                                                                                              |
+| [TRIP transports](../../../../tentackle-core/src/main/docs/io.md)                                             | `@TransportService(PROTOCOL)`, `@RemoteService`                                                                                                                | Transports keyed by **protocol string** — `trip`, `tripe`, `tripce`, and [QUIC](../../../../tentackle-quic/src/main/docs/quic.md), each a drop-in |
+| [Interceptors](../../../../tentackle-core/src/main/docs/interceptors.md)                                      | `@InterceptionService`                                                                                                                                         | Interceptable implementations, resolved like any mapped service                                                                                   |
+| [Validation](../../../../tentackle-core/src/main/docs/validation.md)                                          | `@ValidationScopeService`, `@ValidationSeverityService`, `@ValidationScriptConverter`                                                                          | Scopes, severities and script converters                                                                                                          |
+| [Security](../../../../tentackle-pdo/src/main/docs/security.md)                                               | `@PermissionService`                                                                                                                                           | Permission types                                                                                                                                  |
+| [FX](../../../../tentackle-fx/src/main/docs/fx.md) / [RDC](../../../../tentackle-fx-rdc/src/main/docs/rdc.md) | `@GuiProviderService`, `@TableCellTypeService`, `@TableConfigurationProviderService`, `@BuilderService`, `@ConfiguratorService`, `@Pdo*ContextMenuItemService` | GUI providers, cell types, table configs, context menus                                                                                           |
+| [Secrets](cryptor.md)                                                                                         | `@Service(Cryptor.class)`                                                                                                                                      | The application's own `Cryptor`, resolved identically at build time and runtime                                                                   |
+| [Bundles and i18n](bundle.md)                                                                                 | `META-INF/bundles/` + `ModuleHook`                                                                                                                             | Bundle discovery in both modes                                                                                                                    |
 
 Two entries deserve a note. The **`Cryptor`** case is the neatest demonstration of registrations
 being *data*: the `tentackle-maven-plugin`'s `properties` goal writes `@org.tentackle.common.Cryptor`

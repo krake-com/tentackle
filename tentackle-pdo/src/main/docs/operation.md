@@ -268,8 +268,8 @@ the implementations are `@TripReferencable(NEVER)`.
    application code ───▶ │  MoveOperation  (dynamic proxy)│
                          └───────────────┬────────────────┘
                        OperationInvocationHandler routes by interface
-                ┌───────────────────────┴────────────────────────┐
-                ▼                                                  ▼
+                ┌────────────────────────┴───────────────────────┐
+                ▼                                                ▼
    ┌──────────────────────────┐                    ┌──────────────────────────┐
    │  persistence mixin       │   at least one of  │  domain mixin            │
    │  (may be a dummy)        │   the two is real  │  MoveOperationDomainImpl │

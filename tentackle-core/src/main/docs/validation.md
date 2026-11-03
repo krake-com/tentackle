@@ -441,13 +441,13 @@ invoiceDate: @NotNull(scope=AllScope.class, message="{ @('please_enter_the_invoi
 Predefined scopes live in `org.tentackle.validate.scope` (interface + `…Impl`
 service). Each has a stable `NAME`.
 
-| Scope                              | Purpose                                                                                   |
-|------------------------------------|-------------------------------------------------------------------------------------------|
+| Scope                              | Purpose                                                                                                                       |
+|------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
 | `AllScope` (`ALL`)                 | matches every scope — a wildcard; the only scope applying `DefaultScope` constraints of objects without a `ScopeConfigurator` |
-| `PersistenceScope` (`PERSISTENCE`) | constraints enforced before an object is persisted                                        |
-| `InteractiveScope` (`INTERACTIVE`) | constraints relevant only during interactive editing                                      |
-| `MandatoryScope` (`MANDATORY`)     | drives the *mandatory* state of bound components                                          |
-| `ChangeableScope` (`CHANGEABLE`)   | drives the *changeable* state of bound components                                         |
+| `PersistenceScope` (`PERSISTENCE`) | constraints enforced before an object is persisted                                                                            |
+| `InteractiveScope` (`INTERACTIVE`) | constraints relevant only during interactive editing                                                                          |
+| `MandatoryScope` (`MANDATORY`)     | drives the *mandatory* state of bound components                                                                              |
+| `ChangeableScope` (`CHANGEABLE`)   | drives the *changeable* state of bound components                                                                             |
 
 `DefaultScope` (in the root package) is the placeholder default resolved per
 object through `ScopeConfigurator`. Applications add their own scopes by declaring
@@ -576,25 +576,25 @@ they work in both modular and non-modular deployments. The module exports
 
 ### `org.tentackle.validate` (tentackle-core)
 
-| Type                                                       | Role                                                               |
-|------------------------------------------------------------|--------------------------------------------------------------------|
-| `Validation`                                               | meta-annotation linking a constraint annotation to its `Validator` |
-| `RepeatableValidation`                                     | meta-annotation marking a `@Repeatable` container                  |
-| `Validator` / `AbstractValidator`                          | the constraint contract and base implementation                    |
+| Type                                                       | Role                                                                    |
+|------------------------------------------------------------|-------------------------------------------------------------------------|
+| `Validation`                                               | meta-annotation linking a constraint annotation to its `Validator`      |
+| `RepeatableValidation`                                     | meta-annotation marking a `@Repeatable` container                       |
+| `Validator` / `AbstractValidator`                          | the constraint contract and base implementation                         |
 | `ValidatorList` / `RepeatableValidator`                    | validators wrapping a list of sub-annotations (not used by the scanner) |
-| `ValidationContext` / `DefaultValidationContext`           | per-validation runtime state                                       |
-| `ValidationResult`                                         | the (serializable) outcome of a check                              |
-| `ValidationScope` / `DefaultScope`                         | when a constraint applies; the per-object default placeholder      |
-| `ScopeConfigurator`                                        | object-supplied default scopes                                     |
-| `ValidationSeverity`                                       | turns a failure into a concrete result                             |
-| `Validateable`                                             | objects that drive their own validation                            |
-| `ValidationUtilities`                                      | the engine: scan, filter by scope/condition, run, collect          |
-| `ValidatorCache`                                           | per-class cache of discovered validators                           |
-| `MandatoryBindingEvaluator` / `ChangeableBindingEvaluator` | feed mandatory/changeable state to the binding layer               |
-| `ValidationMapper`                                         | maps validation paths to binding paths/binders                     |
-| `ValidationFailedException`                                | unchecked, carries results, used by `@Fail` to abort               |
-| `ValidationRuntimeException`                               | unchecked, signals configuration/runtime errors                    |
-| `*Factory`, `*Service`                                     | service hooks for context, scope, severity, compound values        |
+| `ValidationContext` / `DefaultValidationContext`           | per-validation runtime state                                            |
+| `ValidationResult`                                         | the (serializable) outcome of a check                                   |
+| `ValidationScope` / `DefaultScope`                         | when a constraint applies; the per-object default placeholder           |
+| `ScopeConfigurator`                                        | object-supplied default scopes                                          |
+| `ValidationSeverity`                                       | turns a failure into a concrete result                                  |
+| `Validateable`                                             | objects that drive their own validation                                 |
+| `ValidationUtilities`                                      | the engine: scan, filter by scope/condition, run, collect               |
+| `ValidatorCache`                                           | per-class cache of discovered validators                                |
+| `MandatoryBindingEvaluator` / `ChangeableBindingEvaluator` | feed mandatory/changeable state to the binding layer                    |
+| `ValidationMapper`                                         | maps validation paths to binding paths/binders                          |
+| `ValidationFailedException`                                | unchecked, carries results, used by `@Fail` to abort                    |
+| `ValidationRuntimeException`                               | unchecked, signals configuration/runtime errors                         |
+| `*Factory`, `*Service`                                     | service hooks for context, scope, severity, compound values             |
 
 ### `org.tentackle.validate.validator`
 

@@ -233,13 +233,13 @@ than literal names so that a model change still propagates. A hand-written metho
 
 So reach for `Query` only when the statement's *structure* depends on runtime data:
 
-| Situation                                                                    | Use                                    |
-|------------------------------------------------------------------------------|----------------------------------------|
-| fixed condition set                                                          | `PdoSelectList` / `PdoSelectUnique`    |
-| known conditions, applied selectively (query by form)                        | optional conditions (`?boolean`)       |
-| condition count unknown at build time (ad-hoc filter lists, generated `IN` …) | `Query`                                |
-| `ORDER BY` chosen by the user, or paging over an arbitrary sort              | `Query`                                |
-| one-off administrative or reporting statements outside the entity's shape    | `Query` (or a plain `PreparedStatementWrapper`) |
+| Situation                                                                     | Use                                             |
+|-------------------------------------------------------------------------------|-------------------------------------------------|
+| fixed condition set                                                           | `PdoSelectList` / `PdoSelectUnique`             |
+| known conditions, applied selectively (query by form)                         | optional conditions (`?boolean`)                |
+| condition count unknown at build time (ad-hoc filter lists, generated `IN` …) | `Query`                                         |
+| `ORDER BY` chosen by the user, or paging over an arbitrary sort               | `Query`                                         |
+| one-off administrative or reporting statements outside the entity's shape     | `Query` (or a plain `PreparedStatementWrapper`) |
 
 ---
 
@@ -360,18 +360,18 @@ into a single joined statement, and the generated body therefore returns `execut
 
 ### Common to both
 
-| Option                        | Effect                                                                                                                                                                                                 |
-|-------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `--private`                   | Makes the method `private` (default `public`). Implies `--noif` and disables remoting.                                                                                                                 |
-| `--noif`                      | There is no interface for the method ⇒ no `@Override` is generated.                                                                                                                                    |
-| `--sort`                      | Append `ORDER BY` using the model's default sorting (`orderBy()`). Mutually exclusive with explicit `+/-` sort terms in the expression, and requires a default sorting to be configured on the entity. |
-| `--lock`                      | Generate `SELECT … FOR UPDATE`; asserts a running transaction.                                                                                                                                         |
-| `--append=<sqltext>`          | Append a literal SQL fragment to the generated statement.                                                                                                                                              |
-| `--classvar=<classvariables>` | Take the cached `StatementId` from the referenced class-variables holder instead of emitting a local `private static final StatementId`.                                                               |
+| Option                        | Effect                                                                                                                                                                                                                                                                                                                                                                    |
+|-------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--private`                   | Makes the method `private` (default `public`). Implies `--noif` and disables remoting.                                                                                                                                                                                                                                                                                    |
+| `--noif`                      | There is no interface for the method ⇒ no `@Override` is generated.                                                                                                                                                                                                                                                                                                       |
+| `--sort`                      | Append `ORDER BY` using the model's default sorting (`orderBy()`). Mutually exclusive with explicit `+/-` sort terms in the expression, and requires a default sorting to be configured on the entity.                                                                                                                                                                    |
+| `--lock`                      | Generate `SELECT … FOR UPDATE`; asserts a running transaction.                                                                                                                                                                                                                                                                                                            |
+| `--append=<sqltext>`          | Append a literal SQL fragment to the generated statement.                                                                                                                                                                                                                                                                                                                 |
+| `--classvar=<classvariables>` | Take the cached `StatementId` from the referenced class-variables holder instead of emitting a local `private static final StatementId`.                                                                                                                                                                                                                                  |
 | `--oneshot`                   | Create the prepared statement for a single use (`createPreparedStatement` within a try-with-resources) instead of caching it under a `StatementId`. No `StatementId` is generated at all. Implied by [optional conditions](#optional-conditions-qbf-style-finders). Incompatible with `--resultset` and `--cursor`, which hand out a result still bound to the statement. |
-| `--immutable`                 | Mark the returned PDO / list [immutable](../../../../tentackle-pdo/src/main/docs/pdo.md).                                                                                                              |
-| `--finallyImmutable`          | Mark the result *finally* immutable (can never become mutable again).                                                                                                                                  |
-| `--mutable`                   | Force a mutable result, overriding the automatic immutability that filtered joins otherwise impose.                                                                                                    |
+| `--immutable`                 | Mark the returned PDO / list [immutable](../../../../tentackle-pdo/src/main/docs/pdo.md).                                                                                                                                                                                                                                                                                 |
+| `--finallyImmutable`          | Mark the result *finally* immutable (can never become mutable again).                                                                                                                                                                                                                                                                                                     |
+| `--mutable`                   | Force a mutable result, overriding the automatic immutability that filtered joins otherwise impose.                                                                                                                                                                                                                                                                       |
 
 > **Automatic immutability:** if the query uses filtered joins, the result is forced immutable unless
 > `--mutable` is given, because a filtered eager-load returns only a subset of an aggregate's components and
@@ -379,24 +379,24 @@ into a single joined statement, and the generated body therefore returns `execut
 
 The options of the base classes apply as well:
 
-| Option                                                       | Effect                                                                                                                                                      |
-|--------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `--remote` / `--noremote`                                    | Force the remote delegate code on or off. By default it follows the entity's model options.                                                                 |
+| Option                                                        | Effect                                                                                                                                                     |
+|---------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--remote` / `--noremote`                                     | Force the remote delegate code on or off. By default it follows the entity's model options.                                                                |
 | `--tracked` / `--attracked` / `--fulltracked` / `--untracked` | Override the entity's tracking type for this method, e.g. to return a `TrackedList` from an untracked entity.                                              |
-| `--context=<key>`                                            | Restrict by another domain-context attribute than the model's. `--context=` drops the context condition. An attribute that does not exist fails the build. |
+| `--context=<key>`                                             | Restrict by another domain-context attribute than the model's. `--context=` drops the context condition. An attribute that does not exist fails the build. |
 
 See [`DbModelWurblet`](persistence-wurblet-api.md#options) and
 [`ModelWurblet`](../../../../tentackle-wurblets/src/main/docs/wurblet-api.md#options) for details.
 
 ### `PdoSelectList` only
 
-| Option        | Effect                                                                                                                                                                                                                              |
-|---------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `--limit`     | Add a parameter limiting the number of returned rows (dialect-aware paging).                                                                                                                                                        |
-| `--offset`    | Add a parameter skipping the first rows.                                                                                                                                                                                            |
-| `--resultset` | Return the raw `ResultSetWrapper` instead of a `List` (disables remoting; incompatible with immutability and `--oneshot`).                                                                                                                          |
+| Option        | Effect                                                                                                                                                                                                                                                                                                                          |
+|---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--limit`     | Add a parameter limiting the number of returned rows (dialect-aware paging).                                                                                                                                                                                                                                                    |
+| `--offset`    | Add a parameter skipping the first rows.                                                                                                                                                                                                                                                                                        |
+| `--resultset` | Return the raw `ResultSetWrapper` instead of a `List` (disables remoting; incompatible with immutability and `--oneshot`).                                                                                                                                                                                                      |
 | `--cursor`    | Return a `ScrollableResource<Pdo>` (a `ResultSetCursor`, `RemoteResultSetCursor` when remote) for streaming large results — see [cursors.md](../../../../tentackle-persistence/src/main/docs/cursors.md). Incompatible with `--resultset`, `--oneshot`, immutability and tracking; with joins the query must be sorted by `id`. |
-| `--bounded`   | Return `List<? extends MainClass>` instead of `List<MainClass>`.                                                                                                                                                                    |
+| `--bounded`   | Return `List<? extends MainClass>` instead of `List<MainClass>`.                                                                                                                                                                                                                                                                |
 
 ### `PdoSelectUnique` only
 

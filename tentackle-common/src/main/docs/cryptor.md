@@ -166,13 +166,13 @@ value unencrypted.
 
 ### Reading values
 
-| Method                       | Returns                                                                          |
-|------------------------------|-----------------------------------------------------------------------------------|
-| `getProperty(key)`           | Decrypted value (via `Cryptor.getInstanceSafely()` when the value is marked `~`)  |
-| `getPropertyAsChars(key)`    | Same, as a `char[]` the caller **can erase after use** — prefer this for secrets  |
-| `getPropertyAsChars(key, defaults)` | Same, but returns `defaults` if there is no such key                        |
-| `getPropertyBlunt(key)`      | The **raw** stored value, still encrypted. For copying/inspecting without decrypting |
-| `getPropertyIgnoreCase(key)` | Case-insensitive lookup                                                          |
+| Method                              | Returns                                                                              |
+|-------------------------------------|--------------------------------------------------------------------------------------|
+| `getProperty(key)`                  | Decrypted value (via `Cryptor.getInstanceSafely()` when the value is marked `~`)     |
+| `getPropertyAsChars(key)`           | Same, as a `char[]` the caller **can erase after use** — prefer this for secrets     |
+| `getPropertyAsChars(key, defaults)` | Same, but returns `defaults` if there is no such key                                 |
+| `getPropertyBlunt(key)`             | The **raw** stored value, still encrypted. For copying/inspecting without decrypting |
+| `getPropertyIgnoreCase(key)`        | Case-insensitive lookup                                                              |
 
 Note the asymmetry that follows from `getInstanceSafely()`: reading a `~`-marked value **without** a
 configured `Cryptor` throws rather than returning ciphertext. That is intentional — silently handing

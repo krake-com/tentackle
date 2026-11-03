@@ -140,7 +140,7 @@ This is **domain-related, not model-related.** Key differences from model eager:
 |----------------|-----------------------------------------|--------------------------------------------------------------|
 | Where declared | In the model (relation line)            | In a finder anchor in the persistence implementation         |
 | Scope          | Global — affects **every** generic read | Local — affects **only that one finder**                     |
-| Cascading      | Capped by `eager:<n>`, **1** by default  | **Explicit** — you chain `*a*b*c` to whatever depth you need |
+| Cascading      | Capped by `eager:<n>`, **1** by default | **Explicit** — you chain `*a*b*c` to whatever depth you need |
 | Filtering      | No                                      | Yes — `*lines\|no:<:10` loads a subset                       |
 | Granularity    | All-or-nothing for the entity           | Tuned per access path                                        |
 

@@ -97,17 +97,17 @@ out-of-date client:
 
 Its responsibilities, all overridable, are:
 
-| Method                               | Purpose                                                                                                     |
-|--------------------------------------|-------------------------------------------------------------------------------------------------------------|
-| `handle(Exception)`                  | Recognize the outdated-client situation and kick off the flow.                                              |
-| `createUpdateService()`              | Look up the remote `UpdateService` from the `updateService` application property (null if none).            |
-| `createUpdateRunnable(...)`          | Decide whether to install — by default asks the user; override for silent updates.                          |
-| `showUpdateDialog(...)`              | Show the "install version X?" notification with Yes/No buttons; closing it without a button means No.       |
-| `createCountdownTimeline(...)`       | A 3-2-1 countdown on the Yes button that auto-confirms after about four seconds; return `null` to disable.  |
-| `createUpdateDirectory(...)`         | Choose where to download/unzip — `update` below the package root for jpackage, `./update` for jlink.        |
-| `update(...)`                        | Download, verify, unzip, launch the update script and exit.                                                 |
-| `passSessionInfoViaEnvironment(...)` | Hand the encrypted credentials to the restarted process for auto-login.                                     |
-| `setStopReason(Throwable)`           | Record `EXIT_VALUE_OUTDATED` and the cause as the exit value of the application.                            |
+| Method                               | Purpose                                                                                                    |
+|--------------------------------------|------------------------------------------------------------------------------------------------------------|
+| `handle(Exception)`                  | Recognize the outdated-client situation and kick off the flow.                                             |
+| `createUpdateService()`              | Look up the remote `UpdateService` from the `updateService` application property (null if none).           |
+| `createUpdateRunnable(...)`          | Decide whether to install — by default asks the user; override for silent updates.                         |
+| `showUpdateDialog(...)`              | Show the "install version X?" notification with Yes/No buttons; closing it without a button means No.      |
+| `createCountdownTimeline(...)`       | A 3-2-1 countdown on the Yes button that auto-confirms after about four seconds; return `null` to disable. |
+| `createUpdateDirectory(...)`         | Choose where to download/unzip — `update` below the package root for jpackage, `./update` for jlink.       |
+| `update(...)`                        | Download, verify, unzip, launch the update script and exit.                                                |
+| `passSessionInfoViaEnvironment(...)` | Hand the encrypted credentials to the restarted process for auto-login.                                    |
+| `setStopReason(Throwable)`           | Record `EXIT_VALUE_OUTDATED` and the cause as the exit value of the application.                           |
 | `terminate(...)`                     | Record the stop reason, show an error/info and close the window, which terminates the application.         |
 
 The handler runs in the login service's background thread, and so does the returned `Runnable`. The dialog is

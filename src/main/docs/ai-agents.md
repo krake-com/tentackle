@@ -34,15 +34,15 @@ all have a **batch mode** that runs headless and is driven entirely from the com
 
 ![Tentackle AI Agent Tooling](./assets/tentackle-ai-agents.png)
 
-| Task                                                | Tool                                                  | Mode                             | Touches the database |
-|-----------------------------------------------------|--------------------------------------------------------|-----------------------------------|----------------------|
-| Understand and validate the entity model            | `tentackle-mcp:serve`                                  | long-running MCP server           | no                   |
-| Create the source files for new entities            | `tentackle-wizard:pdo -DbatchDir=…`                    | headless, one-shot                | no                   |
-| Create the source files for a new operation         | `tentackle-wizard:operation -DoperationName=…`         | headless, one-shot                | no                   |
-| Turn persisted records into Java fixture code       | `tentackle-wizard:browse -Dpdo=… -Doutput=…`           | headless, one-shot                | reads                |
-| Run application code against a backend              | `tentackle-wizard:script -Dscript=…`                   | headless, one-shot                | whatever the script does |
-| Bring the database in line with the model           | `tentackle-sql:migrate` / `:validate`                  | headless, one-shot                | reads metadata       |
-| Run plain SQL against a *development* database      | `tentackle-sql:run -Dscript=…`                         | headless, one-shot                | whatever the SQL does |
+| Task                                           | Tool                                           | Mode                    | Touches the database     |
+|------------------------------------------------|------------------------------------------------|-------------------------|--------------------------|
+| Understand and validate the entity model       | `tentackle-mcp:serve`                          | long-running MCP server | no                       |
+| Create the source files for new entities       | `tentackle-wizard:pdo -DbatchDir=…`            | headless, one-shot      | no                       |
+| Create the source files for a new operation    | `tentackle-wizard:operation -DoperationName=…` | headless, one-shot      | no                       |
+| Turn persisted records into Java fixture code  | `tentackle-wizard:browse -Dpdo=… -Doutput=…`   | headless, one-shot      | reads                    |
+| Run application code against a backend         | `tentackle-wizard:script -Dscript=…`           | headless, one-shot      | whatever the script does |
+| Bring the database in line with the model      | `tentackle-sql:migrate` / `:validate`          | headless, one-shot      | reads metadata           |
+| Run plain SQL against a *development* database | `tentackle-sql:run -Dscript=…`                 | headless, one-shot      | whatever the SQL does    |
 
 The first is read-only and can be left running all day. The second and third write Java sources into
 the reactor. The fourth reads from a backend and writes one file. The sixth only *generates* a
@@ -133,17 +133,17 @@ without a restart.
 
 ### What It Answers
 
-| Tool                    | Question                                                                                       |
-|-------------------------|-------------------------------------------------------------------------------------------------|
+| Tool                    | Question                                                                                                                                            |
+|-------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
 | `model_overview`        | What is loaded: sources, backends, effective model defaults, inheritance hierarchies, aggregate roots, configuration warnings. **The entry point.** |
-| `model_list_entities`   | The entity index, narrowed by name pattern or by filter (composite, abstract, root, embedded, cached, …). |
-| `model_find`            | Where does this name occur? Searches entity, table, attribute, column, relation and index names.  |
-| `model_describe_entity` | One entity — canonical definition, attributes, relations, indexes, inheritance, aggregate, references, embedding, unique domain key, DDL. |
-| `model_source`          | The model definition as text, `raw`, `canonical` or `compact`, optionally as a `@> … @<` block.    |
-| `model_paths`           | How two entities are connected; direct neighbors; composite and embedding paths.                  |
-| `model_ddl`             | The `CREATE TABLE` / `CREATE INDEX` / foreign key statements for a backend. Text only.            |
-| `model_validate`        | Is the model consistent — or would *this draft definition* be? See below.                         |
-| `model_reload`          | Refresh right away and list what changed; `full` for a clean reload. Rarely needed: changes are picked up by themselves. |
+| `model_list_entities`   | The entity index, narrowed by name pattern or by filter (composite, abstract, root, embedded, cached, …).                                           |
+| `model_find`            | Where does this name occur? Searches entity, table, attribute, column, relation and index names.                                                    |
+| `model_describe_entity` | One entity — canonical definition, attributes, relations, indexes, inheritance, aggregate, references, embedding, unique domain key, DDL.           |
+| `model_source`          | The model definition as text, `raw`, `canonical` or `compact`, optionally as a `@> … @<` block.                                                     |
+| `model_paths`           | How two entities are connected; direct neighbors; composite and embedding paths.                                                                    |
+| `model_ddl`             | The `CREATE TABLE` / `CREATE INDEX` / foreign key statements for a backend. Text only.                                                              |
+| `model_validate`        | Is the model consistent — or would *this draft definition* be? See below.                                                                           |
+| `model_reload`          | Refresh right away and list what changed; `full` for a clean reload. Rarely needed: changes are picked up by themselves.                            |
 
 Every entity argument accepts the entity name, `table:<tableName>` or `id:<classId>`, because all three
 turn up in the sources an agent is reading.
@@ -254,13 +254,13 @@ At least one `PdoProfile` must be configured, or the goal fails.
 
 ### Batch-Specific Parameters
 
-| Parameter                  | Property         | Purpose                                                                                    |
-|----------------------------|------------------|---------------------------------------------------------------------------------------------|
-| `batchDir`                 | `batchDir`       | The single input directory. Command-line form of `batchFilesets`.                            |
-| `batchFilesets`            | —                | Input file sets, configured in the POM.                                                      |
-| `batchModelDefaults`       | `batchDefaults`  | Model defaults applied when printing the model source into the generated PDO interfaces. Defaults to `!ROOT, !ROOTID, !ROOTCLASSID, !BIND, UNTRACKED` — a dumped model usually has the project defaults baked in already, so they must not be applied twice. |
-| `dumpColumnGap`            | —                | Minimum spaces between columns in the generated attribute section. Defaults to `2`.          |
-| `dumpAnnotationsAsOptions` | —                | Which annotations to render as attribute options, e.g. `@NotNull|, @NotZero`.                |
+| Parameter                  | Property        | Purpose                                                                                                                                                                                                                                                      |
+|----------------------------|-----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `batchDir`                 | `batchDir`      | The single input directory. Command-line form of `batchFilesets`.                                                                                                                                                                                            |
+| `batchFilesets`            | —               | Input file sets, configured in the POM.                                                                                                                                                                                                                      |
+| `batchModelDefaults`       | `batchDefaults` | Model defaults applied when printing the model source into the generated PDO interfaces. Defaults to `!ROOT, !ROOTID, !ROOTCLASSID, !BIND, UNTRACKED` — a dumped model usually has the project defaults baked in already, so they must not be applied twice. |
+| `dumpColumnGap`            | —               | Minimum spaces between columns in the generated attribute section. Defaults to `2`.                                                                                                                                                                          |
+| `dumpAnnotationsAsOptions` | —               | Which annotations to render as attribute options, e.g. `@NotNull                                                                                                                                                                                             |, @NotZero`.                |
 
 Class ids are still managed: the goal scans the model for the highest id used per profile, records the
 next free one under `${project.build.directory}/wizard/<profile>.classid`, and warns when a
@@ -315,17 +315,17 @@ mvn tentackle-wizard:operation \
     -Dcomment="sends an invoice to the customer"
 ```
 
-| Property                    | Purpose                                                                                          |
-|-----------------------------|----------------------------------------------------------------------------------------------------|
-| `operationName`             | The operation interface name. **Setting it enables batch mode.**                                   |
-| `profile`                   | The `OperationProfile`, case-insensitive. Can be omitted if only one is configured.                |
-| `comment`                   | The short description. Mandatory.                                                                  |
-| `longComment`               | The long description.                                                                              |
-| `remote`                    | Whether remoting is supported. Defaults to `true` without model defaults, otherwise to their `remote` option. |
-| `superOperation`            | The super operation, determining all five super types.                                             |
-| `abstract`                  | Generate an abstract operation.                                                                    |
+| Property                                                                                       | Purpose                                                                                                                                                                                              |
+|------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `operationName`                                                                                | The operation interface name. **Setting it enables batch mode.**                                                                                                                                     |
+| `profile`                                                                                      | The `OperationProfile`, case-insensitive. Can be omitted if only one is configured.                                                                                                                  |
+| `comment`                                                                                      | The short description. Mandatory.                                                                                                                                                                    |
+| `longComment`                                                                                  | The long description.                                                                                                                                                                                |
+| `remote`                                                                                       | Whether remoting is supported. Defaults to `true` without model defaults, otherwise to their `remote` option.                                                                                        |
+| `superOperation`                                                                               | The super operation, determining all five super types.                                                                                                                                               |
+| `abstract`                                                                                     | Generate an abstract operation.                                                                                                                                                                      |
 | `domainInterface`, `persistenceInterface`, `domainImplementation`, `persistenceImplementation` | Override the names derived from the operation name. An empty value or `-` suppresses that file; suppressing an interface suppresses its implementation too, even if an implementation name is given. |
-| `overwrite`                 | Regenerate over existing files (default `false`).                                                  |
+| `overwrite`                                                                                    | Regenerate over existing files (default `false`).                                                                                                                                                    |
 
 Unlike the `pdo` goal, this one **fails instead of warning**: an incomplete operation aborts the build
 with the validation messages, an unknown profile with the list of configured profiles, and existing
@@ -561,16 +561,16 @@ capability, see above), ships with a ready-made **agent skill** — a `SKILL.md`
 reach for the tool, the order of steps that works, and the failure modes that are specific to running it
 headless:
 
-| Skill                        | Lives in                                                  | Covers                          |
-|------------------------------|-----------------------------------------------------------|---------------------------------|
-| `tentackle-model`            | `tentackle-mcp-maven-plugin/src/skills/`                  | `tentackle-mcp:serve`           |
-| `tentackle-pdo-wizard`       | `tentackle-wizard-maven-plugin/src/skills/`               | `tentackle-wizard:pdo`          |
-| `tentackle-operation-wizard` | `tentackle-wizard-maven-plugin/src/skills/`               | `tentackle-wizard:operation`    |
-| `tentackle-pdo-browser`      | `tentackle-wizard-maven-plugin/src/skills/`               | `tentackle-wizard:browse`       |
-| `tentackle-script-runner`    | `tentackle-wizard-maven-plugin/src/skills/`               | `tentackle-wizard:script`       |
-| `tentackle-sql-migrator`     | `tentackle-sql-maven-plugin/src/skills/`                  | `tentackle-sql:migrate` / `:validate` |
-| `tentackle-sql-runner`       | `tentackle-sql-maven-plugin/src/skills/`                  | `tentackle-sql:run`             |
-| `tentackle-sql-reveng`       | `tentackle-sql-maven-plugin/src/skills/`                  | `tentackle-sql:reveng`          |
+| Skill                        | Lives in                                    | Covers                                |
+|------------------------------|---------------------------------------------|---------------------------------------|
+| `tentackle-model`            | `tentackle-mcp-maven-plugin/src/skills/`    | `tentackle-mcp:serve`                 |
+| `tentackle-pdo-wizard`       | `tentackle-wizard-maven-plugin/src/skills/` | `tentackle-wizard:pdo`                |
+| `tentackle-operation-wizard` | `tentackle-wizard-maven-plugin/src/skills/` | `tentackle-wizard:operation`          |
+| `tentackle-pdo-browser`      | `tentackle-wizard-maven-plugin/src/skills/` | `tentackle-wizard:browse`             |
+| `tentackle-script-runner`    | `tentackle-wizard-maven-plugin/src/skills/` | `tentackle-wizard:script`             |
+| `tentackle-sql-migrator`     | `tentackle-sql-maven-plugin/src/skills/`    | `tentackle-sql:migrate` / `:validate` |
+| `tentackle-sql-runner`       | `tentackle-sql-maven-plugin/src/skills/`    | `tentackle-sql:run`                   |
+| `tentackle-sql-reveng`       | `tentackle-sql-maven-plugin/src/skills/`    | `tentackle-sql:reveng`                |
 
 They are **templates**, not something the build installs. Copy the ones you want into your project and
 adapt them — the profile names, the target backend and the harnesses are yours, not the framework's:
@@ -627,16 +627,16 @@ logic.
 
 ## Boundaries Worth Stating
 
-| Tool                     | Writes files                         | Touches the database        |
-|--------------------------|--------------------------------------|------------------------------|
-| `tentackle-mcp:serve`    | never                                | never connects               |
-| `tentackle-wizard:pdo`   | Java sources across the reactor      | never connects               |
-| `tentackle-wizard:operation` | up to five Java sources          | never connects               |
-| `tentackle-wizard:browse`| one output file                      | reads only                   |
-| `tentackle-wizard:script`| whatever the script writes           | whatever the script does     |
-| `tentackle-sql:migrate`  | one SQL script per backend           | reads metadata only          |
-| `tentackle-sql:run`      | never                                | whatever the SQL does, on every configured backend |
-| `tentackle-sql:reveng`   | model source files (not Java)        | reads metadata, of a database that need not be the application's own |
+| Tool                         | Writes files                    | Touches the database                                                 |
+|------------------------------|---------------------------------|----------------------------------------------------------------------|
+| `tentackle-mcp:serve`        | never                           | never connects                                                       |
+| `tentackle-wizard:pdo`       | Java sources across the reactor | never connects                                                       |
+| `tentackle-wizard:operation` | up to five Java sources         | never connects                                                       |
+| `tentackle-wizard:browse`    | one output file                 | reads only                                                           |
+| `tentackle-wizard:script`    | whatever the script writes      | whatever the script does                                             |
+| `tentackle-sql:migrate`      | one SQL script per backend      | reads metadata only                                                  |
+| `tentackle-sql:run`          | never                           | whatever the SQL does, on every configured backend                   |
+| `tentackle-sql:reveng`       | model source files (not Java)   | reads metadata, of a database that need not be the application's own |
 
 Four more notes:
 

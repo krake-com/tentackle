@@ -38,7 +38,7 @@ persistence context **holds a strong reference to it**:
    EntityManager  ──owns──▶  PersistenceContext (identity map)
                                    │  strong references
                   ┌────────────────┼────────────────┐
-                  ▼                 ▼                ▼
+                  ▼                ▼                ▼
               Customer #1       Invoice #7      InvoiceLine #42
               (managed)         (managed)        (managed)
 ```

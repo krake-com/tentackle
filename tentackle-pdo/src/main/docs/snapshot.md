@@ -121,7 +121,7 @@ as a unit.
 
 ```java
 public T createSnapshot() {
-  T snapshot = PdoFactory.getInstance().create(getPdoClass(), clone());   // 1
+  T snapshot = PdoFactory.getInstance().create(getPdoClass(), clone());  // 1
   PersistentObject<T> persistentSnapshot = snapshot.getPersistenceDelegate();
   persistentSnapshot.setDomainContext(getDomainContext());               // 2
   getClassVariables().getCreateComponentsInSnapshotMethod()

@@ -36,7 +36,7 @@ This document describes that hierarchy, the template steps, and the four shapes.
                         │                               SessionProvider + DomainContextProvider
                     AbstractApplication                (abstract, tentackle-pdo)
                         │                               template methods + start/stop
-          ┌─────────────┴──────────────┐
+          ┌─────────────┴───────────────┐
   AbstractClientApplication     AbstractServerApplication        (tentackle-persistence)
   (tentackle-pdo)                       │                         pools, container detection
           │                    ┌────────┴────────┐
@@ -48,16 +48,16 @@ This document describes that hierarchy, the template steps, and the four shapes.
    UpdatableDesktopApplication<C>   (tentackle-fx-rdc-update)
 ```
 
-| Class | Module | Shape |
-|-------|--------|-------|
-| [`Application`](../java/org/tentackle/app/Application.java) | tentackle-pdo | The contract and the singleton registry. |
-| [`AbstractApplication`](../java/org/tentackle/app/AbstractApplication.java) | tentackle-pdo | The template: properties, session, start/stop. |
-| [`AbstractClientApplication`](../java/org/tentackle/app/AbstractClientApplication.java) | tentackle-pdo | Adds `updateSessionInfoAfterLogin()`. |
-| [`ConsoleApplication`](../java/org/tentackle/app/ConsoleApplication.java) | tentackle-pdo | Non-interactive client: daemons, batch jobs, tools. |
-| [`AbstractServerApplication`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/app/AbstractServerApplication.java) | tentackle-persistence | Serves other tiers: pools, connection manager. |
-| [`ServerApplication`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/app/ServerApplication.java) | tentackle-persistence | Adds the [TRIP](../../../../tentackle-core/src/main/docs/trip.md) listener. |
-| [`WebApplication<T>`](../../../../tentackle-web/src/main/java/org/tentackle/web/app/WebApplication.java) | tentackle-web | A server bridged to a web framework. |
-| [`DesktopApplication<C>`](../../../../tentackle-fx-rdc/src/main/java/org/tentackle/fx/rdc/app/DesktopApplication.java) | tentackle-fx-rdc | Interactive JavaFX client. |
+| Class                                                                                                                                   | Module                | Shape                                                                       |
+|-----------------------------------------------------------------------------------------------------------------------------------------|-----------------------|-----------------------------------------------------------------------------|
+| [`Application`](../java/org/tentackle/app/Application.java)                                                                             | tentackle-pdo         | The contract and the singleton registry.                                    |
+| [`AbstractApplication`](../java/org/tentackle/app/AbstractApplication.java)                                                             | tentackle-pdo         | The template: properties, session, start/stop.                              |
+| [`AbstractClientApplication`](../java/org/tentackle/app/AbstractClientApplication.java)                                                 | tentackle-pdo         | Adds `updateSessionInfoAfterLogin()`.                                       |
+| [`ConsoleApplication`](../java/org/tentackle/app/ConsoleApplication.java)                                                               | tentackle-pdo         | Non-interactive client: daemons, batch jobs, tools.                         |
+| [`AbstractServerApplication`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/app/AbstractServerApplication.java) | tentackle-persistence | Serves other tiers: pools, connection manager.                              |
+| [`ServerApplication`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/app/ServerApplication.java)                 | tentackle-persistence | Adds the [TRIP](../../../../tentackle-core/src/main/docs/trip.md) listener. |
+| [`WebApplication<T>`](../../../../tentackle-web/src/main/java/org/tentackle/web/app/WebApplication.java)                                | tentackle-web         | A server bridged to a web framework.                                        |
+| [`DesktopApplication<C>`](../../../../tentackle-fx-rdc/src/main/java/org/tentackle/fx/rdc/app/DesktopApplication.java)                  | tentackle-fx-rdc      | Interactive JavaFX client.                                                  |
 
 Note that `DesktopApplication` is a **client**, not a server, and `WebApplication`
 *is* a server — a web application talks to browsers, but from Tentackle's point of
@@ -146,13 +146,13 @@ guess, because the order is exactly what distinguishes the tiers.
 
 ### The steps
 
-| Step | Default behavior |
-|------|------------------|
-| `initialize()` | Applies properties, initializes scripting, logs the discovered module hooks. The first step, always. |
-| `login()` | *(subclass)* Creates the `SessionInfo`, obtains the [credentials](../../../../tentackle-session/src/main/docs/authentication.md), opens the session, makes it current, sets the application's domain context. |
-| `configure()` | Calls `configureModificationTracker()`, `configurePreferences()`, `configureSecurityManager()` (which enables the security manager unless `nosecurity` is given). Runs **after** the connection exists. |
+| Step              | Default behavior                                                                                                                                                                                                                                                                                                                                                                                                          |
+|-------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `initialize()`    | Applies properties, initializes scripting, logs the discovered module hooks. The first step, always.                                                                                                                                                                                                                                                                                                                      |
+| `login()`         | *(subclass)* Creates the `SessionInfo`, obtains the [credentials](../../../../tentackle-session/src/main/docs/authentication.md), opens the session, makes it current, sets the application's domain context.                                                                                                                                                                                                             |
+| `configure()`     | Calls `configureModificationTracker()`, `configurePreferences()`, `configureSecurityManager()` (which enables the security manager unless `nosecurity` is given). Runs **after** the connection exists.                                                                                                                                                                                                                   |
 | `finishStartup()` | Activates statistics if asked. Unless `notracker` is given, preloads the [PDO caches](cache.md#preloading-caches-at-startup-preloadcache) marked `@PreloadCache`, starts the [modification tracker](../../../../tentackle-session/src/main/docs/modification-tracking.md), registers its emergency-shutdown hook, and — on a server — waits for the preload to finish. With `notracker`, disables all PDO caches instead. |
-| `cleanup()` | Terminates PDO helper threads and closes the session. |
+| `cleanup()`       | Terminates PDO helper threads and closes the session.                                                                                                                                                                                                                                                                                                                                                                     |
 
 The split between `configure()` and `finishStartup()` matters: `configure()` prepares
 singletons that need a live session, `finishStartup()` starts the threads that use
@@ -176,16 +176,16 @@ default. Most applications therefore never configure
 
 `applyProperties()` interprets a set of properties that need no application code:
 
-| Property | Effect                                                                                                                                  |
-|----------|-----------------------------------------------------------------------------------------------------------------------------------------|
-| `notracker` | Don't start the modification tracker — and disable [PDO caching](cache.md) globally, since a cache without invalidation would go stale. Cache preloading is skipped along with it. |
-| `nosecurity` | Disable the [security manager](security.md).                                                                                            |
-| `statistics` | Collect PDO/operation method invocation statistics and TRIP/SQL/Transaction statistics (if server). Recommended during development.     |
-| `scripting=<lang>` | Set the default scripting language.                                                                                                     |
-| `locale=<tag>` | Set the default locale; falls back to the user preference, and warns if unsupported.                                                    |
-| `readonlyprefs` | Silently ignore [preference](../../../../tentackle-core/src/main/docs/preferences.md) writes.                                           |
-| `systemprefs` | System preferences only (forced on servers).                                                                                            |
-| `noprefsync` | Turn off preference auto-sync between JVMs.                                                                                             |
+| Property           | Effect                                                                                                                                                                             |
+|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `notracker`        | Don't start the modification tracker — and disable [PDO caching](cache.md) globally, since a cache without invalidation would go stale. Cache preloading is skipped along with it. |
+| `nosecurity`       | Disable the [security manager](security.md).                                                                                                                                       |
+| `statistics`       | Collect PDO/operation method invocation statistics and TRIP/SQL/Transaction statistics (if server). Recommended during development.                                                |
+| `scripting=<lang>` | Set the default scripting language.                                                                                                                                                |
+| `locale=<tag>`     | Set the default locale; falls back to the user preference, and warns if unsupported.                                                                                               |
+| `readonlyprefs`    | Silently ignore [preference](../../../../tentackle-core/src/main/docs/preferences.md) writes.                                                                                      |
+| `systemprefs`      | System preferences only (forced on servers).                                                                                                                                       |
+| `noprefsync`       | Turn off preference auto-sync between JVMs.                                                                                                                                        |
 
 Values are run through `StringHelper.evaluate(...)`, so they may reference system
 properties. A property named `SYSTEM_foo` or `^foo` is *set* as system property `foo`
@@ -314,10 +314,10 @@ public class MyAppServer extends ServerApplication {
 
 This is the one genuinely confusing part of the hierarchy, and worth stating plainly:
 
-| Type | Really is | Role |
-|------|-----------|------|
-| [`DesktopApplication<C>`](../../../../tentackle-fx-rdc/src/main/java/org/tentackle/fx/rdc/app/DesktopApplication.java) | `extends AbstractClientApplication` | **The Tentackle application.** The singleton, the session, the context. |
-| [`FxApplication`](../../../../tentackle-fx-rdc/src/main/java/org/tentackle/fx/rdc/app/FxApplication.java) | `extends javafx.application.Application` | **The JavaFX application.** The FX lifecycle entry point. |
+| Type                                                                                                                   | Really is                                | Role                                                                    |
+|------------------------------------------------------------------------------------------------------------------------|------------------------------------------|-------------------------------------------------------------------------|
+| [`DesktopApplication<C>`](../../../../tentackle-fx-rdc/src/main/java/org/tentackle/fx/rdc/app/DesktopApplication.java) | `extends AbstractClientApplication`      | **The Tentackle application.** The singleton, the session, the context. |
+| [`FxApplication`](../../../../tentackle-fx-rdc/src/main/java/org/tentackle/fx/rdc/app/FxApplication.java)              | `extends javafx.application.Application` | **The JavaFX application.** The FX lifecycle entry point.               |
 
 `FxApplication` is *not* part of the Tentackle `Application` hierarchy at all — it is
 JavaFX's. The two hold references to each other: `FxApplication.start(stage)` calls
@@ -440,14 +440,14 @@ optionally, `getApplicationClass()` and `configureMainStage(...)`.
 
 ## Summary
 
-| Concern | How the hierarchy handles it |
-|---------|------------------------------|
-| **Singleton** | `register()` / `unregister()` guarantee one application per JVM; `getInstance()` reaches it from anywhere. |
-| **Initial context** | `Application` is a `SessionProvider` + `DomainContextProvider`; every context-less PDO inherits from it. |
-| **Uniform steps** | `initialize` → `login` → `configure` → `finishStartup`, overridden individually, assembled by `startup()`. |
-| **Configuration** | Command-line options become properties; well-known keys need no code; `SYSTEM_`/`^` set system properties. |
-| **Tier differences** | Servers add pools and TRIP; desktop clients interleave with the FX lifecycle; web applications bridge to a container. |
-| **Shutdown** | One re-entrant `stop()`; `isSystemExitNecessaryToStop()` keeps containers alive; cleanup chains through the hierarchy. |
+| Concern              | How the hierarchy handles it                                                                                           |
+|----------------------|------------------------------------------------------------------------------------------------------------------------|
+| **Singleton**        | `register()` / `unregister()` guarantee one application per JVM; `getInstance()` reaches it from anywhere.             |
+| **Initial context**  | `Application` is a `SessionProvider` + `DomainContextProvider`; every context-less PDO inherits from it.               |
+| **Uniform steps**    | `initialize` → `login` → `configure` → `finishStartup`, overridden individually, assembled by `startup()`.             |
+| **Configuration**    | Command-line options become properties; well-known keys need no code; `SYSTEM_`/`^` set system properties.             |
+| **Tier differences** | Servers add pools and TRIP; desktop clients interleave with the FX lifecycle; web applications bridge to a container.  |
+| **Shutdown**         | One re-entrant `stop()`; `isSystemExitNecessaryToStop()` keeps containers alive; cleanup chains through the hierarchy. |
 
 ### See also
 

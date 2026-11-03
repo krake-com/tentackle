@@ -118,13 +118,13 @@ remote-aware unique select like any other generated query method:
 The generic access to the domain key lives on
 [`DomainObject<T>`](../java/org/tentackle/pdo/DomainObject.java), i.e. on every PDO:
 
-| Method                        | Meaning                                                                          |
-|-------------------------------|----------------------------------------------------------------------------------|
-| `isUniqueDomainKeyProvided()` | Does this entity define a domain key? The guard for all methods below.           |
-| `getUniqueDomainKeyType()`    | The key's type: the attribute type, or the generated `…UDK` record.              |
-| `getUniqueDomainKey()`        | The key *value* — the attribute value, or a new record snapshot of the members.  |
-| `setUniqueDomainKey(Object)`  | Applies a key value to the PDO through its setters (used to preset new objects). |
-| `findByUniqueDomainKey(Object)` | Loads the PDO with that business identity, `null` if none.                     |
+| Method                          | Meaning                                                                          |
+|---------------------------------|----------------------------------------------------------------------------------|
+| `isUniqueDomainKeyProvided()`   | Does this entity define a domain key? The guard for all methods below.           |
+| `getUniqueDomainKeyType()`      | The key's type: the attribute type, or the generated `…UDK` record.              |
+| `getUniqueDomainKey()`          | The key *value* — the attribute value, or a new record snapshot of the members.  |
+| `setUniqueDomainKey(Object)`    | Applies a key value to the PDO through its setters (used to preset new objects). |
+| `findByUniqueDomainKey(Object)` | Loads the PDO with that business identity, `null` if none.                       |
 
 The defaults in
 [`AbstractDomainObject`](../../../../tentackle-domain/src/main/docs/domain.md) assert that the PDO

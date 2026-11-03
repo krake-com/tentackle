@@ -24,13 +24,13 @@ The interesting part is what runs the runner. `Rdc.bg(...)` is a thin static fac
 [`@Service`](../../../../tentackle-common/src/main/docs/services.md) — replaceable. That gives two very
 different execution models out of the box:
 
-| | **Default** ([`RdcUtilities`](../java/org/tentackle/fx/rdc/RdcUtilities.java)) | **Pooled** ([`RdcUtilitiesWithBackgroundPool`](../java/org/tentackle/fx/rdc/RdcUtilitiesWithBackgroundPool.java)) |
-|---|---|---|
-| Runs on | the [`ModificationTracker`](../../../../tentackle-session/src/main/docs/modification-tracking.md) thread | a dedicated thread pool |
-| Session | the tracker's **one** session | one pooled session **per task** |
-| Parallelism | none — tasks are queued and run one after another | up to the pool's maximum size |
-| Side effect | the tracker cannot poll while a task runs | tracker keeps polling, undisturbed |
-| Setup | none | subclass + `@Service(RdcUtilities.class)` |
+|             | **Default** ([`RdcUtilities`](../java/org/tentackle/fx/rdc/RdcUtilities.java))                           | **Pooled** ([`RdcUtilitiesWithBackgroundPool`](../java/org/tentackle/fx/rdc/RdcUtilitiesWithBackgroundPool.java)) |
+|-------------|----------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| Runs on     | the [`ModificationTracker`](../../../../tentackle-session/src/main/docs/modification-tracking.md) thread | a dedicated thread pool                                                                                           |
+| Session     | the tracker's **one** session                                                                            | one pooled session **per task**                                                                                   |
+| Parallelism | none — tasks are queued and run one after another                                                        | up to the pool's maximum size                                                                                     |
+| Side effect | the tracker cannot poll while a task runs                                                                | tracker keeps polling, undisturbed                                                                                |
+| Setup       | none                                                                                                     | subclass + `@Service(RdcUtilities.class)`                                                                         |
 
 The default costs nothing and is right for the common case: short queries, one at a time, in response to a
 click. The pool is what you install when that stops being true.
@@ -52,12 +52,12 @@ static <V> void bg(Node node, Supplier<V> runner, Consumer<V> updateUI);
 static void bg(Node node, Runnable runner);
 ```
 
-| Parameter | Thread | Notes |
-|---|---|---|
-| `node` | — | optional; gets the **wait cursor** while the task runs, restored afterwards. `null` for none |
-| `runner` | background | the lengthy work. Its return value is handed to `updateUI` |
-| `updateUI` | **FX** | optional; posted via `Platform.runLater(...)` |
-| `failedUI` | **FX** | optional; receives the `RuntimeException`. If `null`, the failure is only logged as severe |
+| Parameter  | Thread     | Notes                                                                                        |
+|------------|------------|----------------------------------------------------------------------------------------------|
+| `node`     | —          | optional; gets the **wait cursor** while the task runs, restored afterwards. `null` for none |
+| `runner`   | background | the lengthy work. Its return value is handed to `updateUI`                                   |
+| `updateUI` | **FX**     | optional; posted via `Platform.runLater(...)`                                                |
+| `failedUI` | **FX**     | optional; receives the `RuntimeException`. If `null`, the failure is only logged as severe   |
 
 Overload 3 wraps the `Runnable` into a `Supplier` returning `null` and delegates to overload 2, so all
 three funnel into the same `runInBackground(...)` call.
@@ -199,16 +199,16 @@ on the subclass, and `RdcUtilities.getInstance()` is typed to the base class.
 SessionPoolFactory.getInstance().create("BG", session, 0, 1, 0, 3, 5, 0);
 ```
 
-| Argument | Default | Meaning |
-|---|---|---|
-| `name` | `"BG"` | pool name — also names the thread group and the threads |
-| `session` | tracker's session | the **lead session**: the pool clones its configuration (URL, credentials, backend) |
-| `initialSize` | `0` | sessions opened up front — `0` means the first task pays for opening one |
-| `incrementSize` | `1` | how many to add when all are in use |
-| `minimumSize` | `0` | sessions to keep open; `< 0` shuts the pool down when all are closed |
-| `maximumSize` | `3` | **the parallelism ceiling**; `0` = unlimited |
-| `idleMinutes` | `5` | close unused sessions after this long |
-| `usageMinutes` | `0` | maximum time a session may stay in use; `0` = unlimited |
+| Argument        | Default           | Meaning                                                                             |
+|-----------------|-------------------|-------------------------------------------------------------------------------------|
+| `name`          | `"BG"`            | pool name — also names the thread group and the threads                             |
+| `session`       | tracker's session | the **lead session**: the pool clones its configuration (URL, credentials, backend) |
+| `initialSize`   | `0`               | sessions opened up front — `0` means the first task pays for opening one            |
+| `incrementSize` | `1`               | how many to add when all are in use                                                 |
+| `minimumSize`   | `0`               | sessions to keep open; `< 0` shuts the pool down when all are closed                |
+| `maximumSize`   | `3`               | **the parallelism ceiling**; `0` = unlimited                                        |
+| `idleMinutes`   | `5`               | close unused sessions after this long                                               |
+| `usageMinutes`  | `0`               | maximum time a session may stay in use; `0` = unlimited                             |
 
 `maximumSize` is the number that matters — it is how many background tasks can truly run at once, and it is
 also how many extra connections your client holds. Three is a compromise; a dashboard loading six panels wants

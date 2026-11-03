@@ -262,10 +262,10 @@ such as `mvn tentackle-i18n:push`, synchronize the resource bundles between the 
             tentackle-project-archetype  (maven-archetype, build-time only)
                           │ mvn archetype:generate -Dapplication=MyApp
                           ▼
-        ┌──────────────────────────────────────────────────────────────┐
-        │  generated multi-module project (common → pdo → domain /     │
-        │  persistence → gui → client / server / daemon, + jlink)      │
-        └──────────────────────────────────────────────────────────────┘
+        ┌────────────────────────────────────────────────────────────┐
+        │  generated multi-module project (common → pdo → domain /   │
+        │  persistence → gui → client / server / daemon, + jlink)    │
+        └────────────────────────────────────────────────────────────┘
                           │ mvn install  (drives the plugin pipeline)
                           ▼
    analyze → wurbel → sql → compile → check → test → (jlink)  →  runnable app

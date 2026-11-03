@@ -45,17 +45,17 @@ the client and the server live in different JVMs.
 Everything lives in `org.tentackle.session.auth`, so both the client (`Db.open`) and the server
 (`RemoteDbSessionImpl`) can reach it without dragging in the persistence stack.
 
-| Artifact                                                                            | Role                                                                             |
-|-------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
-| [`Credentials`](../java/org/tentackle/session/auth/Credentials.java)                | What the client presents. Travels on the `SessionInfo` via TRIP.                 |
-| [`PasswordCredentials`](../java/org/tentackle/session/auth/PasswordCredentials.java)| Username and password — the default.                                             |
-| [`TokenCredentials`](../java/org/tentackle/session/auth/TokenCredentials.java)      | A bearer token, plus optional refresh token, issuer and expiry.                  |
-| [`AuthenticationProvider`](../java/org/tentackle/session/auth/AuthenticationProvider.java) | **The server-side SPI**: verifies credentials.                             |
-| [`AuthenticationManager`](../java/org/tentackle/session/auth/AuthenticationManager.java)   | Drives the provider chain. Deny by default.                               |
-| [`Authentication`](../java/org/tentackle/session/auth/Authentication.java)          | The proven identity: name, claims, roles, and the application's user.            |
-| [`UserResolver`](../java/org/tentackle/session/auth/UserResolver.java)              | Optional SPI mapping a proven identity onto the application's user entity.       |
-| [`CredentialsProvider`](../java/org/tentackle/session/auth/CredentialsProvider.java)| **The client-side SPI**: obtains the credentials, interactively if needed.       |
-| [`CredentialsPrompt`](../java/org/tentackle/session/auth/CredentialsPrompt.java)    | The UI-agnostic callbacks an interactive provider uses (open a browser, …).      |
+| Artifact                                                                                   | Role                                                                        |
+|--------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
+| [`Credentials`](../java/org/tentackle/session/auth/Credentials.java)                       | What the client presents. Travels on the `SessionInfo` via TRIP.            |
+| [`PasswordCredentials`](../java/org/tentackle/session/auth/PasswordCredentials.java)       | Username and password — the default.                                        |
+| [`TokenCredentials`](../java/org/tentackle/session/auth/TokenCredentials.java)             | A bearer token, plus optional refresh token, issuer and expiry.             |
+| [`AuthenticationProvider`](../java/org/tentackle/session/auth/AuthenticationProvider.java) | **The server-side SPI**: verifies credentials.                              |
+| [`AuthenticationManager`](../java/org/tentackle/session/auth/AuthenticationManager.java)   | Drives the provider chain. Deny by default.                                 |
+| [`Authentication`](../java/org/tentackle/session/auth/Authentication.java)                 | The proven identity: name, claims, roles, and the application's user.       |
+| [`UserResolver`](../java/org/tentackle/session/auth/UserResolver.java)                     | Optional SPI mapping a proven identity onto the application's user entity.  |
+| [`CredentialsProvider`](../java/org/tentackle/session/auth/CredentialsProvider.java)       | **The client-side SPI**: obtains the credentials, interactively if needed.  |
+| [`CredentialsPrompt`](../java/org/tentackle/session/auth/CredentialsPrompt.java)           | The UI-agnostic callbacks an interactive provider uses (open a browser, …). |
 
 ---
 
@@ -94,11 +94,11 @@ proven identity.
 
 A provider has three possible answers:
 
-| Answer                          | Meaning                                                  |
-|----------------------------------|-----------------------------------------------------------|
-| an `Authentication`              | authenticated — the chain stops here                     |
-| `null`                           | **abstain** — not my business, ask the next provider      |
-| throw `AuthenticationException`  | **veto** — these were mine and they are invalid, stop     |
+| Answer                          | Meaning                                               |
+|---------------------------------|-------------------------------------------------------|
+| an `Authentication`             | authenticated — the chain stops here                  |
+| `null`                          | **abstain** — not my business, ask the next provider  |
+| throw `AuthenticationException` | **veto** — these were mine and they are invalid, stop |
 
 Providers are ordinary services with a public no-arg constructor:
 

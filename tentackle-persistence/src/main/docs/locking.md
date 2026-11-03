@@ -232,8 +232,8 @@ A typical interactive edit therefore uses **both**:
 ```java
 Invoice inv = on(Invoice.class).selectTokenLocked(id);   // (a) token: claim it up-front,
                                                          //     fail fast if someone else has it
-inv.setText("...");                                       // (b) user edits at leisure
-inv = inv.persist();                                      // (c) serial: still verifies nobody
+inv.setText("...");                                      // (b) user edits at leisure
+inv = inv.persist();                                     // (c) serial: still verifies nobody
                                                          //     slipped a change past the token
 ```
 

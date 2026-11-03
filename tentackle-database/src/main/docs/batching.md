@@ -85,12 +85,12 @@ public class MyTransaction extends DbTransaction {
 
 ### The players
 
-| Class | Role |
-|-------|------|
-| [`DbBatch`](../java/org/tentackle/dbms/DbBatch.java) | The per-transaction batch. Owns the statements collected so far, decides when to flush and in which order. |
-| [`DbBatchStatement`](../java/org/tentackle/dbms/DbBatchStatement.java) | One prepared statement plus the list of objects whose parameter sets are pending for it. |
-| [`PreparedStatementWrapper`](../java/org/tentackle/dbms/PreparedStatementWrapper.java) | Knows whether it currently participates in a batch, buffers the parameter sets and performs the actual `addBatch()`/`executeBatch()`. |
-| [`AbstractPersistentObject`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/AbstractPersistentObject.java) | Registers its insert/update/delete statements as batchable. |
+| Class                                                                                                                             | Role                                                                                                                                  |
+|-----------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| [`DbBatch`](../java/org/tentackle/dbms/DbBatch.java)                                                                              | The per-transaction batch. Owns the statements collected so far, decides when to flush and in which order.                            |
+| [`DbBatchStatement`](../java/org/tentackle/dbms/DbBatchStatement.java)                                                            | One prepared statement plus the list of objects whose parameter sets are pending for it.                                              |
+| [`PreparedStatementWrapper`](../java/org/tentackle/dbms/PreparedStatementWrapper.java)                                            | Knows whether it currently participates in a batch, buffers the parameter sets and performs the actual `addBatch()`/`executeBatch()`. |
+| [`AbstractPersistentObject`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/AbstractPersistentObject.java) | Registers its insert/update/delete statements as batchable.                                                                           |
 
 ### Registering a statement
 
@@ -171,15 +171,15 @@ exactly one set is executed as an ordinary `executeUpdate()` — a batch of one 
 
 A flush happens when:
 
-| Trigger | Why |
-|---------|-----|
-| The batch size is reached for a statement | The point of the exercise. |
-| A **different root entity type** is written (`rootClassId` changes) | Execution order across aggregates matters for referential integrity. |
-| The **same object** is written again within the transaction | Its second statement must not overtake its first. |
-| A **non-batchable** statement is executed (`Query`, plain `Statement`, any `executeUpdate(sql)`) | It might depend on, or be depended upon by, pending writes. |
-| A **savepoint** is set (`Db#setSavepoint(...)`) | The savepoint must have the pending work behind it. |
-| The transaction **commits** (`DbTransaction#commit()`) | Nothing may be left unwritten. |
-| A **global transaction** is about to complete (before the two-phase commit) | Same as commit, see [JTA](../../../../tentackle-jta/src/main/docs/jta.md). |
+| Trigger                                                                                          | Why                                                                        |
+|--------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
+| The batch size is reached for a statement                                                        | The point of the exercise.                                                 |
+| A **different root entity type** is written (`rootClassId` changes)                              | Execution order across aggregates matters for referential integrity.       |
+| The **same object** is written again within the transaction                                      | Its second statement must not overtake its first.                          |
+| A **non-batchable** statement is executed (`Query`, plain `Statement`, any `executeUpdate(sql)`) | It might depend on, or be depended upon by, pending writes.                |
+| A **savepoint** is set (`Db#setSavepoint(...)`)                                                  | The savepoint must have the pending work behind it.                        |
+| The transaction **commits** (`DbTransaction#commit()`)                                           | Nothing may be left unwritten.                                             |
+| A **global transaction** is about to complete (before the two-phase commit)                      | Same as commit, see [JTA](../../../../tentackle-jta/src/main/docs/jta.md). |
 
 The first two are handled in `DbBatch#add`:
 
@@ -292,13 +292,13 @@ transaction, so it can detach the session afterwards.
 
 ## Summary
 
-| | Automatic | Manual |
-|---|---|---|
-| **Enabled by** | `batchsize` > 1 in the session config, or `Db#setBatchSize` | Nothing — just call `addBatch()` |
-| **Applies to** | Generated single-row insert/update/delete statements | Any keyed prepared statement |
-| **Application code** | Unchanged | Explicit batch loop |
-| **Row-count check** | Automatic, per object, with the usual exception | Up to the application |
-| **Ordering guarantees** | Preserved: flushed on root-type change, object reuse, savepoint, commit | Up to the application |
+|                         | Automatic                                                               | Manual                           |
+|-------------------------|-------------------------------------------------------------------------|----------------------------------|
+| **Enabled by**          | `batchsize` > 1 in the session config, or `Db#setBatchSize`             | Nothing — just call `addBatch()` |
+| **Applies to**          | Generated single-row insert/update/delete statements                    | Any keyed prepared statement     |
+| **Application code**    | Unchanged                                                               | Explicit batch loop              |
+| **Row-count check**     | Automatic, per object, with the usual exception                         | Up to the application            |
+| **Ordering guarantees** | Preserved: flushed on root-type change, object reuse, savepoint, commit | Up to the application            |
 
 ---
 

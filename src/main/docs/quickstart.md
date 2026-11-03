@@ -230,11 +230,11 @@ There is one trap on the way to the first *operation*. The generated root `pom.x
 configures an `operation` profile for the wizard, but the packages it names do not exist yet —
 the project simply has no operation:
 
-| Profile element                                             | Package                       | Module              |
-|-------------------------------------------------------------|-------------------------------|---------------------|
-| `operationPackage`, `domainPackage`, `persistencePackage`   | `com.example.myapp.pdo.operation`     | `myapp-pdo`         |
-| `domainImplPackage`                                         | `com.example.myapp.domain.operation`  | `myapp-domain`      |
-| `persistenceImplPackage`                                    | `com.example.myapp.persist.operation` | `myapp-persistence` |
+| Profile element                                           | Package                               | Module              |
+|-----------------------------------------------------------|---------------------------------------|---------------------|
+| `operationPackage`, `domainPackage`, `persistencePackage` | `com.example.myapp.pdo.operation`     | `myapp-pdo`         |
+| `domainImplPackage`                                       | `com.example.myapp.domain.operation`  | `myapp-domain`      |
+| `persistenceImplPackage`                                  | `com.example.myapp.persist.operation` | `myapp-persistence` |
 
 The wizard decides which module a generated file belongs to by **looking for the package's
 directory** in the compile source roots of the reactor. A package without a directory belongs to

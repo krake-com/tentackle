@@ -101,12 +101,12 @@ one-shot value, so TRIP serializes it directly without reference bookkeeping.
 
 [`UpdateInfo`](../java/org/tentackle/update/UpdateInfo.java) is the reply record:
 
-| Field            | Meaning                                                                                                  |
-|------------------|----------------------------------------------------------------------------------------------------------|
-| `version`        | the new application version offered by the server                                                        |
-| `urlStr`         | the URL of the downloadable ZIP (stored as a string, exposed via `getUrl()`)                             |
-| `checksum`       | the SHA-256 hash used to verify the download                                                             |
-| `size`           | the expected ZIP size in bytes (`-1` if the server could not determine it), used to drive a progress bar |
+| Field            | Meaning                                                                                                         |
+|------------------|-----------------------------------------------------------------------------------------------------------------|
+| `version`        | the new application version offered by the server                                                               |
+| `urlStr`         | the URL of the downloadable ZIP (stored as a string, exposed via `getUrl()`)                                    |
+| `checksum`       | the SHA-256 hash used to verify the download                                                                    |
+| `size`           | the expected ZIP size in bytes (`-1` if the server could not determine it), used to drive a progress bar        |
 | `updateExecutor` | the file name of the script in the update's `bin` directory that performs the swap (`update.sh` / `update.cmd`) |
 
 Every field here is the server's decision, not the client's. The `urlStr` in particular need not point at the

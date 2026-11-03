@@ -279,20 +279,20 @@ mvn tentackle-wizard:operation \
     -Dremote=true
 ```
 
-| Parameter (`-D…`)           | Meaning                                                                                             |
-|-----------------------------|-----------------------------------------------------------------------------------------------------|
-| `operationName`             | The operation interface name. **Setting it enables batch mode.**                                    |
-| `profile`                   | The `OperationProfile` to use, matched case-insensitively. Optional if only one is configured.      |
-| `comment`                   | The short description. Mandatory — the generator rejects an operation without one.                  |
-| `longComment`               | The long description.                                                                               |
+| Parameter (`-D…`)           | Meaning                                                                                                                                                                                                                                                           |
+|-----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `operationName`             | The operation interface name. **Setting it enables batch mode.**                                                                                                                                                                                                  |
+| `profile`                   | The `OperationProfile` to use, matched case-insensitively. Optional if only one is configured.                                                                                                                                                                    |
+| `comment`                   | The short description. Mandatory — the generator rejects an operation without one.                                                                                                                                                                                |
+| `longComment`               | The long description.                                                                                                                                                                                                                                             |
 | `remote`                    | Whether remoting is supported. Only tailors the generated persistence implementation (delegate import and `getRemoteDelegate()`); it does not generate the delegate. Defaults to `true` if the project has no model defaults, otherwise to their `remote` option. |
-| `superOperation`            | The super operation, determining all five super types. Defaults to the profile / framework types.   |
-| `abstract`                  | Generate an abstract operation (default `false`).                                                   |
-| `domainInterface`           | Override the derived name. An empty value or `-` generates no domain interface and no domain implementation. |
-| `persistenceInterface`      | Likewise for the persistence side. Suppressing it also disables remoting.                           |
-| `domainImplementation`      | Override the derived name; an empty value or `-` generates the interface without an implementation. Ignored if the domain interface is suppressed. |
-| `persistenceImplementation` | Likewise for the persistence implementation.                                                        |
-| `overwrite`                 | Allow regenerating over existing files (default `false`).                                           |
+| `superOperation`            | The super operation, determining all five super types. Defaults to the profile / framework types.                                                                                                                                                                 |
+| `abstract`                  | Generate an abstract operation (default `false`).                                                                                                                                                                                                                 |
+| `domainInterface`           | Override the derived name. An empty value or `-` generates no domain interface and no domain implementation.                                                                                                                                                      |
+| `persistenceInterface`      | Likewise for the persistence side. Suppressing it also disables remoting.                                                                                                                                                                                         |
+| `domainImplementation`      | Override the derived name; an empty value or `-` generates the interface without an implementation. Ignored if the domain interface is suppressed.                                                                                                                |
+| `persistenceImplementation` | Likewise for the persistence implementation.                                                                                                                                                                                                                      |
+| `overwrite`                 | Allow regenerating over existing files (default `false`).                                                                                                                                                                                                         |
 
 At least one of the domain and persistence sides must remain, otherwise the goal fails.
 
@@ -352,13 +352,13 @@ browsing objects, not rows — the database columns only surface where you expli
 
 The window is organized into two toolbars and three data areas, the latter resizable via split panes:
 
-| Area                            | Contents                                                                                    |
-|---------------------------------|---------------------------------------------------------------------------------------------|
-| top toolbar                     | *profile*, *only root entities*, *entity*, and the **+** button (browse in new tab).          |
-| left table                      | the loaded PDOs, with their object ID and their unique domain key (*UDK*). Multi-selectable. |
-| right tree table                | the object tree of the PDO selected on the left, optionally diffed against a memorized state.|
-| bottom table                    | the row details of the tree node selected above.                                             |
-| bottom toolbar                  | loading on the left (*latest*, *load*, *find by ID*, *use finder*), code generation on the right (*code*, *paths*, *generate*, *memorize*). |
+| Area             | Contents                                                                                                                                    |
+|------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| top toolbar      | *profile*, *only root entities*, *entity*, and the **+** button (browse in new tab).                                                        |
+| left table       | the loaded PDOs, with their object ID and their unique domain key (*UDK*). Multi-selectable.                                                |
+| right tree table | the object tree of the PDO selected on the left, optionally diffed against a memorized state.                                               |
+| bottom table     | the row details of the tree node selected above.                                                                                            |
+| bottom toolbar   | loading on the left (*latest*, *load*, *find by ID*, *use finder*), code generation on the right (*code*, *paths*, *generate*, *memorize*). |
 
 ##### Choosing the Entity
 
@@ -408,13 +408,13 @@ entity provides a unique domain key; otherwise the attribute stays a plain ID.
 
 The rendering carries meaning:
 
-| Rendering              | Meaning                                                                       |
-|------------------------|-------------------------------------------------------------------------------|
-| **bold**               | an implicit attribute — supplied by the model or the framework, not authored by you (`id`, `serial`, `editedBy`, …). |
-| underlined             | part of the entity's unique domain key.                                       |
-| *italic*               | a hidden component or attribute — no public getter available.                  |
-| highlighted row        | the node differs from the memorized state (see below).                        |
-| tooltip                | the comment of the attribute or relation, taken from the model.               |
+| Rendering       | Meaning                                                                                                              |
+|-----------------|----------------------------------------------------------------------------------------------------------------------|
+| **bold**        | an implicit attribute — supplied by the model or the framework, not authored by you (`id`, `serial`, `editedBy`, …). |
+| underlined      | part of the entity's unique domain key.                                                                              |
+| *italic*        | a hidden component or attribute — no public getter available.                                                        |
+| highlighted row | the node differs from the memorized state (see below).                                                               |
+| tooltip         | the comment of the attribute or relation, taken from the model.                                                      |
 
 The context menu offers, depending on the selected node:
 
@@ -789,7 +789,7 @@ mvn tentackle-wizard:script -Dscript=src/scripts/fix-orders.groovy
 # reverse-engineer two tables of an existing database (tentackle-sql-maven-plugin's reveng goal),
 # then scaffold PDOs from the result
 mvn tentackle-sql:reveng -Dtentackle.reveng.url=jdbc:postgresql://localhost/legacydb \
-                          -Dtentackle.reveng.user=app -Dtentackle.reveng.tables=CUSTOMER,ORDER_ITEM
+                         -Dtentackle.reveng.user=app -Dtentackle.reveng.tables=CUSTOMER,ORDER_ITEM
 mvn tentackle-wizard:pdo -DbatchDir=target/reveng-model
 
 # restore the default templates

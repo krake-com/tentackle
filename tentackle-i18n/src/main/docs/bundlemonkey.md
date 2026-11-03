@@ -33,13 +33,13 @@ BundleMonkey operates on the same *stored bundles* described in
 [Tentackle I18N](i18n.md). It is the editing stage of a cycle whose other stages are Maven goals of
 the [i18n plugin](../../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md):
 
-| Stage       | Performed by                    | Purpose                                                              |
-|-------------|---------------------------------|---------------------------------------------------------------------|
-| **push**    | `mvn tentackle-i18n:push`       | Seed the database from the property files (adds new keys only; overwrites translator edits only with `override`). |
-| **edit**    | **BundleMonkey**                | Translators maintain the stored texts and extra locales at runtime. |
-| **pull**    | `mvn tentackle-i18n:pull`       | Copy edits back into the property files so they enter the VCS changelog (shipped locales only). |
-| **verify**  | `mvn tentackle-i18n:verify`     | Ensure no stored bundle is missing keys before deployment (guards against `MissingResourceException`). |
-| **cleanup** | `mvn tentackle-i18n:cleanup`    | Remove obsolete bundles/translations; also reachable from BundleMonkey's context menu. |
+| Stage       | Performed by                 | Purpose                                                                                                           |
+|-------------|------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| **push**    | `mvn tentackle-i18n:push`    | Seed the database from the property files (adds new keys only; overwrites translator edits only with `override`). |
+| **edit**    | **BundleMonkey**             | Translators maintain the stored texts and extra locales at runtime.                                               |
+| **pull**    | `mvn tentackle-i18n:pull`    | Copy edits back into the property files so they enter the VCS changelog (shipped locales only).                   |
+| **verify**  | `mvn tentackle-i18n:verify`  | Ensure no stored bundle is missing keys before deployment (guards against `MissingResourceException`).            |
+| **cleanup** | `mvn tentackle-i18n:cleanup` | Remove obsolete bundles/translations; also reachable from BundleMonkey's context menu.                            |
 
 ## Obtaining It
 

@@ -17,7 +17,7 @@ chain that carries a failure from a constraint on the model to a red-marked fiel
 
 ```
 ValidationResult  ──►  ValidationMapper  ──►  Binding  ──►  InteractiveError  ──►  marked FxComponent
- (model path)          (path rewriting)      (component)     (text + control)      (tt-error / popup)
+(model path)           (path rewriting)       (component)   (text + control)       (tt-error / popup)
 ```
 
 
@@ -27,14 +27,14 @@ ValidationResult  ──►  ValidationMapper  ──►  Binding  ──►  In
 
 [`InteractiveError`](../java/org/tentackle/fx/InteractiveError.java):
 
-| Member                | Meaning                                                                    |
-|-----------------------|----------------------------------------------------------------------------|
-| `isWarning()`         | `true` = warning, `false` = error. Decides info vs. error presentation.     |
-| `getText()`           | The message shown to the user.                                              |
-| `getErrorCode()`      | Optional stable code identifying the error independent of the message text. |
-| `getControl()`        | The related `FxControl` — **may be null** if the error maps to no widget.   |
-| `showControl()`       | Bring the control to the user's attention. Default: request the focus.      |
-| `getValidationResult()` | The originating result, `null` if the error was created explicitly.       |
+| Member                  | Meaning                                                                     |
+|-------------------------|-----------------------------------------------------------------------------|
+| `isWarning()`           | `true` = warning, `false` = error. Decides info vs. error presentation.     |
+| `getText()`             | The message shown to the user.                                              |
+| `getErrorCode()`        | Optional stable code identifying the error independent of the message text. |
+| `getControl()`          | The related `FxControl` — **may be null** if the error maps to no widget.   |
+| `showControl()`         | Bring the control to the user's attention. Default: request the focus.      |
+| `getValidationResult()` | The originating result, `null` if the error was created explicitly.         |
 
 **Warning or error** is not a separate decision — it is read off the result:
 `warning = !validationResult.hasFailed()`. That lines up exactly with the two shipped result types:
@@ -129,14 +129,14 @@ resolve controls differently, or build errors explicitly for problems that valid
 
 ## Package Layout
 
-| Type                            | Role                                                       | Module       |
-|---------------------------------|------------------------------------------------------------|--------------|
-| `InteractiveError`              | The contract: text, severity, code, control                | tentackle-fx |
-| `InteractiveErrorFactory`       | Singleton factory; `@Service`-replaceable                  | tentackle-fx |
-| `DefaultInteractiveError`       | Default implementation (incl. the copy constructor)        | tentackle-fx |
-| `DefaultInteractiveErrorFactory`| Maps validation path → binding → `FxComponent`             | tentackle-fx |
-| `FxUtilities`                   | `createInteractiveError(s)`, `showValidationResults`       | tentackle-fx |
-| `ErrorPopupSupported` / `InfoPopupSupported` | `setError` / `setInfo` on the component        | tentackle-fx |
+| Type                                         | Role                                                 | Module       |
+|----------------------------------------------|------------------------------------------------------|--------------|
+| `InteractiveError`                           | The contract: text, severity, code, control          | tentackle-fx |
+| `InteractiveErrorFactory`                    | Singleton factory; `@Service`-replaceable            | tentackle-fx |
+| `DefaultInteractiveError`                    | Default implementation (incl. the copy constructor)  | tentackle-fx |
+| `DefaultInteractiveErrorFactory`             | Maps validation path → binding → `FxComponent`       | tentackle-fx |
+| `FxUtilities`                                | `createInteractiveError(s)`, `showValidationResults` | tentackle-fx |
+| `ErrorPopupSupported` / `InfoPopupSupported` | `setError` / `setInfo` on the component              | tentackle-fx |
 
 
 ## Related Documentation

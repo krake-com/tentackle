@@ -64,12 +64,12 @@ which is the message of the `UnsupportedOperationException` thrown by every meth
 That is the central design decision: **the mocks implement only what a database-less test legitimately touches**
 and fail loudly — and unmistakably — the moment a test reaches for real persistence.
 
-| Class                                                                                  | Stands in for                                          | Also implements                |
-|----------------------------------------------------------------------------------------|--------------------------------------------------------|--------------------------------|
-| [`MockPersistentObject<T,P>`](../java/org/tentackle/pdo/mock/MockPersistentObject.java) | the persistence delegate of a `PersistentDomainObject` | `PdoMethodCacheProvider<T>`       |
-| [`MockDomainObject<T,D>`](../java/org/tentackle/pdo/mock/MockDomainObject.java)         | the domain delegate of a `PersistentDomainObject`      | —                              |
-| [`MockPersistentOperation<T>`](../java/org/tentackle/pdo/mock/MockPersistentOperation.java) | the persistence delegate of an `Operation`         | `OperationMethodCacheProvider<T>` |
-| [`MockDomainOperation<T,D>`](../java/org/tentackle/pdo/mock/MockDomainOperation.java)   | the domain delegate of an `Operation`                  | —                              |
+| Class                                                                                       | Stands in for                                          | Also implements                   |
+|---------------------------------------------------------------------------------------------|--------------------------------------------------------|-----------------------------------|
+| [`MockPersistentObject<T,P>`](../java/org/tentackle/pdo/mock/MockPersistentObject.java)     | the persistence delegate of a `PersistentDomainObject` | `PdoMethodCacheProvider<T>`       |
+| [`MockDomainObject<T,D>`](../java/org/tentackle/pdo/mock/MockDomainObject.java)             | the domain delegate of a `PersistentDomainObject`      | —                                 |
+| [`MockPersistentOperation<T>`](../java/org/tentackle/pdo/mock/MockPersistentOperation.java) | the persistence delegate of an `Operation`             | `OperationMethodCacheProvider<T>` |
+| [`MockDomainOperation<T,D>`](../java/org/tentackle/pdo/mock/MockDomainOperation.java)       | the domain delegate of an `Operation`                  | —                                 |
 
 The type parameters mirror the ones of the real base classes: `T` is the PDO resp. operation interface, `P`/`D` the
 concrete mock implementation class (self-referential, as in `AbstractPersistentObject<T,P>`).
@@ -89,16 +89,16 @@ interface because that is an implementation detail. The mocks therefore implemen
 This is the mock you use most, because most tests are about *domain* logic. It keeps just enough state to make a
 PDO a well-formed object:
 
-| Works                                                                          | Behavior                                                                                                   |
-|--------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
-| `getPdo()` / `me()` / `setPdo()`                                               | the PDO proxy this is a delegate for                                                                       |
-| `getDomainContext()` / `setDomainContext()`                                    | plain field                                                                                                |
-| `getSession()` / `setSession()`                                                | plain field; honors `setSessionImmutable(true)` by throwing `PersistenceException` on a change             |
-| `getId()` / `setId()`                                                          | plain field; `getId()` returns the **absolute value**, mirroring the real layer's negative reserved IDs     |
-| `getSerial()`, `getTableSerial()`, `getRootId()`, `getRootClassId()` + setters | plain fields (the setters are added by the mock, they are not part of `PersistentObject`)                   |
+| Works                                                                              | Behavior                                                                                                                                                    |
+|------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `getPdo()` / `me()` / `setPdo()`                                                   | the PDO proxy this is a delegate for                                                                                                                        |
+| `getDomainContext()` / `setDomainContext()`                                        | plain field                                                                                                                                                 |
+| `getSession()` / `setSession()`                                                    | plain field; honors `setSessionImmutable(true)` by throwing `PersistenceException` on a change                                                              |
+| `getId()` / `setId()`                                                              | plain field; `getId()` returns the **absolute value**, mirroring the real layer's negative reserved IDs                                                     |
+| `getSerial()`, `getTableSerial()`, `getRootId()`, `getRootClassId()` + setters     | plain fields (the setters are added by the mock, they are not part of `PersistentObject`)                                                                   |
 | `setImmutable()`, `setFinallyImmutable()`, `isImmutable()`, `isFinallyImmutable()` | real [immutability](../../../../tentackle-core/src/main/docs/immutable.md) flags; `ImmutableException` when making a finally-immutable object mutable again |
-| `isRootEntityOf(component)`                                                    | real implementation, evaluated against `isRootEntity()`, `getId()` and `getClassId()`                      |
-| `getPdoMethodCache()`                                                          | shared static cache per effective PDO class                                                                |
+| `isRootEntityOf(component)`                                                        | real implementation, evaluated against `isRootEntity()`, `getId()` and `getClassId()`                                                                       |
+| `getPdoMethodCache()`                                                              | shared static cache per effective PDO class                                                                                                                 |
 
 Permissive or empty defaults, so that a test isn't blocked by machinery it doesn't care about:
 
@@ -147,12 +147,12 @@ your mock subclass exactly what the code under test needs.
 A mock is a normal implementation class: extend the matching `Mock…` base, implement the **generated interface**
 of the layer you are replacing, and register it with the SPI annotation of that layer.
 
-| Replacing                       | Extend                       | Annotate with                | Discovered as       |
-|---------------------------------|------------------------------|------------------------------|---------------------|
-| persistence half of a PDO       | `MockPersistentObject<T,P>`  | `@PersistentObjectService`   | `PersistentObject`  |
-| domain half of a PDO            | `MockDomainObject<T,D>`      | `@DomainObjectService`       | `DomainObject`      |
-| persistence half of an operation| `MockPersistentOperation<T>` | `@PersistentOperationService`| `PersistentOperation` |
-| domain half of an operation     | `MockDomainOperation<T,D>`   | `@DomainOperationService`    | `DomainOperation`   |
+| Replacing                        | Extend                       | Annotate with                 | Discovered as         |
+|----------------------------------|------------------------------|-------------------------------|-----------------------|
+| persistence half of a PDO        | `MockPersistentObject<T,P>`  | `@PersistentObjectService`    | `PersistentObject`    |
+| domain half of a PDO             | `MockDomainObject<T,D>`      | `@DomainObjectService`        | `DomainObject`        |
+| persistence half of an operation | `MockPersistentOperation<T>` | `@PersistentOperationService` | `PersistentOperation` |
+| domain half of an operation      | `MockDomainOperation<T,D>`   | `@DomainOperationService`     | `DomainOperation`     |
 
 All four annotations are [`@MappedService`](../../../../tentackle-common/src/main/docs/services.md)s, so the
 `test-analyze` goal of the

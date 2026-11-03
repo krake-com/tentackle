@@ -43,9 +43,9 @@ mvn -DskipTests generate-sources
 
 ### Overview of Goals
 
-| Goal    | Default phase | Purpose                                                    |
-|---------|---------------|------------------------------------------------------------|
-| `serve` | none          | Runs the MCP server until stopped with `Ctrl-C`.            |
+| Goal    | Default phase | Purpose                                                         |
+|---------|---------------|-----------------------------------------------------------------|
+| `serve` | none          | Runs the MCP server until stopped with `Ctrl-C`.                |
 | `help`  | none          | Lists the goals and their parameters (`-Ddetail -Dgoal=serve`). |
 
 The `serve` goal is an aggregator and is not bound to a lifecycle phase: the model spans the whole reactor, so the
@@ -191,34 +191,34 @@ context than the model. Two collapses do most of the work:
 - The **facet** getters (inheritance, aggregate, embedding, deep references, DDL, unique domain key) become a
   `sections` argument on the same tool.
 
-| Tool                    | What it answers                                                                                                                  |
-|-------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
-| `model_overview`        | What model is loaded: sources, backends, effective defaults, entity count, inheritance hierarchies, aggregate roots, integrity distribution, configuration warnings. The entry point. |
+| Tool                    | What it answers                                                                                                                                                                                                         |
+|-------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `model_overview`        | What model is loaded: sources, backends, effective defaults, entity count, inheritance hierarchies, aggregate roots, integrity distribution, configuration warnings. The entry point.                                   |
 | `model_list_entities`   | A column-aligned index, narrowed by `pattern` (substring, glob or `regex:`) and `filter` (composite, abstract, root, embedded, tracked, remote, cached, provided, has_subentities, has_superentity, deeply_referenced). |
-| `model_find`            | Searches entity, table, attribute, column, relation and index names — and optionally comments — across the whole model.           |
-| `model_describe_entity` | One entity, with `scope` and `sections`. See below.                                                                              |
-| `model_source`          | The model definition as text: `raw`, `canonical` or `compact`, optionally as a `@> … @<` block and with the variables kept.       |
-| `model_paths`           | How entities are connected: the relation graph between two of them, their direct neighbors, the composite paths or the embedding paths. |
-| `model_ddl`             | `CREATE TABLE`, `CREATE INDEX` and foreign key statements for a backend, for the entities that own a table — the same rule the SQL plugin generates by. Text only — nothing is executed. |
-| `model_validate`        | Validates the loaded model, or a **candidate** definition that has not been written anywhere. See below.                          |
-| `model_reload`          | Refreshes changed files, or clears and reloads. Needed after deleting or renaming an entity.                                      |
+| `model_find`            | Searches entity, table, attribute, column, relation and index names — and optionally comments — across the whole model.                                                                                                 |
+| `model_describe_entity` | One entity, with `scope` and `sections`. See below.                                                                                                                                                                     |
+| `model_source`          | The model definition as text: `raw`, `canonical` or `compact`, optionally as a `@> … @<` block and with the variables kept.                                                                                             |
+| `model_paths`           | How entities are connected: the relation graph between two of them, their direct neighbors, the composite paths or the embedding paths.                                                                                 |
+| `model_ddl`             | `CREATE TABLE`, `CREATE INDEX` and foreign key statements for a backend, for the entities that own a table — the same rule the SQL plugin generates by. Text only — nothing is executed.                                |
+| `model_validate`        | Validates the loaded model, or a **candidate** definition that has not been written anywhere. See below.                                                                                                                |
+| `model_reload`          | Refreshes changed files, or clears and reloads. Needed after deleting or renaming an entity.                                                                                                                            |
 
 Every entity argument accepts the entity name, `table:<tableName>` or `id:<classId>` — all three appear in the
 sources an agent is reading, and none of them is reliably the one it has at hand.
 
 The arguments of the tools (a `limit` is always capped by `maxResults`, which is also its default):
 
-| Tool                    | Arguments                                                                                                                                                         |
-|-------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `model_overview`        | none                                                                                                                                                              |
-| `model_list_entities`   | `pattern` (substring, glob with `*`/`?`, or `regex:`), `filter` (array of facets, all must match), `limit`                                                         |
-| `model_find`            | `pattern` (required, same syntax), `kinds` (array of `entity`, `table`, `attribute`, `column`, `relation`, `index`; default all), `comments` (default `false`), `limit` |
-| `model_describe_entity` | `entity` (required), `scope` (`own`, `inherited`, `subentities` or `all`; default `inherited`), `sections` (array, see below)                                      |
-| `model_source`          | `entity` (required), `format` (`raw`, `canonical` or `compact`; default `canonical`), `asComment` (default `false`), `useVariables` (default `false`)              |
+| Tool                    | Arguments                                                                                                                                                                                                                                 |
+|-------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `model_overview`        | none                                                                                                                                                                                                                                      |
+| `model_list_entities`   | `pattern` (substring, glob with `*`/`?`, or `regex:`), `filter` (array of facets, all must match), `limit`                                                                                                                                |
+| `model_find`            | `pattern` (required, same syntax), `kinds` (array of `entity`, `table`, `attribute`, `column`, `relation`, `index`; default all), `comments` (default `false`), `limit`                                                                   |
+| `model_describe_entity` | `entity` (required), `scope` (`own`, `inherited`, `subentities` or `all`; default `inherited`), `sections` (array, see below)                                                                                                             |
+| `model_source`          | `entity` (required), `format` (`raw`, `canonical` or `compact`; default `canonical`), `asComment` (default `false`), `useVariables` (default `false`)                                                                                     |
 | `model_paths`           | `from` (required), `to` (omit for the direct neighbors of `from`), `kind` (`relations`, `composite` or `embedding`; default `relations`), `direction` (`forward`, `reverse` or `both`; default `both`), `maxDepth` (default `4`), `limit` |
-| `model_ddl`             | `entity` (array; omit for the whole model), `backend` (any backend known to the server; default: the first configured backend), `parts` (array of `table`, `indexes`, `foreignkeys`; default all) |
-| `model_validate`        | `source` (a candidate definition, without the `@>`/`@<` markers), `entity` (the entity the candidate replaces; omit for a new one)                                |
-| `model_reload`          | `full` (clear and reload instead of refreshing changed files; default `false`)                                                                                    |
+| `model_ddl`             | `entity` (array; omit for the whole model), `backend` (any backend known to the server; default: the first configured backend), `parts` (array of `table`, `indexes`, `foreignkeys`; default all)                                         |
+| `model_validate`        | `source` (a candidate definition, without the `@>`/`@<` markers), `entity` (the entity the candidate replaces; omit for a new one)                                                                                                        |
+| `model_reload`          | `full` (clear and reload instead of refreshing changed files; default `false`)                                                                                                                                                            |
 
 The arguments are read leniently, because agents are not consistent about JSON types: an array argument also
 takes a single string or a comma-separated one, numbers and booleans may arrive as strings, and a boolean
@@ -270,11 +270,11 @@ duplicate entity id 9001 for Note, already assigned to Customer
 
 ### Resources and Prompts
 
-| Resource                                     | Content                                                                                                          |
-|----------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| Resource                                     | Content                                                                                                                                                     |
+|----------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `tentackle-model://grammar/model-definition` | [Model Definition Syntax](../../../../tentackle-model/src/main/docs/model-definition.md), packaged with the plugin, so an agent never has to guess the DSL. |
-| `tentackle-model://index`                    | All entities with class id, table and super entity.                                                              |
-| `tentackle-model://entity/{name}`            | One entity's model source as loaded. `{name}` also takes `table:<tableName>` or `id:<classId>`.                   |
+| `tentackle-model://index`                    | All entities with class id, table and super entity.                                                                                                         |
+| `tentackle-model://entity/{name}`            | One entity's model source as loaded. `{name}` also takes `table:<tableName>` or `id:<classId>`.                                                             |
 
 One prompt, `new-entity`, walks an agent through adding an entity in the order that works: look at comparable
 entities, check the class id, validate the candidate, and only then write the file. Its arguments are `entity`

@@ -157,13 +157,13 @@ it becomes unreachable; `shutdown()` is the orderly path.
 
 The remaining classes are small utilities that fill gaps in the JDK:
 
-| Class                                                                                       | Purpose                                                                                                 |
-|---------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
-| [`NotifyingByteArrayOutputStream`](../java/org/tentackle/io/NotifyingByteArrayOutputStream.java) | A `ByteArrayOutputStream` that notifies waiting threads whenever data is written                     |
-| [`BlockingByteArrayInputStream`](../java/org/tentackle/io/BlockingByteArrayInputStream.java)     | Reads from the above, blocking until data becomes available — an in-memory pipe                      |
-| [`MutableByteArrayInputStream`](../java/org/tentackle/io/MutableByteArrayInputStream.java)       | A `ByteArrayInputStream` whose buffer can be replaced (`setBuffer`), avoiding a new stream per packet |
+| Class                                                                                            | Purpose                                                                                                                                                        |
+|--------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`NotifyingByteArrayOutputStream`](../java/org/tentackle/io/NotifyingByteArrayOutputStream.java) | A `ByteArrayOutputStream` that notifies waiting threads whenever data is written                                                                               |
+| [`BlockingByteArrayInputStream`](../java/org/tentackle/io/BlockingByteArrayInputStream.java)     | Reads from the above, blocking until data becomes available — an in-memory pipe                                                                                |
+| [`MutableByteArrayInputStream`](../java/org/tentackle/io/MutableByteArrayInputStream.java)       | A `ByteArrayInputStream` whose buffer can be replaced (`setBuffer`), avoiding a new stream per packet                                                          |
 | [`AppendableWriter`](../java/org/tentackle/io/AppendableWriter.java)                             | A `Writer` to any `Appendable` — a `StringWriter` replacement that lets you supply the `StringBuilder`/`StringBuffer` (not thread-safe with a `StringBuilder`) |
-| [`UriHelper`](../java/org/tentackle/io/UriHelper.java)                                           | Parses a URI query string into a typed map, skipping malformed pairs; expands `$host`, `${port+1}` and the like against a base URI |
+| [`UriHelper`](../java/org/tentackle/io/UriHelper.java)                                           | Parses a URI query string into a typed map, skipping malformed pairs; expands `$host`, `${port+1}` and the like against a base URI                             |
 
 The byte-array streams are what make TRIP's **loopback transport** and `EchoTransceiver` work:
 the same serialization path that talks to a socket can talk to memory, which is how a
@@ -195,16 +195,16 @@ visible to application code — it is the plumbing under
 
 ## Package Layout
 
-| Group                | Classes                                                                                                                    |
-|----------------------|----------------------------------------------------------------------------------------------------------------------------|
-| Packet framing       | `PacketSizedOutputStream`, `PacketSizedInputStream`                                                                        |
-| Compression          | `CompressedOutputStream`, `CompressedInputStream`                                                                          |
-| Encryption           | `EncryptingOutputStream`, `DecryptingInputStream`                                                                          |
-| SSL/TLS sockets      | `TcpSocketFactory`, `TcpServerSocketFactory`, `SslParameters`                                                              |
-| Reconnection         | `Reconnector`, `ReconnectionPolicy`, `ReconnectedException`                                                                |
-| Server sockets       | `SocketChannelDispatcher`                                                                                                  |
-| Byte arrays & chars  | `NotifyingByteArrayOutputStream`, `BlockingByteArrayInputStream`, `MutableByteArrayInputStream`, `AppendableWriter`         |
-| URIs                 | `UriHelper`                                                                                                                |
+| Group               | Classes                                                                                                             |
+|---------------------|---------------------------------------------------------------------------------------------------------------------|
+| Packet framing      | `PacketSizedOutputStream`, `PacketSizedInputStream`                                                                 |
+| Compression         | `CompressedOutputStream`, `CompressedInputStream`                                                                   |
+| Encryption          | `EncryptingOutputStream`, `DecryptingInputStream`                                                                   |
+| SSL/TLS sockets     | `TcpSocketFactory`, `TcpServerSocketFactory`, `SslParameters`                                                       |
+| Reconnection        | `Reconnector`, `ReconnectionPolicy`, `ReconnectedException`                                                         |
+| Server sockets      | `SocketChannelDispatcher`                                                                                           |
+| Byte arrays & chars | `NotifyingByteArrayOutputStream`, `BlockingByteArrayInputStream`, `MutableByteArrayInputStream`, `AppendableWriter` |
+| URIs                | `UriHelper`                                                                                                         |
 
 
 ## Related Documentation

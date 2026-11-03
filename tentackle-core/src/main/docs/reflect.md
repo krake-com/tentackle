@@ -46,9 +46,9 @@ Class<?> providerClass = mapper.mapLenient(rowClass);
 The interface is small — `map` and `mapLenient`, each taking a `Class` or a name, plus a default
 class and listeners — but the **lenient** variant carries the weight:
 
-| Method                | Lookup                                                                                          |
-|-----------------------|-------------------------------------------------------------------------------------------------|
-| `map(Class \| String)`      | The explicit mapping only. Throws `ClassNotFoundException` if there is none.               |
+| Method                        | Lookup                                                                                                                            |
+|-------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| `map(Class \| String)`        | The explicit mapping only. Throws `ClassNotFoundException` if there is none.                                                      |
 | `mapLenient(Class \| String)` | Walks **up the superclass chain** (all the way to `Object`), then tries the **interfaces**, recursively through super-interfaces. |
 
 Lenient mapping is why a provider registered for a base class or an interface serves every subclass
@@ -152,11 +152,11 @@ interface** — the type the application declared and thinks in, e.g. `Customer`
 persistence implementation class behind the proxy. Three type queries therefore give three different
 answers, and only two of them are useful:
 
-| Expression                              | Result for a `Customer` PDO                                        |
-|-----------------------------------------|-------------------------------------------------------------------|
-| `pdo.getClass()`                        | the synthetic proxy class (`jdk.proxy…$ProxyN`) — never use it     |
-| `pdo.getEffectiveClass()`               | `Customer.class` — the entity interface                           |
-| `pdo instanceof Customer`               | **`true`** — the proxy implements the entity interface           |
+| Expression                                                                                      | Result for a `Customer` PDO                                                        |
+|-------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------|
+| `pdo.getClass()`                                                                                | the synthetic proxy class (`jdk.proxy…$ProxyN`) — never use it                     |
+| `pdo.getEffectiveClass()`                                                                       | `Customer.class` — the entity interface                                            |
+| `pdo instanceof Customer`                                                                       | **`true`** — the proxy implements the entity interface                             |
 | `pdo instanceof CustomerImpl` (or any domain/persistence impl class, `AbstractDomainObject`, …) | **`false`** — the impls are the *delegates* behind the proxy, not the proxy itself |
 
 The practical rule that follows:
@@ -224,13 +224,13 @@ canonical constructor the compiler knows about. Tentackle generalizes the idea t
 with a small annotation family, which is how [TRIP](trip.md) reconstructs immutable values without
 requiring `-parameters` at compile time or resorting to `Unsafe`.
 
-| Annotation                                                              | Applies to     | Meaning                                                                    |
-|-------------------------------------------------------------------------|----------------|----------------------------------------------------------------------------|
-| [`@CanonicalConstructor`](../java/org/tentackle/reflect/CanonicalConstructor.java) | constructor | *This* is the constructor to build the object with                     |
-| [`@CanonicalName`](../java/org/tentackle/reflect/CanonicalName.java)     | parameter      | The parameter's name, since reflection can't recover it without `-parameters` |
-| [`@CanonicalField`](../java/org/tentackle/reflect/CanonicalField.java)   | field          | This field supplies a constructor argument                                 |
-| [`@CanonicalGetter`](../java/org/tentackle/reflect/CanonicalGetter.java) | method         | This public no-arg getter supplies a constructor argument                  |
-| [`@CanonicalBuilder`](../java/org/tentackle/reflect/CanonicalBuilder.java) | type or constructor | The object is built through a builder instead                       |
+| Annotation                                                                         | Applies to          | Meaning                                                                       |
+|------------------------------------------------------------------------------------|---------------------|-------------------------------------------------------------------------------|
+| [`@CanonicalConstructor`](../java/org/tentackle/reflect/CanonicalConstructor.java) | constructor         | *This* is the constructor to build the object with                            |
+| [`@CanonicalName`](../java/org/tentackle/reflect/CanonicalName.java)               | parameter           | The parameter's name, since reflection can't recover it without `-parameters` |
+| [`@CanonicalField`](../java/org/tentackle/reflect/CanonicalField.java)             | field               | This field supplies a constructor argument                                    |
+| [`@CanonicalGetter`](../java/org/tentackle/reflect/CanonicalGetter.java)           | method              | This public no-arg getter supplies a constructor argument                     |
+| [`@CanonicalBuilder`](../java/org/tentackle/reflect/CanonicalBuilder.java)         | type or constructor | The object is built through a builder instead                                 |
 
 The matching of constructor parameters to members is by **name**: either annotate the parameters
 with `@CanonicalName`, or annotate the members with `@CanonicalField` / `@CanonicalGetter`. The
@@ -267,12 +267,12 @@ Delayed construction has one consequence worth knowing: TRIP can only register a
 [back-references](trip.md#tripreferencable) once the object exists. How far a component may
 reference back to the object it belongs to therefore depends on how that object is constructed:
 
-| Construction            | When the object exists          | Components that may back-reference it |
-|-------------------------|---------------------------------|---------------------------------------|
-| no-arg constructor      | before any component is read    | all of them                           |
-| `@CanonicalConstructor` | once all constructor args are read | every non-canonical component      |
-| `@CanonicalBuilder`     | after *all* components are read | none                                  |
-| record                  | after *all* components are read | none                                  |
+| Construction            | When the object exists             | Components that may back-reference it |
+|-------------------------|------------------------------------|---------------------------------------|
+| no-arg constructor      | before any component is read       | all of them                           |
+| `@CanonicalConstructor` | once all constructor args are read | every non-canonical component         |
+| `@CanonicalBuilder`     | after *all* components are read    | none                                  |
+| record                  | after *all* components are read    | none                                  |
 
 A component that reaches back to its own object outside these bounds — directly or through another
 object — fails deserialization with a `no such reference id` `TripRuntimeException`. This is rarely
@@ -325,17 +325,17 @@ generically by property name.
 [`ReflectionHelper`](../java/org/tentackle/reflect/ReflectionHelper.java) is the static toolbox the
 rest of the framework reaches for. Beyond the canonical-construction lookups already mentioned:
 
-| Area                  | Methods                                                                                              |
-|-----------------------|------------------------------------------------------------------------------------------------------|
-| Names                 | `getClassBaseName`, `getPackageName`, `getPackagePathName`, `getOutermostClassName`, `getSerializableClassName`, `methodToString`, `makeDeclareString` |
-| Loading               | `loadClass`                                                                                          |
-| Primitives            | `primitiveToWrapperClass`, `wrapperToPrimitiveClass`                                                  |
-| Type tests            | `isAssignableFrom`, `isAnnotationPresent` (both with all/any semantics), `isNonStaticInnerClass`, `isImmutableCollection` |
-| Generics              | `extractGenericInnerTypeClass`                                                                        |
-| Members               | `getAllFields`, `getAllMethods` (walking the hierarchy)                                               |
-| Bean conventions      | `getGetterName`, `getFieldName`, `getGetter`, `getSetter`, `isGetter`, `isSetter`, `isFunction`, `getGetterPathName`, `getSetterPathName`, `getFromPathName` |
-| Paths                 | `getValueByPath`, `getStaticValueByPath` — the dotted-path evaluation behind [`CompoundValue`](compound-value.md) references |
-| Interfaces & proxies  | `findInterface`, `findAllInterfaces`, `createProxyClass`                                              |
+| Area                 | Methods                                                                                                                                                      |
+|----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Names                | `getClassBaseName`, `getPackageName`, `getPackagePathName`, `getOutermostClassName`, `getSerializableClassName`, `methodToString`, `makeDeclareString`       |
+| Loading              | `loadClass`                                                                                                                                                  |
+| Primitives           | `primitiveToWrapperClass`, `wrapperToPrimitiveClass`                                                                                                         |
+| Type tests           | `isAssignableFrom`, `isAnnotationPresent` (both with all/any semantics), `isNonStaticInnerClass`, `isImmutableCollection`                                    |
+| Generics             | `extractGenericInnerTypeClass`                                                                                                                               |
+| Members              | `getAllFields`, `getAllMethods` (walking the hierarchy)                                                                                                      |
+| Bean conventions     | `getGetterName`, `getFieldName`, `getGetter`, `getSetter`, `isGetter`, `isSetter`, `isFunction`, `getGetterPathName`, `getSetterPathName`, `getFromPathName` |
+| Paths                | `getValueByPath`, `getStaticValueByPath` — the dotted-path evaluation behind [`CompoundValue`](compound-value.md) references                                 |
+| Interfaces & proxies | `findInterface`, `findAllInterfaces`, `createProxyClass`                                                                                                     |
 
 The small details matter here: it knows about synthetic `this$0` parameters of inner classes and
 about `java.util.ImmutableCollections`, both of which trip up naive reflection over serialized
@@ -344,14 +344,14 @@ graphs.
 
 ## Package Layout
 
-| Group                 | Types                                                                                                                     |
-|-----------------------|---------------------------------------------------------------------------------------------------------------------------|
-| Class mapping         | `ClassMapper`, `AbstractClassMapper`, `DefaultClassMapper`, `ClassMapperFactory`, `DefaultClassMapperFactory`, `ClassToServicesMapper`, `ClassMappedListener` |
-| Proxies & mixins      | `Mixin`, `DummyDelegate`, `EffectiveClassProvider`                                                                        |
-| Interception          | `Interceptable`, `Interception`, `Interceptor`, `AbstractInterceptor`, `InterceptableMethod`, `InterceptableMethodCache`, `InterceptableMethodInvoker`, `InterceptableInvocationHandler`, `InterceptableFactory`, `DefaultInterceptableFactory`, `InterceptionService`, `InterceptionUtilities` → [interceptors.md](interceptors.md) |
-| Canonical construction | `CanonicalConstructor`, `CanonicalName`, `CanonicalField`, `CanonicalGetter`, `CanonicalBuilder`                          |
-| Caches                | `MethodCache`, `IndexedMethodCache`                                                                                       |
-| Helpers               | `ReflectionHelper`, `ReflectiveVisitor`, `PropertyMap`, `PropertyMapping`                                                 |
+| Group                  | Types                                                                                                                                                                                                                                                                                                                                |
+|------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Class mapping          | `ClassMapper`, `AbstractClassMapper`, `DefaultClassMapper`, `ClassMapperFactory`, `DefaultClassMapperFactory`, `ClassToServicesMapper`, `ClassMappedListener`                                                                                                                                                                        |
+| Proxies & mixins       | `Mixin`, `DummyDelegate`, `EffectiveClassProvider`                                                                                                                                                                                                                                                                                   |
+| Interception           | `Interceptable`, `Interception`, `Interceptor`, `AbstractInterceptor`, `InterceptableMethod`, `InterceptableMethodCache`, `InterceptableMethodInvoker`, `InterceptableInvocationHandler`, `InterceptableFactory`, `DefaultInterceptableFactory`, `InterceptionService`, `InterceptionUtilities` → [interceptors.md](interceptors.md) |
+| Canonical construction | `CanonicalConstructor`, `CanonicalName`, `CanonicalField`, `CanonicalGetter`, `CanonicalBuilder`                                                                                                                                                                                                                                     |
+| Caches                 | `MethodCache`, `IndexedMethodCache`                                                                                                                                                                                                                                                                                                  |
+| Helpers                | `ReflectionHelper`, `ReflectiveVisitor`, `PropertyMap`, `PropertyMapping`                                                                                                                                                                                                                                                            |
 
 
 ## Related Documentation

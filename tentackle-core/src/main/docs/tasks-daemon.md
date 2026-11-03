@@ -88,12 +88,12 @@ the `Supervisable` daemons on termination — for example on application shutdow
 
 The package is a small set of capability interfaces:
 
-| Interface | Meaning |
-|-----------|---------|
-| [`Terminatable`](../java/org/tentackle/daemon/Terminatable.java) | something (typically a `Thread`) that can be asked to terminate **gracefully** |
-| [`Killable`](../java/org/tentackle/daemon/Killable.java) | a thread that may be forcibly killed |
-| [`Supervisable`](../java/org/tentackle/daemon/Supervisable.java) | a `Killable` thread that opts into supervision, allowing the supervisor extra checks and control |
-| [`Scavenger`](../java/org/tentackle/daemon/Scavenger.java) | a cleanup service (e.g. a cleanup thread) that may bypass certain checks to avoid spurious exceptions |
+| Interface                                                        | Meaning                                                                                               |
+|------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| [`Terminatable`](../java/org/tentackle/daemon/Terminatable.java) | something (typically a `Thread`) that can be asked to terminate **gracefully**                        |
+| [`Killable`](../java/org/tentackle/daemon/Killable.java)         | a thread that may be forcibly killed                                                                  |
+| [`Supervisable`](../java/org/tentackle/daemon/Supervisable.java) | a `Killable` thread that opts into supervision, allowing the supervisor extra checks and control      |
+| [`Scavenger`](../java/org/tentackle/daemon/Scavenger.java)       | a cleanup service (e.g. a cleanup thread) that may bypass certain checks to avoid spurious exceptions |
 
 Because `DefaultTaskDispatcher` implements `Supervisable` (and `TaskDispatcher` extends
 `Terminatable`), a task dispatcher can be placed under a `DaemonSupervisor` and torn down cleanly
@@ -106,12 +106,12 @@ layers build on it, and picking the right entry point is mostly a question of **
 session**:
 
 |                  | [`DefaultTaskDispatcher`](../java/org/tentackle/task/DefaultTaskDispatcher.java) | [`DefaultSessionTaskDispatcher`](../../../../tentackle-session/src/main/java/org/tentackle/session/DefaultSessionTaskDispatcher.java) | [`Rdc.bg(...)`](../../../../tentackle-fx-rdc/src/main/java/org/tentackle/fx/rdc/Rdc.java) |
-|------------------|----------------------------------------------------------------|----------------------------------------------------------------|----------------------------------------------------------------|
-| Module           | `tentackle-core`                                               | `tentackle-session`                                            | `tentackle-fx-rdc`                                             |
-| Database session | none                                                           | one **exclusive** session owned by the dispatcher              | provided behind the scenes (tracker session or session pool)   |
-| Task type        | `AbstractTask`                                                 | `AbstractSessionTask`                                          | any lambda — wrapped into a session task for you               |
-| Thread           | you create and `start()` it                                    | you create and `start()` it                                    | reuses the modification tracker (or a pool)                    |
-| Typical use      | timers, repeated jobs, serializing work without persistence    | server-side database jobs: housekeeping, imports, schedules    | moving a persistence call off the JavaFX thread                |
+|------------------|----------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
+| Module           | `tentackle-core`                                                                 | `tentackle-session`                                                                                                                   | `tentackle-fx-rdc`                                                                        |
+| Database session | none                                                                             | one **exclusive** session owned by the dispatcher                                                                                     | provided behind the scenes (tracker session or session pool)                              |
+| Task type        | `AbstractTask`                                                                   | `AbstractSessionTask`                                                                                                                 | any lambda — wrapped into a session task for you                                          |
+| Thread           | you create and `start()` it                                                      | you create and `start()` it                                                                                                           | reuses the modification tracker (or a pool)                                               |
+| Typical use      | timers, repeated jobs, serializing work without persistence                      | server-side database jobs: housekeeping, imports, schedules                                                                           | moving a persistence call off the JavaFX thread                                           |
 
 ### Plain dispatcher — work without a session
 
