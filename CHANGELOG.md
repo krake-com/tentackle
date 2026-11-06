@@ -38,6 +38,7 @@ requires Java 11.
   exchanges (`X25519MLKEM768` etc.). The client honors `namedgroups`; the server, which cannot restrict the groups,
   logs a prominent warning if `namedgroups` is set.
 - `tentackle-quiche`: `tripj`/`tripcj` honor `namedgroups` on both ends (via `quiche_config_set_curves_list`).
+- Fx.isHeadless using `glass.platform=Headless` for running FX-related tests in headless mode (Jenkins, for example)
 
 ### Changed
 
