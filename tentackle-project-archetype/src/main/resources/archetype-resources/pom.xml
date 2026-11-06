@@ -471,7 +471,7 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${maven.surefire.plugin.version}</version>
           <configuration>
-            <argLine>-Duser.language=en -Duser.region=US -Dglass.platform=headless</argLine>
+            <argLine>-Duser.language=en -Duser.region=US</argLine>
           </configuration>
         </plugin>
 
