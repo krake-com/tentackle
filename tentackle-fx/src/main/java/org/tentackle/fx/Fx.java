@@ -47,6 +47,16 @@ import java.util.function.Consumer;
 public class Fx {
 
   /**
+   * Returns whether the application is running in headless mode.
+   *
+   * @return true if headless
+   */
+  public static boolean isHeadless() {
+    return FxUtilities.getInstance().isHeadless();
+  }
+
+
+  /**
    * Loads an object hierarchy from an FXML document.<br>
    * Uses the tentackle builder factory, so that the tentackle implementations of the nodes are created.
    *

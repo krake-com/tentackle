@@ -87,6 +87,7 @@ public class LoginApplication extends FxApplication {
       stage.setScene(scene);
       stage.initStyle(StageStyle.TRANSPARENT);
 
+      // not Fx.isHeadless() since Splashscreen is AWT and not FX
       SplashScreen splashScreen = GraphicsEnvironment.isHeadless() ? null : SplashScreen.getSplashScreen();
       Point2D center = determineLoginWindowCenter(splashScreen);
       // this does the trick to avoid flickering on the screen due to the window first displayed and then moved

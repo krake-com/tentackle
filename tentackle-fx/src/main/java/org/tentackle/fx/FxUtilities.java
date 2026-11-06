@@ -96,6 +96,7 @@ import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.Callback;
 import java.awt.Desktop;
+import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -164,14 +165,39 @@ public class FxUtilities {
    */
   private boolean terminated;
 
+  /**
+   * Flag to indicate whether the application is running in headless mode.<br>
+   * Determined once since it does not change for the lifetime of the application (usually tests).
+   */
+  private final boolean headless;
+
 
   /**
    * Creates the FX utilities.
    */
   public FxUtilities() {
-    // see -Xlint:missing-explicit-ctor since Java 16
+    headless = GraphicsEnvironment.isHeadless() &&
+               // Unfortunately, PlatformUtil#isHeadless() is in com.sun.javafx,
+               // so we run the check here again.
+               // PlatformUtil checks the property case-insensitive as well.
+               !"headless".equalsIgnoreCase(System.getProperty("glass.platform"));
   }
 
+
+  /**
+   * Returns whether the application is running in headless mode.<br>
+   * JavaFX can run without a display if the system property {@code glass.platform} is set to {@code "headless"}.<br>
+   * For example: {@code -Dglass.platform=headless}.<br>
+   * However, the AWT headless mode still returns {@code true) in such a case,
+   * so we check the property as well.
+   * <p>
+   * Important: this relates only to FX! For AWT, use {@code GraphicsEnvironment.isHeadless()}.
+   *
+   * @return true if headless
+   */
+  public boolean isHeadless() {
+    return headless;
+  }
 
   /**
    * Shows a stage.<br>
