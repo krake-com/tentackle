@@ -188,7 +188,7 @@ public class FxUtilities {
    * Returns whether the application is running in headless mode.<br>
    * JavaFX can run without a display if the system property {@code glass.platform} is set to {@code "headless"}.<br>
    * For example: {@code -Dglass.platform=headless}.<br>
-   * However, the AWT headless mode still returns {@code true) in such a case,
+   * However, the AWT headless mode still returns {@code true} in such a case,
    * so we check the property as well.
    * <p>
    * Important: this relates only to FX! For AWT, use {@code GraphicsEnvironment.isHeadless()}.
