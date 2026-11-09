@@ -125,6 +125,21 @@ public class QuicheKwikInteropTest {
     assertTrue(chain.toString().contains("Handshake"), "not a handshake failure: " + chain);
   }
 
+  @Test(timeOut = 90000)
+  public void testPostQuantumOnlyQuicheClientAgainstPostQuantumOnlyKwikServer() throws Exception {
+    Reporter.log("a quiche client offering only X25519MLKEM768 calls a KWIK server accepting only that", true);
+    exchange(KWIK_SCHEME, "&namedgroups=X25519MLKEM768", QuicheTripTransport.PROTOCOL, "&namedgroups=X25519MLKEM768");
+  }
+
+  @Test(timeOut = 90000)
+  public void testPostQuantumOnlyKwikServerRejectsClassicalQuicheClient() {
+    Reporter.log("a KWIK server accepting only X25519MLKEM768 rejects a quiche client offering classical groups", true);
+    // the connect timeout of exchange() is long, but the server answers the ClientHello with an alert at once
+    expectThrows(RuntimeException.class,
+                 () -> exchange(KWIK_SCHEME, "&namedgroups=X25519MLKEM768",
+                                QuicheTripTransport.PROTOCOL, "&namedgroups=x25519,secp256r1"));
+  }
+
 
   /**
    * Starts a server of one implementation and calls it with a client of the other.

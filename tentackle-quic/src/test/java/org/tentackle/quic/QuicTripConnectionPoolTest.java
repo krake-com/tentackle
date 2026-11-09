@@ -205,6 +205,76 @@ public class QuicTripConnectionPoolTest {
     }
   }
 
+  /**
+   * A server accepting nothing but {@code X25519MLKEM768} lets a client offering the same group in.
+   */
+  @Test(timeOut = 60000)
+  public void postQuantumOnlyServerAcceptsPostQuantumClient() throws Exception {
+    Reporter.log("postQuantumOnlyServerAcceptsPostQuantumClient", true);
+    connectToPostQuantumOnlyServer("&namedgroups=X25519MLKEM768",
+                                   client -> new QuicTripConnectionPool(client, dictionary()).shutdown());
+  }
+
+  /**
+   * A server accepting nothing but {@code X25519MLKEM768} must reject a client offering classical groups
+   * only, instead of silently negotiating a classical key exchange.
+   */
+  @Test(timeOut = 60000)
+  public void postQuantumOnlyServerRejectsClassicalClient() throws Exception {
+    Reporter.log("postQuantumOnlyServerRejectsClassicalClient", true);
+    connectToPostQuantumOnlyServer("&namedgroups=x25519,secp256r1",
+                                   client -> expectThrows(TripRuntimeException.class,
+                                                          () -> new QuicTripConnectionPool(client, dictionary())));
+  }
+
+  /**
+   * Same as {@link #postQuantumOnlyServerRejectsClassicalClient}, but the client offers KWIK's default groups,
+   * which are all classical.
+   */
+  @Test(timeOut = 60000)
+  public void postQuantumOnlyServerRejectsDefaultClient() throws Exception {
+    Reporter.log("postQuantumOnlyServerRejectsDefaultClient", true);
+    connectToPostQuantumOnlyServer("",
+                                   client -> expectThrows(TripRuntimeException.class,
+                                                          () -> new QuicTripConnectionPool(client, dictionary())));
+  }
+
+  /**
+   * Connects a client to a server restricted to {@code X25519MLKEM768}.
+   *
+   * @param clientParameters the additional client URI parameters, each starting with {@code &}
+   * @param test the test to run with the client transport
+   * @throws Exception if the test failed
+   */
+  private void connectToPostQuantumOnlyServer(String clientParameters, ClientTest test) throws Exception {
+    Path serverKeyStore = QuicTestSupport.createKeyStore();
+    try {
+      int port = QuicTestSupport.freeUdpPort();
+      QuicTripTransport server = new QuicTripTransport(URI.create(
+        "tripq://localhost:" + port + "?namedgroups=X25519MLKEM768&" +
+        QuicTestSupport.keyStoreParameters(serverKeyStore)));
+      try {
+        server.accept();
+        Thread.sleep(1000);   // let the server start accepting connections
+
+        QuicTripTransport client = new QuicTripTransport(URI.create(
+          "tripq://localhost:" + port + "?certcheck=false&connecttimeout=5" + clientParameters));
+        try {
+          test.run(client);
+        }
+        finally {
+          client.close();
+        }
+      }
+      finally {
+        server.close();
+      }
+    }
+    finally {
+      Files.deleteIfExists(serverKeyStore);
+    }
+  }
+
   @Test(timeOut = 60000)
   public void rejectsUntrustedCertificateWithCertcheck() throws Exception {
     Reporter.log("rejectsUntrustedCertificateWithCertcheck", true);
@@ -281,6 +351,124 @@ public class QuicTripConnectionPoolTest {
     finally {
       Files.deleteIfExists(serverKeyStore);
     }
+  }
+
+  /**
+   * A trusted certificate issued for another host than the one the client connects to must be rejected:
+   * the server's certificate is issued for {@code localhost}, but the client connects to {@code 127.0.0.1}.
+   */
+  @Test(timeOut = 60000)
+  public void rejectsCertificateOfAnotherHost() throws Exception {
+    Reporter.log("rejectsCertificateOfAnotherHost", true);
+    connectByAddress("", client -> expectThrows(TripRuntimeException.class,
+                                                () -> new QuicTripConnectionPool(client, dictionary())));
+  }
+
+  /**
+   * The escape hatch for {@link #rejectsCertificateOfAnotherHost}: with {@code hostcheck=false} the
+   * certificate chain is still verified, but not the host name.
+   */
+  @Test(timeOut = 60000)
+  public void acceptsCertificateOfAnotherHostWithoutHostcheck() throws Exception {
+    Reporter.log("acceptsCertificateOfAnotherHostWithoutHostcheck", true);
+    connectByAddress("&hostcheck=false", client -> new QuicTripConnectionPool(client, dictionary()).shutdown());
+  }
+
+  /**
+   * {@code hostcheck=false} skips the host name only: a certificate that is not trusted is still rejected.
+   */
+  @Test(timeOut = 60000)
+  public void rejectsUntrustedCertificateWithoutHostcheck() throws Exception {
+    Reporter.log("rejectsUntrustedCertificateWithoutHostcheck", true);
+    Path serverKeyStore = QuicTestSupport.createKeyStore();
+    try {
+      int port = QuicTestSupport.freeUdpPort();
+      QuicTripTransport server = new QuicTripTransport(URI.create(
+        "tripq://127.0.0.1:" + port + "?" + QuicTestSupport.keyStoreParameters(serverKeyStore)));
+      try {
+        server.accept();
+        Thread.sleep(1000);   // let the server start accepting connections
+
+        // no tsfile configured -> the JVM's default cacerts apply, which do not trust this self-signed cert
+        QuicTripTransport client = new QuicTripTransport(URI.create(
+          "tripq://127.0.0.1:" + port + "?certcheck=true&hostcheck=false"));
+        try {
+          TripRuntimeException exception =
+            expectThrows(TripRuntimeException.class, () -> new QuicTripConnectionPool(client, dictionary()));
+          SSLHandshakeException sslException = assertHandshakeException(exception);
+          assertTrue(sslException.getCause() instanceof CertificateException,
+                     "expected an SSLHandshakeException wrapping a CertificateException, got " +
+                     sslException.getCause());
+        }
+        finally {
+          client.close();
+        }
+      }
+      finally {
+        server.close();
+      }
+    }
+    finally {
+      Files.deleteIfExists(serverKeyStore);
+    }
+  }
+
+  /**
+   * Connects a client trusting the server's certificate, which is issued for {@code localhost}, by the
+   * server's IP address instead.
+   *
+   * @param clientParameters the additional client URI parameters, each starting with {@code &}
+   * @param test the test to run with the client transport
+   * @throws Exception if the test failed
+   */
+  private void connectByAddress(String clientParameters, ClientTest test) throws Exception {
+    Path serverKeyStore = QuicTestSupport.createKeyStore();
+    try {
+      Path trustStore = QuicTestSupport.deriveTrustStore(serverKeyStore);
+      try {
+        int port = QuicTestSupport.freeUdpPort();
+        QuicTripTransport server = new QuicTripTransport(URI.create(
+          "tripq://127.0.0.1:" + port + "?" + QuicTestSupport.keyStoreParameters(serverKeyStore)));
+        try {
+          server.accept();
+          Thread.sleep(1000);   // let the server start accepting connections
+
+          QuicTripTransport client = new QuicTripTransport(URI.create(
+            "tripq://127.0.0.1:" + port + "?certcheck=true&connecttimeout=5&" +
+            QuicTestSupport.trustStoreParameters(trustStore) + clientParameters));
+          try {
+            test.run(client);
+          }
+          finally {
+            client.close();
+          }
+        }
+        finally {
+          server.close();
+        }
+      }
+      finally {
+        Files.deleteIfExists(trustStore);
+      }
+    }
+    finally {
+      Files.deleteIfExists(serverKeyStore);
+    }
+  }
+
+  /**
+   * A test running against a client transport.
+   */
+  @FunctionalInterface
+  private interface ClientTest {
+
+    /**
+     * Runs the test.
+     *
+     * @param client the client transport
+     * @throws Exception if the test failed
+     */
+    void run(QuicTripTransport client) throws Exception;
   }
 
   /**

@@ -35,13 +35,17 @@ requires Java 11.
   groups of `trips`/`tripcs`, e.g. `namedgroups=X25519MLKEM768` to enforce a post-quantum key exchange (JEP 527)
   instead of silently falling back to a classical one.
 - `tentackle-quic`: depends on `tech.kwik:agent15-pqc`, so `tripq`/`tripcq` support the post-quantum hybrid key
-  exchanges (`X25519MLKEM768` etc.). The client honors `namedgroups`; the server, which cannot restrict the groups,
-  logs a prominent warning if `namedgroups` is set.
+  exchanges (`X25519MLKEM768` etc.). `namedgroups` is honored on both ends: the client offers only these groups,
+  the server accepts nothing else, so `namedgroups=X25519MLKEM768` enforces a post-quantum key exchange.
+- `tentackle-quic`: `tripq`/`tripcq` support `hostcheck=false`, which skips the verification of the server's host
+  name while still validating its certificate chain, just like the TCP/SSL transports and `tripj`.
 - `tentackle-quiche`: `tripj`/`tripcj` honor `namedgroups` on both ends (via `quiche_config_set_curves_list`).
 - Fx.isHeadless using `glass.platform=Headless` for running FX-related tests in headless mode (Jenkins, for example)
 
 ### Changed
 
+- KWIK was upgraded from 0.12.1 to 0.12.2, which can restrict the key-exchange groups of a server and skip the
+  host name verification of a client.
 - The native quiche library (`jetty-quiche-native`) was upgraded from 0.29.3 to 0.30.0. Its BoringSSL offers the
   post-quantum hybrid key exchange `X25519MLKEM768` by default. A library set via `tentackle.quiche.library` must be
   0.30.0 or later.

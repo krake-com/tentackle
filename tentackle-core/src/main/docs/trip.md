@@ -203,9 +203,8 @@ withstand a future quantum computer.
 
 The QUIC transports bring their own TLS stacks.
 [`tripq`/`tripcq`](../../../tentackle-quic/src/main/docs/quic.md#post-quantum-key-exchange) use KWIK
-with the post-quantum key exchanges of `agent15-pqc`: its client honors `namedgroups` as well, but
-offers only classical groups unless it is set, and its server cannot restrict the groups at all, so it
-only logs a prominent warning when `namedgroups` is set.
+with the post-quantum key exchanges of `agent15-pqc` and honor `namedgroups` on both ends, but the
+client offers only classical groups unless it is set.
 [`tripj`/`tripcj`](../../../tentackle-quiche/src/main/docs/quiche.md#post-quantum-key-exchange) use
 BoringSSL, which offers `X25519MLKEM768` by default, and honor `namedgroups` on both ends.
 

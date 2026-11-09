@@ -108,6 +108,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
   private final int streamTimeoutSeconds;
   private final X509TrustManager trustManager;    // checks the server certificate, null if certcheck is disabled
   private final List<NamedGroup> namedGroups;     // the key-exchange groups to offer, null for the KWIK default
+  private final boolean hostCheck;                // true if the server's host name is verified (if certcheck)
   private QuicClientConnection connection;
 
   /**
@@ -154,7 +155,9 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     streamWindow = transport.getStreamWindow();   // validated here rather than by every connect attempt
     trustManager = Boolean.parseBoolean(queryParameters.getOrDefault("certcheck", "true")) ?
                    createTrustManager(uri) : null;
-    namedGroups = toNamedGroups(new SslParameters(uri).getNamedGroups(), uri);
+    SslParameters sslParameters = new SslParameters(uri);
+    namedGroups = toNamedGroups(sslParameters.getNamedGroups(), uri);
+    hostCheck = sslParameters.isHostCheck();
 
     connect();
   }
@@ -416,6 +419,10 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     }
     else {
       builder.customTrustManager(attemptTrustManager);
+      if (!hostCheck) {
+        // the certificate chain is still validated against the truststore, but not the host name
+        builder.noServerHostnameVerification();
+      }
     }
     if (namedGroups != null) {
       // KWIK sends a key share for the first group and falls back to a HelloRetryRequest for the others
@@ -435,15 +442,19 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
   /**
    * Converts the configured key-exchange group names to KWIK's named groups.<br>
    * The names are the standard TLS names, as used by the JDK as well (e.g. {@code X25519MLKEM768}).
-   * Whether a known group is also supported is checked by KWIK when connecting: the post-quantum
-   * hybrid groups, for example, are provided by {@code agent15-pqc}.
+   * Whether a known group is also supported is checked by KWIK: by the client when connecting, by the
+   * server when the connector is built. The post-quantum hybrid groups, for example, are provided by
+   * {@code agent15-pqc}.
+   * <p>
+   * Used by the client (the groups to offer) and by the server (the groups to accept), see
+   * {@link QuicTripTransport#accept()}.
    *
    * @param names the group names, null if not configured
-   * @param uri the transport URI (for diagnostics)
+   * @param uri the transport URI (for diagnostics, its query is not included since it may hold passwords)
    * @return the named groups, null if not configured
    * @throws IllegalArgumentException if a name is unknown
    */
-  private static List<NamedGroup> toNamedGroups(String[] names, URI uri) {
+  static List<NamedGroup> toNamedGroups(String[] names, URI uri) {
     if (names == null) {
       return null;
     }
@@ -453,7 +464,8 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
         groups.add(NamedGroup.valueOf(name));
       }
       catch (IllegalArgumentException ix) {
-        throw new IllegalArgumentException("unknown named group '" + name + "' in " + uri, ix);
+        throw new IllegalArgumentException(
+          "unknown named group '" + name + "' in " + UriHelper.uriToSafeString(uri), ix);
       }
     }
     return groups;

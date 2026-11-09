@@ -182,8 +182,13 @@ establishes its QUIC connection right away:
    reacting to it (such as the client auto-update's
    `LoginFailedWithUpdateHandler`) does not need to know which transport is
    in use. The certificate must also be issued for the host name of the URI,
-   which KWIK always verifies — unlike the other transports, `tripq` does not
-   support `hostcheck=false` yet; it will with the next KWIK release. Set
+   which KWIK verifies by default. `hostcheck=false` skips that check
+   (`noServerHostnameVerification()`), for a client connecting by an address
+   the certificate is not issued for: the certificate chain is still validated
+   against the truststore. This works like `hostcheck` of the TCP/SSL
+   transports. Unlike an untrusted certificate, a host name mismatch is
+   detected by KWIK's TLS engine rather than the trust manager, so its
+   `TripRuntimeException` has no `SSLHandshakeException` cause. Set
    `certcheck=false` to disable validation altogether
    (`noServerCertificateCheck()`) — for a client that runs on a trusted,
    non-public network against a server presenting a self-signed certificate
@@ -322,12 +327,12 @@ shape is used on both client and server (with host `0` / `0.0.0.0` selecting the
 server bind-all case).
 
 ```
-tripq://<host>:<port>?ksfile=...&kspass=...&ksalias=...[&kstype=...][&kmpass=...][&tsfile=...][&tspass=...][&tstype=...][&alpnid=...][&maxstreams=...][&streamwindow=...][&certcheck=...][&connecttimeout=...][&streamtimeout=...][&quicidle=...][&keepalive=...][&namedgroups=...]
+tripq://<host>:<port>?ksfile=...&kspass=...&ksalias=...[&kstype=...][&kmpass=...][&tsfile=...][&tspass=...][&tstype=...][&alpnid=...][&maxstreams=...][&streamwindow=...][&certcheck=...][&hostcheck=...][&connecttimeout=...][&streamtimeout=...][&quicidle=...][&keepalive=...][&namedgroups=...]
 tripcq://<host>:<port>?...same as tripq...&mincompress=1024
 ```
 
-The keystore/truststore parameters (`ksfile`, `kspass`, `ksalias`, `kstype`, `kmpass`, `tsfile`, `tspass`, `tstype`)
-and `namedgroups` are
+The keystore/truststore parameters (`ksfile`, `kspass`, `ksalias`, `kstype`, `kmpass`, `tsfile`, `tspass`, `tstype`),
+`hostcheck` and `namedgroups` are
 resolved by the shared
 [`SslParameters`](../../../../tentackle-core/src/main/docs/trip.md#ssltls-configuration), so each
 also honors a `tentackle.ssl.<name>` system property and, as a fallback, the standard
@@ -347,16 +352,19 @@ also honors a `tentackle.ssl.<name>` system property and, as a fallback, the sta
 | `maxstreams`     | both            | `128`                                                                         | Maximum concurrent peer-initiated bidirectional streams per connection; must be >= 1. On the client, it is the default of the pool's `maximum`, see [Stream limit](#stream-limit).      |
 | `streamwindow`   | both            | `250000`                                                                      | Flow control window per stream in bytes; must be >= 1500. See below.                                                                                                                    |
 | `certcheck`      | client          | `true`                                                                        | When `true`, the client validates the server certificate against `tsfile`. Any other value skips validation.                                                                            |
+| `hostcheck`      | client          | `tentackle.ssl.hostCheck` / `true`                                            | Verify the server's host name against its certificate, used when `certcheck=true`. Any value but `true` turns it off; the certificate chain is still validated.                         |
 | `connecttimeout` | client          | `10`                                                                          | Seconds to wait for the QUIC handshake before giving up. Must be > 0.                                                                                                                   |
 | `streamtimeout`  | client          | `10`                                                                          | Seconds to wait for the peer to grant the credits to open another stream. Must be > 0. See below.                                                                                       |
 | `quicidle`       | both            | `30`                                                                          | QUIC max idle timeout in **seconds**. See below.                                                                                                                                        |
 | `keepalive`      | client          | unlimited                                                                     | How many seconds to keep the QUIC connection alive. `0` disables the keep-alive. See below.                                                                                             |
-| `namedgroups`    | client          | `tentackle.ssl.namedGroups` / KWIK default                                    | Comma-separated key-exchange groups to offer, e.g. `X25519MLKEM768`. A server cannot enforce it and logs a warning if set. See [Post-quantum key exchange](#post-quantum-key-exchange). |
+| `namedgroups`    | both            | `tentackle.ssl.namedGroups` / KWIK default                                    | Comma-separated key-exchange groups, e.g. `X25519MLKEM768`: the client offers them, the server accepts nothing else. See [Post-quantum key exchange](#post-quantum-key-exchange).      |
 | `mincompress`    | both (`tripcq`) | `1024`                                                                        | Minimum block size in bytes before deflate compression is applied.                                                                                                                      |
 
 > On the server, if the keystore file (`ksfile`) or the certificate alias (`ksalias`, unless the
 > keystore holds a single key entry) cannot be resolved, `accept()` throws a
-> `TripRuntimeException`. The port must be in the range `0..65535`. On the client, a port that is
+> `TripRuntimeException`. The port must be in the range `0..65535`. An unknown or duplicate group
+> in `namedgroups`, or one without a key exchange at runtime, fails `accept()` with a
+> `TripRuntimeException` as well. On the client, a port that is
 > not > 0, or a `connecttimeout` or `streamtimeout` that is not > 0, or an unknown group in
 > `namedgroups`, fails the creation of the connection pool with an `IllegalArgumentException`.
 
@@ -367,15 +375,16 @@ KWIK's TLS library, agent15, implements the post-quantum hybrid groups of RFC 10
 artifact `tech.kwik:agent15-pqc`, which agent15 finds via the `ServiceLoader`. This module
 depends on it, so both ends of `tripq`/`tripcq` support these groups:
 
-- The **server** accepts every group it supports, the hybrid groups included, and picks the
-  first key share of the client it supports. A client offering `X25519MLKEM768` first, such as
+- The **server** accepts every group it supports by default, the hybrid groups included, and picks
+  the first key share of the client it supports. A client offering `X25519MLKEM768` first, such as
   `tripj`, therefore gets a post-quantum key exchange.
-  KWIK provides no way to restrict the groups of the server. If `namedgroups` (or
-  `tentackle.ssl.namedGroups`) is set, `accept()` therefore logs a prominent warning, framed in
-  asterisks, that the server still accepts classical clients and cannot verify a post-quantum key
-  exchange. Enforce it on the client side, or use
-  [`tripj`](../../../tentackle-quiche/src/main/docs/quiche.md#post-quantum-key-exchange) for the
-  server.
+  `namedgroups` (or `tentackle.ssl.namedGroups`) restricts the groups the server accepts
+  (`ServerConnector.Builder.withSupportedGroups()`, since KWIK 0.12.2). With
+  `namedgroups=X25519MLKEM768`, a client offering classical groups only fails the handshake instead of
+  downgrading, so the server enforces a post-quantum key exchange. Note that the list is a **set** of
+  acceptable groups, not an order of preference: the server takes the first key share of the client
+  that is in the set. With `namedgroups=X25519MLKEM768,x25519`, a client preferring `x25519` gets a
+  classical exchange, so enforcing post-quantum requires post-quantum groups only.
 - The **client** offers KWIK's classical default groups unless `namedgroups` is set. With
   `namedgroups=X25519MLKEM768`, it offers nothing else, so a server without post-quantum support
   fails the handshake instead of downgrading. With a list, e.g.
