@@ -15,7 +15,7 @@ module's `QuicheKwikInteropTest` verifies on every build.
 - Module: `org.tentackle.quiche`
 - Artifact: `org.tentackle:tentackle-quiche`
 - Schemes: `tripj`, `tripcj` (the `j` is for the Jetty project, which publishes the native binaries)
-- License: LGPL 2.1 (the bundled quiche binaries are BSD-2-Clause)
+- License: LGPL 2.1 or later (the bundled quiche binaries are BSD-2-Clause)
 
 ### Which of the two to use
 

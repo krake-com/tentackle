@@ -20,7 +20,7 @@ preferences-based default. Application code doesn't change:
 - Module: `org.tentackle.keyring`
 - Artifact: `org.tentackle:tentackle-keyring`
 - Dependencies: `tentackle-core` only, and no third-party runtime libraries at all
-- License: LGPL 2.1
+- License: LGPL 2.1 or later
 
 The native APIs are called directly through the Java FFM API (`java.lang.foreign`), the same way
 [tentackle-quiche](../../../../tentackle-quiche/src/main/docs/quiche.md) does. There is no JNA, no JNI, and

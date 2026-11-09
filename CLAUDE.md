@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Website: https://tentackle.org/
 - Artifacts: [Maven Central](https://central.sonatype.com/namespace/org.tentackle)
-- License: LGPL 2.1
+- License: LGPL 2.1 or later
 - Developer: Krake Softwaretechnik (https://krake.de/)
 
 ## Documentation

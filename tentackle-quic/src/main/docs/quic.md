@@ -31,7 +31,7 @@ matter of the connection URI scheme.
 - **Module:** `org.tentackle.quic`
 - **Maven artifact:** `org.tentackle:tentackle-quic`
 - **Protocol schemes:** `tripq` (plain QUIC), `tripcq` (QUIC + compression)
-- **License:** LGPL 2.1
+- **License:** LGPL 2.1 or later
 
 ### Two QUIC implementations
 
