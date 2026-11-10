@@ -19,13 +19,11 @@
 package org.tentackle.fx.bind;
 
 import org.tentackle.bind.AbstractBinding;
-import org.tentackle.bind.BindingException;
 import org.tentackle.bind.BindingMember;
 import org.tentackle.bind.BindingVetoException;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxTextComponent;
 import org.tentackle.fx.FxUtilities;
-import org.tentackle.log.Logger;
 import org.tentackle.validate.ChangeableBindingEvaluator;
 import org.tentackle.validate.MandatoryBindingEvaluator;
 import org.tentackle.validate.ValidationContext;
@@ -44,8 +42,6 @@ import java.util.Objects;
  * @author harald
  */
 public class DefaultFxComponentBinding extends AbstractBinding implements FxComponentBinding {
-
-  private static final Logger LOGGER = Logger.get(DefaultFxComponentBinding.class);
 
   private final FxComponent component;                  // the bound GUI component (unique constraint)
   private List<Validator> fixedMandatoryValidators;     // fixed mandatory validators, null if none
@@ -97,18 +93,15 @@ public class DefaultFxComponentBinding extends AbstractBinding implements FxComp
     return (FxComponentBinder) super.getBinder();
   }
 
-
   @Override
   public FxComponent getComponent() {
     return component;
   }
 
-
   @Override
   public Object getViewValue() {
     return component.getViewValue();
   }
-
 
   @Override
   public void fireToView(Object parent, Object modelValue) throws BindingVetoException {
@@ -165,6 +158,34 @@ public class DefaultFxComponentBinding extends AbstractBinding implements FxComp
     }
   }
 
+  @Override
+  public void setMandatory(boolean mandatory) {
+    component.setMandatory(mandatory);
+  }
+
+  @Override
+  public boolean isMandatory() {
+    return component.isMandatory();
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Components bound to a read-only model are never changeable.
+   *
+   * @param changeable true if changeable, else false
+   * @see #isModelReadOnly()
+   */
+  @Override
+  public void setChangeable(boolean changeable) {
+    component.setChangeable(changeable && !isModelReadOnly());
+  }
+
+  @Override
+  public boolean isChangeable() {
+    return component.isChangeable();
+  }
+
 
   @Override
   protected void determineValidators() {
@@ -194,7 +215,6 @@ public class DefaultFxComponentBinding extends AbstractBinding implements FxComp
     }
   }
 
-
   /**
    * {@inheritDoc}
    * <p>
@@ -207,7 +227,6 @@ public class DefaultFxComponentBinding extends AbstractBinding implements FxComp
     return component.getType();
   }
 
-
   /**
    * Applies the model's type to the component.<br>
    * Components bound to read-only members are made non-changeable.
@@ -217,32 +236,10 @@ public class DefaultFxComponentBinding extends AbstractBinding implements FxComp
   protected void applyType() {
     component.setGenericType(getMember().getGenericType());
     component.setType(getMember().getType());
-    if (getMember().isReadOnly()) {
+    if (isModelReadOnly()) {
       component.setChangeable(false);
     }
   }
-
-  @Override
-  public void setMandatory(boolean mandatory) {
-    component.setMandatory(mandatory);
-  }
-
-  @Override
-  public boolean isMandatory() {
-    return component.isMandatory();
-  }
-
-
-  @Override
-  public void setChangeable(boolean changeable) {
-    component.setChangeable(changeable);
-  }
-
-  @Override
-  public boolean isChangeable() {
-    return component.isChangeable();
-  }
-
 
   @Override
   protected Object getBoundRootObject() {

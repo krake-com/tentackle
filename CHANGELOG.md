@@ -66,7 +66,9 @@ requires Java 11.
   `IgnoreDuplicatesPersistenceVisitor`, `ScriptRunnerException`). The protected no-arg constructors of the validation results were replaced
   by constructors taking the serialized values.
 - Binding treats final fields without a setter as read-only, and the NoFXML linker refuses to inject into final
-  fields.
+  fields. The new `Binding.isModelReadOnly()` also covers from-methods whose replacement cannot be set into the
+  parent chain. FX components bound to a read-only model stay non-changeable, even if a changeable validator or
+  the application asks otherwise, and such table cells are not editable.
 - TRIP transfers the JDK's exceptions via their getters and public constructors instead of their inaccessible fields.
   An exception that cannot be serialized no longer fails the whole response: it arrives with its message, cause and
   stack trace, either as its own class or, without a usable constructor, as `TripInstantiationException`.

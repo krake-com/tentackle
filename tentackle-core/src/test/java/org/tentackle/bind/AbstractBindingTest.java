@@ -20,6 +20,7 @@ package org.tentackle.bind;
 
 import org.testng.annotations.Test;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
 
@@ -72,6 +73,15 @@ public class AbstractBindingTest {
     public void setAddress(Address address) {
       this.address = address;
     }
+  }
+
+
+  /** holds the immutable address in a final field. */
+  @SuppressWarnings("missing-explicit-ctor")
+  public static class FinalContainer {
+    public final Address address = new Address("fixed");
+    public final String code = "code";
+    public String text;
   }
 
 
@@ -347,6 +357,79 @@ public class AbstractBindingTest {
     // writing produces a new Address and installs it via the container's setter
     binding.setModelValue("new");
     assertEquals(container.getAddress(), new Address("new"));
+  }
+
+
+  // ---- read-only model ---------------------------------------------------
+
+  private static Field field(Class<?> clazz, String name) {
+    try {
+      return clazz.getField(name);
+    }
+    catch (NoSuchFieldException ex) {
+      throw new AssertionError(ex);
+    }
+  }
+
+  private static BindingMember fieldMember(Class<?> clazz, String name) {
+    DefaultBindableElement element = new DefaultBindableElement(name);
+    element.setField(field(clazz, name));
+    return new DefaultBindingMember(clazz, null, name, name, element);
+  }
+
+  private static BindingMember cityMember(BindingMember addressMember) {
+    DefaultBindableElement cityElement = new DefaultBindableElement("City");
+    cityElement.setGetter(method(Address.class, "city"));
+    cityElement.setFrom(method(Address.class, "withCity", String.class));
+    return new DefaultBindingMember(Address.class, addressMember, "city", "address.city", cityElement);
+  }
+
+  @Test
+  public void testModelReadOnlyMutableMembers() {
+    assertFalse(new TestBinding(newBinder(), null, nameMember(), new Model()).isModelReadOnly());
+    assertFalse(new TestBinding(newBinder(), null, fieldMember(FinalContainer.class, "text"),
+                                new FinalContainer()).isModelReadOnly());
+  }
+
+  @Test
+  public void testModelReadOnlyFinalField() {
+    TestBinding binding = new TestBinding(newBinder(), null, fieldMember(FinalContainer.class, "code"),
+                                          new FinalContainer());
+    assertTrue(binding.isModelReadOnly());
+  }
+
+  @Test
+  public void testModelReadOnlyFinalFieldWithSetter() {
+    DefaultBindableElement element = new DefaultBindableElement("code");
+    element.setField(field(FinalContainer.class, "code"));
+    element.setSetter(method(Model.class, "setName", String.class));   // any setter will do
+    BindingMember member = new DefaultBindingMember(FinalContainer.class, null, "code", "code", element);
+    assertFalse(new TestBinding(newBinder(), null, member, new FinalContainer()).isModelReadOnly());
+  }
+
+  @Test
+  public void testModelReadOnlyFromMethodBelowSetter() {
+    DefaultBindableElement addressElement = new DefaultBindableElement("Address");
+    addressElement.setGetter(method(Container.class, "getAddress"));
+    addressElement.setSetter(method(Container.class, "setAddress", Address.class));
+    BindingMember addressMember = new DefaultBindingMember(Container.class, null, "address", "address", addressElement);
+    TestBinding binding = new TestBinding(newBinder(), new BindingMember[]{ addressMember },
+                                          cityMember(addressMember), new Container());
+    assertFalse(binding.isModelReadOnly());
+  }
+
+  @Test
+  public void testModelReadOnlyFromMethodBelowFinalField() {
+    BindingMember addressMember = fieldMember(FinalContainer.class, "address");
+    TestBinding binding = new TestBinding(newBinder(), new BindingMember[]{ addressMember },
+                                          cityMember(addressMember), new FinalContainer());
+    assertTrue(binding.isModelReadOnly());
+  }
+
+  @Test
+  public void testModelReadOnlyFromMethodWithoutParent() {
+    TestBinding binding = new TestBinding(newBinder(), null, cityMember(null), new Address("x"));
+    assertTrue(binding.isModelReadOnly());
   }
 
 

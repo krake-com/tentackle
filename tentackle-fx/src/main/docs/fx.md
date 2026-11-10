@@ -637,6 +637,10 @@ discountField.addViewToModelListener(this::updateTotals);
 mode. A control that must stay usable nevertheless, e.g. a button to open a detail view, is exempted
 with `setContainerChangeableIgnored(true)`.
 
+A component bound to a read-only model, such as a `final` field without setter, is never changeable,
+regardless of its container, changeable validators or `binding.setChangeable(true)`
+(see `Binding.isModelReadOnly()` in [binding.md](../../../../tentackle-core/src/main/docs/binding.md)).
+
 ### Configurators
 
 A `Configurator<T>` applies cross-cutting setup to every instance of an FX type

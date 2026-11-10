@@ -80,6 +80,7 @@ A table is read-only unless its configuration provides an [edit handler](#edit-h
 controls everything that happens when a value is entered in a cell. With a handler, all columns
 are editable, except those whose `editable` property is `FALSE`. Without a handler, a column is
 editable only if its `editable` property is `TRUE`; committing a value then simply ends editing.
+Either way, a cell bound to a read-only model, such as a `final` field without setter, is never editable.
 
 The configuration owns an [`FxTableBinder`](../java/org/tentackle/fx/bind/FxTableBinder.java) that
 binds the *cells* to the row objects. Don't confuse it with the controller's binder, which binds a
