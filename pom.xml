@@ -82,7 +82,7 @@
 
   <properties>
     <rootBasedir>${project.basedir}</rootBasedir>
-    <project.build.outputTimestamp>2026-10-21T15:00:00Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-11-11T10:00:00Z</project.build.outputTimestamp>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -107,7 +107,7 @@
     <kwik.version>0.12.2</kwik.version>
     <agent15.version>4.0</agent15.version>
     <log4j2.version>2.26.1</log4j2.version>
-    <logback.version>1.6.5</logback.version>
+    <logback.version>1.6.6</logback.version>
     <narayana.version>7.2.2.Final</narayana.version>
     <jboss.logging.version>3.6.1.Final</jboss.logging.version>
     <plexus.archiver.version>4.14.0</plexus.archiver.version>

@@ -26,6 +26,11 @@ requires Java 11.
 
 ## [Unreleased]
 
+
+## Java 25 line (25.x)
+
+### [25.20.1.0] – 2026-11-11
+
 ### Added
 
 - `tentackle-jlink-maven-plugin`: jlink of Java 27 refuses to link a resource directory found in more than one
@@ -94,8 +99,6 @@ requires Java 11.
 - `tentackle-jlink-maven-plugin`: the jpackage goal failed with "could not patch classpath" for a plain modular
   application with resources, i.e., a classpath but no module path.
 
-
-## Java 25 line (25.x)
 
 ### [25.20.0.0] – 2026-10-23
 
@@ -1364,7 +1367,8 @@ Java 8 maintenance release with backports from 2.2.
 The first release in the public git history.
 For what it already contained, see [The History of Tentackle](src/main/docs/history.md#origins-20012015).
 
-[Unreleased]: https://github.com/krake-com/tentackle/compare/25.20.0.0...develop
+[Unreleased]: https://github.com/krake-com/tentackle/compare/25.20.1.0...develop
+[25.20.1.0]: https://github.com/krake-com/tentackle/releases/tag/25.20.1.0
 [25.20.0.0]: https://github.com/krake-com/tentackle/releases/tag/25.20.0.0
 [25.19.0.0]: https://github.com/krake-com/tentackle/releases/tag/25.19.0.0
 [25.18.2.1]: https://github.com/krake-com/tentackle/releases/tag/25.18.2.1
