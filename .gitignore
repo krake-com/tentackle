@@ -36,3 +36,6 @@ qodana.yaml
 
 /velocity.log
 .attach_pid*
+
+# AI
+.claude/

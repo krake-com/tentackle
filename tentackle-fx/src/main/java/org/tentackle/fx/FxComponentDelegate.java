@@ -238,25 +238,13 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
     return "delegate for " + toGenericString();
   }
 
-
   @Override
-  protected void updateChangeable(boolean changeable) {
-    // the default for components is to use the disabled property
-    getNode().setDisable(!changeable);
-    // non-changeable components should not be focus traversable
-    getNode().setFocusTraversable(changeable);
-    // mandatory is only shown if component is changeable as well
-    updateMandatoryStyle(isMandatory());
-    updateInfoStyle(changeable && infoMessage != null);
-    updateErrorStyle(changeable && errorMessage != null);
-  }
-
-  @Override
-  protected ReadOnlyBooleanWrapper createChangeableProperty(boolean changeable) {
-    ReadOnlyBooleanWrapper changeableProperty =  new ReadOnlyBooleanWrapper(changeable);
-    // if the disabled property changes, change the controlChangeable property as well
-    changeableProperty.bind(getNode().disabledProperty().not());
-    return changeableProperty;
+  public void setChangeable(boolean changeable) {
+    if (changeable && binding != null && binding.isModelReadOnly()) {
+      changeable = false;
+      LOGGER.warning("the model bound to {0} is readonly -> setChangeable(true) ignored!", toGenericString());
+    }
+    super.setChangeable(changeable);
   }
 
   @Override
@@ -282,25 +270,6 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   @Override
   public ValueTranslator<?,?> getValueTranslator() {
     return valueTranslator;
-  }
-
-
-  /**
-   * Returns a flag to avoid recursive invocations of {@link #updateModel()}.
-   *
-   * @return true if currently updating the model
-   */
-  protected boolean isUpdatingModel() {
-    return updatingModel;
-  }
-
-  /**
-   * Returns a flag to avoid recursive invocations of {@link #updateView()}.
-   *
-   * @return true if currently updating the view
-   */
-  protected boolean isUpdatingView() {
-    return updatingView;
   }
 
   @Override
@@ -392,25 +361,6 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
     }
   }
 
-  /**
-   * Handles a failure during conversion of the user's input to the model.
-   *
-   * @param msg the failure message
-   */
-  protected void handleInputFailure(String msg) {
-    setError(msg);
-    setErrorTemporary(true);
-    Scene scene = getNode().getScene();
-    if (scene != null) {
-      Node node = scene.getFocusOwner();
-      if (node != getNode() &&
-          (!(node instanceof FxComponent) || ((FxComponent) node).getError() == null)) {
-        // only if other component currently holding the focus has no error (would loop otherwise)
-        Platform.runLater(((Node) getComponent())::requestFocus);
-      }
-    }
-  }
-
   @Override
   public boolean isModelUpdated() {
     return modelUpdated;
@@ -457,24 +407,6 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
     return errorTemporary;
   }
 
-  /**
-   * Updates the error style and shows/hides the popup if component has focus.
-   *
-   * @param enable true to enable style
-   */
-  protected void updateErrorStyle(boolean enable) {
-    if (!enable) {
-      getNode().getStyleClass().remove(ERROR_STYLE);
-    }
-    else if (!getNode().getStyleClass().contains(ERROR_STYLE)) {
-      getNode().getStyleClass().add(ERROR_STYLE);
-    }
-    if (!enable || getNode().isFocused()) {
-      showErrorPopup();   // show/hide error popup, node has focus (see ComponentConfigurator)
-    }
-  }
-
-
   @Override
   public void showInfoPopup() {
     hideInfoPopup();
@@ -500,23 +432,6 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
     this.infoMessage = infoMessage;
     if (changed) {
       updateInfoStyle(infoMessage != null && isChangeable());
-    }
-  }
-
-  /**
-   * Updates the info style and shows/hides the popup if component has focus.
-   *
-   * @param enable true to enable style
-   */
-  protected void updateInfoStyle(boolean enable) {
-    if (!enable) {
-      getNode().getStyleClass().remove(INFO_STYLE);
-    }
-    else if (!getNode().getStyleClass().contains(INFO_STYLE)) {
-      getNode().getStyleClass().add(INFO_STYLE);
-    }
-    if (!enable || getNode().isFocused()) {
-      showInfoPopup();   // show/hide info popup, node has focus (see ComponentConfigurator)
     }
   }
 
@@ -653,30 +568,10 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   public BooleanProperty mandatoryProperty() {
     if (mandatoryProperty == null) {
       mandatoryProperty = new SimpleBooleanProperty(mandatory);
-      mandatoryProperty.addListener((obs, ov, nv) -> updateMandatoryStyle(nv));
+      mandatoryProperty.addListener((_, _, nv) -> updateMandatoryStyle(nv));
     }
     return mandatoryProperty;
   }
-
-  /**
-   * Does the physical update of the style.<br>
-   * See resources/org/tentackle/fx/tentackle.css.
-   *
-   * @param mandatory true if mandatory
-   */
-  protected void updateMandatoryStyle(boolean mandatory) {
-    if (mandatory && !getNode().isDisabled()) {
-      // node must be editable by the user to
-      // show the mandatory color.
-      if (!getNode().getStyleClass().contains(MANDATORY_STYLE)) {
-        getNode().getStyleClass().add(MANDATORY_STYLE);
-      }
-    }
-    else {
-      getNode().getStyleClass().remove(MANDATORY_STYLE);
-    }
-  }
-
 
   @Override
   public void setBindingPath(String bindingPath) {
@@ -747,4 +642,116 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   public void setListenerSuppressedIfViewUnchanged(boolean listenerSuppressedIfViewUnchanged) {
     this.listenerSuppressedIfViewUnchanged = listenerSuppressedIfViewUnchanged;
   }
+
+
+  @Override
+  protected void updateChangeable(boolean changeable) {
+    // the default for components is to use the disabled property
+    getNode().setDisable(!changeable);
+    // non-changeable components should not be focus traversable
+    getNode().setFocusTraversable(changeable);
+    // mandatory is only shown if component is changeable as well
+    updateMandatoryStyle(isMandatory());
+    updateInfoStyle(changeable && infoMessage != null);
+    updateErrorStyle(changeable && errorMessage != null);
+  }
+
+  @Override
+  protected ReadOnlyBooleanWrapper createChangeableProperty(boolean changeable) {
+    ReadOnlyBooleanWrapper changeableProperty =  new ReadOnlyBooleanWrapper(changeable);
+    // if the disabled property changes, change the controlChangeable property as well
+    changeableProperty.bind(getNode().disabledProperty().not());
+    return changeableProperty;
+  }
+
+  /**
+   * Returns a flag to avoid recursive invocations of {@link #updateModel()}.
+   *
+   * @return true if currently updating the model
+   */
+  protected boolean isUpdatingModel() {
+    return updatingModel;
+  }
+
+  /**
+   * Returns a flag to avoid recursive invocations of {@link #updateView()}.
+   *
+   * @return true if currently updating the view
+   */
+  protected boolean isUpdatingView() {
+    return updatingView;
+  }
+
+  /**
+   * Handles a failure during conversion of the user's input to the model.
+   *
+   * @param msg the failure message
+   */
+  protected void handleInputFailure(String msg) {
+    setError(msg);
+    setErrorTemporary(true);
+    Scene scene = getNode().getScene();
+    if (scene != null) {
+      Node node = scene.getFocusOwner();
+      if (node != getNode() &&
+          (!(node instanceof FxComponent) || ((FxComponent) node).getError() == null)) {
+        // only if other component currently holding the focus has no error (would loop otherwise)
+        Platform.runLater(((Node) getComponent())::requestFocus);
+      }
+    }
+  }
+
+  /**
+   * Updates the error style and shows/hides the popup if component has focus.
+   *
+   * @param enable true to enable style
+   */
+  protected void updateErrorStyle(boolean enable) {
+    if (!enable) {
+      getNode().getStyleClass().remove(ERROR_STYLE);
+    }
+    else if (!getNode().getStyleClass().contains(ERROR_STYLE)) {
+      getNode().getStyleClass().add(ERROR_STYLE);
+    }
+    if (!enable || getNode().isFocused()) {
+      showErrorPopup();   // show/hide error popup, node has focus (see ComponentConfigurator)
+    }
+  }
+
+  /**
+   * Updates the info style and shows/hides the popup if component has focus.
+   *
+   * @param enable true to enable style
+   */
+  protected void updateInfoStyle(boolean enable) {
+    if (!enable) {
+      getNode().getStyleClass().remove(INFO_STYLE);
+    }
+    else if (!getNode().getStyleClass().contains(INFO_STYLE)) {
+      getNode().getStyleClass().add(INFO_STYLE);
+    }
+    if (!enable || getNode().isFocused()) {
+      showInfoPopup();   // show/hide info popup, node has focus (see ComponentConfigurator)
+    }
+  }
+
+  /**
+   * Does the physical update of the style.<br>
+   * See resources/org/tentackle/fx/tentackle.css.
+   *
+   * @param mandatory true if mandatory
+   */
+  protected void updateMandatoryStyle(boolean mandatory) {
+    if (mandatory && !getNode().isDisabled()) {
+      // node must be editable by the user to
+      // show the mandatory color.
+      if (!getNode().getStyleClass().contains(MANDATORY_STYLE)) {
+        getNode().getStyleClass().add(MANDATORY_STYLE);
+      }
+    }
+    else {
+      getNode().getStyleClass().remove(MANDATORY_STYLE);
+    }
+  }
+
 }

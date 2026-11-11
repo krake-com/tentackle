@@ -2845,9 +2845,7 @@ public class Db implements Session, Cloneable {
       throw new PersistenceException(this, "no connection manager");
     }
     if (reconnectionPending.get() && reconnectingThread != Thread.currentThread()) {
-      PersistenceException px = new PersistenceException(this, "reconnection in progress");
-      px.setTemporary(true);
-      throw px;
+      throw new PersistenceException(this, "reconnection in progress").temporary();
     }
     if (!autoCommit && resources.con == null) {
       throw createConnectionLostException();    // fast path: checked by the connection manager as well

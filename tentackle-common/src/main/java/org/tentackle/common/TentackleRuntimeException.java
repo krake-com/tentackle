@@ -16,9 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.common;
-
 
 import java.io.Serial;
 
@@ -41,20 +39,20 @@ public class TentackleRuntimeException extends RuntimeException {
   /** true if temporary exception. */
   private boolean temporary;
 
+
   /**
    * Constructs a new tentackle runtime exception
    * with <code>null</code> as its detail message.
-   * The cause is not initialized, and may subsequently be
+   * The cause is not initialized and may subsequently be
    * initialized by a call to {@link #initCause}.
    */
   public TentackleRuntimeException() {
     super();
   }
 
-
   /**
    * Constructs a new tentackle runtime exception with the specified detail message.
-   * The cause is not initialized, and may subsequently be initialized by a
+   * The cause is not initialized and may subsequently be initialized by a
    * call to {@link #initCause}.
    *
    * @param   message   the detail message. The detail message is saved for
@@ -74,7 +72,7 @@ public class TentackleRuntimeException extends RuntimeException {
    *         by the {@link #getMessage()} method).
    * @param  cause the cause (which is saved for later retrieval by the
    *         {@link #getCause()} method).  (A <code>null</code> value is
-   *         permitted, and indicates that the cause is nonexistent or
+   *         permitted and indicates that the cause is nonexistent or
    *         unknown.)
    */
   public TentackleRuntimeException(String message, Throwable cause) {
@@ -90,7 +88,7 @@ public class TentackleRuntimeException extends RuntimeException {
    *
    * @param  cause the cause (which is saved for later retrieval by the
    *         {@link #getCause()} method).  (A <code>null</code> value is
-   *         permitted, and indicates that the cause is nonexistent or
+   *         permitted and indicates that the cause is nonexistent or
    *         unknown.)
    */
   public TentackleRuntimeException(Throwable cause) {
@@ -116,6 +114,16 @@ public class TentackleRuntimeException extends RuntimeException {
    */
   public void setTemporary(boolean temporary) {
     this.temporary = temporary;
+  }
+
+  /**
+   * The fluent version of {@code #setTemporary(true)}.
+   *
+   * @return this
+   */
+  public TentackleRuntimeException temporary() {
+    setTemporary(true);
+    return this;
   }
 
 }

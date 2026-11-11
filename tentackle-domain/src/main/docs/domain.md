@@ -185,8 +185,8 @@ A PDO proxy combines a domain delegate (from this module's subclasses) and a per
         │                                   │
    business logic,                    SQL / connection /
    domain key, validation,            transactions / remoting
-   derived values                            │
-        │  getSession()/getDomainContext()   ▼
+   derived values                           │
+        │  getSession()/getDomainContext()  ▼
         └──────────── forwarded ───────► Session / DomainContext
 ```
 

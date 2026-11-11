@@ -16,14 +16,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.bind;
 
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.Validator;
 
 import java.util.List;
-
 
 /**
  * Binding between a class member and some related component.
@@ -267,5 +265,17 @@ public interface Binding {
    * @return true if bound element is changeable
    */
   boolean isChangeable();
+
+  /**
+   * Returns whether the model cannot be updated via this binding.<br>
+   * This is the case if the bound member is read-only (see {@link BindingMember#isReadOnly()}),
+   * for example a final field without setter, or if the member is updated via a from-method and the
+   * newly created parent object cannot be set into the declaration chain.
+   * <p>
+   * The bound view element of a read-only binding is never changeable.
+   *
+   * @return true if read-only
+   */
+  boolean isModelReadOnly();
 
 }

@@ -32,7 +32,7 @@ import java.util.Properties;
  * <pre>
  * name1='value1', name2='value2', ...
  * </pre>
- * Where name must be a valid name according to the Java convention for variables.
+ * Where the names must conform to the Java convention for variables.
  * The values are any kind of strings enclosed in single quotes.
  * If the value contains a single quote, it is encoded as two consecutive single quotes.
  * The parameters are separated by a comma.
@@ -50,9 +50,9 @@ public class ParameterString implements Serializable {
   @Serial
   private static final long serialVersionUID = 1L;
 
-  /** the name/value pairs. */
+  /** the name/value pairs (not final: deserialized by TRIP, see JEP-500). */
   @SuppressWarnings("serial")
-  private final Map<String,String> parameters;
+  private Map<String,String> parameters;
 
 
   /**

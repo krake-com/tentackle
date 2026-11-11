@@ -97,16 +97,16 @@ The execution lock is what makes the plugins safe for parallel builds, see [Para
 
 All are injected by Maven, and the components are exposed via getters, so every plugin inherits them for free:
 
-| Parameter                                      | Purpose                                                           |
-|------------------------------------------------|-------------------------------------------------------------------|
-| `${project}`, `${session}`, `${mojoExecution}` | the Maven project, build session and execution                                           |
-| `${settings}` + `SettingsDecrypter`            | `settings.xml` plus credential decryption (e.g. for servers)                             |
-| `jdkToolchain` + `ToolchainManager`            | per-plugin selection (or deselection) of the `"jdk"` toolchain                           |
+| Parameter                                      | Purpose                                                                                           |
+|------------------------------------------------|---------------------------------------------------------------------------------------------------|
+| `${project}`, `${session}`, `${mojoExecution}` | the Maven project, build session and execution                                                    |
+| `${settings}` + `SettingsDecrypter`            | `settings.xml` plus credential decryption (e.g. for servers)                                      |
+| `jdkToolchain` + `ToolchainManager`            | per-plugin selection (or deselection) of the `"jdk"` toolchain                                    |
 | `RepositorySystem`                             | the Maven Resolver, see [`ProjectDependencies`](#projectdependencies-and-layerdependencyresolver) |
-| `tentackle.verbosity`                          | `default` / `info` / `debug` (if unset, `debug` with Maven's `-X`; unknown → `default`)  |
-| `skip`                                         | skip the goal; if unset, skipped for `pom` packaging in recursive executions             |
-| `charset` (`${project.build.sourceEncoding}`)  | encoding for reading/writing files, applied JVM-wide (see [Parallel builds](#parallel-builds)) |
-| `minLogLevel` (default `WARNING`)              | threshold for the JUL→Maven log bridge                                                   |
+| `tentackle.verbosity`                          | `default` / `info` / `debug` (if unset, `debug` with Maven's `-X`; unknown → `default`)           |
+| `skip`                                         | skip the goal; if unset, skipped for `pom` packaging in recursive executions                      |
+| `charset` (`${project.build.sourceEncoding}`)  | encoding for reading/writing files, applied JVM-wide (see [Parallel builds](#parallel-builds))    |
+| `minLogLevel` (default `WARNING`)              | threshold for the JUL→Maven log bridge                                                            |
 
 ### Skip and validation logic
 
@@ -210,15 +210,15 @@ is shared by all projects built concurrently. Plugins that work on such state re
 `getExecutionLock()`, and `execute()` holds it for the whole mojo lifecycle. Concurrent executions of these
 goals wait for each other and log `waiting for concurrent execution to finish`.
 
-| Plugin                                                                                                        | Executions                                                               |
-|---------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------|
-| [`tentackle-maven-plugin`](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md)        | concurrent                                                               |
-| [`tentackle-sql-maven-plugin`](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) | serialized (model), except `reveng`, which runs concurrently         |
-| [`tentackle-i18n-maven-plugin`](../../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md) | serialized (modification tracker bound to the goal's session)     |
-| [`tentackle-check-maven-plugin`](../../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md) | serialized (bundle, validation and script factories)           |
-| [`tentackle-jlink-maven-plugin`](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md)       | concurrent                                                               |
-| [`tentackle-wizard-maven-plugin`](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) | serialized (model, code factory, JavaFX platform)           |
-| [`tentackle-mcp-maven-plugin`](../../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md) | serialized (model)                                                   |
+| Plugin                                                                                                                      | Executions                                                    |
+|-----------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------|
+| [`tentackle-maven-plugin`](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md)                      | concurrent                                                    |
+| [`tentackle-sql-maven-plugin`](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md)          | serialized (model), except `reveng`, which runs concurrently  |
+| [`tentackle-i18n-maven-plugin`](../../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md)       | serialized (modification tracker bound to the goal's session) |
+| [`tentackle-check-maven-plugin`](../../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md)    | serialized (bundle, validation and script factories)          |
+| [`tentackle-jlink-maven-plugin`](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md)                    | concurrent                                                    |
+| [`tentackle-wizard-maven-plugin`](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) | serialized (model, code factory, JavaFX platform)             |
+| [`tentackle-mcp-maven-plugin`](../../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md)          | serialized (model)                                            |
 
 Two more JVM-wide settings are relevant for parallel builds:
 

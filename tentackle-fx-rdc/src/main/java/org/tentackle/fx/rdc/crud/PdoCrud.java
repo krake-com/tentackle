@@ -272,7 +272,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     if (editor.isViewAllowed()) {
       noViewLabel.setVisible(false);
       editor.getView().setVisible(true);
-      setEditing(isEditable() && editor.isEditAllowed());
+      setEditing(isEditable() && editor.isEditAllowed() && (!pdo.isNew() || editor.isNewAllowed()));
       // make contents editable if the application requested it and the pdo is editable
       editor.setChangeable(isEditing());
     }

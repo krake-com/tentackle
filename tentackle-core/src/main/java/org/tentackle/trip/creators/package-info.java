@@ -17,6 +17,6 @@
  */
 
 /**
- * Predefined {@link org.tentackle.trip.TripInstanceCreator}s for classes without a usable constructor.
+ * Predefined {@link org.tentackle.trip.TripInstanceCreator}s.
  */
 package org.tentackle.trip.creators;

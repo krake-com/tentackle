@@ -15,19 +15,19 @@ up to 63 characters and decimals with a precision of up to 38 digits.
 
 ## Type Mapping
 
-| `SqlType`          | Firebird type                | Note                                                                      |
-|--------------------|------------------------------|---------------------------------------------------------------------------|
+| `SqlType`          | Firebird type                | Note                                                                       |
+|--------------------|------------------------------|----------------------------------------------------------------------------|
 | `VARCHAR(n)`       | `VARCHAR(n)`                 | `n` is capped at 8191: 32 765 bytes with up to 4 bytes per UTF-8 character |
-| `VARCHAR`          | `VARCHAR(8191)`              | an attribute without a size                                               |
-| `CLOB`             | `BLOB SUB_TYPE TEXT`         |                                                                           |
-| `XML`              | `BLOB SUB_TYPE TEXT`         | no native XML type; `isSqlxmlSupported()` is `false`                     |
-| `JSON`             | `BLOB SUB_TYPE TEXT`         | no native JSON type; `isJsonSupported()` is `false`                      |
-| `BLOB`             | `BLOB SUB_TYPE BINARY`       |                                                                           |
-| `BIT`              | `BOOLEAN`                    | defaults are written as `TRUE`/`FALSE`, not as strings                    |
-| `TINYINT`          | `SMALLINT`                   | there is no `TINYINT`                                                     |
-| `FLOAT` / `DOUBLE` | `FLOAT` / `DOUBLE PRECISION` |                                                                           |
-| `DECIMAL`          | `DECIMAL(19)`                | if the model gives no size — see below                                    |
-| `UUID`             | —                            | `isUUIDSupported()` is `false`, so a UUID is stored as a string           |
+| `VARCHAR`          | `VARCHAR(8191)`              | an attribute without a size                                                |
+| `CLOB`             | `BLOB SUB_TYPE TEXT`         |                                                                            |
+| `XML`              | `BLOB SUB_TYPE TEXT`         | no native XML type; `isSqlxmlSupported()` is `false`                       |
+| `JSON`             | `BLOB SUB_TYPE TEXT`         | no native JSON type; `isJsonSupported()` is `false`                        |
+| `BLOB`             | `BLOB SUB_TYPE BINARY`       |                                                                            |
+| `BIT`              | `BOOLEAN`                    | defaults are written as `TRUE`/`FALSE`, not as strings                     |
+| `TINYINT`          | `SMALLINT`                   | there is no `TINYINT`                                                      |
+| `FLOAT` / `DOUBLE` | `FLOAT` / `DOUBLE PRECISION` |                                                                            |
+| `DECIMAL`          | `DECIMAL(19)`                | if the model gives no size — see below                                     |
+| `UUID`             | —                            | `isUUIDSupported()` is `false`, so a UUID is stored as a string            |
 
 Firebird reads a bare `DECIMAL` as `DECIMAL(9,0)` and would silently round away every fraction digit, so an
 attribute without an explicit size becomes `DECIMAL(19,<scale>)` (`getDefaultSize`) — the same remedy as on

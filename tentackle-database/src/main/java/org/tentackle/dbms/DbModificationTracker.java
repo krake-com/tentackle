@@ -400,9 +400,8 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   public Db getSession() {
     Db db = (Db) super.getSession();
     if (db == null) {
-      PersistenceException ex = new PersistenceException("no session configured for " + this);
-      ex.setTemporary(true);    // try again later when everything is up and running
-      throw ex;
+      // try again later when everything is up and running
+      throw new PersistenceException("no session configured for " + this).temporary();
     }
     return db;
   }

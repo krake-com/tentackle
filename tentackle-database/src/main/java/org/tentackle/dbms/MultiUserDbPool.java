@@ -344,9 +344,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
         if (sz + num > maximumSize) {
           num = maximumSize - sz;
           if (num <= 0) {
-            PersistenceException pex = new PersistenceException("cannot create more session instances, max. pool size per session " + maximumSize + " reached");
-            pex.setTemporary(true);
-            throw pex;
+            throw new PersistenceException("cannot create more session instances, max. pool size per session " + maximumSize + " reached").temporary();
           }
         }
       }
@@ -357,9 +355,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
           int sz = size.get();
           int n = Math.min(num, maximumTotalSize - sz);
           if (n <= 0) {
-            PersistenceException pex = new PersistenceException("cannot create more session instances, max. total pool size " + maximumTotalSize + " reached");
-            pex.setTemporary(true);
-            throw pex;
+            throw new PersistenceException("cannot create more session instances, max. total pool size " + maximumTotalSize + " reached").temporary();
           }
           if (size.compareAndSet(sz, sz + n)) {
             reserved = n;

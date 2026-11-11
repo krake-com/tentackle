@@ -16,11 +16,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.fx.bind;
 
 import org.tentackle.bind.AbstractBinding;
-import org.tentackle.bind.BindingException;
 import org.tentackle.bind.BindingMember;
 import org.tentackle.bind.BindingVetoException;
 import org.tentackle.fx.FxUtilities;
@@ -81,54 +79,11 @@ public class DefaultFxTableBinding<S,T> extends AbstractBinding implements FxTab
     return (FxTableBinder<S>) super.getBinder();
   }
 
-
   @Override
   @SuppressWarnings("unchecked")
   public T getModelValue() {
     return (T) super.getModelValue();
   }
-
-  /**
-   * Applies the model's type to the column configuration.
-   */
-  @SuppressWarnings("unchecked")
-  protected void applyType() {
-    columnConfiguration.setGenericType(getMember().getGenericType());
-    columnConfiguration.setType((Class<T>) getMember().getType());
-  }
-
-
-  @Override
-  protected Class<?> getViewType() {
-    return columnConfiguration.getType();
-  }
-
-
-  @Override
-  protected void determineValidators() {
-
-    super.determineValidators();
-
-    List<Validator> validators = getValidators();
-    if (validators != null) {
-      // determine mandatory/changeable fixed and dynamic validators
-      for (Validator validator: validators) {
-        if (validator instanceof MandatoryBindingEvaluator) {
-          if (mandatoryValidators == null) {
-            mandatoryValidators = new ArrayList<>();
-          }
-          mandatoryValidators.add(validator);
-        }
-        if (validator instanceof ChangeableBindingEvaluator) {
-          if (changeableValidators == null) {
-            changeableValidators = new ArrayList<>();
-          }
-          changeableValidators.add(validator);
-        }
-      }
-    }
-  }
-
 
   @Override
   public void setMandatory(boolean mandatory) {
@@ -140,16 +95,23 @@ public class DefaultFxTableBinding<S,T> extends AbstractBinding implements FxTab
     return mandatory;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Cells bound to a read-only model are never changeable.
+   *
+   * @param changeable true if changeable, else false
+   * @see #isModelReadOnly()
+   */
   @Override
   public void setChangeable(boolean changeable) {
-    this.changeable = changeable;
+    this.changeable = changeable && !isModelReadOnly();
   }
 
   @Override
   public boolean isChangeable() {
     return changeable;
   }
-
 
   @Override
   public void fireToView(Object parent, Object modelValue) throws BindingVetoException {
@@ -204,28 +166,6 @@ public class DefaultFxTableBinding<S,T> extends AbstractBinding implements FxTab
     super.fireToView(parent, modelValue);
   }
 
-
-  @Override
-  protected boolean isValidationRequired() {
-    return true;    // always true
-  }
-
-  @Override
-  protected String viewComponentToString() {
-    return getMember() + ":" + columnConfiguration.getName();
-  }
-
-  @Override
-  public Object getViewValue() {
-    // not used, implemented in FxTableCell
-    return null;
-  }
-
-  @Override
-  protected void updateView(Object value) {
-    // not used, implemented in FxTableCell
-  }
-
   @Override
   public void setBoundRootObject(S rowObject) {
     this.rowObject = rowObject;
@@ -239,6 +179,67 @@ public class DefaultFxTableBinding<S,T> extends AbstractBinding implements FxTab
   @Override
   public TableColumnConfiguration<S, T> getConfiguration() {
     return columnConfiguration;
+  }
+
+  @Override
+  public Object getViewValue() {
+    // not used, implemented in FxTableCell
+    return null;
+  }
+
+
+  /**
+   * Applies the model's type to the column configuration.
+   */
+  @SuppressWarnings("unchecked")
+  protected void applyType() {
+    columnConfiguration.setGenericType(getMember().getGenericType());
+    columnConfiguration.setType((Class<T>) getMember().getType());
+  }
+
+  @Override
+  protected Class<?> getViewType() {
+    return columnConfiguration.getType();
+  }
+
+  @Override
+  protected void determineValidators() {
+
+    super.determineValidators();
+
+    List<Validator> validators = getValidators();
+    if (validators != null) {
+      // determine mandatory/changeable fixed and dynamic validators
+      for (Validator validator: validators) {
+        if (validator instanceof MandatoryBindingEvaluator) {
+          if (mandatoryValidators == null) {
+            mandatoryValidators = new ArrayList<>();
+          }
+          mandatoryValidators.add(validator);
+        }
+        if (validator instanceof ChangeableBindingEvaluator) {
+          if (changeableValidators == null) {
+            changeableValidators = new ArrayList<>();
+          }
+          changeableValidators.add(validator);
+        }
+      }
+    }
+  }
+
+  @Override
+  protected boolean isValidationRequired() {
+    return true;    // always true
+  }
+
+  @Override
+  protected String viewComponentToString() {
+    return getMember() + ":" + columnConfiguration.getName();
+  }
+
+  @Override
+  protected void updateView(Object value) {
+    // not used, implemented in FxTableCell
   }
 
 }

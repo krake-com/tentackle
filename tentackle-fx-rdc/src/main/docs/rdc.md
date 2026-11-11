@@ -57,8 +57,8 @@ tentackle-fx-rdc   ── knows PDOs *and* JavaFX ──────────
         ├── org.tentackle.fx     (controls, controllers,   │  the only module
         │                         binding, tables)         │  that bridges the
         └── org.tentackle.pdo    (persistent domain        │  UI and the
-                                  objects, sessions, DDD)   │  persistence world
-                                                            ┘
+                                  objects, sessions, DDD)  │  persistence world
+                                                           ┘
 ```
 
 The companion modules build on top of it:
@@ -196,26 +196,26 @@ view is searchable out of the box.
 `Consumer<PdoCrud<T>>` resp. `Consumer<PdoSearch<T>>` invoked before the stage is shown. Together with
 the hooks of the editor and finder, this is how a dialog is adapted to its use case:
 
-| Where         | Method                                                   | Effect                                                                                                         |
-|---------------|----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
-| `PdoCrud`     | `setPdoList(list)`                                       | Walk through a list of PDOs with the *previous*/*next* buttons, e.g. the result of a search. Also hides *new*, *delete* and *find*, as a modal CRUD does. |
-|               | `addPdoEventHandler(type, handler)` / `addPdoEventFilter(...)` | React on the [events](#events) of this dialog.                                                          |
-|               | `releasePdo(released)`                                   | Ask the user to save, discard or cancel pending changes, and release the token lock.                           |
-| `PdoSearch`   | `setSingleSelectMode(true)`                              | Select exactly one PDO, usually in a modal dialog.                                                             |
-|               | `setCreatePdoAllowed(boolean)`                           | Show or hide the *new* button.                                                                                  |
-|               | `setDoubleClickHandler(consumer)`                        | Replace the default action of a double-click in a non-modal dialog (opening the editor).                        |
-|               | `setFinderVisible(boolean)`                              | Hide the search criteria, e.g. to display a given result with `setItems(list)`. Invoke it after `setPdo`.       |
-|               | `setNoDataMessage(text)`                                 | The message shown if nothing was found.                                                                         |
-|               | `showTree()` / `showTable()`                             | Toggle between the result table and a tree of the found PDOs.                                                   |
-|               | `filterResult()`                                         | Narrow the displayed result by the text of the dialog's filter field, matched against the PDOs' normtext; a leading `!` or `-` inverts the filter. |
-| `PdoFinder`   | `setSearchRunningImmediately(true)`                      | Search as soon as the dialog opens.                                                                             |
-|               | `setSearchRunningInBackground(true)`                     | Run the query off the FX thread, for queries that may take a while.                                              |
-|               | `setTreeShowingInitially(true)` / `setScrollingToEnd(true)` | Initial presentation of the result.                                                                          |
-|               | `createTotals(items)` / `createTotalsTableView()`        | A totals row below the result table, by default summing up all numeric columns.                                |
-| `PdoEditor`   | `isNewAllowed()` / `isRemoveAllowed()`                   | Enable the *new* and *delete* buttons; by default `isEditAllowed()`, for *delete* also the PDO's `isRemovable()`. |
-|               | `validateForm()`                                         | Checks beyond the model's validation, invoked within the save transaction before the PDO is persisted.         |
-|               | `getValidationMappers()` / `getValidationPath()`         | Map validation results from the server to the editor's controls.                                               |
-|               | `requestInitialFocus()`                                  | Put the focus on the first field when the dialog opens.                                                         |
+| Where       | Method                                                         | Effect                                                                                                                                                    |
+|-------------|----------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `PdoCrud`   | `setPdoList(list)`                                             | Walk through a list of PDOs with the *previous*/*next* buttons, e.g. the result of a search. Also hides *new*, *delete* and *find*, as a modal CRUD does. |
+|             | `addPdoEventHandler(type, handler)` / `addPdoEventFilter(...)` | React on the [events](#events) of this dialog.                                                                                                            |
+|             | `releasePdo(released)`                                         | Ask the user to save, discard or cancel pending changes, and release the token lock.                                                                      |
+| `PdoSearch` | `setSingleSelectMode(true)`                                    | Select exactly one PDO, usually in a modal dialog.                                                                                                        |
+|             | `setCreatePdoAllowed(boolean)`                                 | Show or hide the *new* button.                                                                                                                            |
+|             | `setDoubleClickHandler(consumer)`                              | Replace the default action of a double-click in a non-modal dialog (opening the editor).                                                                  |
+|             | `setFinderVisible(boolean)`                                    | Hide the search criteria, e.g. to display a given result with `setItems(list)`. Invoke it after `setPdo`.                                                 |
+|             | `setNoDataMessage(text)`                                       | The message shown if nothing was found.                                                                                                                   |
+|             | `showTree()` / `showTable()`                                   | Toggle between the result table and a tree of the found PDOs.                                                                                             |
+|             | `filterResult()`                                               | Narrow the displayed result by the text of the dialog's filter field, matched against the PDOs' normtext; a leading `!` or `-` inverts the filter.        |
+| `PdoFinder` | `setSearchRunningImmediately(true)`                            | Search as soon as the dialog opens.                                                                                                                       |
+|             | `setSearchRunningInBackground(true)`                           | Run the query off the FX thread, for queries that may take a while.                                                                                       |
+|             | `setTreeShowingInitially(true)` / `setScrollingToEnd(true)`    | Initial presentation of the result.                                                                                                                       |
+|             | `createTotals(items)` / `createTotalsTableView()`              | A totals row below the result table, by default summing up all numeric columns.                                                                           |
+| `PdoEditor` | `isNewAllowed()` / `isRemoveAllowed()`                         | Enable the *new* and *delete* buttons; by default `isEditAllowed()`, for *delete* also the PDO's `isRemovable()`.                                         |
+|             | `validateForm()`                                               | Checks beyond the model's validation, invoked within the save transaction before the PDO is persisted.                                                    |
+|             | `getValidationMappers()` / `getValidationPath()`               | Map validation results from the server to the editor's controls.                                                                                          |
+|             | `requestInitialFocus()`                                        | Put the focus on the first field when the dialog opens.                                                                                                   |
 
 Opening an existing PDO in a `PdoCrud` for editing requests its [token lock](../../../../tentackle-persistence/src/main/docs/locking.md),
 if the entity provides one. If another user holds it, the editor switches to view-only and says so. The
@@ -382,12 +382,12 @@ without touching the framework:
   for a particular entity. Invisible items are left out.
 - The built-in items live in the `contextmenu` package:
 
-  | Item                                                                      | Ordinal | Tree | Table | Action                                            |
-  |---------------------------------------------------------------------------|---------|------|-------|---------------------------------------------------|
-  | [`ExpandItem`](../java/org/tentackle/fx/rdc/contextmenu/ExpandItem.java)     | 100     | ✓    |       | Expand the node and all its children.             |
-  | [`CollapseItem`](../java/org/tentackle/fx/rdc/contextmenu/CollapseItem.java) | 110     | ✓    |       | Collapse the node and all its children.           |
-  | [`ViewItem`](../java/org/tentackle/fx/rdc/contextmenu/ViewItem.java)         | 140     | ✓    | ✓     | Open the PDO in a non-modal, read-only CRUD dialog. |
-  | [`EditItem`](../java/org/tentackle/fx/rdc/contextmenu/EditItem.java)         | 150     | ✓    |       | Edit the PDO in a modal CRUD dialog.              |
+  | Item                                                                         | Ordinal | Tree | Table | Action                                              |
+  |------------------------------------------------------------------------------|---------|------|-------|-----------------------------------------------------|
+  | [`ExpandItem`](../java/org/tentackle/fx/rdc/contextmenu/ExpandItem.java)     | 100     | ✓   |       | Expand the node and all its children.               |
+  | [`CollapseItem`](../java/org/tentackle/fx/rdc/contextmenu/CollapseItem.java) | 110     | ✓   |       | Collapse the node and all its children.             |
+  | [`ViewItem`](../java/org/tentackle/fx/rdc/contextmenu/ViewItem.java)         | 140     | ✓   | ✓    | Open the PDO in a non-modal, read-only CRUD dialog. |
+  | [`EditItem`](../java/org/tentackle/fx/rdc/contextmenu/EditItem.java)         | 150     | ✓   |       | Edit the PDO in a modal CRUD dialog.                |
 
   *View* and *edit* are disabled unless the `GuiProvider` allows viewing or editing. There are no
   built-in items for tree tables.

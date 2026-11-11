@@ -17,6 +17,6 @@
  */
 
 /**
- * Predefined component providers.
+ * Predefined {@link org.tentackle.trip.TripComponentProvider}s.
  */
 package org.tentackle.trip.provider;

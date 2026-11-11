@@ -31,12 +31,14 @@ public class ScriptRunnerException extends BackendException {
   @Serial
   private static final long serialVersionUID = 1L;
 
+  // not final: deserialized by TRIP, see JEP-500 (tentackle-sql cannot use @CanonicalConstructor)
+
   /** the SQL code that failed. */
-  private final String sql;
+  private String sql;
 
   /** the successful results collected so far. */
   @SuppressWarnings("serial")
-  private final List<ScriptRunnerResult> results;
+  private List<ScriptRunnerResult> results;
 
   /**
    * Creates a new ScriptRunnerException.
@@ -54,7 +56,7 @@ public class ScriptRunnerException extends BackendException {
 
   /**
    * Constructor used by TRIP deserialization.<br>
-   * The SQL code and the results are not transferred and remain null.
+   * TRIP sets the SQL code and the results afterward.
    *
    * @param message the detail message
    * @param cause the cause

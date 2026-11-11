@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Website: https://tentackle.org/
 - Artifacts: [Maven Central](https://central.sonatype.com/namespace/org.tentackle)
-- License: LGPL 2.1
+- License: LGPL 2.1 or later
 - Developer: Krake Softwaretechnik (https://krake.de/)
 
 ## Documentation
@@ -71,7 +71,7 @@ mvn -pl :tentackle-core -am clean install
 mvn -Ppostgres test
 ```
 
-**Requirements:** Java JDK >= 25, Maven >= 3.9.10 (Maven 3 and Maven 4 are both supported).
+**Requirements:** Java JDK >= 27, Maven >= 3.9.10 (Maven 3 and Maven 4 are both supported).
 (Older LTS lines live on the `java21`, `java17`, `java11` and `java8` branches.)
 
 The build needs **no database**: the tests run against H2 (see [Testing](#testing)).
@@ -178,7 +178,8 @@ FXML, CSS, and `.properties` files are co-located with their Controller classes 
     children it spawns.
 - **PostgreSQL is opt-in** via `mvn -Ppostgres test`, which adds the `postgres` TestNG group.
   It holds `PostgresScriptRunnerTest` in `tentackle-test-pdo` (cancelling a statement needs a
-  server that can sleep) and `PostgresObjectIdSavepointTest` in `tentackle-database` (PostgreSQL
+  server that can sleep), `RemotePostgresExceptionTest` in `tentackle-test-pdo` (a real driver
+  exception crosses TRIP as a plain `SQLException`) and `PostgresObjectIdSavepointTest` in `tentackle-database` (PostgreSQL
   releases row locks on a rollback to a savepoint). That run needs a `tentackle` database created from the generated DDL beforehand; its
   credentials come from the `dbUrl`/`dbUser`/`dbPasswd` properties, filtered into the test
   modules' `postgres.properties`.

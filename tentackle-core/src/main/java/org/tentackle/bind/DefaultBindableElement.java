@@ -22,6 +22,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -220,7 +221,8 @@ public class DefaultBindableElement implements BindableElement {
       else if (from != null) {
         updatedParent = from.invoke(parent, value);
       }
-      else if (field != null) {
+      else if (field != null && !Modifier.isFinal(field.getModifiers())) {
+        // final fields are read-only: never mutate them reflectively (JEP-500)
         try {
           field.set(parent, value);
         }
@@ -239,7 +241,7 @@ public class DefaultBindableElement implements BindableElement {
 
   @Override
   public boolean isReadOnly() {
-    return field == null && setter == null && from == null;
+    return (field == null || Modifier.isFinal(field.getModifiers())) && setter == null && from == null;
   }
 
   @Override

@@ -40,8 +40,8 @@ import static org.testng.Assert.expectThrows;
  * asks for an update and downloads the offered ZIP from the (separate) HTTP endpoint.
  * <p>
  * A TRIP transport is either accepting or connecting, never both, and the
- * {@link TransportManager} keys transports by scheme, host, port <em>and query</em>. Adding a
- * query parameter to the client's URL therefore yields a second, client-side transport talking
+ * {@link TransportManager} keys transports by scheme, host and port. Addressing the server by
+ * {@code 127.0.0.1} instead of {@code localhost} therefore yields a second, client-side transport talking
  * to the server over a real socket - the same setup as two separate JVMs, only closer.
  */
 @SuppressWarnings({ "exports", "missing-explicit-ctor" })
@@ -76,7 +76,7 @@ public class UpdateServiceRemoteTest {
 
     int port = UpdateTestSupport.freeTcpPort();
     serviceUrl = "trip://localhost:" + port + "/Update";
-    clientServiceUrl = serviceUrl + "?idle=1";
+    clientServiceUrl = "trip://127.0.0.1:" + port + "/Update";
 
     ServerUpdateUtilities.getInstance().startUpdateService(
       serviceUrl, downloadServer.getBaseUrl() + BASE_PATH, TestUpdateServiceImpl.class);
@@ -144,9 +144,10 @@ public class UpdateServiceRemoteTest {
 
   @Test
   public void reportsAnUnknownServiceName() {
-    expectThrows(TripRuntimeException.class,
+    TripRuntimeException ex = expectThrows(TripRuntimeException.class,
                  () -> ClientUpdateUtilities.getInstance().getUpdateService(
-                   serviceUrl.replace("/Update", "/NoSuchService") + "?idle=1"));
+                   clientServiceUrl.replace("/Update", "/NoSuchService")));
+    assertTrue(ex.getMessage().contains("remote object not found"), ex.getMessage());
   }
 
 }

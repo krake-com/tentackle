@@ -33,11 +33,11 @@ module descriptor.
 
 ## Package Layout
 
-| Package                    | Role                                                                                                                                                          |
-|----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `org.tentackle.pdo.testng` | TestNG base classes: `AbstractPdoTest` and `TestApplication`. The **default** framework (the module's own tests run under TestNG via `src/test/testng.xml`).  |
-| `org.tentackle.pdo.junit`  | JUnit 5 equivalents of the same two base classes, for projects that prefer Jupiter.                                                                           |
-| `org.tentackle.pdo.test`   | `DbTestUtilities` — low-level helpers that build and run the database-population SQL script from the model. Shared by both the TestNG and JUnit base classes. |
+| Package                    | Role                                                                                                                                                                                                                                                           |
+|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `org.tentackle.pdo.testng` | TestNG base classes: `AbstractPdoTest` and `TestApplication`. The **default** framework (the module's own tests run under TestNG via `src/test/testng.xml`).                                                                                                   |
+| `org.tentackle.pdo.junit`  | JUnit 5 equivalents of the same two base classes, for projects that prefer Jupiter.                                                                                                                                                                            |
+| `org.tentackle.pdo.test`   | `DbTestUtilities` — low-level helpers that build and run the database-population SQL script from the model. Shared by both the TestNG and JUnit base classes.                                                                                                  |
 | `org.tentackle.pdo.mock`   | `MockDomainObject`, `MockPersistentObject`, `MockDomainOperation`, `MockPersistentOperation` — no-op delegates for database-less unit tests. Ships in the separate `tentackle-pdo-mock` artifact (see below) and reaches downstream projects through this one. |
 
 ---
@@ -262,16 +262,16 @@ the framework end-to-end against the in-memory H2 database — including the mul
 lives inside the forked server. They double as worked examples of the base classes above. Coverage spans, among
 others:
 
-| Area                       | Example test(s)                                                                                                                                             |
-|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| PDO factory & proxy wiring | `PdoFactoryTest`, `PdoInvocationTest`, `PdoUtilitiesTest`, `IllegalModelNamesTest`                                                                          |
-| Snapshots                  | `SnapshotTest` (see [snapshot.md](../../../../tentackle-pdo/src/main/docs/snapshot.md))                                                                     |
-| TRIP serialization         | `PdoComponentTripFilterTest`                                                                                                                                |
-| Model & build support      | `ModelTest`, `AnalyzeClassNamesTest`                                                                                                                        |
-| Database / DBMS            | `BatchingTest`, `ResultSetTest`, `H2ConnectionTest`, `SqlScriptTest`, `PostgresScriptRunnerTest` (`postgres` group)                                         |
-| Sessions & remoting        | `SessionPoolExecutorTest`, `RemoteTransactionTest`, `RemoteDelegatePreloadTest`, `RemoteAuthenticationTest`, plus the out-of-JVM server in `persist/server` |
-| Security & number sources  | `SecurityTest`, `DefaultSecurityManagerDbTest`, `NumberSourceTest`                                                                                          |
-| Preferences                | `RemotePreferencesTest`                                                                                                                                     |
+| Area                       | Example test(s)                                                                                                                                                                                               |
+|----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| PDO factory & proxy wiring | `PdoFactoryTest`, `PdoInvocationTest`, `PdoUtilitiesTest`, `IllegalModelNamesTest`                                                                                                                            |
+| Snapshots                  | `SnapshotTest` (see [snapshot.md](../../../../tentackle-pdo/src/main/docs/snapshot.md))                                                                                                                       |
+| TRIP serialization         | `PdoComponentTripFilterTest`                                                                                                                                                                                  |
+| Model & build support      | `ModelTest`, `AnalyzeClassNamesTest`                                                                                                                                                                          |
+| Database / DBMS            | `BatchingTest`, `ResultSetTest`, `H2ConnectionTest`, `SqlScriptTest`, `PostgresScriptRunnerTest` (`postgres` group)                                                                                           |
+| Sessions & remoting        | `SessionPoolExecutorTest`, `RemoteTransactionTest`, `RemoteDelegatePreloadTest`, `RemoteAuthenticationTest`, `RemotePostgresExceptionTest` (`postgres` group), plus the out-of-JVM server in `persist/server` |
+| Security & number sources  | `SecurityTest`, `DefaultSecurityManagerDbTest`, `NumberSourceTest`                                                                                                                                            |
+| Preferences                | `RemotePreferencesTest`                                                                                                                                                                                       |
 
 The `pdofactory` test package (`Invoice`/`SingleInvoice`/`CollectiveInvoice` with handwritten domain and
 persistence impls, an `Operation` and a `LogIt` interceptor) is a self-contained miniature PDO model used to test
@@ -303,11 +303,18 @@ build the schema themselves in `login()` via `InMemoryServerSchema` (before `con
 modification tracker, which expects the tables) — the counterpart of what
 `AbstractPdoTest` does for the test JVM.
 
-`postgres.properties` (filtered from `dbUrl`/`dbUser`/`dbPasswd`) points at a real PostgreSQL server. Only
-`PostgresScriptRunnerTest` uses it: cancelling a running script needs a statement that blocks (`PG_SLEEP`) and
-asserts PostgreSQL's own abort message, and it is the only coverage of `PostgresScriptRunner`. It belongs to the
-`postgres` group, which `testng.xml` excludes; run it with `mvn -Ppostgres test`, which switches the suite to
-`testng-postgres.xml`.
+`postgres.properties` (filtered from `dbUrl`/`dbUser`/`dbPasswd`) points at a real PostgreSQL server. Two tests
+use it:
+
+- `PostgresScriptRunnerTest`: cancelling a running script needs a statement that blocks (`PG_SLEEP`) and asserts
+  PostgreSQL's own abort message, and it is the only coverage of `PostgresScriptRunner`.
+- `RemotePostgresExceptionTest`: starts the out-of-process `TestServer` on PostgreSQL (`--backend=postgres`),
+  provokes a real unique constraint violation from a remote client and verifies that the driver's
+  `PSQLException` arrives at the client as a plain `java.sql.SQLException`, because a client usually doesn't
+  have the JDBC driver on its classpath.
+
+Both belong to the `postgres` group, which `testng.xml` excludes; run them with `mvn -Ppostgres test`, which
+switches the suite to `testng-postgres.xml`.
 
 Logging is routed to `target/logs/test.log` via
 [`tentackle-log-log4j2v`](../../../../tentackle-log-log4j2v/src/main/docs/tentackle-log-log4j2v.md) because the

@@ -77,23 +77,27 @@ Transport serverTransport = TransportManager.getInstance().requestTransport(
 serverTransport.accept();
 ```
 
-`TransportManager` is a singleton that deduplicates transports: calling `requestTransport(URI)` with the same scheme, host, port and query string returns the same `Transport` instance. Transports are reference-counted via a lease pattern — they close automatically when the last lease is released.
+`TransportManager` is a singleton that deduplicates transports: calling `requestTransport(URI)` with the same scheme, host and port 
+returns the same `Transport` instance. The query parameters configure the transport and are not part of its identity: 
+there is only one transport per endpoint, so requesting it again with different query parameters (their order doesn't matter) 
+fails with a `TripRuntimeException`. Transports are reference-counted via a lease pattern — 
+they close automatically when the last lease is released.
 The server uses virtual threads to handle multiple connections concurrently.
 
 **Built-in transports:**
 
-| Scheme   | Description                                                                    |
-|----------|--------------------------------------------------------------------------------|
-| `trip`   | Plain TCP sockets                                                              |
-| `trips`  | TCP with SSL/TLS encryption                                                    |
-| `tripe`  | TCP with pre-shared key (PSK) encryption                                       |
-| `tripc`  | TCP with deflate compression                                                   |
-| `tripcs` | TCP with both SSL and compression                                              |
-| `tripce` | TCP with both PSK and compression                                              |
-| `tripq`  | UDP QUIC protocol (provided by `tentackle-quic` module)                        |
-| `tripcq` | UDP QUIC protocol with compression                                             |
-| `tripj`  | UDP QUIC protocol on Cloudflare quiche (provided by `tentackle-quiche` module) |
-| `tripcj` | UDP QUIC protocol on Cloudflare quiche, with compression                       |
+| Scheme     | Description                                                                                                                               |
+|------------|-------------------------------------------------------------------------------------------------------------------------------------------|
+| `trip`     | Plain TCP sockets                                                                                                                         |
+| `trips`    | TCP with SSL/TLS encryption                                                                                                               |
+| `tripe`    | TCP with pre-shared key (PSK) encryption                                                                                                  |
+| `tripc`    | TCP with deflate compression                                                                                                              |
+| `tripcs`   | TCP with both SSL and compression                                                                                                         |
+| `tripce`   | TCP with both PSK and compression                                                                                                         |
+| `tripq`    | UDP QUIC protocol (provided by `tentackle-quic` module)                                                                                   |
+| `tripcq`   | UDP QUIC protocol with compression                                                                                                        |
+| `tripj`    | UDP QUIC protocol on Cloudflare quiche (provided by `tentackle-quiche` module)                                                            |
+| `tripcj`   | UDP QUIC protocol on Cloudflare quiche, with compression                                                                                  |
 | `loopback` | In-memory transport for tests: no socket, accepts a single connection, but runs the server side in separate threads like a real transport |
 
 The compressing and PSK-encrypting variants are built from the packet-framed streams in
@@ -142,22 +146,23 @@ value is resolved from up to three sources, in order of precedence:
 3. the standard JSSE **system property** `javax.net.ssl.<name>` as a fallback, so existing
    configurations (e.g. in `backend.properties`) keep working.
 
-| Query key    | `tentackle.ssl.` suffix  | `javax.net.ssl.` fallback | Side   | Description                                                                                 |
-|--------------|--------------------------|---------------------------|--------|---------------------------------------------------------------------------------------------|
-| `ksfile`     | `keyStore`               | `keyStore`                | both   | keystore holding the own certificate(s); a client sets it to present a client cert          |
-| `kspass`     | `keyStorePassword`       | `keyStorePassword`        | both   | keystore password                                                                           |
-| `kstype`     | `keyStoreType`           | `keyStoreType`            | both   | keystore type (default: JDK default, usually `PKCS12`)                                      |
-| `ksalias`    | `keyStoreAlias`          | —                         | both   | **alias of the certificate to present** (optional if the keystore holds a single key entry) |
-| `kmpass`     | `keyPassword`            | `keyPassword`             | both   | private key password (default: keystore password)                                           |
-| `tsfile`     | `trustStore`             | `trustStore`              | both   | truststore verifying the peer (default: JSSE default trust store)                           |
-| `tspass`     | `trustStorePassword`     | `trustStorePassword`      | both   | truststore password                                                                         |
-| `tstype`     | `trustStoreType`         | `trustStoreType`          | both   | truststore type                                                                             |
-| `protocol`   | `protocol`               | —                         | both   | `SSLContext` protocol (default `TLS`)                                                       |
-| `protocols`  | `protocols`              | —                         | both   | comma-separated enabled protocols, e.g. `TLSv1.3,TLSv1.2`                                   |
-| `ciphers`    | `cipherSuites`           | —                         | both   | comma-separated enabled cipher suites                                                       |
-| `clientauth` | `clientAuth`             | —                         | server | client-certificate policy: `none` (default), `want` or `need`                               |
-| `endpointid` | `endpointIdentification` | —                         | client | endpoint identification algorithm (default `HTTPS`)                                         |
-| `hostcheck`  | `hostCheck`              | —                         | client | verify the server's host name against its certificate (default `true`)                      |
+| Query key     | `tentackle.ssl.` suffix  | `javax.net.ssl.` fallback | Side   | Description                                                                                 |
+|---------------|--------------------------|---------------------------|--------|---------------------------------------------------------------------------------------------|
+| `ksfile`      | `keyStore`               | `keyStore`                | both   | keystore holding the own certificate(s); a client sets it to present a client cert          |
+| `kspass`      | `keyStorePassword`       | `keyStorePassword`        | both   | keystore password                                                                           |
+| `kstype`      | `keyStoreType`           | `keyStoreType`            | both   | keystore type (default: JDK default, usually `PKCS12`)                                      |
+| `ksalias`     | `keyStoreAlias`          | —                         | both   | **alias of the certificate to present** (optional if the keystore holds a single key entry) |
+| `kmpass`      | `keyPassword`            | `keyPassword`             | both   | private key password (default: keystore password)                                           |
+| `tsfile`      | `trustStore`             | `trustStore`              | both   | truststore verifying the peer (default: JSSE default trust store)                           |
+| `tspass`      | `trustStorePassword`     | `trustStorePassword`      | both   | truststore password                                                                         |
+| `tstype`      | `trustStoreType`         | `trustStoreType`          | both   | truststore type                                                                             |
+| `protocol`    | `protocol`               | —                         | both   | `SSLContext` protocol (default `TLS`)                                                       |
+| `protocols`   | `protocols`              | —                         | both   | comma-separated enabled protocols, e.g. `TLSv1.3,TLSv1.2`                                   |
+| `ciphers`     | `cipherSuites`           | —                         | both   | comma-separated enabled cipher suites                                                       |
+| `namedgroups` | `namedGroups`            | —                         | both   | comma-separated enabled key-exchange groups in preference order, e.g. `X25519MLKEM768`      |
+| `clientauth`  | `clientAuth`             | —                         | server | client-certificate policy: `none` (default), `want` or `need`                               |
+| `endpointid`  | `endpointIdentification` | —                         | client | endpoint identification algorithm (default `HTTPS`)                                         |
+| `hostcheck`   | `hostCheck`              | —                         | client | verify the server's host name against its certificate (default `true`)                      |
 
 The client verifies the server's certificate against the host name of the URI by default, just like
 the QUIC transports `tripq` and `tripj` do. A client connecting by an address the certificate is not
@@ -174,6 +179,34 @@ trips://0.0.0.0:18000/myapp?ksfile=server.p12&kspass=secret&ksalias=server&tsfil
 
 Client certificates are supported symmetrically: a client presents one by providing `ksfile`
 (and, to pick a specific one, `ksalias`).
+
+#### Post-quantum key exchange
+
+Since Java 27 ([JEP 527](https://openjdk.org/jeps/527)), TLS 1.3 negotiates the hybrid post-quantum
+key exchange `X25519MLKEM768` automatically when both ends support it. This protects recorded TRIP
+traffic against "harvest now, decrypt later" attacks. Nothing has to be configured for that.
+
+However, the JDK silently falls back to a classical group (`x25519`, `secp256r1`, …) when the peer
+does not support it — a client or server on an older JDK, for example. A site that must not accept
+such a downgrade restricts the enabled groups with `namedgroups`:
+
+```
+trips://0.0.0.0:18000/myapp?ksfile=server.p12&kspass=secret&namedgroups=X25519MLKEM768
+```
+
+A peer without post-quantum support then fails the handshake ("No common named group") instead of
+quietly negotiating a classical key exchange. The option can be set on either side, or on both, and
+applies via `SSLParameters#setNamedGroups`. If it is not set, the JDK default applies, which in turn
+can be changed JVM-wide by the `jdk.tls.namedGroups` system property. The certificates and signatures
+remain classical, which is fine against "harvest now, decrypt later": only the key exchange must
+withstand a future quantum computer.
+
+The QUIC transports bring their own TLS stacks.
+[`tripq`/`tripcq`](../../../tentackle-quic/src/main/docs/quic.md#post-quantum-key-exchange) use KWIK
+with the post-quantum key exchanges of `agent15-pqc` and honor `namedgroups` on both ends, but the
+client offers only classical groups unless it is set.
+[`tripj`/`tripcj`](../../../tentackle-quiche/src/main/docs/quiche.md#post-quantum-key-exchange) use
+BoringSSL, which offers `X25519MLKEM768` by default, and honor `namedgroups` on both ends.
 
 ### Remote and RemoteDelegate
 
@@ -317,12 +350,12 @@ A `TripComponent<P, T>` (`org.tentackle.trip.TripComponent`) describes one seria
 
 Component implementations:
 
-| Type                     | Implementation                 | Access mechanism                                 |
-|--------------------------|--------------------------------|--------------------------------------------------|
-| Fields                   | `FieldTripComponent`           | `VarHandle` (fast) or `Field.set` (final fields) |
-| Fields of primitive type | `PrimitiveFieldTripComponent`  | `VarHandle`, invoked with a primitive signature  |
-| Getters/setters          | `MethodTripComponent`          | Reflective `Method.invoke`                       |
-| Record components        | `RecordTripComponent`          | `MethodHandle` bound to the accessor             |
+| Type                     | Implementation                | Access mechanism                                                             |
+|--------------------------|-------------------------------|------------------------------------------------------------------------------|
+| Fields                   | `FieldTripComponent`          | `VarHandle` (final fields are refused, see [JEP-500](#final-fields-jep-500)) |
+| Fields of primitive type | `PrimitiveFieldTripComponent` | `VarHandle`, invoked with a primitive signature                              |
+| Getters/setters          | `MethodTripComponent`         | Reflective `Method.invoke`                                                   |
+| Record components        | `RecordTripComponent`         | `MethodHandle` bound to the accessor                                         |
 
 Two further implementations serve internal purposes: `EnumTripComponent` represents a single enum
 constant, and `ClassTripComponent` represents an interface of a dynamic proxy or the component
@@ -556,6 +589,44 @@ their backing collection or type token — copy them into a regular collection b
 - `Collections.checked*`,
 - `Map.entry` (`java.util.KeyValueHolder`) and `BitSet`, which are neither collections nor maps.
 
+### JDK exceptions
+
+The JDK does not open its packages, so TRIP cannot access the private fields and non-public
+constructors of the JDK's exceptions — and many of those fields are final anyway (see
+[Final fields](#final-fields-jep-500)). The
+[`ThrowableComponentProvider`](../java/org/tentackle/trip/provider/ThrowableComponentProvider.java)
+therefore never reads a field declared in a `java.*` class directly (except a public non-final one, such as
+`InterruptedIOException.bytesTransferred`): the message, cause and stack trace go through their accessors, and
+any other field through its public getter of the same name, if there is one. Such a getter-only value cannot be
+written back; it is meant for an instance creator that passes it to the constructor.
+
+**Arrive with message, cause and stack trace** — any exception that has a usable constructor taking the
+message and/or the cause. The cause parameter may be of any type the cause is an instance of, such as
+`UncheckedIOException(String, IOException)`, and constructors that are not accessible, such as the protected
+`ExecutionException(String)`, are skipped.
+
+**Arrive with all their values** — created by a predefined instance creator from the getter values
+(see [`AbstractThrowableInstanceCreator`](../java/org/tentackle/trip/creators/AbstractThrowableInstanceCreator.java)):
+
+- `InvocationTargetException` (with its target),
+- `FileSystemException` and its subclasses, such as `NoSuchFileException` and `AccessDeniedException`,
+- `DateTimeParseException`, `ParseException`,
+- `URISyntaxException`, `PatternSyntaxException`, `InvalidPathException`,
+- `MissingResourceException`,
+- with tentackle-database: `SQLException` and its subclasses, including the next exception, the update
+  counts of a `BatchUpdateException`, the values of a `DataTruncation` and the failed properties of an
+  `SQLClientInfoException`. A driver-specific exception, such as PostgreSQL's `PSQLException`, is sent as its
+  nearest superclass provided by the JDK, since the client usually doesn't have the JDBC driver on its classpath.
+
+**Arrive as `TripInstantiationException`** — an exception without any usable constructor. It carries the original
+message, cause and stack trace, and names the original class. The type is never refused, so a non-transferable
+exception, even as the cause of another one, no longer breaks the response. Provide an instance creator
+(extending `AbstractThrowableInstanceCreator`) and, for values without a getter of the same name, a component
+provider (extending `ThrowableComponentProvider` and overriding `getAdditionalGetterNames`) to transfer such an
+exception completely.
+
+Suppressed exceptions are not transferred.
+
 ### Annotation-driven customization
 
 TRIP's annotations let you tweak serialization behavior without writing custom `TripType` code.
@@ -705,27 +776,21 @@ It can create a bare instance, and — by overriding `isCreationFromValuesSuppor
 — build the object from the already-deserialized component values:
 
 ```java
-@TripInstanceCreatorService(SQLException.class)
-public class SQLExceptionInstanceCreator implements TripInstanceCreator<SQLException> {
+@TripInstanceCreatorService(ParseException.class)
+public class ParseExceptionInstanceCreator<T extends ParseException>
+       extends AbstractThrowableInstanceCreator<T> {
 
   @Override
-  public SQLException create(Class<SQLException> clazz) {
-    return new SQLException();
-  }
-
-  @Override
-  public SQLException create(Class<SQLException> clazz,
-                             Map<TripComponent<SQLException, ?>, Object> values) {
-    // map "message", "errorCode", "sQLState", "nextException", "stackTrace" → constructor
-    ...
-  }
-
-  @Override
-  public boolean isCreationFromValuesSupported(Class<SQLException> clazz) {
-    return true;
+  protected T create(Class<T> clazz, Values values) throws ReflectiveOperationException {
+    // the values of the getters by component name → public constructor of the actual class
+    return newInstance(clazz, new Class<?>[] { String.class, int.class },
+                       values.get("message"), values.getInt("errorOffset", 0));
   }
 }
 ```
+
+`AbstractThrowableInstanceCreator` returns `true` for `isCreationFromValuesSupported`, initializes the cause
+and applies the stack trace. See [JDK exceptions](#jdk-exceptions).
 
 #### `@TripComponentProvider`
 
@@ -901,6 +966,30 @@ These defenses address the *broken invariants* risk for classes you control. The
 the *gadget class* risk, because an attacker chooses the class — which is where the allowlist
 comes in.
 
+### Final fields (JEP-500)
+
+TRIP never writes a final field. A final field can only be written reflectively, and
+[JEP-500](https://openjdk.org/jeps/500) deprecates that: Java 26 and later warn about it, and a
+future release will deny it. So when a class is created through its no-arg constructor (or a
+`TripInstanceCreator` that does not create from values), deserializing one of its final fields fails
+with a `TripRuntimeException` that names the field. The same applies to the final fields of a
+`@CanonicalConstructor` class that are not passed to the constructor, and to the final fields of an
+exception that has no canonical constructor.
+
+The remedies, in order of preference:
+
+- pass the value to a [`@CanonicalConstructor`](reflect.md#canonical-construction) or `@CanonicalBuilder`,
+  or turn the class into a record;
+- make the field `transient` (or annotate it with `@TripIgnore`) if it is derived or local state;
+- create the instance from the values with a [`@TripInstanceCreator`](#tripinstancecreator) whose
+  `isCreationFromValuesSupported` returns `true`;
+- drop the `final` modifier if neither is possible, for example, when components back-reference the
+  object (see [delayed construction](reflect.md#delayed-construction-and-back-references)).
+
+As a migration aid, `-Dtentackle.trip.mutateFinalFields=true` (or
+`FieldTripComponent.setFinalFieldMutationEnabled(true)`) restores the reflective write. The JVM
+then also needs `--enable-final-field-mutation=org.tentackle.core` to suppress the JEP-500 warnings.
+
 ### Allowlisting: `DisallowedTripType`
 
 The gadget risk is eliminated globally by restricting **which classes may be deserialized at
@@ -986,11 +1075,11 @@ The `Transport` interface defines the core contract:
 
 Three base classes handle different levels of boilerplate:
 
-| Class                                        | What it provides                                                     | Best for                                        |
-|----------------------------------------------|----------------------------------------------------------------------|-------------------------------------------------|
-| `AbstractTransport`                          | UUID generation, thread pools, dictionary management, lease tracking | New protocol from scratch (e.g., QUIC)          |
-| `TcpTransport`                               | Socket-based client connections and server listening                 | Adding a layer on top of TCP (SSL, compression) |
-| `SslTransport` / `EncryptedTransport` / `CompressedTransport` | Subclasses of `TcpTransport`                        | Adding SSL, PSK encryption or compression to TCP |
+| Class                                                         | What it provides                                                     | Best for                                         |
+|---------------------------------------------------------------|----------------------------------------------------------------------|--------------------------------------------------|
+| `AbstractTransport`                                           | UUID generation, thread pools, dictionary management, lease tracking | New protocol from scratch (e.g., QUIC)           |
+| `TcpTransport`                                                | Socket-based client connections and server listening                 | Adding a layer on top of TCP (SSL, compression)  |
+| `SslTransport` / `EncryptedTransport` / `CompressedTransport` | Subclasses of `TcpTransport`                                         | Adding SSL, PSK encryption or compression to TCP |
 
 The only abstract method in `AbstractTransport` is:
 

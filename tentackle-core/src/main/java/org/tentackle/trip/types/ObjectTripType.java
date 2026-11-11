@@ -544,7 +544,7 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
           canonicalArgs[canonicalIndex] = componentValue;
           if (!canonicalArgsAssigned[canonicalIndex]) {
             // count each argument once: a repeated ordinal must not create the object early,
-            // i.e. with arguments that were not read from the stream yet
+            // i.e., with arguments that were not read from the stream yet
             canonicalArgsAssigned[canonicalIndex] = true;
             if (--canonicalArgsMissing == 0) {
               // we got all canonical fields -> create the object
@@ -558,7 +558,7 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
     }
 
     if (value == null && canonicalConstructor != null && canonicalBuilderInfo == null && componentValues == null) {
-      // Not all canonical components arrived, for example because the sender's version of the class
+      // Not all canonical components arrived, for example, because the sender's version of the class
       // does not provide them (anymore). Create the object from what we got instead of returning
       // null: the missing arguments keep their default value, just like the components of a class
       // created by its no-args constructor would.
@@ -680,7 +680,7 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
             }
             if (members[i] == null) {
               try {
-                members[i] = clazz.getDeclaredField(canonicalNames[i]);
+                members[i] = getDeclaredField(clazz, canonicalNames[i]);
               }
               catch (NoSuchFieldException e) {
                 // try to find a matching getter
@@ -717,6 +717,26 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
       }
     }
     return canonicalMembers;
+  }
+
+  /**
+   * Finds a declared field in the given class or one of its superclasses.
+   *
+   * @param clazz the class
+   * @param name the field name
+   * @return the field
+   * @throws NoSuchFieldException if no such field
+   */
+  protected Field getDeclaredField(Class<?> clazz, String name) throws NoSuchFieldException {
+    for (Class<?> cls = clazz; cls != null && cls != Object.class; cls = cls.getSuperclass()) {
+      try {
+        return cls.getDeclaredField(name);
+      }
+      catch (NoSuchFieldException e) {
+        // try superclass
+      }
+    }
+    throw new NoSuchFieldException(name + " in " + clazz);
   }
 
   /**

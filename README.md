@@ -61,7 +61,7 @@ baked into the source.
 To see it running, the [Quickstart](src/main/docs/quickstart.md) generates and builds
 a complete multi-tier application in minutes.
 
-Tentackle is Open Source (LGPL 2.1), available from
+Tentackle is Open Source (LGPL 2.1 or later), available from
 [Maven Central](https://central.sonatype.com/namespace/org.tentackle), and requires
 Java 25 or later (older LTS lines are maintained on the `java21`, `java17`,
 `java11` and `java8` branches).

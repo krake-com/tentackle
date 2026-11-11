@@ -691,9 +691,7 @@ public class DefaultConnectionManager implements ConnectionManager {
     if (freeDbCount == 0) {
       // no more free Db entries: double the list size
       if (maxDbSize > 0 && dbSize >= maxDbSize) {
-        PersistenceException pex = new PersistenceException(this + ": max. number of sessions exceeded (" + maxDbSize + ")");
-        pex.setTemporary(true);
-        throw pex;
+        throw new PersistenceException(this + ": max. number of sessions exceeded (" + maxDbSize + ")").temporary();
       }
 
       int newSize = dbSize << 1;
@@ -781,9 +779,7 @@ public class DefaultConnectionManager implements ConnectionManager {
    */
   private void growConnectionList(int newSize) {
     if (maxConSize > 0 && conList.length >= maxConSize) {
-      PersistenceException pex = new PersistenceException(this + ": max. number of connections exceeded (" + maxConSize + ")");
-      pex.setTemporary(true);
-      throw pex;
+      throw new PersistenceException(this + ": max. number of connections exceeded (" + maxConSize + ")").temporary();
     }
     if (maxConSize > 0 && newSize > maxConSize) {
       newSize = maxConSize;

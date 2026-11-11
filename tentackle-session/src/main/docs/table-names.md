@@ -29,12 +29,12 @@ source — the annotation shown above is generated.
 The generated DDL is schema-qualified only if the backend supports schemas. `Backend.isSchemaSupported()`
 returns `false` for:
 
-| Backend               | Why                                                                              |
-|-----------------------|----------------------------------------------------------------------------------|
-| **MySQL**, **MariaDB**| `CREATE SCHEMA` is a synonym for `CREATE DATABASE` — a schema is a database of its own, not a namespace inside one. `MariaDb` extends `MySql` and inherits this. |
-| **Oracle**            | A schema *is* a user. Putting `md.` and `td.` into schemas means creating two extra users, with their own grants. See [The Oracle Backend](../../../../tentackle-sql/src/main/docs/oracle.md). |
-| **Informix**          | "there is a `CREATE SCHEMA`, but this is a different beast" (`Informix:190`).     |
-| **Firebird**          | Schemas arrive with Firebird 6 only. See [The Firebird Backend](../../../../tentackle-sql/src/main/docs/firebird.md). |
+| Backend                | Why                                                                                                                                                                                            |
+|------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **MySQL**, **MariaDB** | `CREATE SCHEMA` is a synonym for `CREATE DATABASE` — a schema is a database of its own, not a namespace inside one. `MariaDb` extends `MySql` and inherits this.                               |
+| **Oracle**             | A schema *is* a user. Putting `md.` and `td.` into schemas means creating two extra users, with their own grants. See [The Oracle Backend](../../../../tentackle-sql/src/main/docs/oracle.md). |
+| **Informix**           | "there is a `CREATE SCHEMA`, but this is a different beast" (`Informix:190`).                                                                                                                  |
+| **Firebird**           | Schemas arrive with Firebird 6 only. See [The Firebird Backend](../../../../tentackle-sql/src/main/docs/firebird.md).                                                                          |
 
 PostgreSQL, CockroachDB, H2, SQL Server, DB2 and SAP HANA support schemas, so a model using them needs no mapping there. If your
 application must run on *both* kinds of backend, map the schemas — the flattened names work everywhere.
@@ -70,11 +70,11 @@ Tentackle's own technical tables (`modlog`, `tokenlock`, `prefnode`, `prefkey`, 
 
 `prefix` is prepended to the *whole* name, after the schema has (or has not) been mapped:
 
-| Model         | `prefix="app"`, `mapSchema=false` | `prefix="app"`, `mapSchema=true` |
-|---------------|-----------------------------------|-----------------------------------|
-| `md.user`     | `appmd.user`                      | `appmd_user`                      |
-| `td.message`  | `apptd.message`                   | `apptd_message`                   |
-| `invoice`     | `appinvoice`                      | `appinvoice`                      |
+| Model        | `prefix="app"`, `mapSchema=false` | `prefix="app"`, `mapSchema=true` |
+|--------------|-----------------------------------|----------------------------------|
+| `md.user`    | `appmd.user`                      | `appmd_user`                     |
+| `td.message` | `apptd.message`                   | `apptd_message`                  |
+| `invoice`    | `appinvoice`                      | `appinvoice`                     |
 
 The unmapped column is the interesting one on Oracle: the schema *names* get the prefix, so the main user `app`
 keeps its own name while master data lands in the schema-user `appmd` and transaction data in `apptd`. That
@@ -112,15 +112,15 @@ Two independent pipelines derive a physical table name, and **they must agree**:
   table := md.user     (tentackle-sql-maven-plugin)
 ```
 
-| Knob            | Configured in                                                             | Property                | Affects                        |
-|-----------------|---------------------------------------------------------------------------|-------------------------|--------------------------------|
-| `mapSchema`     | `wurbelizer-maven-plugin` → `<wurbletProperties>`                         | —                       | the runtime name (`@TableName`)|
-| `tablePrefix`   | `wurbelizer-maven-plugin` → `<wurbletProperties>`                         | —                       | the runtime name (`@TableName`)|
-| `mapSchemas`    | [`tentackle-sql-maven-plugin`](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) | `tentackle.mapSchemas`  | the generated DDL and migration|
-| `mapSchemas`    | [`tentackle-wizard-maven-plugin`](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) | `tentackle.mapSchemas`  | the model the wizard browses   |
-| `tentackle.mapSchemas` | `maven-surefire-plugin` → `<argLine>`                              | system property         | `ModelImpl`, for unit tests    |
-| `createSchemas` | `tentackle-sql-maven-plugin`, `create` goal                               | —                       | emits `CREATE SCHEMA`; ignored when `mapSchemas` is set |
-| `schemaNames` / `schemas` | `tentackle-sql-maven-plugin`, backend configuration             | —                       | restricts `migrate` to the listed schemas; ignored when `mapSchemas` is set |
+| Knob                      | Configured in                                                                                                               | Property               | Affects                                                                     |
+|---------------------------|-----------------------------------------------------------------------------------------------------------------------------|------------------------|-----------------------------------------------------------------------------|
+| `mapSchema`               | `wurbelizer-maven-plugin` → `<wurbletProperties>`                                                                           | —                      | the runtime name (`@TableName`)                                             |
+| `tablePrefix`             | `wurbelizer-maven-plugin` → `<wurbletProperties>`                                                                           | —                      | the runtime name (`@TableName`)                                             |
+| `mapSchemas`              | [`tentackle-sql-maven-plugin`](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md)          | `tentackle.mapSchemas` | the generated DDL and migration                                             |
+| `mapSchemas`              | [`tentackle-wizard-maven-plugin`](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) | `tentackle.mapSchemas` | the model the wizard browses                                                |
+| `tentackle.mapSchemas`    | `maven-surefire-plugin` → `<argLine>`                                                                                       | system property        | `ModelImpl`, for unit tests                                                 |
+| `createSchemas`           | `tentackle-sql-maven-plugin`, `create` goal                                                                                 | —                      | emits `CREATE SCHEMA`; ignored when `mapSchemas` is set                     |
+| `schemaNames` / `schemas` | `tentackle-sql-maven-plugin`, backend configuration                                                                         | —                      | restricts `migrate` to the listed schemas; ignored when `mapSchemas` is set |
 
 > **Mind the plural.** The annotation attribute and the wurblet property are `mapSchema` (singular); the model
 > API, the maven parameters and the system property are `mapSchema**s**` (plural). They are the same decision
@@ -210,13 +210,13 @@ No `CREATE SCHEMA` is emitted, and the framework's own tables (`modlog`, `tokenl
 
 ## When the Two Sides Disagree
 
-| Symptom                                                                     | Likely cause                                                                 |
-|-----------------------------------------------------------------------------|------------------------------------------------------------------------------|
-| Runtime fails with *table or view does not exist* / *relation does not exist*| `mapSchema` and `mapSchemas` differ — the application asks for `md.user`, the database has `md_user` (or vice versa) |
-| `tentackle-sql:migrate` wants to create **every** table                      | the same, seen from the DDL side: the model's names do not match anything in the database |
-| Build fails with *schemas are not supported by backend …*                    | `mapSchemas` is not set for a backend that needs it                          |
-| Build fails with *name too long*                                             | the flattened `schema_table` name exceeds the backend's identifier limit      |
-| Unit tests see different tables than the application                         | `-Dtentackle.mapSchemas` missing from the surefire `argLine`                  |
+| Symptom                                                                       | Likely cause                                                                                                         |
+|-------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------|
+| Runtime fails with *table or view does not exist* / *relation does not exist* | `mapSchema` and `mapSchemas` differ — the application asks for `md.user`, the database has `md_user` (or vice versa) |
+| `tentackle-sql:migrate` wants to create **every** table                       | the same, seen from the DDL side: the model's names do not match anything in the database                            |
+| Build fails with *schemas are not supported by backend …*                     | `mapSchemas` is not set for a backend that needs it                                                                  |
+| Build fails with *name too long*                                              | the flattened `schema_table` name exceeds the backend's identifier limit                                             |
+| Unit tests see different tables than the application                          | `-Dtentackle.mapSchemas` missing from the surefire `argLine`                                                         |
 
 Changing the setting on an existing database is a **rename**, not a no-op. The migrator will not guess it — use
 a `rename <tablename>: <newtablename>` migration hint (see the

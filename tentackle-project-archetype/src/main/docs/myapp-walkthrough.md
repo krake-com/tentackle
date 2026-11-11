@@ -168,7 +168,7 @@ me().setMessageType(messageType);
 me().setOrgUnit(owner);
 me().setWhen(new Timestamp());
 me().setMessageNumber(me().nextMessageNumber());   // persistence facet
-return me().persist();                              // write through
+return me().persist();                             // write through
 ```
 
 The implementations are wired to their PDO class by annotations the framework discovers via the service SPI:
@@ -216,7 +216,7 @@ There are two kinds of block, both visible at the top of `OrgUnit.java`:
  */
 
 /*
- * @> $mapping                          <-- a "wurble into file $mapping" block: the actual model
+ * @> $mapping                         <-- a "wurble into file $mapping" block: the actual model
  *
  * # Organizational Unit
  * name := $classname
@@ -360,17 +360,17 @@ order is described in [The Generated Build Pipeline](tentackle-project-archetype
 `myapp-common` holds the small classes every layer needs. Most are **thin subclasses of framework defaults registered
 as services** (`@Service(...)`), so the framework picks them up automatically:
 
-| Class                       | Extends / implements             | Why it exists                                                                     |
-|-----------------------------|----------------------------------|-----------------------------------------------------------------------------------|
-| `MyAppSessionInfo`          | `DefaultSessionInfo`             | [credentials](../../../../tentackle-session/src/main/docs/authentication.md) + connection params; here it forces usernames to **uppercase** |
-| `MyAppSessionInfoFactory`   | `@Service(SessionInfoFactory)`   | builds `MyAppSessionInfo` from username/password/properties                       |
-| `MyAppDomainContext`        | `DefaultDomainContext`           | the per-call context; narrows `getSessionInfo()` to `MyAppSessionInfo`            |
-| `MyAppDomainContextFactory` | `@Service(DomainContextFactory)` | builds `MyAppDomainContext`                                                       |
+| Class                       | Extends / implements             | Why it exists                                                                                                                                                           |
+|-----------------------------|----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `MyAppSessionInfo`          | `DefaultSessionInfo`             | [credentials](../../../../tentackle-session/src/main/docs/authentication.md) + connection params; here it forces usernames to **uppercase**                             |
+| `MyAppSessionInfoFactory`   | `@Service(SessionInfoFactory)`   | builds `MyAppSessionInfo` from username/password/properties                                                                                                             |
+| `MyAppDomainContext`        | `DefaultDomainContext`           | the per-call context; narrows `getSessionInfo()` to `MyAppSessionInfo`                                                                                                  |
+| `MyAppDomainContextFactory` | `@Service(DomainContextFactory)` | builds `MyAppDomainContext`                                                                                                                                             |
 | `MyAppCryptor`              | `@Service(Cryptor.class)`        | app-specific symmetric encryption (salt + passphrase) for stored secrets — see [Cryptor and EncryptedProperties](../../../../tentackle-common/src/main/docs/cryptor.md) |
-| `MyAppLocaleProvider`       | `@Service(LocaleProvider.class)` | restricts supported locales to `en` (default) and `de`                            |
-| `MyAppPreferences`          | —                                | typed access to persisted system/user [preferences](../../../../tentackle-core/src/main/docs/preferences.md) (e.g. the help URL) |
-| `Version`                   | —                                | reads `version`/`date` from a *filtered* `Version.properties` baked at build time |
-| `Constants`                 | —                                | app constants such as the realm `"MyApp"` of the [number pool](../../../../tentackle-pdo/src/main/docs/ns.md) |
+| `MyAppLocaleProvider`       | `@Service(LocaleProvider.class)` | restricts supported locales to `en` (default) and `de`                                                                                                                  |
+| `MyAppPreferences`          | —                                | typed access to persisted system/user [preferences](../../../../tentackle-core/src/main/docs/preferences.md) (e.g. the help URL)                                        |
+| `Version`                   | —                                | reads `version`/`date` from a *filtered* `Version.properties` baked at build time                                                                                       |
+| `Constants`                 | —                                | app constants such as the realm `"MyApp"` of the [number pool](../../../../tentackle-pdo/src/main/docs/ns.md)                                                           |
 
 The **`SessionInfo` / `DomainContext`** pair is worth internalizing early:
 

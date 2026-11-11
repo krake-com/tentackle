@@ -353,15 +353,15 @@ The defaults, however, already work for the most basic scenarios.
  
 The templates refer to a _model_ that provides variables:
 
-| Variable                                                  | Meaning                                                                                       |
-|-----------------------------------------------------------|-----------------------------------------------------------------------------------------------|
-| `mainModule`, `mainClass`, `modulePath`, `classPath`      | the four values [described above](#why-the-plugin-generates-the-start-script); `mainModule` is empty for a classpath application |
-| `phase`, `goal`, `id`                                     | the lifecycle phase, the goal (`jlink` or `jpackage`) and the execution id                     |
-| `layered`                                                 | whether [isolated module layers](#isolated-module-layers) are configured                       |
-| `bootstrapModule`, `bootstrapClass`, `layersConfigPath`   | only if layered: the module and class to launch instead of the main class, and the path of the generated `layers.properties` |
-| `runtimeDir`                                              | jpackage option templates only: the platform-specific path of the runtime image               |
-| `runScript`                                               | update script templates of the `jlink` goal only: the name of the run script                   |
-| system properties, maven properties, `<variables>`        | each converted to camelCase (`os.name` becomes `osName`)                                       |
+| Variable                                                | Meaning                                                                                                                          |
+|---------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| `mainModule`, `mainClass`, `modulePath`, `classPath`    | the four values [described above](#why-the-plugin-generates-the-start-script); `mainModule` is empty for a classpath application |
+| `phase`, `goal`, `id`                                   | the lifecycle phase, the goal (`jlink` or `jpackage`) and the execution id                                                       |
+| `layered`                                               | whether [isolated module layers](#isolated-module-layers) are configured                                                         |
+| `bootstrapModule`, `bootstrapClass`, `layersConfigPath` | only if layered: the module and class to launch instead of the main class, and the path of the generated `layers.properties`     |
+| `runtimeDir`                                            | jpackage option templates only: the platform-specific path of the runtime image                                                  |
+| `runScript`                                             | update script templates of the `jlink` goal only: the name of the run script                                                     |
+| system properties, maven properties, `<variables>`      | each converted to camelCase (`os.name` becomes `osName`)                                                                         |
 
 `osName` is the one you'll reach for most, since it is how a template derives the platform. The system properties,
 the maven properties and your own `<variables>` override each other in the order given by `variablesPrecedence`
@@ -624,47 +624,48 @@ Besides the parameters explained above (`mainClass`, `mainModule`, `addModules`,
 
 **Image contents** (`jlink` and `jpackage`):
 
-| Parameter                | Default                             | Meaning                                                                                                 |
-|--------------------------|-------------------------------------|---------------------------------------------------------------------------------------------------------|
-| `resourcesDirectory`     | `${project.build.directory}/classes` | Resources copied to the image's `conf` directory, such as logger configurations or backend properties. Set it to a non-existent directory (e.g. `none`) to copy nothing. |
-| `extraDirectories`       |                                     | Extra directories copied to the image.                                                                  |
-| `extraClasspathElements` |                                     | Extra classpath elements, relative to the image root.                                                   |
-| `failOnAutomaticRequired`| unset                               | What happens if a modular application requires an automatic module: unset logs a warning, `true` fails the build, `false` logs it as info. Ignored for classpath applications. |
-| `templateDir`            | `${project.basedir}/templates`      | The directory holding the templates.                                                                    |
-| `variablesPrecedence`    | `system, maven, variables`          | The order in which system properties, maven properties and the extra `variables` override each other (later wins). Also accepted: `sys`; `mvn`, `properties`, `props`, `pom`; `vars`, `var`, `extras`, `extra`, `template`. |
+| Parameter                 | Default                              | Meaning                                                                                                                                                                                                                     |
+|---------------------------|--------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `resourcesDirectory`      | `${project.build.directory}/classes` | Resources copied to the image's `conf` directory, such as logger configurations or backend properties. Set it to a non-existent directory (e.g. `none`) to copy nothing.                                                    |
+| `extraDirectories`        |                                      | Extra directories copied to the image.                                                                                                                                                                                      |
+| `extraClasspathElements`  |                                      | Extra classpath elements, relative to the image root.                                                                                                                                                                       |
+| `failOnAutomaticRequired` | unset                                | What happens if a modular application requires an automatic module: unset logs a warning, `true` fails the build, `false` logs it as info. Ignored for classpath applications.                                              |
+| `templateDir`             | `${project.basedir}/templates`       | The directory holding the templates.                                                                                                                                                                                        |
+| `variablesPrecedence`     | `system, maven, variables`           | The order in which system properties, maven properties and the extra `variables` override each other (later wins). Also accepted: `sys`; `mvn`, `properties`, `props`, `pom`; `vars`, `var`, `extras`, `extra`, `template`. |
 
 **jlink options** (`jlink` and `jpackage`):
 
-| Parameter                  | Default | Meaning                                                               |
-|----------------------------|---------|-----------------------------------------------------------------------|
-| `stripDebug`               | `false` | jlink's `--strip-debug`.                                              |
-| `compress`                 |         | jlink's `--compress`: `zip-0` (none) to `zip-9` (best). The legacy values `0`, `1` and `2` are deprecated since Java 21. |
-| `noHeaderFiles`            | `false` | jlink's `--no-header-files`: omit the `include` directory.            |
-| `noManPages`               | `false` | jlink's `--no-man-pages`: omit the `man` directory.                   |
-| `ignoreSigningInformation` | `false` | jlink's `--ignore-signing-information`: allow signed modular jars.   |
-| `saveOpts`                 |         | jlink's `--save-opts`: the file to save the jlink options to.        |
-| `jlinkOptions`             |         | Further jlink options, e.g. platform-specific or hidden ones such as `--upgrade-files`. |
+| Parameter                  | Default          | Meaning                                                                                                                  |
+|----------------------------|------------------|--------------------------------------------------------------------------------------------------------------------------|
+| `stripDebug`               | `false`          | jlink's `--strip-debug`.                                                                                                 |
+| `compress`                 |                  | jlink's `--compress`: `zip-0` (none) to `zip-9` (best). The legacy values `0`, `1` and `2` are deprecated since Java 21. |
+| `noHeaderFiles`            | `false`          | jlink's `--no-header-files`: omit the `include` directory.                                                               |
+| `noManPages`               | `false`          | jlink's `--no-man-pages`: omit the `man` directory.                                                                      |
+| `ignoreSigningInformation` | `false`          | jlink's `--ignore-signing-information`: allow signed modular jars.                                                       |
+| `excludeResources`         | `**/OSGI-INF/**` | jlink's `--exclude-resources`: glob (or `regex:`) patterns of resources to leave out.                                    |
+| `saveOpts`                 |                  | jlink's `--save-opts`: the file to save the jlink options to.                                                            |
+| `jlinkOptions`             |                  | Further jlink options, e.g. platform-specific or hidden ones such as `--upgrade-files`.                                  |
 
 **Output**:
 
-| Parameter         | Goal                | Default                              | Meaning                                              |
-|-------------------|---------------------|--------------------------------------|------------------------------------------------------|
-| `imageDirectory`  | `jlink`, `jpackage` | `${project.build.directory}/jlink`   | The directory jlink creates the image in.            |
-| `zipDirectory`    | `jlink`, `jpackage` | `${project.build.directory}`         | The directory for the ZIP files.                     |
-| `extraClassifier` | `jlink`, `jpackage` |                                      | An additional classifier for the deployed artifacts. |
-| `packageDirectory`| `jpackage`          | `${project.build.directory}/jpackage`| The directory the installers are created in.         |
-| `layersDirectory` | `layers`            | `${project.build.directory}/tentackle-layers` | The directory the layers are materialized into. |
+| Parameter          | Goal                | Default                                       | Meaning                                              |
+|--------------------|---------------------|-----------------------------------------------|------------------------------------------------------|
+| `imageDirectory`   | `jlink`, `jpackage` | `${project.build.directory}/jlink`            | The directory jlink creates the image in.            |
+| `zipDirectory`     | `jlink`, `jpackage` | `${project.build.directory}`                  | The directory for the ZIP files.                     |
+| `extraClassifier`  | `jlink`, `jpackage` |                                               | An additional classifier for the deployed artifacts. |
+| `packageDirectory` | `jpackage`          | `${project.build.directory}/jpackage`         | The directory the installers are created in.         |
+| `layersDirectory`  | `layers`            | `${project.build.directory}/tentackle-layers` | The directory the layers are materialized into.      |
 
 **Templates** — the file names of the templates in `templateDir`:
 
-| Parameter                  | Goal       | Default                 | Template for                                      |
-|----------------------------|------------|-------------------------|---------------------------------------------------|
-| `nameTemplate`             | `jlink`    | `name.ftl`              | the name of the start script, e.g. `run.sh`        |
-| `runTemplate`              | `jlink`    | `run.ftl`               | the start script                                   |
-| `updateTemplate`           | `jlink`    | `update.ftl`            | the update script, if `withUpdater` is set         |
+| Parameter                  | Goal       | Default                 | Template for                                        |
+|----------------------------|------------|-------------------------|-----------------------------------------------------|
+| `nameTemplate`             | `jlink`    | `name.ftl`              | the name of the start script, e.g. `run.sh`         |
+| `runTemplate`              | `jlink`    | `run.ftl`               | the start script                                    |
+| `updateTemplate`           | `jlink`    | `update.ftl`            | the update script, if `withUpdater` is set          |
 | `packageImageTemplate`     | `jpackage` | `package-image.ftl`     | the jpackage options creating the application image |
-| `packageInstallerTemplate` | `jpackage` | `package-installer.ftl` | the jpackage options creating the installer        |
-| `packageUpdateTemplate`    | `jpackage` | `package-update.ftl`    | the update script, if `withUpdater` is set         |
+| `packageInstallerTemplate` | `jpackage` | `package-installer.ftl` | the jpackage options creating the installer         |
+| `packageUpdateTemplate`    | `jpackage` | `package-update.ftl`    | the update script, if `withUpdater` is set          |
 
 **jpackage only**:
 

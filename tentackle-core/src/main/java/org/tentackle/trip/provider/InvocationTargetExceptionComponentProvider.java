@@ -62,10 +62,10 @@ public class InvocationTargetExceptionComponentProvider<T extends InvocationTarg
         try {
           if ("target".equals(field.getName())) {
             Method method = type.getObjectClass().getMethod("getTargetException");
-              components.add(TripFactory.getInstance().createComponent(
-                type, ordinal++, method, null, false, null));
+            components.add(TripFactory.getInstance().createComponent(
+              type, ordinal++, method, null, false, null));
           }
-          if ("detailMessage".equals(field.getName())) {
+          else if ("detailMessage".equals(field.getName())) {
             Method method = type.getObjectClass().getMethod("getMessage");
             if (!method.isAnnotationPresent(TripIgnore.class)) {
               components.add(TripFactory.getInstance().createComponent(

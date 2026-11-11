@@ -65,7 +65,8 @@ public class InterceptableInvocationHandler<T extends Interceptable & Serializab
 
 
   private final Class<T> clazz;                           // the handled class
-  private final Mixin<T,T> mixin;                         // the mixin
+  private final transient Mixin<T,T> mixin;               // the shared mixin (only needed to create the delegate)
+  private T delegate;                                     // the delegate
   private transient InterceptableMethodCache methodCache; // the method cache for given class
 
 
@@ -79,7 +80,7 @@ public class InterceptableInvocationHandler<T extends Interceptable & Serializab
    */
   public InterceptableInvocationHandler(ClassMapper mapper, Class<T> clazz) throws ClassNotFoundException {
     this.clazz = clazz;
-    mixin = new Mixin<>(mapper, clazz, Interceptable.class);
+    mixin = Mixin.get(mapper, clazz, Interceptable.class);
   }
 
 
@@ -98,7 +99,7 @@ public class InterceptableInvocationHandler<T extends Interceptable & Serializab
   public void setupDelegate(T proxy, Class<T> clazz)
          throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
-    mixin.createDelegate(new Class<?>[] { clazz }, new Object[] { proxy });
+    delegate = mixin.createDelegate(new Class<?>[] { clazz }, new Object[] { proxy });
   }
 
 
@@ -118,7 +119,7 @@ public class InterceptableInvocationHandler<T extends Interceptable & Serializab
       return list;
     }
 
-    return getMethodCache().invoke(INVOKER, mixin.getDelegate(), method, args);
+    return getMethodCache().invoke(INVOKER, delegate, method, args);
   }
 
 

@@ -94,6 +94,28 @@ public class FileHelperTest {
   }
 
   @Test
+  public void unzipRestoresModificationTime() throws Exception {
+    Path tmp = Files.createTempDirectory("filehelper-mtime");
+    try {
+      long time = 1_700_000_000_000L;   // even seconds, representable in DOS time as well
+      Path zip = tmp.resolve("test.zip");
+      try (java.util.zip.ZipOutputStream out = new java.util.zip.ZipOutputStream(Files.newOutputStream(zip))) {
+        ZipEntry entry = new ZipEntry("lib/some.jar");
+        entry.setLastModifiedTime(java.nio.file.attribute.FileTime.fromMillis(time));   // adds the extended timestamp
+        out.putNextEntry(entry);
+        out.write('x');
+        out.closeEntry();
+      }
+      Path dest = tmp.resolve("dest");
+      FileHelper.unzip(zip.toFile(), dest.toFile(), null);
+      assertEquals(Files.getLastModifiedTime(dest.resolve("lib/some.jar")).toMillis(), time);
+    }
+    finally {
+      deleteRecursively(tmp);
+    }
+  }
+
+  @Test
   public void unzipRejectsSiblingDirectoryWithSamePrefix() throws Exception {
     Path tmp = Files.createTempDirectory("filehelper-zipslip");
     try {

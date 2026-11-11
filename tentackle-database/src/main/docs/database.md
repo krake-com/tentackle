@@ -54,16 +54,16 @@ deployment **by changing a config file, not the source code**.
 [`tentackle-session`](../../../../tentackle-session/src/main/docs/session.md)) and is the workhorse of the module.
 Each thread must use its own `Db`. Its responsibilities include:
 
-| Group | Examples | Purpose |
-|-------|----------|---------|
-| **Connection brokering** | `getConnectionManager`, attach/detach (internal), `isRemote` | Acquire/release a managed connection for a unit of work. |
-| **Transactions** | `begin`, `commit`, `rollback`, `createTransaction`, savepoints | Run (nestable) transactions; the voucher protocol from `Session` decides who really commits. |
-| **Statements** | `getPreparedStatement`, `createStatement` | Obtain cached, wrapped statements bound to the session's connection. |
-| **Id sources** | the per-session `IdSource` (`ObjectId` / `ObjectSequenceId`) | Allocate unique object IDs. |
-| **Batching** | `executeBatch`, batch configuration | Collect prepared statements into JDBC batches for throughput. |
-| **Modification tracking** | the session's `ModificationTracker` integration | Advance table serials on writes for caches/notifications. |
-| **Diagnostics** | statement history, statement/transaction statistics, the statement tracer | Observe and profile database activity. |
-| **Keep-alive / lifecycle** | `isAlive`, reconnection policy | Survive idle timeouts and dropped connections. |
+| Group                      | Examples                                                                  | Purpose                                                                                      |
+|----------------------------|---------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
+| **Connection brokering**   | `getConnectionManager`, attach/detach (internal), `isRemote`              | Acquire/release a managed connection for a unit of work.                                     |
+| **Transactions**           | `begin`, `commit`, `rollback`, `createTransaction`, savepoints            | Run (nestable) transactions; the voucher protocol from `Session` decides who really commits. |
+| **Statements**             | `getPreparedStatement`, `createStatement`                                 | Obtain cached, wrapped statements bound to the session's connection.                         |
+| **Id sources**             | the per-session `IdSource` (`ObjectId` / `ObjectSequenceId`)              | Allocate unique object IDs.                                                                  |
+| **Batching**               | `executeBatch`, batch configuration                                       | Collect prepared statements into JDBC batches for throughput.                                |
+| **Modification tracking**  | the session's `ModificationTracker` integration                           | Advance table serials on writes for caches/notifications.                                    |
+| **Diagnostics**            | statement history, statement/transaction statistics, the statement tracer | Observe and profile database activity.                                                       |
+| **Keep-alive / lifecycle** | `isAlive`, reconnection policy                                            | Survive idle timeouts and dropped connections.                                               |
 
 A `Db` can be **cloned** and **pooled**, and exposes whether it is local or remote so the rest of the framework
 can adapt where it genuinely matters (rarely).
@@ -265,11 +265,11 @@ The default id source is chosen from the backend: `sequence:object_sequence_id` 
 sequences, `table:object_id` otherwise. The `idsource` [backend property](../../../../tentackle-session/src/main/docs/backend-properties.md)
 selects another one, in the syntax of the `DefaultIdSourceConfigurator`:
 
-| Value                                          | Id source                                                                                                  |
-|------------------------------------------------|------------------------------------------------------------------------------------------------------------|
-| `table:<name>`                                 | An `ObjectId` counting in table `<name>`.                                                                  |
-| `sequence:<name>`                              | An `ObjectSequenceId` on sequence `<name>`, with the default multipliers `100` and `1`.                    |
-| `sequence:<name>:<sequenceMult>:<globalMult>`  | The same with explicit multipliers. The id is `(sequenceValue * sequenceMult + counter) * globalMult`, where the counter runs from `0` to `sequenceMult - 1` before the sequence is read again. A `globalMult` greater than 1 leaves room for application-specific offsets. |
+| Value                                         | Id source                                                                                                                                                                                                                                                                   |
+|-----------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `table:<name>`                                | An `ObjectId` counting in table `<name>`.                                                                                                                                                                                                                                   |
+| `sequence:<name>`                             | An `ObjectSequenceId` on sequence `<name>`, with the default multipliers `100` and `1`.                                                                                                                                                                                     |
+| `sequence:<name>:<sequenceMult>:<globalMult>` | The same with explicit multipliers. The id is `(sequenceValue * sequenceMult + counter) * globalMult`, where the counter runs from `0` to `sequenceMult - 1` before the sequence is read again. A `globalMult` greater than 1 leaves room for application-specific offsets. |
 
 Different entities may use different id sources: if a resource named after the persistent class
 (`com/example/persist/InvoicePersistenceImpl.properties`) exists and holds an `idsource` line, it
@@ -434,23 +434,23 @@ The diagnostics are switched on by static setters, typically at application star
 enables a sensible subset on servers: statement, TRIP-invocation and transaction statistics, a
 statistics log every 30 seconds, and logging nested selects at `INFO`.
 
-| Setter                                                          | Default  | Effect                                                                                                             |
-|-----------------------------------------------------------------|----------|--------------------------------------------------------------------------------------------------------------------|
-| `ManagedConnection.setCollectingStatistics(boolean)`            | off      | Count the executions and durations of each SQL statement.                                                          |
-| `ManagedConnection.setLogStatisticsMillis(long)`                | `0`      | Log and clear the statement statistics periodically.                                                               |
-| `StatementStatistics.setWithParameters(boolean)`                | off      | Separate the statistics per parameter values, not only per statement.                                              |
-| `ManagedConnection.setLogLevelForParallelOpenResultSets(Level)` | `null`   | Log *nested selects*: a select executed while a result set of the same connection is still open — typically a lazy relation loaded inside a loop over a result set. |
-| `ManagedConnection.setTraceParallelOpenResultSets(boolean)`     | off      | Also add such statements to the `StatementTracer`.                                                                 |
-| `ManagedConnection.setMaxStatementsPerTransaction(int)`         | `0`      | Fail a transaction that executes more statements than this — a guard against runaway loops exhausting memory or the backend. |
-| `ManagedConnection.setLogMinAttachMillis(long)`                 | `0`      | Log sessions that keep a connection attached longer than this; `-1` logs every detach.                             |
-| `ManagedConnection.setMdcFilter(Pattern)`                       | `null`   | Only collect statements for logging if the thread's mapped diagnostic context matches.                            |
-| `ManagedConnection.setCheckingStatementResultSetParameters(boolean)` | off | Verify that a reused prepared statement has the requested result set type and concurrency.                       |
-| `StatementHistory.setLogMinDurationMillis(long)`                | `0`      | Log statements running longer than this as a warning.                                                              |
-| `DbTransactionFactory.setCollectingStatistics(boolean)`         | off      | Collect transaction statistics (count, duration) per transaction name.                                             |
-| `RemoteDbDelegateInvocationHandler.setCollectingStatistics(boolean)` | off | Count and measure TRIP invocations per method on the server.                                                     |
-| `RemoteDbDelegateInvocationHandler.setLoggingInvocations(boolean)` / `setLoggingInvocationDetails(boolean)` | off | Log each TRIP invocation, optionally with arguments and return value.         |
-| `RemoteDbDelegateInvocationHandler.setLogMinDurationMillis(long)` / `setLogMinReturnedCollectionSize(int)` | `0` | Log only invocations that took at least this long, or returned at least this many elements. |
-| `RemoteDbDelegateInvocationHandler.setMdcFilter(Pattern)`       | `null`   | Only log TRIP invocations for matching mapped diagnostic contexts.                                                 |
+| Setter                                                                                                      | Default | Effect                                                                                                                                                              |
+|-------------------------------------------------------------------------------------------------------------|---------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `ManagedConnection.setCollectingStatistics(boolean)`                                                        | off     | Count the executions and durations of each SQL statement.                                                                                                           |
+| `ManagedConnection.setLogStatisticsMillis(long)`                                                            | `0`     | Log and clear the statement statistics periodically.                                                                                                                |
+| `StatementStatistics.setWithParameters(boolean)`                                                            | off     | Separate the statistics per parameter values, not only per statement.                                                                                               |
+| `ManagedConnection.setLogLevelForParallelOpenResultSets(Level)`                                             | `null`  | Log *nested selects*: a select executed while a result set of the same connection is still open — typically a lazy relation loaded inside a loop over a result set. |
+| `ManagedConnection.setTraceParallelOpenResultSets(boolean)`                                                 | off     | Also add such statements to the `StatementTracer`.                                                                                                                  |
+| `ManagedConnection.setMaxStatementsPerTransaction(int)`                                                     | `0`     | Fail a transaction that executes more statements than this — a guard against runaway loops exhausting memory or the backend.                                        |
+| `ManagedConnection.setLogMinAttachMillis(long)`                                                             | `0`     | Log sessions that keep a connection attached longer than this; `-1` logs every detach.                                                                              |
+| `ManagedConnection.setMdcFilter(Pattern)`                                                                   | `null`  | Only collect statements for logging if the thread's mapped diagnostic context matches.                                                                              |
+| `ManagedConnection.setCheckingStatementResultSetParameters(boolean)`                                        | off     | Verify that a reused prepared statement has the requested result set type and concurrency.                                                                          |
+| `StatementHistory.setLogMinDurationMillis(long)`                                                            | `0`     | Log statements running longer than this as a warning.                                                                                                               |
+| `DbTransactionFactory.setCollectingStatistics(boolean)`                                                     | off     | Collect transaction statistics (count, duration) per transaction name.                                                                                              |
+| `RemoteDbDelegateInvocationHandler.setCollectingStatistics(boolean)`                                        | off     | Count and measure TRIP invocations per method on the server.                                                                                                        |
+| `RemoteDbDelegateInvocationHandler.setLoggingInvocations(boolean)` / `setLoggingInvocationDetails(boolean)` | off     | Log each TRIP invocation, optionally with arguments and return value.                                                                                               |
+| `RemoteDbDelegateInvocationHandler.setLogMinDurationMillis(long)` / `setLogMinReturnedCollectionSize(int)`  | `0`     | Log only invocations that took at least this long, or returned at least this many elements.                                                                         |
+| `RemoteDbDelegateInvocationHandler.setMdcFilter(Pattern)`                                                   | `null`  | Only log TRIP invocations for matching mapped diagnostic contexts.                                                                                                  |
 
 When a connection's diagnostic info is logged — for example by the idle transaction supervisor — it
 includes the statement history. Code stuck in a loop can execute the same statements many thousand
@@ -511,13 +511,13 @@ chain is:
 
 Each capability is exposed as a *remote delegate* (interface + `…Impl` executor):
 
-| Delegate / impl | Mirrors |
-|------------------|---------|
-| [`DbRemoteDelegate`](../java/org/tentackle/dbms/trip/DbRemoteDelegate.java) / `…Impl` | `Db` (the session itself) |
-| [`AbstractDbObjectRemoteDelegate`](../java/org/tentackle/dbms/trip/AbstractDbObjectRemoteDelegate.java) / `…Impl` | `AbstractDbObject` CRUD/queries |
-| [`AbstractDbOperationRemoteDelegate`](../java/org/tentackle/dbms/trip/AbstractDbOperationRemoteDelegate.java) / `…Impl` | `AbstractDbOperation` |
+| Delegate / impl                                                                                                             | Mirrors                         |
+|-----------------------------------------------------------------------------------------------------------------------------|---------------------------------|
+| [`DbRemoteDelegate`](../java/org/tentackle/dbms/trip/DbRemoteDelegate.java) / `…Impl`                                       | `Db` (the session itself)       |
+| [`AbstractDbObjectRemoteDelegate`](../java/org/tentackle/dbms/trip/AbstractDbObjectRemoteDelegate.java) / `…Impl`           | `AbstractDbObject` CRUD/queries |
+| [`AbstractDbOperationRemoteDelegate`](../java/org/tentackle/dbms/trip/AbstractDbOperationRemoteDelegate.java) / `…Impl`     | `AbstractDbOperation`           |
 | [`DbModificationTrackerRemoteDelegate`](../java/org/tentackle/dbms/trip/DbModificationTrackerRemoteDelegate.java) / `…Impl` | modification tracking / serials |
-| [`ModificationLogRemoteDelegate`](../java/org/tentackle/dbms/trip/ModificationLogRemoteDelegate.java) / `…Impl` | modification logs |
+| [`ModificationLogRemoteDelegate`](../java/org/tentackle/dbms/trip/ModificationLogRemoteDelegate.java) / `…Impl`             | modification logs               |
 
 [`RemoteDbDelegateLocator`](../java/org/tentackle/dbms/trip/RemoteDbDelegateLocator.java) /
 [`DbRemoteDelegateLocator`](../java/org/tentackle/dbms/trip/DbRemoteDelegateLocator.java)
@@ -584,13 +584,13 @@ server must be built from the same Tentackle version, which the login handshake 
 
 ## Package Layout
 
-| Package | Contents |
-|---------|----------|
-| `org.tentackle.dbms` | The engine: `Db`, `AbstractDbObject`/`AbstractDbOperation`, connection managers and `ManagedConnection`, pools and factories, id-sources, statement/query/result wrappers, transactions, batching, modification tracking + table serials, modification logging, persistence visitors, diagnostics/statistics and the SPI utility replacements. |
-| `org.tentackle.dbms.dsl` | The [query DSL](./query-dsl.md): typed tables, columns, expressions and conditions rendered to the SQL of a `Query`. |
-| `org.tentackle.dbms.prefs` (+ `prefs.trip`) | Database-backed `java.util.prefs.Preferences` and its remoting. |
-| `org.tentackle.dbms.trip` | The TRIP server, remote connection/session and the remote delegates that make the layer location-transparent. |
-| `org.tentackle.dbms.service` | The [`Hook`](../java/org/tentackle/dbms/service/Hook.java) (`ModuleHook`) for i18n bundle resolution. |
+| Package                                     | Contents                                                                                                                                                                                                                                                                                                                                       |
+|---------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `org.tentackle.dbms`                        | The engine: `Db`, `AbstractDbObject`/`AbstractDbOperation`, connection managers and `ManagedConnection`, pools and factories, id-sources, statement/query/result wrappers, transactions, batching, modification tracking + table serials, modification logging, persistence visitors, diagnostics/statistics and the SPI utility replacements. |
+| `org.tentackle.dbms.dsl`                    | The [query DSL](./query-dsl.md): typed tables, columns, expressions and conditions rendered to the SQL of a `Query`.                                                                                                                                                                                                                           |
+| `org.tentackle.dbms.prefs` (+ `prefs.trip`) | Database-backed `java.util.prefs.Preferences` and its remoting.                                                                                                                                                                                                                                                                                |
+| `org.tentackle.dbms.trip`                   | The TRIP server, remote connection/session and the remote delegates that make the layer location-transparent.                                                                                                                                                                                                                                  |
+| `org.tentackle.dbms.service`                | The [`Hook`](../java/org/tentackle/dbms/service/Hook.java) (`ModuleHook`) for i18n bundle resolution.                                                                                                                                                                                                                                          |
 
 ---
 

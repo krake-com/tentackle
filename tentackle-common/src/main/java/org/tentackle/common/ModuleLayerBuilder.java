@@ -60,7 +60,7 @@ public final class ModuleLayerBuilder {
 
   /**
    * Builds the module layer graph described by the given spec.
-   *
+   * <p>
    * If the spec names a {@link LayerGraphSpec#leafMainModule()}, the package of the main class
    * is opened to tentackle-common, so that {@link LayerBootstrap} can invoke the main method reflectively.
    *

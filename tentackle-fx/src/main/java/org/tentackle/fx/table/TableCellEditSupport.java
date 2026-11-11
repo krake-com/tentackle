@@ -153,11 +153,16 @@ abstract class TableCellEditSupport<S, T> {
 
 
   /**
-   * Returns whether the edit handler allows editing the cell.
+   * Returns whether the cell can be edited.<br>
+   * Cells bound to a read-only model are never editable, otherwise the edit handler decides.
    *
    * @return true if editable
    */
   boolean isCellEditable() {
+    FxTableBinding<S, T> binding = columnConfiguration.getBinding();
+    if (binding != null && binding.isModelReadOnly()) {
+      return false;   // for example, a final field (edits would be lost)
+    }
     TableEditContext<S> context = getEditContext();
     S row = getRowObject();
     if (context != null && row != null) {

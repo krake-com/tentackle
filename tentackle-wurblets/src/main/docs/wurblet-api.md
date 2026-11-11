@@ -48,8 +48,8 @@ org.wurbelizer.wurblet.AbstractWurblet                  (wurbelizer)
   the argument mini-language
   ──────────────────────────
   WurbletArgumentParser ─── builds ──►  WurbletArgumentExpression  ─┐
-        │                                       │                  ├─ implements
-        │                                       └─ operands ───────┤   WurbletArgumentOperand
+        │                                       │                   ├─ implements
+        │                                       └─ operands ────────┤  WurbletArgumentOperand
         └── creates ──► WurbletArgument ────────────────────────────┘
                             │  type  ──► WurbletArgumentType   (CONDITION / EXTRA / SORT / JOIN)
                             │  operators ─► WurbletArgumentOperator (AND / OR / NOT / ANDNOT / ORNOT)
@@ -346,7 +346,7 @@ Derived names the template uses directly:
 | `--validate[=<code>]`           | `validate`                         | Validate after construction. Defaults to `ValidationUtilities.getInstance().validate(this)`; rejected for records. See [validation](../../../../tentackle-core/src/main/docs/validation.md). |
 | `--names`                       | `withNames`                        | Emit the `PN_*` constants.                                                                                                                                                                   |
 | `--canonical`                   | `canonical`                        | Emit `@Canonical*` annotations for [TRIP](../../../../tentackle-core/src/main/docs/trip.md).                                                                                                 |
-| `--nofinal`                     | `noFinal`                          | Serialization-friendly non-final fields plus a `protected` no-args constructor (JEP-500). Not rejected for records, but the constructor does not compile there.                             |
+| `--nofinal`                     | `noFinal`                          | Serialization-friendly non-final fields plus a `protected` no-args constructor (JEP-500). Not rejected for records, but the constructor does not compile there.                              |
 | `--nott`                        | `nott`                             | No Tentackle dependency in the generated code. **Mutually exclusive with `--canonical`.**                                                                                                    |
 
 `needConstructor` is set as soon as any property is immutable.

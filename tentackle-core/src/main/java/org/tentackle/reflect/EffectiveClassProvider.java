@@ -64,7 +64,7 @@ public interface EffectiveClassProvider<T> {
   /**
    * Gets the effective super classes.
    *
-   * @return the super classes, never null
+   * @return the super classes, never null, unmodifiable
    */
   @NotInterceptable
   List<Class<? super T>> getEffectiveSuperClasses();

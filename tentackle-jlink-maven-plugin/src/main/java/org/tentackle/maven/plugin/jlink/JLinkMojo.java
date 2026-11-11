@@ -95,7 +95,7 @@ import org.tentackle.maven.AbstractTentackleMojo;
  * </ul>
  * The order in which the properties and variables override each other is configured via
  * {@link AbstractJLinkMojo#getVariablesPrecedence()}. The other variables cannot be overridden.
- *
+ * <p>
  * Modules not passed to <code>jlink</code> and automatic modules are copied to the <code>mp</code> folder
  * and added to the <code>modulePath</code> template variable. If no such modules are detected, no folder is created.<br>
  * Non-modular classpath artifacts are copied to the <code>cp</code> folder and added to the <code>classPath</code> template variable.

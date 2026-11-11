@@ -32,6 +32,7 @@ import org.tentackle.trip.impl.MethodTripComponent;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -52,12 +53,27 @@ public final class ThrowableTripType<T extends Throwable> extends ObjectTripType
   private static final OpCode OP_CODE = DefaultOpCode.THROWABLE;
 
   /**
-   * The throwable classes the fallback warning has already been logged for.<br>
+   * The throwable classes the warning about the missing constructor has already been logged for.<br>
    * Trip types are stateless singletons, so the log-once bookkeeping must not live in the instance.
    * Keeping it here retains the per-class granularity of the warning and makes it exactly once,
    * even if several threads deserialize the same throwable class concurrently.
    */
   private static final Set<Class<?>> WARNED_CLASSES = ConcurrentHashMap.newKeySet();
+
+  /**
+   * The throwable classes without a usable no-args constructor or instance creator.
+   */
+  private static final Set<Class<?>> NO_DEFAULT_CLASSES = ConcurrentHashMap.newKeySet();
+
+  /**
+   * Placeholder for a null message passed to a constructor.
+   */
+  private static final Object MESSAGE_SLOT = new Object();
+
+  /**
+   * Placeholder for a null cause passed to a constructor.
+   */
+  private static final Object CAUSE_SLOT = new Object();
 
   /**
    * Creates the type.
@@ -75,74 +91,25 @@ public final class ThrowableTripType<T extends Throwable> extends ObjectTripType
   }
 
 
+  /**
+   * Creates the default instance.<br>
+   * Unlike other objects, a throwable without a (usable) no-args constructor or instance creator is
+   * not an error: it is created from the deserialized message and cause, see {@link #readComponents}.
+   *
+   * @return the instance, null if created from the deserialized values
+   */
   @Override
   protected T createInitializedDefault() {
+    if (NO_DEFAULT_CLASSES.contains(getObjectClass())) {
+      return null;
+    }
     try {
       return super.createInitializedDefault();
     }
     catch (TripInstantiationException ix) {
-      // missing no-arg constructor?
-      if (WARNED_CLASSES.add(getObjectClass())) {
-        LOGGER.warning(
-          "{0} -> trying common constructors (consider providing a TripInstanceCreator!)",
-          ix.getMessage());
-      }
-      try {
-        try {
-          try {
-            return getObjectClass().getDeclaredConstructor(String.class).newInstance((String) null);
-          }
-          catch (IllegalAccessException ia) {
-            Constructor<T> constructor = getObjectClass().getDeclaredConstructor(String.class);
-            constructor.setAccessible(true);
-            return constructor.newInstance((String) null);
-          }
-        }
-        catch (NoSuchMethodException e1) {
-          try {
-            try {
-              return getObjectClass().getDeclaredConstructor(Throwable.class).newInstance((Throwable) null);
-            }
-            catch (IllegalAccessException ia) {
-              Constructor<T> constructor = getObjectClass().getDeclaredConstructor(Throwable.class);
-              constructor.setAccessible(true);
-              return constructor.newInstance((Throwable) null);
-            }
-          }
-          catch (NoSuchMethodException e2) {
-            try {
-              try {
-                return getObjectClass().getDeclaredConstructor(String.class, Throwable.class)
-                                       .newInstance(null, null);
-              }
-              catch (IllegalAccessException ia) {
-                Constructor<T> constructor = getObjectClass().getDeclaredConstructor(String.class, Throwable.class);
-                constructor.setAccessible(true);
-                return constructor.newInstance(null, null);
-              }
-            }
-            catch (NoSuchMethodException e3) {
-              try {
-                try {
-                  return getObjectClass().getDeclaredConstructor(Throwable.class, String.class)
-                                         .newInstance(null, null);
-                }
-                catch (IllegalAccessException ia) {
-                  Constructor<T> constructor = getObjectClass().getDeclaredConstructor(Throwable.class, String.class);
-                  constructor.setAccessible(true);
-                  return constructor.newInstance(null, null);
-                }
-              }
-              catch (NoSuchMethodException e4) {
-                throw new TripInstantiationException(getObjectClass(), "no suitable constructors for " + getObjectClass());
-              }
-            }
-          }
-        }
-      }
-      catch (InaccessibleObjectException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-        throw new TripInstantiationException(getObjectClass(), "cannot instantiate " + getObjectClass(), e);
-      }
+      // missing or inaccessible no-arg constructor
+      NO_DEFAULT_CLASSES.add(getObjectClass());
+      return null;
     }
   }
 
@@ -196,79 +163,23 @@ public final class ThrowableTripType<T extends Throwable> extends ObjectTripType
       // implement readComponents() method to handle them.
     }
 
-    boolean constructed = false;
-    try {
-      for (Constructor<?> constructor : getObjectClass().getDeclaredConstructors()) {
-        if (hasCause && hasMessage) {
-          if (constructor.getParameterCount() == 2) {
-            if (constructor.getParameterTypes()[0] == String.class &&
-                constructor.getParameterTypes()[1] == Throwable.class) {
-              value = newThrowable(constructor, message, cause);
-              constructed = true;
-              break;
-            }
-            if (constructor.getParameterTypes()[1] == String.class &&
-                constructor.getParameterTypes()[0] == Throwable.class) {
-              value = newThrowable(constructor, cause, message);
-              constructed = true;
-              break;
-            }
-          }
+    T throwable = newThrowable(hasMessage ? message : null, hasCause ? cause : null);
+    if (throwable == null) {
+      // no usable constructor: fall back to the default instance, if any
+      if (value == null) {
+        // return wrapped exception
+        if (WARNED_CLASSES.add(getObjectClass())) {
+          LOGGER.warning("no usable constructor for {0} -> deserialized as {1} (consider providing a TripInstanceCreator!)",
+                         getObjectClass().getName(), TripInstantiationException.class.getName());
         }
-        else if (hasCause) {    // cause only
-          if (constructor.getParameterCount() == 1 &&
-              constructor.getParameterTypes()[0] == Throwable.class) {
-            value = newThrowable(constructor, cause);
-            constructed = true;
-            break;
-          }
-        }
-        else if (hasMessage) {  // message only
-          if (constructor.getParameterCount() == 1 &&
-              constructor.getParameterTypes()[0] == String.class) {
-            value = newThrowable(constructor, message);
-            constructed = true;
-            break;
-          }
-        }
-        else {  // no message and no cause
-          if (constructor.getParameterCount() == 0) {
-            value = newThrowable(constructor);
-            constructed = true;
-            break;
-          }
-        }
+        throwable = (T) new TripInstantiationException(getObjectClass(), message, cause);
+        otherComponentValues.clear();   // they belong to the original class
       }
-      if (!constructed && hasCause && hasMessage) {
-        // no (message, cause)-style constructor, e.g. NullPointerException:
-        // fall back to a message-only constructor and initCause()
-        for (Constructor<?> constructor : getObjectClass().getDeclaredConstructors()) {
-          if (constructor.getParameterCount() == 1 &&
-              constructor.getParameterTypes()[0] == String.class) {
-            value = newThrowable(constructor, message);
-            try {
-              value.initCause(cause);
-            }
-            catch (IllegalStateException isx) {
-              // the constructor already initialized the cause
-            }
-            constructed = true;
-            break;
-          }
-        }
+      else {
+        throwable = value;
       }
     }
-    catch (InstantiationException | IllegalAccessException | InaccessibleObjectException |
-           InvocationTargetException e) {
-      // return wrapped exception
-      value = (T) new TripInstantiationException(getObjectClass(), message, cause);
-      constructed = true;
-    }
-
-    if (!constructed && value == null) {    // no matching constructor and no default instance
-      // return wrapped exception
-      value = (T) new TripInstantiationException(getObjectClass(), message, cause);
-    }
+    value = throwable;
 
     if (hasStackTrace) {
       value.setStackTrace(stackTrace);
@@ -285,26 +196,142 @@ public final class ThrowableTripType<T extends Throwable> extends ObjectTripType
 
 
   /**
-   * Creates a throwable via the given constructor.
+   * Creates a throwable from its message and cause.<br>
+   * Tries the common constructor signatures in a reasonable order.
+   * The cause parameter may be of any type the cause is an instance of, for example,
+   * {@code UncheckedIOException(String, IOException)}. Constructors that are not accessible
+   * (for example, protected constructors in a JDK package) or throw an exception are skipped.
+   * If the chosen constructor does not take the cause, it is initialized via {@link Throwable#initCause}.
    *
-   * @param constructor the constructor
-   * @param args the constructor arguments
-   * @return the created throwable
-   * @throws InstantiationException if the class is abstract
-   * @throws IllegalAccessException if the constructor is inaccessible even after setAccessible
-   * @throws InvocationTargetException if the constructor throws an exception
+   * @param message the message, null if none
+   * @param cause the cause, null if none
+   * @return the throwable, null if no usable constructor found
+   */
+  private T newThrowable(String message, Throwable cause) {
+    Constructor<?>[] constructors = getObjectClass().getDeclaredConstructors();
+    T throwable;
+    if (message != null && cause != null) {
+      throwable = newThrowable(constructors, cause, message, cause);
+      if (throwable == null) {
+        throwable = newThrowable(constructors, cause, cause, message);
+      }
+      if (throwable == null) {
+        // no (message, cause)-style constructor, e.g. NullPointerException
+        throwable = newThrowable(constructors, cause, message);
+      }
+    }
+    else if (cause != null) {
+      throwable = newThrowable(constructors, cause, cause);
+      if (throwable == null) {
+        throwable = newThrowable(constructors, cause, MESSAGE_SLOT, cause);
+      }
+      if (throwable == null) {
+        throwable = newThrowable(constructors, cause, cause, MESSAGE_SLOT);
+      }
+      if (throwable == null) {
+        throwable = newThrowable(constructors, cause);
+      }
+    }
+    else if (message != null) {
+      throwable = newThrowable(constructors, null, message);
+      if (throwable == null) {
+        throwable = newThrowable(constructors, null, message, CAUSE_SLOT);
+      }
+      if (throwable == null) {
+        throwable = newThrowable(constructors, null, CAUSE_SLOT, message);
+      }
+    }
+    else {
+      throwable = newThrowable(constructors, null);
+      if (throwable == null) {
+        throwable = newThrowable(constructors, null, MESSAGE_SLOT);
+      }
+      if (throwable == null) {
+        throwable = newThrowable(constructors, null, CAUSE_SLOT);
+      }
+      if (throwable == null) {
+        throwable = newThrowable(constructors, null, MESSAGE_SLOT, CAUSE_SLOT);
+      }
+    }
+    return throwable;
+  }
+
+  /**
+   * Creates a throwable via the first matching constructor.
+   *
+   * @param constructors the declared constructors
+   * @param cause the cause to initialize, if not passed to the constructor, null if none
+   * @param args the arguments: a string for the message, a throwable for the cause, or
+   *        {@link #MESSAGE_SLOT}/{@link #CAUSE_SLOT} for a null message/cause
+   * @return the throwable, null if no matching constructor or the constructor failed
    */
   @SuppressWarnings("unchecked")
-  private T newThrowable(Constructor<?> constructor, Object... args)
-    throws InstantiationException, IllegalAccessException, InvocationTargetException {
+  private T newThrowable(Constructor<?>[] constructors, Throwable cause, Object... args) {
+    for (Constructor<?> constructor : constructors) {
+      if (constructor.getParameterCount() == args.length && matches(constructor.getParameterTypes(), args)) {
+        if (!Modifier.isPublic(constructor.getModifiers()) || !Modifier.isPublic(getObjectClass().getModifiers())) {
+          if (!constructor.trySetAccessible()) {
+            continue;   // e.g. protected constructor in a JDK package
+          }
+        }
+        Object[] values = new Object[args.length];
+        boolean causePassed = false;
+        for (int i = 0; i < args.length; i++) {
+          Object arg = args[i];
+          if (arg instanceof Throwable) {
+            causePassed = true;
+          }
+          values[i] = arg == MESSAGE_SLOT || arg == CAUSE_SLOT ? null : arg;
+        }
+        T throwable;
+        try {
+          throwable = (T) constructor.newInstance(values);
+        }
+        catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+               IllegalArgumentException | InaccessibleObjectException e) {
+          // try next, e.g. constructor rejects null
+          continue;
+        }
+        if (cause != null && !causePassed) {
+          try {
+            throwable.initCause(cause);
+          }
+          catch (IllegalStateException isx) {
+            // the constructor already initialized the cause
+          }
+        }
+        return throwable;
+      }
+    }
+    return null;
+  }
 
-    try {
-      return (T) constructor.newInstance(args);
+  /**
+   * Checks whether the constructor's parameter types match the arguments.
+   *
+   * @param parameterTypes the parameter types
+   * @param args the arguments
+   * @return true if matching
+   */
+  private static boolean matches(Class<?>[] parameterTypes, Object[] args) {
+    for (int i = 0; i < args.length; i++) {
+      Object arg = args[i];
+      Class<?> type = parameterTypes[i];
+      if (arg == MESSAGE_SLOT || arg instanceof String) {
+        if (type != String.class) {
+          return false;
+        }
+      }
+      else if (arg == CAUSE_SLOT) {
+        if (!Throwable.class.isAssignableFrom(type)) {
+          return false;
+        }
+      }
+      else if (!Throwable.class.isAssignableFrom(type) || !type.isInstance(arg)) {
+        return false;
+      }
     }
-    catch (IllegalAccessException ix) {
-      constructor.setAccessible(true);
-      return (T) constructor.newInstance(args);
-    }
+    return true;
   }
 
 }

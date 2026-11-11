@@ -313,7 +313,7 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
     QuicheConnection quicConnection = connection;
     if (quicConnection == null || !quicConnection.isConnected()) {
       // idle timeout, peer restarted, network loss, ... (or a previous connect attempt failed)
-      LOGGER.info("QUIC connection to {0} is gone -> reconnecting", getTransport().getUri());
+      LOGGER.info("QUIC connection to {0} is gone -> reconnecting", UriHelper.uriToSafeString(getTransport().getUri()));
       connect();
       quicConnection = connection;
     }
@@ -321,11 +321,10 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
       return quicConnection.openStream();
     }
     catch (StreamLimitException e) {
-      TripRuntimeException tex = new TripRuntimeException(
+      // may well succeed again once a pooled connection is returned and closed
+      throw new TripRuntimeException(
         "no QUIC stream available on " + getTransport().getUri() +
-        ": the peer grants fewer than the configured " + transport.getMaxStreams() + " streams", e);
-      tex.setTemporary(true);   // may well succeed again once a pooled connection is returned and closed
-      throw tex;
+        ": the peer grants fewer than the configured " + transport.getMaxStreams() + " streams", e).temporary();
     }
     catch (QuicheException e) {
       throw new TripRuntimeException("creating QUIC stream failed", e);
@@ -442,7 +441,7 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
       long interval = keepAliveSeconds * 1000L;
       if (idleMillis > 0 && interval >= idleMillis / 2) {
         LOGGER.warning("the keep-alive interval of " + keepAliveSeconds + " seconds configured in " +
-                       getTransport().getUri() + " is too close to the QUIC max idle timeout of " +
+                       UriHelper.uriToSafeString(getTransport().getUri()) + " is too close to the QUIC max idle timeout of " +
                        transport.getMaxIdleSeconds() + " seconds: the connection may time out anyway");
       }
       return interval;
@@ -497,7 +496,7 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
         quicConnection.closeGracefully(0, "closed by the pool");
       }
       catch (RuntimeException e) {
-        LOGGER.warning("closing the QUIC connection to " + getTransport().getUri() + " failed", e);
+        LOGGER.warning("closing the QUIC connection to " + UriHelper.uriToSafeString(getTransport().getUri()) + " failed", e);
       }
     }
   }

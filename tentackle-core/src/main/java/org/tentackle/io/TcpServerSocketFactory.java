@@ -30,7 +30,8 @@ import java.net.ServerSocket;
  * In <em>plain</em> mode (default constructor) it creates ordinary TCP server sockets.
  * In <em>SSL</em> mode (constructed with {@link SslParameters}) it creates {@link SSLServerSocket}s
  * from an {@link javax.net.ssl.SSLContext} that presents the certificate selected by its alias and
- * honors the configured SSL options (enabled protocols, cipher suites, client-certificate policy).
+ * honors the configured SSL options (enabled protocols, cipher suites, key-exchange groups,
+ * client-certificate policy).
  * <p>
  * This factory is the SSL-alias-aware replacement for the default
  * {@link javax.net.ssl.SSLServerSocketFactory}, which always presents the first certificate

@@ -18,14 +18,17 @@
 
 package org.tentackle.validate.severity;
 
+import org.tentackle.reflect.CanonicalConstructor;
+import org.tentackle.reflect.CanonicalName;
 import org.tentackle.validate.ValidationContext;
+import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.Validator;
 
 import java.io.Serial;
 
 /**
  * Simple informational result.<br>
- * Created by the {@link MinorSeverity}. Provides a message, but does not fail.
+ * Created by the {@link MinorSeverity}. Provides a message but does not fail.
  *
  * @author harald
  */
@@ -46,9 +49,21 @@ public class InfoValidationResult extends FailedValidationResult {
   }
 
   /**
-   * For TRIP.
+   * Creates a validation result from its serialized values.<br>
+   * Used by TRIP to avoid mutating final fields (JEP-500).
+   *
+   * @param message the message
+   * @param errorCode the error code
+   * @param validationPath the validation path
+   * @param configuredScopes the configured scopes
    */
-  protected InfoValidationResult() {}
+  @CanonicalConstructor
+  protected InfoValidationResult(@CanonicalName("message") String message,
+                                 @CanonicalName("errorCode") String errorCode,
+                                 @CanonicalName("validationPath") String validationPath,
+                                 @CanonicalName("configuredScopes") Class<? extends ValidationScope>[] configuredScopes) {
+    super(message, errorCode, validationPath, configuredScopes);
+  }
 
 
   @Override

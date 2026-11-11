@@ -31,7 +31,7 @@ matter of the connection URI scheme.
 - **Module:** `org.tentackle.quic`
 - **Maven artifact:** `org.tentackle:tentackle-quic`
 - **Protocol schemes:** `tripq` (plain QUIC), `tripcq` (QUIC + compression)
-- **License:** LGPL 2.1
+- **License:** LGPL 2.1 or later
 
 ### Two QUIC implementations
 
@@ -111,7 +111,7 @@ contract. Server and client responsibilities are clearly separated.
    QuicProtocolConnectionFactory      QuicClientConnection (KWIK)
                     |                            |
      QuicProtocolConnection            createStream(true) -> QuicStream
-       acceptPeerInitiatedStream(s)             |
+       acceptPeerInitiatedStream(s)              |
                     |                     QuicTripConnection
         QuicStream -> createConnectionHandler   (wraps a TripStream)
 ```
@@ -182,8 +182,13 @@ establishes its QUIC connection right away:
    reacting to it (such as the client auto-update's
    `LoginFailedWithUpdateHandler`) does not need to know which transport is
    in use. The certificate must also be issued for the host name of the URI,
-   which KWIK always verifies — unlike the other transports, `tripq` does not
-   support `hostcheck=false` yet; it will with the next KWIK release. Set
+   which KWIK verifies by default. `hostcheck=false` skips that check
+   (`noServerHostnameVerification()`), for a client connecting by an address
+   the certificate is not issued for: the certificate chain is still validated
+   against the truststore. This works like `hostcheck` of the TCP/SSL
+   transports. Unlike an untrusted certificate, a host name mismatch is
+   detected by KWIK's TLS engine rather than the trust manager, so its
+   `TripRuntimeException` has no `SSLHandshakeException` cause. Set
    `certcheck=false` to disable validation altogether
    (`noServerCertificateCheck()`) — for a client that runs on a trusted,
    non-public network against a server presenting a self-signed certificate
@@ -197,6 +202,9 @@ establishes its QUIC connection right away:
    does not return at all.
 4. Each pool slot (`createSlot`) opens a new **bidirectional** QUIC stream
    (`connection.createStream(true)`) and wraps it in a `QuicTripConnection`.
+
+The key-exchange groups the client offers can be restricted with `namedgroups`,
+see [Post-quantum key exchange](#post-quantum-key-exchange).
 
 So one QUIC *connection* carries many TRIP *connections*, each being one QUIC
 *stream* — taking direct advantage of QUIC's multiplexing without head-of-line
@@ -267,11 +275,11 @@ interrupt, which is remembered and re-asserted before returning.
 can withhold an interrupt that is already pending, but not one that arrives *while*
 the thread is inside KWIK (as of KWIK 0.12):
 
-| Operation | Interrupt arriving during the operation | Consequence |
-|-----------|------------------------------------------|-------------|
-| write that does not have to wait | Left alone by KWIK. | None, the interrupt stays pending. |
-| write waiting for room in the send buffer | KWIK fails the write with an `InterruptedIOException`. The wrapper repeats it. | None, the interrupt is re-asserted when the write returns. |
-| read      | Swallowed by KWIK: the read goes on and returns normally, the interrupt status is cleared. | The call succeeds, but the interrupt is **lost**. A dispatcher misses its wakeup and notices the queued work only when its sleep interval ends. |
+| Operation                                 | Interrupt arriving during the operation                                                    | Consequence                                                                                                                                     |
+|-------------------------------------------|--------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| write that does not have to wait          | Left alone by KWIK.                                                                        | None, the interrupt stays pending.                                                                                                              |
+| write waiting for room in the send buffer | KWIK fails the write with an `InterruptedIOException`. The wrapper repeats it.             | None, the interrupt is re-asserted when the write returns.                                                                                      |
+| read                                      | Swallowed by KWIK: the read goes on and returns normally, the interrupt status is cleared. | The call succeeds, but the interrupt is **lost**. A dispatcher misses its wakeup and notices the queued work only when its sleep interval ends. |
 
 Repeating a write is safe because KWIK takes its data all or nothing as long as it
 fits into the stream's send buffer of 50 kB: the interrupted wait for room in that
@@ -319,41 +327,76 @@ shape is used on both client and server (with host `0` / `0.0.0.0` selecting the
 server bind-all case).
 
 ```
-tripq://<host>:<port>?ksfile=...&kspass=...&ksalias=...[&kstype=...][&kmpass=...][&tsfile=...][&tspass=...][&tstype=...][&alpnid=...][&maxstreams=...][&streamwindow=...][&certcheck=...][&connecttimeout=...][&streamtimeout=...][&quicidle=...][&keepalive=...]
+tripq://<host>:<port>?ksfile=...&kspass=...&ksalias=...[&kstype=...][&kmpass=...][&tsfile=...][&tspass=...][&tstype=...][&alpnid=...][&maxstreams=...][&streamwindow=...][&certcheck=...][&hostcheck=...][&connecttimeout=...][&streamtimeout=...][&quicidle=...][&keepalive=...][&namedgroups=...]
 tripcq://<host>:<port>?...same as tripq...&mincompress=1024
 ```
 
-The keystore/truststore parameters (`ksfile`, `kspass`, `ksalias`, `kstype`, `kmpass`, `tsfile`, `tspass`, `tstype`) are
+The keystore/truststore parameters (`ksfile`, `kspass`, `ksalias`, `kstype`, `kmpass`, `tsfile`, `tspass`, `tstype`),
+`hostcheck` and `namedgroups` are
 resolved by the shared
 [`SslParameters`](../../../../tentackle-core/src/main/docs/trip.md#ssltls-configuration), so each
 also honors a `tentackle.ssl.<name>` system property and, as a fallback, the standard
 `javax.net.ssl.<name>` property. See that table for the full precedence rules.
 
-| Parameter        | Side            | Default                                                                       | Description                                                                                                                                                                        |
-|------------------|-----------------|-------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `ksfile`         | server          | `tentackle.ssl.keyStore` / `javax.net.ssl.keyStore`                           | Path to the TLS keystore file. **Required** (here or via a system property).                                                                                                       |
-| `kspass`         | server          | `tentackle.ssl.keyStorePassword` / `javax.net.ssl.keyStorePassword`           | Keystore password; also used as the key password unless `kmpass` is set.                                                                                                           |
-| `ksalias`        | server          | the sole key entry, if the keystore has exactly one                           | Alias of the server certificate within the keystore. Required only for multi-entry keystores.                                                                                      |
-| `kstype`         | server          | `tentackle.ssl.keyStoreType` / `javax.net.ssl.keyStoreType` / JDK default     | Keystore type, e.g. `PKCS12` or `JKS`.                                                                                                                                             |
-| `kmpass`         | server          | the keystore password (`kspass`)                                              | Private key password, if it differs from the keystore password.                                                                                                                    |
-| `tsfile`         | client          | `tentackle.ssl.trustStore` / `javax.net.ssl.trustStore` / JVM cacerts         | Truststore verifying the server certificate, used when `certcheck=true`.                                                                                                           |
-| `tspass`         | client          | `tentackle.ssl.trustStorePassword` / `javax.net.ssl.trustStorePassword`       | Truststore password.                                                                                                                                                               |
-| `tstype`         | client          | `tentackle.ssl.trustStoreType` / `javax.net.ssl.trustStoreType` / JDK default | Truststore type.                                                                                                                                                                   |
-| `alpnid`         | both            | the URI scheme (`tripq` / `tripcq`)                                           | ALPN application-protocol identifier. Client and server must match.                                                                                                                |
-| `maxstreams`     | both            | `128`                                                                         | Maximum concurrent peer-initiated bidirectional streams per connection; must be >= 1. On the client, it is the default of the pool's `maximum`, see [Stream limit](#stream-limit). |
-| `streamwindow`   | both            | `250000`                                                                      | Flow control window per stream in bytes; must be >= 1500. See below.                                                                                                               |
-| `certcheck`      | client          | `true`                                                                        | When `true`, the client validates the server certificate against `tsfile`. Any other value skips validation.                                                                       |
-| `connecttimeout` | client          | `10`                                                                          | Seconds to wait for the QUIC handshake before giving up. Must be > 0.                                                                                                              |
-| `streamtimeout`  | client          | `10`                                                                          | Seconds to wait for the peer to grant the credits to open another stream. Must be > 0. See below.                                                                                  |
-| `quicidle`       | both            | `30`                                                                          | QUIC max idle timeout in **seconds**. See below.                                                                                                                                   |
-| `keepalive`      | client          | unlimited                                                                     | How many seconds to keep the QUIC connection alive. `0` disables the keep-alive. See below.                                                                                        |
-| `mincompress`    | both (`tripcq`) | `1024`                                                                        | Minimum block size in bytes before deflate compression is applied.                                                                                                                 |
+| Parameter        | Side            | Default                                                                       | Description                                                                                                                                                                             |
+|------------------|-----------------|-------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `ksfile`         | server          | `tentackle.ssl.keyStore` / `javax.net.ssl.keyStore`                           | Path to the TLS keystore file. **Required** (here or via a system property).                                                                                                            |
+| `kspass`         | server          | `tentackle.ssl.keyStorePassword` / `javax.net.ssl.keyStorePassword`           | Keystore password; also used as the key password unless `kmpass` is set.                                                                                                                |
+| `ksalias`        | server          | the sole key entry, if the keystore has exactly one                           | Alias of the server certificate within the keystore. Required only for multi-entry keystores.                                                                                           |
+| `kstype`         | server          | `tentackle.ssl.keyStoreType` / `javax.net.ssl.keyStoreType` / JDK default     | Keystore type, e.g. `PKCS12` or `JKS`.                                                                                                                                                  |
+| `kmpass`         | server          | the keystore password (`kspass`)                                              | Private key password, if it differs from the keystore password.                                                                                                                         |
+| `tsfile`         | client          | `tentackle.ssl.trustStore` / `javax.net.ssl.trustStore` / JVM cacerts         | Truststore verifying the server certificate, used when `certcheck=true`.                                                                                                                |
+| `tspass`         | client          | `tentackle.ssl.trustStorePassword` / `javax.net.ssl.trustStorePassword`       | Truststore password.                                                                                                                                                                    |
+| `tstype`         | client          | `tentackle.ssl.trustStoreType` / `javax.net.ssl.trustStoreType` / JDK default | Truststore type.                                                                                                                                                                        |
+| `alpnid`         | both            | the URI scheme (`tripq` / `tripcq`)                                           | ALPN application-protocol identifier. Client and server must match.                                                                                                                     |
+| `maxstreams`     | both            | `128`                                                                         | Maximum concurrent peer-initiated bidirectional streams per connection; must be >= 1. On the client, it is the default of the pool's `maximum`, see [Stream limit](#stream-limit).      |
+| `streamwindow`   | both            | `250000`                                                                      | Flow control window per stream in bytes; must be >= 1500. See below.                                                                                                                    |
+| `certcheck`      | client          | `true`                                                                        | When `true`, the client validates the server certificate against `tsfile`. Any other value skips validation.                                                                            |
+| `hostcheck`      | client          | `tentackle.ssl.hostCheck` / `true`                                            | Verify the server's host name against its certificate, used when `certcheck=true`. Any value but `true` turns it off; the certificate chain is still validated.                         |
+| `connecttimeout` | client          | `10`                                                                          | Seconds to wait for the QUIC handshake before giving up. Must be > 0.                                                                                                                   |
+| `streamtimeout`  | client          | `10`                                                                          | Seconds to wait for the peer to grant the credits to open another stream. Must be > 0. See below.                                                                                       |
+| `quicidle`       | both            | `30`                                                                          | QUIC max idle timeout in **seconds**. See below.                                                                                                                                        |
+| `keepalive`      | client          | unlimited                                                                     | How many seconds to keep the QUIC connection alive. `0` disables the keep-alive. See below.                                                                                             |
+| `namedgroups`    | both            | `tentackle.ssl.namedGroups` / KWIK default                                    | Comma-separated key-exchange groups, e.g. `X25519MLKEM768`: the client offers them, the server accepts nothing else. See [Post-quantum key exchange](#post-quantum-key-exchange).      |
+| `mincompress`    | both (`tripcq`) | `1024`                                                                        | Minimum block size in bytes before deflate compression is applied.                                                                                                                      |
 
 > On the server, if the keystore file (`ksfile`) or the certificate alias (`ksalias`, unless the
 > keystore holds a single key entry) cannot be resolved, `accept()` throws a
-> `TripRuntimeException`. The port must be in the range `0..65535`. On the client, a port that is
-> not > 0, or a `connecttimeout` or `streamtimeout` that is not > 0, fails the creation of the
-> connection pool with an `IllegalArgumentException`.
+> `TripRuntimeException`. The port must be in the range `0..65535`. An unknown or duplicate group
+> in `namedgroups`, or one without a key exchange at runtime, fails `accept()` with a
+> `TripRuntimeException` as well. On the client, a port that is
+> not > 0, or a `connecttimeout` or `streamtimeout` that is not > 0, or an unknown group in
+> `namedgroups`, fails the creation of the connection pool with an `IllegalArgumentException`.
+
+### Post-quantum key exchange
+
+KWIK's TLS library, agent15, implements the post-quantum hybrid groups of RFC 10024
+(`X25519MLKEM768`, `SecP256r1MLKEM768` and `SecP384r1MLKEM1024`) in the separate
+artifact `tech.kwik:agent15-pqc`, which agent15 finds via the `ServiceLoader`. This module
+depends on it, so both ends of `tripq`/`tripcq` support these groups:
+
+- The **server** accepts every group it supports by default, the hybrid groups included, and picks
+  the first key share of the client it supports. A client offering `X25519MLKEM768` first, such as
+  `tripj`, therefore gets a post-quantum key exchange.
+  `namedgroups` (or `tentackle.ssl.namedGroups`) restricts the groups the server accepts
+  (`ServerConnector.Builder.withSupportedGroups()`, since KWIK 0.12.2). With
+  `namedgroups=X25519MLKEM768`, a client offering classical groups only fails the handshake instead of
+  downgrading, so the server enforces a post-quantum key exchange. Note that the list is a **set** of
+  acceptable groups, not an order of preference: the server takes the first key share of the client
+  that is in the set. With `namedgroups=X25519MLKEM768,x25519`, a client preferring `x25519` gets a
+  classical exchange, so enforcing post-quantum requires post-quantum groups only.
+- The **client** offers KWIK's classical default groups unless `namedgroups` is set. With
+  `namedgroups=X25519MLKEM768`, it offers nothing else, so a server without post-quantum support
+  fails the handshake instead of downgrading. With a list, e.g.
+  `namedgroups=X25519MLKEM768,x25519`, it sends a key share for the first group and lets the
+  server ask for another one via a HelloRetryRequest. The names are the standard TLS names, the
+  same as for the TCP transports (see
+  [TRIP](../../../../tentackle-core/src/main/docs/trip.md#post-quantum-key-exchange)).
+  An unknown name fails the creation of the connection pool.
+
+Since agent15 loads the key exchanges via the `ServiceLoader`, `agent15-pqc` must be present at
+runtime: on the module path, the descriptor's `requires tech.kwik.agent15.pqc` takes care of that,
+including jlink images; on the class path, its jar must be there as well.
 
 ### Idle timeout and keep-alive
 
@@ -445,6 +488,10 @@ The module declares its dependencies as:
   <groupId>tech.kwik</groupId>
   <artifactId>kwik</artifactId>
 </dependency>
+<dependency>
+  <groupId>tech.kwik</groupId>
+  <artifactId>agent15-pqc</artifactId>   <!-- the post-quantum key exchanges -->
+</dependency>
 ```
 
 ### JPMS descriptor
@@ -454,6 +501,8 @@ module org.tentackle.quic {
   exports org.tentackle.quic;
   opens   org.tentackle.quic to org.tentackle.core;   // TRIP instantiates the transport reflectively
   requires transitive tech.kwik.core;
+  requires tech.kwik.agent15;                         // the named groups
+  requires tech.kwik.agent15.pqc;                     // the post-quantum key exchanges
   requires transitive org.tentackle.core;
   provides org.tentackle.common.ModuleHook with org.tentackle.quic.service.Hook;
 }

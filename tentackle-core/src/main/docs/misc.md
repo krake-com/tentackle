@@ -38,16 +38,16 @@ documented in depth elsewhere and are only cross-referenced below:
 Small interfaces that the rest of the framework implements. They are the reason the package sits
 so low in the dependency graph.
 
-| Interface                                                            | Contract                                                                                     |
-|----------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
-| [`Identifiable`](../java/org/tentackle/misc/Identifiable.java)         | An object with an id (and thus a class + id identity). Extends `Serializable`.               |
-| [`SerialNumbered`](../java/org/tentackle/misc/SerialNumbered.java)     | An `Identifiable` that also carries a `long` serial — a version, sequence or serial number.  |
-| [`Modifiable`](../java/org/tentackle/misc/Modifiable.java)             | An object that can tell whether it has been modified.                                        |
-| [`Snapshotable<T>`](../java/org/tentackle/misc/Snapshotable.java)      | An object that can take snapshots and revert to them — see [snapshot.md](../../../../tentackle-pdo/src/main/docs/snapshot.md). |
-| [`Immutable`](../java/org/tentackle/misc/Immutable.java)              | An object that can be switched read-only — see [immutable.md](immutable.md).                  |
-| [`Convertible`](../java/org/tentackle/misc/Convertible.java)          | A type that maps to and from another representation (`toExternal` / `toInternal` / `getDefault`) — how an enum or custom type becomes a database column via [`ConvertibleType`](../../../../tentackle-sql/src/main/java/org/tentackle/sql/datatypes/ConvertibleType.java). |
-| [`ShortLongText`](../java/org/tentackle/misc/ShortLongText.java)      | An object offering both a short label and a longer description.                              |
-| [`ScrollableResource<T>`](../java/org/tentackle/misc/ScrollableResource.java) | An `AutoCloseable` resource with a current row (1-based) — the abstraction behind database cursors. |
+| Interface                                                                     | Contract                                                                                                                                                                                                                                                                   |
+|-------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`Identifiable`](../java/org/tentackle/misc/Identifiable.java)                | An object with an id (and thus a class + id identity). Extends `Serializable`.                                                                                                                                                                                             |
+| [`SerialNumbered`](../java/org/tentackle/misc/SerialNumbered.java)            | An `Identifiable` that also carries a `long` serial — a version, sequence or serial number.                                                                                                                                                                                |
+| [`Modifiable`](../java/org/tentackle/misc/Modifiable.java)                    | An object that can tell whether it has been modified.                                                                                                                                                                                                                      |
+| [`Snapshotable<T>`](../java/org/tentackle/misc/Snapshotable.java)             | An object that can take snapshots and revert to them — see [snapshot.md](../../../../tentackle-pdo/src/main/docs/snapshot.md).                                                                                                                                             |
+| [`Immutable`](../java/org/tentackle/misc/Immutable.java)                      | An object that can be switched read-only — see [immutable.md](immutable.md).                                                                                                                                                                                               |
+| [`Convertible`](../java/org/tentackle/misc/Convertible.java)                  | A type that maps to and from another representation (`toExternal` / `toInternal` / `getDefault`) — how an enum or custom type becomes a database column via [`ConvertibleType`](../../../../tentackle-sql/src/main/java/org/tentackle/sql/datatypes/ConvertibleType.java). |
+| [`ShortLongText`](../java/org/tentackle/misc/ShortLongText.java)              | An object offering both a short label and a longer description.                                                                                                                                                                                                            |
+| [`ScrollableResource<T>`](../java/org/tentackle/misc/ScrollableResource.java) | An `AutoCloseable` resource with a current row (1-based) — the abstraction behind database cursors.                                                                                                                                                                        |
 
 `Snapshotable` deserves one clarification that is easy to get wrong: a snapshot is **not** a copy.
 It holds the information needed to *revert* the object to its state at the time the snapshot was
@@ -134,13 +134,13 @@ A small, complete pooling framework used by the framework's own expensive resour
 [`DbPool`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/DbPool.java) for database
 sessions and `AbstractConnectionPool` for [TRIP](trip.md) connections both build on it.
 
-| Type                                                             | Role                                                                        |
-|------------------------------------------------------------------|-----------------------------------------------------------------------------|
-| [`Pool<T>`](../java/org/tentackle/misc/Pool.java)                 | The pool: `get()` / `put()`, sizes, timeouts, `shutdown()`, `monitor()`      |
-| [`Poolable<T>`](../java/org/tentackle/misc/Poolable.java)         | What a pooled resource must offer: its pool and its pool id                 |
-| [`PoolSlot<T>`](../java/org/tentackle/misc/PoolSlot.java)         | One slot in the pool                                                        |
-| [`AbstractPool`](../java/org/tentackle/misc/AbstractPool.java) / [`AbstractPoolSlot`](../java/org/tentackle/misc/AbstractPoolSlot.java) | Base implementations: min/max sizes, fixed increments, idle timeouts |
-| [`PoolTimeoutThread`](../java/org/tentackle/misc/PoolTimeoutThread.java) | **One** thread for *all* pools, closing instances idle or in use too long |
+| Type                                                                                                                                    | Role                                                                      |
+|-----------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------|
+| [`Pool<T>`](../java/org/tentackle/misc/Pool.java)                                                                                       | The pool: `get()` / `put()`, sizes, timeouts, `shutdown()`, `monitor()`   |
+| [`Poolable<T>`](../java/org/tentackle/misc/Poolable.java)                                                                               | What a pooled resource must offer: its pool and its pool id               |
+| [`PoolSlot<T>`](../java/org/tentackle/misc/PoolSlot.java)                                                                               | One slot in the pool                                                      |
+| [`AbstractPool`](../java/org/tentackle/misc/AbstractPool.java) / [`AbstractPoolSlot`](../java/org/tentackle/misc/AbstractPoolSlot.java) | Base implementations: min/max sizes, fixed increments, idle timeouts      |
+| [`PoolTimeoutThread`](../java/org/tentackle/misc/PoolTimeoutThread.java)                                                                | **One** thread for *all* pools, closing instances idle or in use too long |
 
 A poolable's `poolId` doubles as its state: 0 when idle in the pool, greater than 0 while lent out,
 -1 once removed. Resources are created lazily on the first `get()`, which also registers the pool
@@ -212,14 +212,14 @@ Parsing runs in four steps:
 
 The built-in vocabulary:
 
-| Element                                                                    | Effect                                                                 |
-|----------------------------------------------------------------------------|------------------------------------------------------------------------|
-| [`NowShortcut`](../java/org/tentackle/misc/time/NowShortcut.java)            | Input starting with `.`, `,` or `/` means *now*                       |
-| [`AddShortcut`](../java/org/tentackle/misc/time/AddShortcut.java)            | `+10h` adds ten hours; units are `y`, `M`, `d`, `h`, `m`, `s`; a bare `-10` defaults to days (or hours for time-only types) |
-| [`NumberShortcut`](../java/org/tentackle/misc/time/NumberShortcut.java)      | `5h` → 05:00:00.000; `7M` → July 1st, midnight. Sets lesser fields to their minimum. Four and six digits are read as `ddMM`, `ddMMyy`, `HHmm`, `HHmmss` (in the order of the locale's pattern) |
-| [`ZoneShortcut`](../java/org/tentackle/misc/time/ZoneShortcut.java) / [`OffsetShortcut`](../java/org/tentackle/misc/time/OffsetShortcut.java) | A zone or offset; prefixed with `=` it *converts* the value, otherwise it just sets it |
-| [`DateFilter`](../java/org/tentackle/misc/time/DateFilter.java), [`ZoneFilter`](../java/org/tentackle/misc/time/ZoneFilter.java), [`OffsetFilter`](../java/org/tentackle/misc/time/OffsetFilter.java) | The normalizing filters |
-| [`MissingTimeHandler`](../java/org/tentackle/misc/time/MissingTimeHandler.java), [`MissingZoneIdHandler`](../java/org/tentackle/misc/time/MissingZoneIdHandler.java), [`MissingOffsetHandler`](../java/org/tentackle/misc/time/MissingOffsetHandler.java) | The error handlers that fill in what the input omitted: midnight or the rest of a partial time, the default zone, the current offset |
+| Element                                                                                                                                                                                                                                                   | Effect                                                                                                                                                                                         |
+|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`NowShortcut`](../java/org/tentackle/misc/time/NowShortcut.java)                                                                                                                                                                                         | Input starting with `.`, `,` or `/` means *now*                                                                                                                                                |
+| [`AddShortcut`](../java/org/tentackle/misc/time/AddShortcut.java)                                                                                                                                                                                         | `+10h` adds ten hours; units are `y`, `M`, `d`, `h`, `m`, `s`; a bare `-10` defaults to days (or hours for time-only types)                                                                    |
+| [`NumberShortcut`](../java/org/tentackle/misc/time/NumberShortcut.java)                                                                                                                                                                                   | `5h` → 05:00:00.000; `7M` → July 1st, midnight. Sets lesser fields to their minimum. Four and six digits are read as `ddMM`, `ddMMyy`, `HHmm`, `HHmmss` (in the order of the locale's pattern) |
+| [`ZoneShortcut`](../java/org/tentackle/misc/time/ZoneShortcut.java) / [`OffsetShortcut`](../java/org/tentackle/misc/time/OffsetShortcut.java)                                                                                                             | A zone or offset; prefixed with `=` it *converts* the value, otherwise it just sets it                                                                                                         |
+| [`DateFilter`](../java/org/tentackle/misc/time/DateFilter.java), [`ZoneFilter`](../java/org/tentackle/misc/time/ZoneFilter.java), [`OffsetFilter`](../java/org/tentackle/misc/time/OffsetFilter.java)                                                     | The normalizing filters                                                                                                                                                                        |
+| [`MissingTimeHandler`](../java/org/tentackle/misc/time/MissingTimeHandler.java), [`MissingZoneIdHandler`](../java/org/tentackle/misc/time/MissingZoneIdHandler.java), [`MissingOffsetHandler`](../java/org/tentackle/misc/time/MissingOffsetHandler.java) | The error handlers that fill in what the input omitted: midnight or the rest of a partial time, the default zone, the current offset                                                           |
 
 `NumberShortcut`'s sliding window deserves a mention: `010120` becomes 2020-01-01 while `010199`
 becomes 1999-01-01, not 2099 — a `WindowProvider` decides where the century flips.
@@ -247,19 +247,19 @@ and friends for the whole `java.time` family.
 
 ## Utilities
 
-| Class                                                                                     | Purpose                                                                                  |
-|-------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| [`ObjectUtilities`](../java/org/tentackle/misc/ObjectUtilities.java)                       | Object helpers, mainly for [`CompoundValue`](compound-value.md) conversions; a `@Service`, so applications extend it for their own types |
-| [`DiagnosticUtilities`](../java/org/tentackle/misc/DiagnosticUtilities.java)               | Diagnostics (thread dumps and friends); also a `@Service`                                |
-| [`ConcurrencyHelper`](../java/org/tentackle/misc/ConcurrencyHelper.java)                   | Concurrency and multithreading helpers                                                   |
-| [`TimeKeeper`](../java/org/tentackle/misc/TimeKeeper.java)                                 | A `nanoTime`-based duration with a fluent API — used throughout for timing and statistics |
-| [`Canonicalizer<T>`](../java/org/tentackle/misc/Canonicalizer.java)                        | Makes equal objects share one reference, cutting memory in large object graphs           |
-| [`CommandLine`](../java/org/tentackle/misc/CommandLine.java)                               | Parses `--option` / `--option=value` plus plain arguments                                |
-| [`XUUID`](../java/org/tentackle/misc/XUUID.java)                                           | An id plus a `UUID` (`"id-uuid"`), so an external reference can be checked against brute-force guessing without changing the domain logic |
-| [`NamedCounter`](../java/org/tentackle/misc/NamedCounter.java) / [`NamedValue<T>`](../java/org/tentackle/misc/NamedValue.java) | Thread-safe counters/values by name — e.g. numbering threads          |
-| [`InheritableThreadLocalHashTable`](../java/org/tentackle/misc/InheritableThreadLocalHashTable.java) | A thread-local hashtable where each child thread gets its own copy             |
-| [`UserHomeJavaDir`](../java/org/tentackle/misc/UserHomeJavaDir.java)                       | The per-user cache directory, `${user.home}/.java/tentackle`; the system property `tentackle.user.home.java.dir` replaces `${user.home}` |
-| [`IdSerialTuple`](../java/org/tentackle/misc/IdSerialTuple.java) / [`IdSerialNameTuple`](../java/org/tentackle/misc/IdSerialNameTuple.java) | Id + serial (+ name) tuples, mainly for compact serialization |
+| Class                                                                                                                                       | Purpose                                                                                                                                   |
+|---------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
+| [`ObjectUtilities`](../java/org/tentackle/misc/ObjectUtilities.java)                                                                        | Object helpers, mainly for [`CompoundValue`](compound-value.md) conversions; a `@Service`, so applications extend it for their own types  |
+| [`DiagnosticUtilities`](../java/org/tentackle/misc/DiagnosticUtilities.java)                                                                | Diagnostics (thread dumps and friends); also a `@Service`                                                                                 |
+| [`ConcurrencyHelper`](../java/org/tentackle/misc/ConcurrencyHelper.java)                                                                    | Concurrency and multithreading helpers                                                                                                    |
+| [`TimeKeeper`](../java/org/tentackle/misc/TimeKeeper.java)                                                                                  | A `nanoTime`-based duration with a fluent API — used throughout for timing and statistics                                                 |
+| [`Canonicalizer<T>`](../java/org/tentackle/misc/Canonicalizer.java)                                                                         | Makes equal objects share one reference, cutting memory in large object graphs                                                            |
+| [`CommandLine`](../java/org/tentackle/misc/CommandLine.java)                                                                                | Parses `--option` / `--option=value` plus plain arguments                                                                                 |
+| [`XUUID`](../java/org/tentackle/misc/XUUID.java)                                                                                            | An id plus a `UUID` (`"id-uuid"`), so an external reference can be checked against brute-force guessing without changing the domain logic |
+| [`NamedCounter`](../java/org/tentackle/misc/NamedCounter.java) / [`NamedValue<T>`](../java/org/tentackle/misc/NamedValue.java)              | Thread-safe counters/values by name — e.g. numbering threads                                                                              |
+| [`InheritableThreadLocalHashTable`](../java/org/tentackle/misc/InheritableThreadLocalHashTable.java)                                        | A thread-local hashtable where each child thread gets its own copy                                                                        |
+| [`UserHomeJavaDir`](../java/org/tentackle/misc/UserHomeJavaDir.java)                                                                        | The per-user cache directory, `${user.home}/.java/tentackle`; the system property `tentackle.user.home.java.dir` replaces `${user.home}`  |
+| [`IdSerialTuple`](../java/org/tentackle/misc/IdSerialTuple.java) / [`IdSerialNameTuple`](../java/org/tentackle/misc/IdSerialNameTuple.java) | Id + serial (+ name) tuples, mainly for compact serialization                                                                             |
 
 ### Holders
 
@@ -309,16 +309,16 @@ property changes, so a listener can veto the change by throwing a `RuntimeExcept
 
 ## Package Layout
 
-| Group             | Types                                                                                                                              |
-|-------------------|------------------------------------------------------------------------------------------------------------------------------------|
-| Core contracts    | `Identifiable`, `SerialNumbered`, `Modifiable`, `Snapshotable`, `Immutable`, `Convertible`, `ShortLongText`, `ScrollableResource`, `Provider`, `Acceptor` |
-| Collections       | `TrackedList`, `TrackedArrayList`, `TrackedListListener`, `CopyOnWrite{Collection,List,Set}`, `IdentifiableMap`, `IdentifiableKey`, `Immutable{Collection,ArrayList}`, `ImmutableException` |
-| Pooling           | `Pool`, `Poolable`, `PoolSlot`, `AbstractPool`, `AbstractPoolSlot`, `PoolTimeoutThread`                                            |
-| Formatting        | `FormatHelper`, `DateTimeUtilities`, `CsvConverter`, `SubString`, `CompoundValue`                                                  |
-| Utilities         | `ObjectUtilities`, `DiagnosticUtilities`, `ConcurrencyHelper`, `TimeKeeper`, `Canonicalizer`, `CommandLine`, `XUUID`, `NamedCounter`, `NamedValue`, `InheritableThreadLocalHashTable`, `UserHomeJavaDir`, `IdSerialTuple`, `IdSerialNameTuple` |
-| Holders           | `Holder`, `VolatileHolder`, `BlockingHolder`                                                                                      |
-| Properties        | `PropertiesUtilities`, `PropertiesResource`, `DefaultPropertiesResource`, `PropertiesResourceService`, `ChainedProperties`, `PropertySupport`, `PropertyEvent`, `PropertyListener` |
-| `misc.time`       | `SmartDateTimeParser`, the shortcuts (`Now`, `Add`, `Number`, `Zone`, `Offset`), the filters (`Date`, `Zone`, `Offset`), the missing-value handlers |
+| Group          | Types                                                                                                                                                                                                                                          |
+|----------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Core contracts | `Identifiable`, `SerialNumbered`, `Modifiable`, `Snapshotable`, `Immutable`, `Convertible`, `ShortLongText`, `ScrollableResource`, `Provider`, `Acceptor`                                                                                      |
+| Collections    | `TrackedList`, `TrackedArrayList`, `TrackedListListener`, `CopyOnWrite{Collection,List,Set}`, `IdentifiableMap`, `IdentifiableKey`, `Immutable{Collection,ArrayList}`, `ImmutableException`                                                    |
+| Pooling        | `Pool`, `Poolable`, `PoolSlot`, `AbstractPool`, `AbstractPoolSlot`, `PoolTimeoutThread`                                                                                                                                                        |
+| Formatting     | `FormatHelper`, `DateTimeUtilities`, `CsvConverter`, `SubString`, `CompoundValue`                                                                                                                                                              |
+| Utilities      | `ObjectUtilities`, `DiagnosticUtilities`, `ConcurrencyHelper`, `TimeKeeper`, `Canonicalizer`, `CommandLine`, `XUUID`, `NamedCounter`, `NamedValue`, `InheritableThreadLocalHashTable`, `UserHomeJavaDir`, `IdSerialTuple`, `IdSerialNameTuple` |
+| Holders        | `Holder`, `VolatileHolder`, `BlockingHolder`                                                                                                                                                                                                   |
+| Properties     | `PropertiesUtilities`, `PropertiesResource`, `DefaultPropertiesResource`, `PropertiesResourceService`, `ChainedProperties`, `PropertySupport`, `PropertyEvent`, `PropertyListener`                                                             |
+| `misc.time`    | `SmartDateTimeParser`, the shortcuts (`Now`, `Add`, `Number`, `Zone`, `Offset`), the filters (`Date`, `Zone`, `Offset`), the missing-value handlers                                                                                            |
 
 
 ## Related Documentation

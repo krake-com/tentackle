@@ -17,18 +17,18 @@ defaults on `TEXT` columns; only the major and minor version are available for t
 
 ## Type Mapping
 
-| `SqlType`   | MySQL/MariaDB type | Note                                                                       |
-|-------------|--------------------|----------------------------------------------------------------------------|
-| `VARCHAR(n)`| `VARCHAR(n)`       | `n` is capped at 4096 (`getMaxSize`)                                        |
-| `VARCHAR`   | `LONGTEXT`         | an attribute **without a size** — see [Sizeless Strings](#sizeless-strings) |
-| `CLOB`      | `LONGTEXT`         | there is no `CLOB`, and `TEXT` holds only 64 KB                            |
-| `XML`       | `LONGTEXT`         | no native XML type either; `isSqlxmlSupported()` is `false`                |
-| `JSON`      | `JSON`             | native since 5.7.8, and takes a plain string; **MariaDB** uses `LONGTEXT`   |
-| `BLOB`      | `LONGBLOB`         | `BLOB` holds only 64 KB                                                    |
-| `DECIMAL`   | `DECIMAL(19)`      | if the model gives no size — see [Decimals](#decimals)                     |
-| `TIMESTAMP` | `DATETIME(6)`      | without the `(6)` MySQL truncates to whole seconds                         |
-| `TIME`      | `TIME(6)`          | ditto                                                                       |
-| `BIT`       | `TINYINT`          | `TINYINT` as well; `SMALLINT`/`INTEGER`/`BIGINT` become `SMALLINT`/`INT`/`BIGINT` |
+| `SqlType`    | MySQL/MariaDB type | Note                                                                              |
+|--------------|--------------------|-----------------------------------------------------------------------------------|
+| `VARCHAR(n)` | `VARCHAR(n)`       | `n` is capped at 4096 (`getMaxSize`)                                              |
+| `VARCHAR`    | `LONGTEXT`         | an attribute **without a size** — see [Sizeless Strings](#sizeless-strings)       |
+| `CLOB`       | `LONGTEXT`         | there is no `CLOB`, and `TEXT` holds only 64 KB                                   |
+| `XML`        | `LONGTEXT`         | no native XML type either; `isSqlxmlSupported()` is `false`                       |
+| `JSON`       | `JSON`             | native since 5.7.8, and takes a plain string; **MariaDB** uses `LONGTEXT`         |
+| `BLOB`       | `LONGBLOB`         | `BLOB` holds only 64 KB                                                           |
+| `DECIMAL`    | `DECIMAL(19)`      | if the model gives no size — see [Decimals](#decimals)                            |
+| `TIMESTAMP`  | `DATETIME(6)`      | without the `(6)` MySQL truncates to whole seconds                                |
+| `TIME`       | `TIME(6)`          | ditto                                                                             |
+| `BIT`        | `TINYINT`          | `TINYINT` as well; `SMALLINT`/`INTEGER`/`BIGINT` become `SMALLINT`/`INT`/`BIGINT` |
 
 ### Sizeless Strings
 

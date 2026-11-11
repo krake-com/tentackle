@@ -98,7 +98,8 @@ it. `DefaultBindableElement` implements the actual access logic:
 - **Reading** (`getObject`): getter takes precedence over field.
 - **Writing** (`setObject`): setter → from-method → field, in that order.
   Primitive targets receive a safe default when the incoming value is `null`.
-- **Read-only** when there is no field, no setter, and no from-method.
+- **Read-only** when there is no setter, no from-method, and no field or only a `final` one.
+  Final fields are never mutated reflectively (JEP-500).
 - **Type** is derived lazily from the getter return type or field type.
 
 `BindableCache` caches the sorted `BindableElement`s per class (declared-only or
@@ -116,6 +117,12 @@ gets the replacement object, and then walks **up** the parent chain writing the
 replacement into each parent until it finds a parent with a setter or field
 (`AbstractBinding.setModelValue`). If the chain cannot absorb the replacement, a
 `BindingException` is thrown.
+
+`Binding.isModelReadOnly()` tells in advance whether a to-model transfer can succeed: it is `true`
+if the leaf member is read-only, or if it is updated via a from-method and the chain cannot absorb
+the replacement — for example, because the immutable object is held in a `final` field. The bound
+view element of such a binding is never changeable: FX components stay non-changeable even if a
+changeable validator or the application asks otherwise, and table cells cannot be edited.
 This feature is essential for application-specific DataTypes, for example, a
 Position3D that is immutable but can be constructed from a 3-tuple of doubles.
 

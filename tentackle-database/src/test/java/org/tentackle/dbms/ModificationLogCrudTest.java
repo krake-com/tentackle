@@ -113,7 +113,7 @@ public class ModificationLogCrudTest extends AbstractDbTest {
      * @param object the object
      * @param modType the modification type
      */
-    public void visit(AbstractDbObject<?> object, Character modType) {
+    public void visit(AbstractDbObject<?> object, ModificationType modType) {
       // nothing to collect
     }
 

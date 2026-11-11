@@ -54,10 +54,13 @@ public interface TransportManager {
    * Requests a {@code Transport} for the given URI.<br>
    * If there is no transport with the corresponding {@link TransportKey},
    * a new transport will be created.<br>
-   * Otherwise, the existing transport will be returned.
+   * Otherwise, the existing transport will be returned, provided the URI's query parameters
+   * are the same as those the transport was created with.
    *
    * @param uri  the URI of the transport
    * @return the transport
+   * @throws TripRuntimeException if a transport for the same scheme, host and port is already
+   *         in use with different query parameters
    */
   Transport requestTransport(URI uri);
 

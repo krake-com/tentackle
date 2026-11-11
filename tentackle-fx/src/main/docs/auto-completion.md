@@ -131,12 +131,12 @@ against. Subclasses may override `setSelectList` to bypass or filter that conver
 
 The four built-in strategies:
 
-| Generator                     | Matches                                                                  | Good for                                    |
-|-------------------------------|--------------------------------------------------------------------------|---------------------------------------------|
-| `SimpleSuggestionGenerator`   | The input as a plain substring, anywhere in the candidate.                | Ordinary text.                              |
-| `CamelCaseSuggestionGenerator`| Input segments against the candidate's camel-case segments.               | Identifiers, `CustomerInvoiceReport`.       |
-| `SeparatorSuggestionGenerator`| Input segments against segments split by a separator string.             | Structured codes like `XXX-YYY-Z-AAA`.      |
-| `RegexSuggestionGenerator`    | Input segments against segments found by a regular expression.           | Anything with a lexical structure of its own.|
+| Generator                      | Matches                                                        | Good for                                      |
+|--------------------------------|----------------------------------------------------------------|-----------------------------------------------|
+| `SimpleSuggestionGenerator`    | The input as a plain substring, anywhere in the candidate.     | Ordinary text.                                |
+| `CamelCaseSuggestionGenerator` | Input segments against the candidate's camel-case segments.    | Identifiers, `CustomerInvoiceReport`.         |
+| `SeparatorSuggestionGenerator` | Input segments against segments split by a separator string.   | Structured codes like `XXX-YYY-Z-AAA`.        |
+| `RegexSuggestionGenerator`     | Input segments against segments found by a regular expression. | Anything with a lexical structure of its own. |
 
 `SimpleSuggestionGenerator` and `SeparatorSuggestionGenerator` are case-insensitive by default
 (`setCaseSensitive(true)` to change that).
@@ -178,13 +178,13 @@ default font. Override `AutoCompletionPopup.createCellFactory()` to render rows 
 Styling hooks — the framework itself ships no rules for these, they exist for themes and
 applications:
 
-| Hook                               | Kind        | Applies to                       |
-|------------------------------------|-------------|----------------------------------|
-| `.autocompletion`                  | style class | the popup                        |
-| `.autocompletion-pane`             | style class | the popup's `StackPane`          |
-| `.autocompletion-list`             | style class | the `ListView` inside            |
-| `-tt-autocomplete-visible-row-count` | CSS property | rows shown before scrolling (default 16) |
-| `-tt-autocomplete-fixed-cell-size` | CSS property | row height (default 0 = derive from the text component's height) |
+| Hook                                 | Kind         | Applies to                                                       |
+|--------------------------------------|--------------|------------------------------------------------------------------|
+| `.autocompletion`                    | style class  | the popup                                                        |
+| `.autocompletion-pane`               | style class  | the popup's `StackPane`                                          |
+| `.autocompletion-list`               | style class  | the `ListView` inside                                            |
+| `-tt-autocomplete-visible-row-count` | CSS property | rows shown before scrolling (default 16)                         |
+| `-tt-autocomplete-fixed-cell-size`   | CSS property | row height (default 0 = derive from the text component's height) |
 
 ### Threading and input coalescing
 
@@ -230,12 +230,12 @@ A controller offering completion over a list of customers:
 
 ## Package Layout
 
-| Package                              | Content                                                                     | Module               |
-|--------------------------------------|-----------------------------------------------------------------------------|----------------------|
-| `org.tentackle.fx.component.auto`    | `AutoCompletionController`, the suggestion generators, `AutoCompletionCellFactory` | tentackle-fx   |
-| `org.tentackle.fx.component`         | `AutoCompletionPopup`                                                       | tentackle-fx         |
-| `org.tentackle.fx.component.skin`    | `AutoCompletionPopupSkin`                                                   | tentackle-fx         |
-| `org.tentackle.misc`                 | `SubString`                                                                 | tentackle-core       |
+| Package                           | Content                                                                            | Module         |
+|-----------------------------------|------------------------------------------------------------------------------------|----------------|
+| `org.tentackle.fx.component.auto` | `AutoCompletionController`, the suggestion generators, `AutoCompletionCellFactory` | tentackle-fx   |
+| `org.tentackle.fx.component`      | `AutoCompletionPopup`                                                              | tentackle-fx   |
+| `org.tentackle.fx.component.skin` | `AutoCompletionPopupSkin`                                                          | tentackle-fx   |
+| `org.tentackle.misc`              | `SubString`                                                                        | tentackle-core |
 
 
 ## Related Documentation

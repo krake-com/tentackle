@@ -49,7 +49,7 @@ of, or in addition to, a desktop UI. Like every other node, its role is decided 
      │  (e.g. Spring Boot) │     + WebSessionKeyCache  (HTTP session ↔ SessionInfo)
      └──────────┬──────────┘
                 │  url = jdbc:… │ jndi:…  →  DB-connected (owns a SessionPool)
-                │  url = trip…           →  proxy (owns a remote MultiUserSessionPool)
+                │  url = trip…            →  proxy (owns a remote MultiUserSessionPool)
                 ▼
         Database   ─or─   upstream Tentackle server
 ```
@@ -113,7 +113,7 @@ The public API is five methods that the web layer calls, plus the inherited serv
 | `removeWebSession(T key)`                | logout / session-expired listener | Drop the mapping (no-op if absent).                                                                                                                                                                  |
 | `getSession(T key)`                      | per request                       | Borrow a pooled persistence [`Session`](../../../../tentackle-session/src/main/java/org/tentackle/session/Session.java) attached to that user's `SessionInfo`; `null` if the key is unknown/expired. |
 | `putSession(Session)`                    | after the response                | Return the session to its pool.                                                                                                                                                                      |
-| `getSessionKeys(SessionInfo)`            | app code                          | Reverse-lookup all web keys currently bound to a `SessionInfo` (compared by `equals`, i.e., by username).                                                                                           |
+| `getSessionKeys(SessionInfo)`            | app code                          | Reverse-lookup all web keys currently bound to a `SessionInfo` (compared by `equals`, i.e., by username).                                                                                            |
 
 ### How `getSession` resolves a pooled session
 
@@ -133,7 +133,7 @@ public Session getSession(T sessionKey) {
       }
     }
     if (session != null) {
-      session.setSessionInfo(sessionInfo);          // attach the user's identity
+      session.setSessionInfo(sessionInfo);         // attach the user's identity
       return session;
     }
   }
@@ -348,7 +348,7 @@ public class TentackleDispatcherServlet extends DispatcherServlet {
     try {
       Principal principal = request.getUserPrincipal();
       if (principal != null) {
-        String sessionId = request.getSession().getId();         // the web session key (T = String)
+        String sessionId = request.getSession().getId();          // the web session key (T = String)
         session = app.getSession(sessionId);
         if (session == null) {                                    // first request of this web session
           char[] password = extractBasicAuthPassword(request);
@@ -450,7 +450,7 @@ Spring Security's `UserDetailsService` is backed by Tentackle PDOs. The user det
 
 ```java
 public class PlsblUserDetailsManager implements UserDetailsService {
-  public synchronized void reload() {                                   // run from the ModificationTracker thread
+  public synchronized void reload() {                                // run from the ModificationTracker thread
     userMap.clear();
     for (User user : Pdo.create(User.class, Pdo.createDomainContext()).selectAllCached()) {
       if (!user.isRetired()) {

@@ -205,7 +205,7 @@ disappear if you try again". The flag is set by:
   victim, serialization failure — are wrapped in a temporary `PersistenceException`;
 - the **token lock**: a [`LockException`](../java/org/tentackle/pdo/LockException.java) because
   another user (or another named context) holds the token lock is temporary as well;
-- any application code that throws a `TentackleRuntimeException` with `setTemporary(true)`.
+- any application code that throws a `TentackleRuntimeException` marked via `temporary()` or `setTemporary(true)`.
 
 Everything else — constraint violations, domain exceptions, programming errors — fails
 immediately, exactly as without `retry`.

@@ -39,9 +39,9 @@ what the UI needs on top. Like `TestApplication`, it has no automatic transactio
 ```
    org.tentackle.app.AbstractApplication           (tentackle-pdo)
               ▲
-   TestApplication                                  (tentackle-test-pdo)  ── DB session, schema, registration
+   TestApplication                                 (tentackle-test-pdo)  ── DB session, schema, registration
               ▲
-   FxRdcTestApplication                             (tentackle-test-fx-rdc) ── JavaFX toolkit + FX-thread session
+   FxRdcTestApplication                            (tentackle-test-fx-rdc) ── JavaFX toolkit + FX-thread session
               ▲
    ┌──────────┼───────────────────────────┐
    ControllerTest   GuiProviderTest   TableConfigurationProviderTest

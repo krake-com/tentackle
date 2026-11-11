@@ -83,6 +83,69 @@ public class QuicTripTransportTest {
   }
 
   @Test(timeOut = 60000)
+  public void acceptsWithNamedGroups() throws Exception {
+    Reporter.log("acceptsWithNamedGroups", true);
+    // the server accepts only the given groups, see QuicTripConnectionPoolTest for the handshakes
+    int port = QuicTestSupport.freeUdpPort();
+    QuicTripTransport transport = new QuicTripTransport(URI.create(
+      "tripq://localhost:" + port + "?namedgroups=X25519MLKEM768&" + QuicTestSupport.keyStoreParameters(keyStore)));
+    try {
+      transport.accept();
+      assertTrue(transport.isAccepting());
+    }
+    finally {
+      transport.close();
+    }
+  }
+
+  @Test(timeOut = 60000)
+  public void refusesToAcceptWithUnknownNamedGroup() throws Exception {
+    Reporter.log("refusesToAcceptWithUnknownNamedGroup", true);
+    // the obsolete draft group is not known to KWIK
+    int port = QuicTestSupport.freeUdpPort();
+    QuicTripTransport transport = new QuicTripTransport(URI.create(
+      "tripq://localhost:" + port + "?namedgroups=X25519MLKEM768,X25519Kyber768Draft00&" +
+      QuicTestSupport.keyStoreParameters(keyStore)));
+    try {
+      TripRuntimeException exception = expectThrows(TripRuntimeException.class, transport::accept);
+      assertTrue(exception.getMessage().contains("invalid namedgroups"),
+                 "unexpected message: " + exception.getMessage());
+      assertTrue(exception.getCause().getMessage().contains("unknown named group 'X25519Kyber768Draft00'"),
+                 "unexpected cause: " + exception.getCause());
+      // neither the message nor the cause may reveal the keystore password
+      assertFalse(exception.getMessage().contains(QuicTestSupport.STORE_PASSWORD),
+                  "password leaked: " + exception.getMessage());
+      assertFalse(exception.getCause().getMessage().contains(QuicTestSupport.STORE_PASSWORD),
+                  "password leaked: " + exception.getCause().getMessage());
+      assertFalse(transport.isAccepting());
+      QuicTestSupport.assertPortIsFree(port);
+    }
+    finally {
+      transport.close();
+    }
+  }
+
+  @Test(timeOut = 60000)
+  public void refusesToAcceptWithDuplicateNamedGroup() throws Exception {
+    Reporter.log("refusesToAcceptWithDuplicateNamedGroup", true);
+    int port = QuicTestSupport.freeUdpPort();
+    QuicTripTransport transport = new QuicTripTransport(URI.create(
+      "tripq://localhost:" + port + "?namedgroups=X25519MLKEM768,X25519MLKEM768&" +
+      QuicTestSupport.keyStoreParameters(keyStore)));
+    try {
+      TripRuntimeException exception = expectThrows(TripRuntimeException.class, transport::accept);
+      assertTrue(exception.getCause() instanceof IllegalArgumentException,
+                 "unexpected cause: " + exception.getCause());
+      assertFalse(transport.isAccepting());
+      // the socket bound for localhost must have been released
+      QuicTestSupport.assertPortIsFree(port);
+    }
+    finally {
+      transport.close();
+    }
+  }
+
+  @Test(timeOut = 60000)
   public void refusesToAcceptWithoutPort() {
     Reporter.log("refusesToAcceptWithoutPort", true);
     QuicTripTransport transport = new QuicTripTransport(URI.create(

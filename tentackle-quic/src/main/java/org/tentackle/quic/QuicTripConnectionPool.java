@@ -18,6 +18,7 @@
 
 package org.tentackle.quic;
 
+import tech.kwik.agent15.TlsConstants.NamedGroup;
 import tech.kwik.core.QuicClientConnection;
 import tech.kwik.core.QuicStream;
 
@@ -40,6 +41,8 @@ import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -104,6 +107,8 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
   private final int connectTimeoutSeconds;
   private final int streamTimeoutSeconds;
   private final X509TrustManager trustManager;    // checks the server certificate, null if certcheck is disabled
+  private final List<NamedGroup> namedGroups;     // the key-exchange groups to offer, null for the KWIK default
+  private final boolean hostCheck;                // true if the server's host name is verified (if certcheck)
   private QuicClientConnection connection;
 
   /**
@@ -112,7 +117,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
    * @param transport     the transport associated with this pool
    * @param dictionary    the dictionary associated with this pool
    * @throws IllegalArgumentException if the URI has no port &gt; 0, or {@code connecttimeout} or
-   *         {@code streamtimeout} is not &gt; 0
+   *         {@code streamtimeout} is not &gt; 0, or {@code namedgroups} names an unknown group
    * @throws TripRuntimeException if the QUIC connection cannot be established
    */
   public QuicTripConnectionPool(QuicTripTransport transport, Dictionary dictionary) {
@@ -150,6 +155,9 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     streamWindow = transport.getStreamWindow();   // validated here rather than by every connect attempt
     trustManager = Boolean.parseBoolean(queryParameters.getOrDefault("certcheck", "true")) ?
                    createTrustManager(uri) : null;
+    SslParameters sslParameters = new SslParameters(uri);
+    namedGroups = toNamedGroups(sslParameters.getNamedGroups(), uri);
+    hostCheck = sslParameters.isHostCheck();
 
     connect();
   }
@@ -220,7 +228,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     QuicClientConnection quicConnection = connection;
     if (quicConnection == null || !quicConnection.isConnected()) {
       // idle timeout, peer restarted, network loss, ... (or a previous connect attempt failed)
-      LOGGER.info("QUIC connection to {0} is gone -> reconnecting", getTransport().getUri());
+      LOGGER.info("QUIC connection to {0} is gone -> reconnecting", UriHelper.uriToSafeString(getTransport().getUri()));
       connect();
       quicConnection = connection;
     }
@@ -270,11 +278,10 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     }
     catch (TimeoutException e) {
       creator.interrupt();                // KWIK aborts a blocked createStream when interrupted
-      TripRuntimeException tex = new TripRuntimeException(
+      // may well succeed again once a pooled connection is returned and closed
+      throw new TripRuntimeException(
         "no QUIC stream available on " + getTransport().getUri() + " within " + streamTimeoutSeconds +
-        " seconds: the peer grants fewer than the configured " + transport.getMaxStreams() + " streams", e);
-      tex.setTemporary(true);   // may well succeed again once a pooled connection is returned and closed
-      throw tex;
+        " seconds: the peer grants fewer than the configured " + transport.getMaxStreams() + " streams", e).temporary();
     }
     catch (ExecutionException e) {
       throw new TripRuntimeException("creating QUIC stream failed", e.getCause());
@@ -412,6 +419,14 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     }
     else {
       builder.customTrustManager(attemptTrustManager);
+      if (!hostCheck) {
+        // the certificate chain is still validated against the truststore, but not the host name
+        builder.noServerHostnameVerification();
+      }
+    }
+    if (namedGroups != null) {
+      // KWIK sends a key share for the first group and falls back to a HelloRetryRequest for the others
+      builder.supportedGroups(namedGroups);
     }
     QuicClientConnection quicConnection = builder.build();
     try {
@@ -422,6 +437,38 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
       closeQuietly(quicConnection);
       throw e;
     }
+  }
+
+  /**
+   * Converts the configured key-exchange group names to KWIK's named groups.<br>
+   * The names are the standard TLS names, as used by the JDK as well (e.g. {@code X25519MLKEM768}).
+   * Whether a known group is also supported is checked by KWIK: by the client when connecting, by the
+   * server when the connector is built. The post-quantum hybrid groups, for example, are provided by
+   * {@code agent15-pqc}.
+   * <p>
+   * Used by the client (the groups to offer) and by the server (the groups to accept), see
+   * {@link QuicTripTransport#accept()}.
+   *
+   * @param names the group names, null if not configured
+   * @param uri the transport URI (for diagnostics, its query is not included since it may hold passwords)
+   * @return the named groups, null if not configured
+   * @throws IllegalArgumentException if a name is unknown
+   */
+  static List<NamedGroup> toNamedGroups(String[] names, URI uri) {
+    if (names == null) {
+      return null;
+    }
+    List<NamedGroup> groups = new ArrayList<>(names.length);
+    for (String name : names) {
+      try {
+        groups.add(NamedGroup.valueOf(name));
+      }
+      catch (IllegalArgumentException ix) {
+        throw new IllegalArgumentException(
+          "unknown named group '" + name + "' in " + UriHelper.uriToSafeString(uri), ix);
+      }
+    }
+    return groups;
   }
 
   /**
@@ -516,7 +563,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
         quicConnection.close();
       }
       catch (RuntimeException e) {
-        LOGGER.warning("closing the QUIC connection to " + getTransport().getUri() + " failed", e);
+        LOGGER.warning("closing the QUIC connection to " + UriHelper.uriToSafeString(getTransport().getUri()) + " failed", e);
       }
     }
   }
@@ -531,7 +578,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
       quicConnection.close();
     }
     catch (RuntimeException e) {
-      LOGGER.warning("closing the QUIC connection to " + getTransport().getUri() + " failed", e);
+      LOGGER.warning("closing the QUIC connection to " + UriHelper.uriToSafeString(getTransport().getUri()) + " failed", e);
     }
   }
 

@@ -28,7 +28,7 @@ public interface DomainContextProvider {
   DomainContext getDomainContext();
 
   default <T extends PersistentDomainObject<T>> T on(Class<T> clazz) { ... }   // create a PDO
-  default <T extends Operation<T>>             T op(Class<T> clazz) { ... }    // create an Operation
+  default <T extends Operation<T>>              T op(Class<T> clazz) { ... }   // create an Operation
   // + named-context overloads and isWithinContext(...) checks
 }
 ```

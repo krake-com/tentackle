@@ -2,13 +2,13 @@
   <!--
    Tentackle OSGi Parent
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>25.20.0.0</version>
+    <version>25.20.1.0</version>
     <!-- not a module of tentackle-parent -->
     <!-- to be build separately -->
   </parent>
@@ -18,11 +18,11 @@
    OSGI semantic versioning is restricted to x.y.z[.timestamp].
    Thus, the versioning is reduced to LTS.a.b, where a and b are not related to the original versions.
    -->
-  <version>25.3.0</version>
+  <version>25.3.1</version>
   <packaging>pom</packaging>
 
   <properties>
-    <tentackle.version>25.20.0.0</tentackle.version>
+    <tentackle.version>25.20.1.0</tentackle.version>
   </properties>
 
   <name>Tentackle OSGi Parent</name>

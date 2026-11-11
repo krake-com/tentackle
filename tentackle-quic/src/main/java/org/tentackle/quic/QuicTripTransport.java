@@ -18,6 +18,7 @@
 
 package org.tentackle.quic;
 
+import tech.kwik.agent15.TlsConstants.NamedGroup;
 import tech.kwik.core.QuicStream;
 import tech.kwik.core.log.Logger;
 import tech.kwik.core.server.ServerConnectionConfig;
@@ -42,6 +43,7 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.security.KeyStore;
 import java.security.cert.CertificateException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -147,6 +149,15 @@ public class QuicTripTransport extends AbstractTransport {
       throw new TripRuntimeException(
         "keystore-file (ksfile) and certificate-alias (ksalias, or a single-entry keystore) must be specified");
     }
+    // the key-exchange groups the server accepts, null for all groups KWIK supports
+    List<NamedGroup> namedGroups;
+    try {
+      namedGroups = QuicTripConnectionPool.toNamedGroups(sslParameters.getNamedGroups(), uri);
+    }
+    catch (IllegalArgumentException e) {
+      // not the query: it may hold passwords
+      throw new TripRuntimeException("invalid namedgroups in URI " + UriHelper.uriToSafeString(uri), e);
+    }
 
     int streamWindow = getStreamWindow();
     ServerConnectionConfig serverConnectionConfig =
@@ -173,6 +184,15 @@ public class QuicTripTransport extends AbstractTransport {
                        .withConfiguration(serverConnectionConfig)
                        .withKeyStore(keyStore, certificateAlias, sslParameters.getKeyPassword())
                        .withLogger(log);
+      if (namedGroups != null) {
+        /*
+         * A set of acceptable groups, not a preference order: KWIK picks the first key share of the
+         * client that is in the set, and fails the handshake if there is none. So a server restricted to
+         * post-quantum groups enforces a post-quantum key exchange.
+         * build() verifies that a key exchange is available for every group (agent15-pqc for the hybrids).
+         */
+        builder.withSupportedGroups(namedGroups);
+      }
       String host = uri.getHost();
       int port = uri.getPort();
       if (port < 0 || port > 0xffff) {
@@ -195,7 +215,8 @@ public class QuicTripTransport extends AbstractTransport {
       accepting = true;
       started = true;
     }
-    catch (CertificateException | IOException e) {
+    catch (CertificateException | IOException | IllegalArgumentException e) {
+      // IllegalArgumentException: duplicate named groups or one without a key exchange at runtime
       throw new TripRuntimeException("starting QUIC service failed", e);
     }
     finally {

@@ -33,16 +33,15 @@ import org.tentackle.fx.NotificationBuilder;
 import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.rdc.app.DesktopApplication;
 import org.tentackle.fx.rdc.app.FxApplication;
-import org.tentackle.fx.rdc.app.LoginApplication;
 import org.tentackle.fx.rdc.app.LoginFailedHandler;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.BlockingHolder;
 import org.tentackle.misc.Holder;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.VersionIncompatibleException;
+import org.tentackle.update.ClientInfo;
 import org.tentackle.update.ClientUpdateUtilities;
 import org.tentackle.update.InstallationType;
-import org.tentackle.update.ClientInfo;
 import org.tentackle.update.UpdateInfo;
 import org.tentackle.update.UpdateService;
 
@@ -227,9 +226,9 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
 
   /**
    * Creates a countdown timeline for the go-button to start the update automatically after a few seconds.<br>
-   * The default implementation replaces the button text every second by 3, 2, 1 and 0 seconds
-   * and clicks the button at 0, i.e. about four seconds after the dialog was shown.<br>
-   * The update should not start immediately, since the user must have the option to cancel.
+   * The default implementation replaces the button text every second by 3, 2, 1, and 0 seconds
+   * and clicks the button at 0, i.e., about four seconds after the dialog was shown.<br>
+   * The update should not start immediately, since the user must be able to cancel.
    * Furthermore, if the update keeps failing for whatever reason, the user can break the installation loop.
    * Return null to require an explicit confirmation.
    *
@@ -237,7 +236,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
    * @return the timeline, null if no countdown (no automatic update start)
    */
   protected Timeline createCountdownTimeline(FxButton goButton) {
-    Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
+    Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(1), _ -> {
       String text = goButton.getText();
       char c = text.charAt(0);
       int value;
@@ -369,10 +368,10 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
    * Passes the current username and password encrypted to the process environment of the updated application.<br>
    * Requires a {@link Cryptor}. The username is passed if known, the password in addition if the credentials
    * are password-based. The variables are named {@code <APP>_USER} and {@code <APP>_PASSWORD}, where
-   * {@code <APP>} is the application name reduced to ASCII letters and digits, all in upper case.
+   * {@code <APP>} is the application name reduced to ASCII letters and digits, all in uppercase.
+   * See {@code LoginApplication#updateSessionInfoFromEnvironment(SessionInfo)}.
    *
    * @param environment the process environment
-   * @see LoginApplication#updateSessionInfoFromEnvironment(SessionInfo)
    */
   protected void passSessionInfoViaEnvironment(Map<String, String> environment) {
     Cryptor cryptor = Cryptor.getInstance();

@@ -123,6 +123,7 @@ model server and the headless modes of the wizards.
 
 ## License
 
-Tentackle is licensed under the [GNU Lesser General Public License, version 2.1](LICENSE).
+Tentackle is licensed under the [GNU Lesser General Public License, version 2.1 or (at your option) any later version](LICENSE)
+(SPDX: `LGPL-2.1-or-later`).
 By submitting a contribution, you agree that it is licensed under the same terms and confirm
 that you have the right to contribute it.

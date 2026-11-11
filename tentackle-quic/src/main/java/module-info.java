@@ -26,6 +26,8 @@ module org.tentackle.quic {
   opens org.tentackle.quic to org.tentackle.core;
 
   requires transitive tech.kwik.core;
+  requires tech.kwik.agent15;
+  requires tech.kwik.agent15.pqc;
   requires transitive org.tentackle.core;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.quic.service.Hook;

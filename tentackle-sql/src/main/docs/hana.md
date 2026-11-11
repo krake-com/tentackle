@@ -13,20 +13,20 @@ version 4 and passes as well.
 
 ## Type Mapping
 
-| `SqlType`    | HANA type        | Note                                                                                  |
-|--------------|------------------|---------------------------------------------------------------------------------------|
-| `VARCHAR(n)` | `NVARCHAR(n)`    | `n` is capped at 5000 (`getMaxSize`); `VARCHAR` holds ASCII only on HANA 2.0          |
-| `VARCHAR`    | `NVARCHAR(5000)` | an attribute without a size                                                           |
-| `CHAR`       | `NCHAR(1)`       | for the same reason                                                                   |
-| `CLOB`       | `NCLOB`          |                                                                                       |
-| `XML`        | `NCLOB`          | no native XML type; `isSqlxmlSupported()` is `false`                                 |
-| `JSON`       | `NCLOB`          | no native JSON column type; `isJsonSupported()` is `false`                            |
-| `BLOB`       | `BLOB`           |                                                                                       |
-| `BIT`        | `BOOLEAN`        | defaults are written as `TRUE`/`FALSE`, not as strings                                |
-| `TINYINT`    | `SMALLINT`       | HANA's `TINYINT` is **unsigned** (0–255) and cannot hold a negative Java `byte`       |
-| `FLOAT`      | `REAL`           | `DOUBLE` stays `DOUBLE`                                                               |
-| `DECIMAL`    | `DECIMAL`        | without a size, a decimal floating-point number that keeps the scale of each value    |
-| `UUID`       | —                | `isUUIDSupported()` is `false`, so a UUID is stored as a string                       |
+| `SqlType`    | HANA type        | Note                                                                               |
+|--------------|------------------|------------------------------------------------------------------------------------|
+| `VARCHAR(n)` | `NVARCHAR(n)`    | `n` is capped at 5000 (`getMaxSize`); `VARCHAR` holds ASCII only on HANA 2.0       |
+| `VARCHAR`    | `NVARCHAR(5000)` | an attribute without a size                                                        |
+| `CHAR`       | `NCHAR(1)`       | for the same reason                                                                |
+| `CLOB`       | `NCLOB`          |                                                                                    |
+| `XML`        | `NCLOB`          | no native XML type; `isSqlxmlSupported()` is `false`                               |
+| `JSON`       | `NCLOB`          | no native JSON column type; `isJsonSupported()` is `false`                         |
+| `BLOB`       | `BLOB`           |                                                                                    |
+| `BIT`        | `BOOLEAN`        | defaults are written as `TRUE`/`FALSE`, not as strings                             |
+| `TINYINT`    | `SMALLINT`       | HANA's `TINYINT` is **unsigned** (0–255) and cannot hold a negative Java `byte`    |
+| `FLOAT`      | `REAL`           | `DOUBLE` stays `DOUBLE`                                                            |
+| `DECIMAL`    | `DECIMAL`        | without a size, a decimal floating-point number that keeps the scale of each value |
+| `UUID`       | —                | `isUUIDSupported()` is `false`, so a UUID is stored as a string                    |
 
 The generated `CREATE TABLE` does not name a table type (`COLUMN` or `ROW`), so the database's configured default
 applies. HANA Cloud knows column tables only.

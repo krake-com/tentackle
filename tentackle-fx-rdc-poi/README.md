@@ -11,7 +11,7 @@ Compiling a real module against it makes the compiler warn:
 
     [WARNING] * Required filename-based automodules detected: [commons-math3-3.6.1.jar]. Please don't publish this project to a public artifact repository! *
 
-Strictly speaking, POI 5.x shouldn't have been published to Maven Central
+Strictly speaking, POI 5.x and 6.x shouldn't have been published to Maven Central
 before all of its dependencies were given a stable module name.
 
 Because `tentackle-fx-rdc` is a real module, its default `TableUtilities` would always win over

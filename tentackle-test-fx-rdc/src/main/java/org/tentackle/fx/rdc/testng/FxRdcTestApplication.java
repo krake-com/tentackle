@@ -23,13 +23,13 @@ import org.testng.Reporter;
 import org.testng.SkipException;
 import org.testng.annotations.BeforeSuite;
 
+import org.tentackle.fx.Fx;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.testng.TestApplication;
 import org.tentackle.session.Session;
 
 import javafx.application.Platform;
 import javafx.scene.control.Label;
-import java.awt.GraphicsEnvironment;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -48,9 +48,40 @@ public abstract class FxRdcTestApplication extends TestApplication {
   private static final String HEADLESS_MSG = "JVM is headless -> no FX tests";
   private static final int DEFAULT_FX_TIMEOUT = 30;       // timeout in seconds for the FX thread to catch up
 
+  /**
+   * Initializes the CSS and control classes on the FX thread.<br>
+   * {@link Platform#startup(Runnable)}, unlike {@code Application.launch}, does not load the default user agent
+   * stylesheet. The first control created by the test thread would load it via {@link Platform#runLater(Runnable)},
+   * and the FX thread would then initialize the {@code Styleable...Property} classes concurrently to the test thread.
+   * Since these classes and {@code com.sun.javafx.css.StyleablePropertyHelper} initialize each other in their
+   * static initializers, this may deadlock both threads. Creating a control on the FX thread first avoids that.
+   */
+  private static void initCssOnFxThread() {
+    CountDownLatch latch = new CountDownLatch(1);
+    Platform.runLater(() -> {
+      try {
+        new Label();    // loads the default stylesheet synchronously and initializes the styleable properties
+      }
+      finally {
+        latch.countDown();
+      }
+    });
+    try {
+      if (!latch.await(DEFAULT_FX_TIMEOUT, TimeUnit.SECONDS)) {
+        Assert.fail("initializing FX timed out");
+      }
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      Assert.fail("initializing FX interrupted", e);
+    }
+  }
+
+
   private final AtomicReference<Throwable> unhandledException = new AtomicReference<>();
   private Session fxSession;
   private int fxTimeout = DEFAULT_FX_TIMEOUT;
+
 
   /**
    * Creates the test application.
@@ -88,7 +119,7 @@ public abstract class FxRdcTestApplication extends TestApplication {
    */
   @BeforeSuite(alwaysRun = true)
   public void startFx() {
-    if (GraphicsEnvironment.isHeadless()) {
+    if (Fx.isHeadless()) {
       System.out.println(HEADLESS_MSG);   // Reporter.log ignored with SkipException
       throw new SkipException(HEADLESS_MSG);
     }
@@ -107,33 +138,17 @@ public abstract class FxRdcTestApplication extends TestApplication {
   }
 
   /**
-   * Initializes the CSS and control classes on the FX thread.<br>
-   * {@link Platform#startup(Runnable)}, unlike {@code Application.launch}, does not load the default user agent
-   * stylesheet. The first control created by the test thread would load it via {@link Platform#runLater(Runnable)},
-   * and the FX thread would then initialize the {@code Styleable...Property} classes concurrently to the test thread.
-   * Since these classes and {@code com.sun.javafx.css.StyleablePropertyHelper} initialize each other in their
-   * static initializers, this may deadlock both threads. Creating a control on the FX thread first avoids that.
+   * Unregisters the application and closes the FX thread's session.<br>
+   * Does nothing if the FX thread was never prepared, since then the application was not registered either.
    */
-  private static void initCssOnFxThread() {
-    CountDownLatch latch = new CountDownLatch(1);
-    Platform.runLater(() -> {
-      try {
-        new Label();    // loads the default stylesheet synchronously and initializes the styleable properties
-      }
-      finally {
-        latch.countDown();
-      }
-    });
-    try {
-      if (!latch.await(DEFAULT_FX_TIMEOUT, TimeUnit.SECONDS)) {
-        Assert.fail("initializing FX timed out");
-      }
-    }
-    catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      Assert.fail("initializing FX interrupted", e);
+  @Override
+  public void unregister() {
+    if (fxSession != null) {
+      super.unregister();
+      fxSession.close();
     }
   }
+
 
   /**
    * Sets the domain context and prepares the FX thread.<br>
@@ -146,7 +161,7 @@ public abstract class FxRdcTestApplication extends TestApplication {
   @Override
   protected void setDomainContext(DomainContext context) {
     super.setDomainContext(context);
-    if (GraphicsEnvironment.isHeadless()) {
+    if (Fx.isHeadless()) {
       throw new SkipException(HEADLESS_MSG);
     }
     else {
@@ -166,18 +181,6 @@ public abstract class FxRdcTestApplication extends TestApplication {
       catch (InterruptedException e) {
         Assert.fail("FX setup interrupted", e);
       }
-    }
-  }
-
-  /**
-   * Unregisters the application and closes the FX thread's session.<br>
-   * Does nothing if the FX thread was never prepared, since then the application was not registered either.
-   */
-  @Override
-  public void unregister() {
-    if (fxSession != null) {
-      super.unregister();
-      fxSession.close();
     }
   }
 

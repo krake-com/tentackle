@@ -49,7 +49,6 @@ public abstract class AbstractBinding implements Binding {
   private static final Logger LOGGER = Logger.get(AbstractBinding.class);
 
 
-
   // used to grab both kinds of validators: binder's validation scope and MandatoryScope
   private class BindingScopeImpl implements ValidationScope {
 
@@ -90,6 +89,7 @@ public abstract class AbstractBinding implements Binding {
   private List<ToModelListener> toModelListeners;         // to-model binding event listener list
   private List<ValidationListener> validationListeners;   // validation event listener list
   private List<Validator> validators;                     // the validators, null if none
+  private Boolean modelReadOnly;                          // true if the model cannot be updated, null if not determined yet
 
   /**
    * Creates a binding.
@@ -102,6 +102,15 @@ public abstract class AbstractBinding implements Binding {
     this.binder  = Objects.requireNonNull(binder, "binder");
     this.parents = parents;
     this.member  = Objects.requireNonNull(member, "member");
+  }
+
+
+  @Override
+  public boolean isModelReadOnly() {
+    if (modelReadOnly == null) {
+      modelReadOnly = determineModelReadOnly();
+    }
+    return modelReadOnly;
   }
 
   @Override
@@ -294,11 +303,39 @@ public abstract class AbstractBinding implements Binding {
 
 
   /**
+   * Determines whether the model value can be updated by this binding.<br>
+   * Mirrors the update logic of {@link #setModelValue(Object, Object, boolean)}:
+   * a member updated in place (setter or non-final field) is writable, a member updated
+   * via a from-method creates a new parent object which must be set into its own parent,
+   * and so on up the declaration chain.
+   *
+   * @return true if read-only
+   */
+  protected boolean determineModelReadOnly() {
+    BindingMember current = member;
+    int parentIndex = parents == null ? -1 : parents.length - 1;
+    for (;;) {
+      if (current.isReadOnly()) {
+        return true;
+      }
+      if (current.getSetter() != null || current.getFrom() == null) {
+        // updated in place (setter or non-final field, since not read-only)
+        return false;
+      }
+      // from-method: the new parent object must be set into its parent
+      if (parentIndex < 0) {
+        return true;
+      }
+      current = parents[parentIndex--];
+    }
+  }
+
+  /**
    * Sets the model value.
    *
    * @param parent the parent object
    * @param value the value from the view
-   * @param honourResyncByVetoException true if {@link BindingVetoException#isResyncRequested()} should be honoured
+   * @param honourResyncByVetoException true if {@link BindingVetoException#isResyncRequested()} should be honored
    */
   protected void setModelValue(Object parent, Object value, boolean honourResyncByVetoException) {
 
@@ -365,13 +402,12 @@ public abstract class AbstractBinding implements Binding {
     }
   }
 
-
   /**
    * Updates the view.
    *
    * @param parent the parent object
    * @param value the value from the model
-   * @param honourResyncByVetoException true if {@link BindingVetoException#isResyncRequested()} should be honoured
+   * @param honourResyncByVetoException true if {@link BindingVetoException#isResyncRequested()} should be honored
    */
   protected void updateView(Object parent, Object value, boolean honourResyncByVetoException) {
     // note: if parent == null value will also be null,
@@ -405,7 +441,6 @@ public abstract class AbstractBinding implements Binding {
     }
   }
 
-
   /**
    * Gets the value of the field to be set into the component.
    *
@@ -425,7 +460,6 @@ public abstract class AbstractBinding implements Binding {
     }
   }
 
-
   /**
    * Determines the view's component type.
    *
@@ -433,14 +467,12 @@ public abstract class AbstractBinding implements Binding {
    */
   protected abstract Class<?> getViewType();
 
-
   /**
    * Gets the root object bound to the view.
    *
    * @return the root object
    */
   protected abstract Object getBoundRootObject();
-
 
   /**
    * Determines whether the view is changed in such a way that it
@@ -450,7 +482,6 @@ public abstract class AbstractBinding implements Binding {
    */
   protected abstract boolean isValidationRequired();
 
-
   /**
    * Gets the string representation of the bound view element.
    *
@@ -458,14 +489,12 @@ public abstract class AbstractBinding implements Binding {
    */
   protected abstract String viewComponentToString();
 
-
   /**
    * Updates the view.
    *
    * @param value the value to be shown in the view
    */
   protected abstract void updateView(Object value);
-
 
   /**
    * Determines the validators for this member.<br>
@@ -486,7 +515,6 @@ public abstract class AbstractBinding implements Binding {
       validators = null;  // free to GC
     }
   }
-
 
   /**
    * Retrieves the parent object by walking along the member path starting at the root object.

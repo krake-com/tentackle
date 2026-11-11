@@ -49,7 +49,7 @@ as the `archetypeVersion`):
 mvn archetype:generate \
     -DarchetypeGroupId=org.tentackle \
     -DarchetypeArtifactId=tentackle-project-archetype \
-    -DarchetypeVersion=25.20.0.0
+    -DarchetypeVersion=25.20.1.0
 ```
 When all dependencies have been pulled from [Maven Central](https://central.sonatype.com/namespace/org.tentackle),
 you will be asked for:
@@ -230,11 +230,11 @@ There is one trap on the way to the first *operation*. The generated root `pom.x
 configures an `operation` profile for the wizard, but the packages it names do not exist yet —
 the project simply has no operation:
 
-| Profile element                                             | Package                       | Module              |
-|-------------------------------------------------------------|-------------------------------|---------------------|
-| `operationPackage`, `domainPackage`, `persistencePackage`   | `com.example.myapp.pdo.operation`     | `myapp-pdo`         |
-| `domainImplPackage`                                         | `com.example.myapp.domain.operation`  | `myapp-domain`      |
-| `persistenceImplPackage`                                    | `com.example.myapp.persist.operation` | `myapp-persistence` |
+| Profile element                                           | Package                               | Module              |
+|-----------------------------------------------------------|---------------------------------------|---------------------|
+| `operationPackage`, `domainPackage`, `persistencePackage` | `com.example.myapp.pdo.operation`     | `myapp-pdo`         |
+| `domainImplPackage`                                       | `com.example.myapp.domain.operation`  | `myapp-domain`      |
+| `persistenceImplPackage`                                  | `com.example.myapp.persist.operation` | `myapp-persistence` |
 
 The wizard decides which module a generated file belongs to by **looking for the package's
 directory** in the compile source roots of the reactor. A package without a directory belongs to

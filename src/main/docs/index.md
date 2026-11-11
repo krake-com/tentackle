@@ -92,12 +92,14 @@ topic-grouped listing of every document, see the
 - **`ExceptionHelper` (searching and handling exception chains)** — [Exceptions and Error Handling](./exceptions.md#exceptionhelper--working-with-chains)
 - **Exceptions (hierarchy, `TentackleRuntimeException`, `PersistenceException`)** — [Exceptions and Error Handling](./exceptions.md)
 - **Exceptions across tiers (remoting a `Throwable`)** — [Exceptions and Error Handling](./exceptions.md#exceptions-across-tiers), [TRIP](../../../tentackle-core/src/main/docs/trip.md)
+- **Exceptions of the JDK (transfer via TRIP)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#jdk-exceptions), [Exceptions and Error Handling](./exceptions.md#exceptions-across-tiers)
 - **Expandable text areas (one-liner expanding to a multi-line editor)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#expandable-one-line-text-areas)
 - **Environment variables (overriding properties)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md#properties)
 
 ## F
 
 - **FFM API (native bindings)** — [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md), [OS Credential Stores](../../../tentackle-keyring/src/main/docs/platform-keyring.md)
+- **Final fields / JEP-500 (deserialization)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#final-fields-jep-500), [Reflection](../../../tentackle-core/src/main/docs/reflect.md#canonical-construction)
 - **Fetch size / `FetchList` (fetching cursor rows in blocks)** — [Cursors](../../../tentackle-persistence/src/main/docs/cursors.md#fetching-in-blocks-fetch)
 - **Filtering (column autofilter in table headers)** — [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md#column-filters-autofilter)
 - **Firebird (backend peculiarities)** — [The Firebird Backend](../../../tentackle-sql/src/main/docs/firebird.md)
@@ -116,7 +118,7 @@ topic-grouped listing of every document, see the
 
 - **H2 (backend peculiarities, test database)** — [The H2 Backend](../../../tentackle-sql/src/main/docs/h2.md), [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md)
 - **History (origins, milestones, the move to GitHub)** — [The History of Tentackle](./history.md)
-- **Host name verification (`hostcheck`, TLS)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#ssltls-configuration), [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md#client-side), [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md)
+- **Host name verification (`hostcheck`, TLS)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#ssltls-configuration), [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md#client-side), [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md#client-side)
 
 ## I
 
@@ -185,6 +187,7 @@ topic-grouped listing of every document, see the
 
 ## N
 
+- **Named groups (TLS key exchange, `namedgroups`)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#post-quantum-key-exchange)
 - **Naming rules (derived class names, `NamingRules`)** — [Naming Rules](../../../tentackle-common/src/main/docs/naming-rules.md)
 - **NoBundle (bundle look-alikes, excluded from `tentackle-check:bundles`)** — [Resource Bundles and Internationalization](../../../tentackle-common/src/main/docs/bundle.md#the-bundle-convention), [Checker Maven Plugin](../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md#the-bundles-goal)
 - **N:M relations** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
@@ -216,6 +219,7 @@ topic-grouped listing of every document, see the
 - **Permissions / grantees** — [Security](../../../tentackle-pdo/src/main/docs/security.md)
 - **Persistence layer** — [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md)
 - **Pooling (resources, sessions)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
+- **Post-quantum key exchange (`X25519MLKEM768`, `namedgroups`)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#post-quantum-key-exchange), [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md#post-quantum-key-exchange), [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md#post-quantum-key-exchange)
 - **PostgreSQL (backend peculiarities, `JSON`/`JSONB`)** — [The PostgreSQL Backend](../../../tentackle-sql/src/main/docs/postgres.md)
 - **Printing (tables, tree tables)** — [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#table-popup-export-and-printing)
 - **Projection queries (plain data instead of PDOs)** — [The Query DSL](../../../tentackle-database/src/main/docs/query-dsl.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md)

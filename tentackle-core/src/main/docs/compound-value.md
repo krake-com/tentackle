@@ -36,12 +36,12 @@ A `CompoundValue` is classified once, at construction, into one of four
 [`Type`](../java/org/tentackle/misc/CompoundValue.java)s. The classification is purely syntactic — it is driven by
 the leading characters of the text:
 
-| `Type`             | Written as                     | Evaluates to                                          |
-|--------------------|--------------------------------|-------------------------------------------------------|
-| `CONSTANT`         | `100`, `\$literal`             | the text, converted to the requested type             |
-| `REFERENCE`        | `$grandTotal`, `!$customer.valid` | a getter/field path on the parent object, optionally negated |
-| `STATIC_REFERENCE` | `$org.tentackle.common.DateHelper.now` | a static method/field on a class, optionally negated  |
-| `SCRIPT`           | `#!gv{ object.amount > 200 }`, `{ … }` | the result of a script expression                |
+| `Type`             | Written as                             | Evaluates to                                                 |
+|--------------------|----------------------------------------|--------------------------------------------------------------|
+| `CONSTANT`         | `100`, `\$literal`                     | the text, converted to the requested type                    |
+| `REFERENCE`        | `$grandTotal`, `!$customer.valid`      | a getter/field path on the parent object, optionally negated |
+| `STATIC_REFERENCE` | `$org.tentackle.common.DateHelper.now` | a static method/field on a class, optionally negated         |
+| `SCRIPT`           | `#!gv{ object.amount > 200 }`, `{ … }` | the result of a script expression                            |
 
 `getType()` reports the outcome, and `toString()` renders it — `[SCRIPT] #!gv{ object.amount > 200 }` — which makes
 the classification easy to confirm in a debugger or a log line.
@@ -240,10 +240,10 @@ CompoundValue(String text)                   // ... and no target type
 
 `getValue` comes in four shapes, all funnelling into the first:
 
-| Overload                                              | Use when                                        |
-|-------------------------------------------------------|-------------------------------------------------|
-| `getValue(Object parentObject, Set<ScriptVariable>)`  | the general case                                |
-| `getValue(Object parentObject, ScriptVariable...)`    | a handful of variables, written inline          |
+| Overload                                                        | Use when                                                          |
+|-----------------------------------------------------------------|-------------------------------------------------------------------|
+| `getValue(Object parentObject, Set<ScriptVariable>)`            | the general case                                                  |
+| `getValue(Object parentObject, ScriptVariable...)`              | a handful of variables, written inline                            |
 | `getValue(Set<ScriptVariable>)` / `getValue(ScriptVariable...)` | no parent object (constants, static refs, self-contained scripts) |
 
 Everything about the classification is introspectable after construction — `getText()`, `getType()`, `getClazz()`,
@@ -275,11 +275,11 @@ validator annotation are compound values rather than plain strings:
 @NotNull(condition = "{ object.objectClassId == 0 }", message = "{ @('missing object classname') }")
 ```
 
-| Parameter   | Target type | Meaning                                                                             |
-|-------------|-------------|-------------------------------------------------------------------------------------|
-| `condition` | `Boolean`   | gates whether the constraint applies at all; a non-`Boolean` result is a `ValidationRuntimeException` |
-| `value`     | the element's type | the comparison operand, or a computed replacement for the element under test  |
-| `message`   | `String`    | the diagnostic text; empty means "use the validator's default message"              |
+| Parameter   | Target type        | Meaning                                                                                               |
+|-------------|--------------------|-------------------------------------------------------------------------------------------------------|
+| `condition` | `Boolean`          | gates whether the constraint applies at all; a non-`Boolean` result is a `ValidationRuntimeException` |
+| `value`     | the element's type | the comparison operand, or a computed replacement for the element under test                          |
+| `message`   | `String`           | the diagnostic text; empty means "use the validator's default message"                                |
 
 ### `ValidatorCompoundValueFactory`
 
@@ -314,14 +314,14 @@ or a house dialect only replaces `ValidatorCompoundValueFactory`.
 For a validator's scripts, `AbstractValidator.createScriptVariables(ctx)` exposes the whole
 [`ValidationContext`](../java/org/tentackle/validate/ValidationContext.java) as named variables:
 
-| Variable  | Constant           | Bound to                                                       |
-|-----------|--------------------|-----------------------------------------------------------------|
-| `object`  | `VAR_OBJECT`       | the **parent** object — the one declaring the validated element |
-| `value`   | `VAR_VALUE`        | the element under test (a field's value)                        |
-| `clazz`   | `VAR_CLASS`        | the parent's effective class (proxies unwrapped)                |
-| `context` | `VAR_CONTEXT`      | the `ValidationContext` itself                                  |
-| `scope`   | `VAR_SCOPE`        | the effective `ValidationScope` of this run                     |
-| `path`    | `VAR_PATH`         | the dotted validation path, e.g. `invoice.customer.name`        |
+| Variable  | Constant      | Bound to                                                        |
+|-----------|---------------|-----------------------------------------------------------------|
+| `object`  | `VAR_OBJECT`  | the **parent** object — the one declaring the validated element |
+| `value`   | `VAR_VALUE`   | the element under test (a field's value)                        |
+| `clazz`   | `VAR_CLASS`   | the parent's effective class (proxies unwrapped)                |
+| `context` | `VAR_CONTEXT` | the `ValidationContext` itself                                  |
+| `scope`   | `VAR_SCOPE`   | the effective `ValidationScope` of this run                     |
+| `path`    | `VAR_PATH`    | the dotted validation path, e.g. `invoice.customer.name`        |
 
 Note the pairing that catches newcomers out: **`object` is the parent, `value` is the field**. It is consistent
 between the two worlds, though — `object` is bound to `getParentObject()` exactly as the `$reference` form resolves
@@ -428,12 +428,12 @@ readable, and is the conventional spelling throughout the framework's own models
 
 The four types are ordered by cost, and the cheapest one that expresses the rule is the right one:
 
-| Prefer            | When                                                                                        |
-|-------------------|---------------------------------------------------------------------------------------------|
-| a **constant**    | the operand really is fixed — `@Greater("0")`. Converted once, then free.                   |
-| a **reference**   | the rule is "ask this property" — `condition="$slave"`. Reflection only, no scripting engine on the path, nothing to compile, and it works with no scripting module on the classpath at all. |
-| a **script**      | the rule needs logic a path cannot express — comparisons, arithmetic, null checks, `&&`.    |
-| a **static reference** | the operand is a well-known global, typically a clock — `$org.tentackle.common.DateHelper.now`. |
+| Prefer                 | When                                                                                                                                                                                         |
+|------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| a **constant**         | the operand really is fixed — `@Greater("0")`. Converted once, then free.                                                                                                                    |
+| a **reference**        | the rule is "ask this property" — `condition="$slave"`. Reflection only, no scripting engine on the path, nothing to compile, and it works with no scripting module on the classpath at all. |
+| a **script**           | the rule needs logic a path cannot express — comparisons, arithmetic, null checks, `&&`.                                                                                                     |
+| a **static reference** | the operand is a well-known global, typically a clock — `$org.tentackle.common.DateHelper.now`.                                                                                              |
 
 A script pulls in a scripting provider and a compile step; a reference does not. `condition="{ object.slave }"` and
 `condition="$slave"` produce identical results, and the reference is the better citizen of the two. Reach for a
@@ -460,14 +460,14 @@ script when the condition earns it.
 
 ## Source Map
 
-| Type                                                                                                          | Location                                        |
-|---------------------------------------------------------------------------------------------------------------|-------------------------------------------------|
-| [`CompoundValue`](../java/org/tentackle/misc/CompoundValue.java), [`ObjectUtilities`](../java/org/tentackle/misc/ObjectUtilities.java) | `tentackle-core` · `org.tentackle.misc`         |
-| [`ReflectionHelper`](../java/org/tentackle/reflect/ReflectionHelper.java) (`getValueByPath`, `getStaticValueByPath`) | `tentackle-core` · `org.tentackle.reflect`  |
-| [`ValidatorCompoundValueFactory`](../java/org/tentackle/validate/ValidatorCompoundValueFactory.java), [`DefaultValidatorCompoundValueFactory`](../java/org/tentackle/validate/DefaultValidatorCompoundValueFactory.java) | `tentackle-core` · `org.tentackle.validate` |
+| Type                                                                                                                                                                                                                         | Location                                              |
+|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------|
+| [`CompoundValue`](../java/org/tentackle/misc/CompoundValue.java), [`ObjectUtilities`](../java/org/tentackle/misc/ObjectUtilities.java)                                                                                       | `tentackle-core` · `org.tentackle.misc`               |
+| [`ReflectionHelper`](../java/org/tentackle/reflect/ReflectionHelper.java) (`getValueByPath`, `getStaticValueByPath`)                                                                                                         | `tentackle-core` · `org.tentackle.reflect`            |
+| [`ValidatorCompoundValueFactory`](../java/org/tentackle/validate/ValidatorCompoundValueFactory.java), [`DefaultValidatorCompoundValueFactory`](../java/org/tentackle/validate/DefaultValidatorCompoundValueFactory.java)     | `tentackle-core` · `org.tentackle.validate`           |
 | [`AbstractValidator`](../java/org/tentackle/validate/validator/AbstractValidator.java), [`AbstractScriptValidationMessageConverter`](../java/org/tentackle/validate/validator/AbstractScriptValidationMessageConverter.java) | `tentackle-core` · `org.tentackle.validate.validator` |
-| `ScriptFactory`, `Script`, `ScriptVariable`, `ScriptConverter`                                                 | `tentackle-core` · `org.tentackle.script`       |
-| `CheckValidationsMojo` (build-time script check)                                                               | `tentackle-check-maven-plugin`                  |
+| `ScriptFactory`, `Script`, `ScriptVariable`, `ScriptConverter`                                                                                                                                                               | `tentackle-core` · `org.tentackle.script`             |
+| `CheckValidationsMojo` (build-time script check)                                                                                                                                                                             | `tentackle-check-maven-plugin`                        |
 
 ## Related Documentation
 

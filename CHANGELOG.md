@@ -9,12 +9,12 @@ For the story behind the releases, see [The History of Tentackle](src/main/docs/
 
 ## Versioning
 
-Since 8.2.2.0, a version reads `<java>.<feature>.<minor>.<patch>`:
+Since 8.2.2.0, a version reads `<java>.<major>.<minor>.<patch>`:
 
 - **java** — the minimum JDK the release requires (8, 11, 17, 21, 25).
-- **feature** — the feature level. Since the Java 11 line, each new Java line continues with the
-  next feature level (11.7 → 17.8, 17.14 → 21.15, 21.16 → 25.17). The Java 8 line counts on its own.
-- **minor**, **patch** — enhancements and fixes within a feature level.
+- **major** — the major level. Since the Java 11 line, each new Java line continues with the
+  next major level (11.7 → 17.8, 17.14 → 21.15, 21.16 → 25.17). The Java 8 line counts on its own.
+- **minor**, **patch** — enhancements and fixes within a major level.
 
 Older Java lines are maintained on their own branches (`java8`, `java11`, `java17`, `java21`) and
 still receive maintenance releases. The releases are therefore grouped by Java line below, newest
@@ -28,6 +28,77 @@ requires Java 11.
 
 
 ## Java 25 line (25.x)
+
+### [25.20.1.0] – 2026-11-11
+
+### Added
+
+- `tentackle-jlink-maven-plugin`: jlink of Java 27 refuses to link a resource directory found in more than one
+  module, such as `OSGI-INF` in ikonli 12.4.0. The new parameter `excludeResources` (jlink's `--exclude-resources`)
+  excludes `**/OSGI-INF/**` by default.
+- `SslParameters`: the new option `namedgroups` (`tentackle.ssl.namedGroups`) restricts the TLS key-exchange
+  groups of `trips`/`tripcs`, e.g. `namedgroups=X25519MLKEM768` to enforce a post-quantum key exchange (JEP 527)
+  instead of silently falling back to a classical one.
+- `tentackle-quic`: depends on `tech.kwik:agent15-pqc`, so `tripq`/`tripcq` support the post-quantum hybrid key
+  exchanges (`X25519MLKEM768` etc.). `namedgroups` is honored on both ends: the client offers only these groups,
+  the server accepts nothing else, so `namedgroups=X25519MLKEM768` enforces a post-quantum key exchange.
+- `tentackle-quic`: `tripq`/`tripcq` support `hostcheck=false`, which skips the verification of the server's host
+  name while still validating its certificate chain, just like the TCP/SSL transports and `tripj`.
+- `tentackle-quiche`: `tripj`/`tripcj` honor `namedgroups` on both ends (via `quiche_config_set_curves_list`).
+- Fx.isHeadless using `glass.platform=Headless` for running FX-related tests in headless mode (Jenkins, for example)
+
+### Changed
+
+- KWIK was upgraded from 0.12.1 to 0.12.2, which can restrict the key-exchange groups of a server and skip the
+  host name verification of a client.
+- The native quiche library (`jetty-quiche-native`) was upgraded from 0.29.3 to 0.30.0. Its BoringSSL offers the
+  post-quantum hybrid key exchange `X25519MLKEM768` by default. A library set via `tentackle.quiche.library` must be
+  0.30.0 or later.
+- Faster PDO and operation invocation handlers: `hashCode`, `equals`, `compareTo` and `toString` are dispatched
+  without `Method.equals` chains, and `getEffectiveSuperClasses()` is computed once per class (and is now unmodifiable).
+- `Mixin` is now an immutable descriptor shared by all proxies of the same type (`Mixin.get`, `Mixin.forImplementation`).
+  It no longer holds the delegate: the invocation handlers hold their delegates directly, which saves two objects per
+  PDO and one indirection per method call, and TRIP transfers the delegates instead of the mixins.
+  `setDelegate`/`getDelegate` and the dummy constructor `Mixin(Class, Class)` were removed, and `createDelegate` now
+  returns the delegate.
+- TRIP no longer mutates final fields (JEP-500). Deserializing a final field that is not passed to a canonical
+  constructor fails with a `TripRuntimeException`. The migration aid `-Dtentackle.trip.mutateFinalFields=true`
+  (plus `--enable-final-field-mutation=org.tentackle.core`) restores the old behavior.
+  Canonical members are now also matched against superclass fields.
+- Final fields that were deserialized are now passed to canonical constructors (`CopyOnWriteCollection`,
+  `CopyOnWriteList`, `CopyOnWriteSet`, `FailedValidationResult`, `InfoValidationResult`,
+  `VersionIncompatibleException`, `RebuildEpochException`), transient (`ImmutableArrayList`'s hash) or no longer final (`DbPreferences`, `ParameterString`,
+  `IgnoreDuplicatesPersistenceVisitor`, `ScriptRunnerException`). The protected no-arg constructors of the validation results were replaced
+  by constructors taking the serialized values.
+- Binding treats final fields without a setter as read-only, and the NoFXML linker refuses to inject into final
+  fields. The new `Binding.isModelReadOnly()` also covers from-methods whose replacement cannot be set into the
+  parent chain. FX components bound to a read-only model stay non-changeable, even if a changeable validator or
+  the application asks otherwise, and such table cells are not editable.
+- TRIP transfers the JDK's exceptions via their getters and public constructors instead of their inaccessible fields.
+  An exception that cannot be serialized no longer fails the whole response: it arrives with its message, cause and
+  stack trace, either as its own class or, without a usable constructor, as `TripInstantiationException`.
+  New instance creators transfer `FileSystemException` (and subclasses), `DateTimeParseException`, `ParseException`,
+  `URISyntaxException`, `PatternSyntaxException`, `InvalidPathException` and `MissingResourceException` completely.
+  The new base class `AbstractThrowableInstanceCreator` supports application-specific ones.
+- Formerly, `PersistenceException` replaced a driver-specific `SQLException`
+  by a plain `SQLException` so that clients could deserialize a remote exception without the driver on the classpath.
+  This logic moved to `SQLExceptionComponentProvider` and was enhanced, so that TRIP now transfers a driver-specific exception as 
+  its **nearest** JDK superclass. A driver-specific cause that is not an `SQLException` is sent as a plain `Exception`.
+- `FileHelper.unzip` (used by the auto-update) now restores the modification times of the extracted files, if present.
+- `TransportKey` identifies a transport by scheme, host and port only, and is no longer accidentally serializable via TRIP.
+  `TransportManager.requestTransport` fails if the endpoint is already in use with different query parameters.
+
+### Removed
+
+- `SessionUtilities#alignExceptionCause` (overridden by `DbSessionUtilities`): no more necessary (see above).
+
+### Fixed
+
+- `UncheckedIOException`, `ExecutionException`, `CompletionException` and `AssertionError` could not be transferred
+  via TRIP.
+- `tentackle-jlink-maven-plugin`: the jpackage goal failed with "could not patch classpath" for a plain modular
+  application with resources, i.e., a classpath but no module path.
+
 
 ### [25.20.0.0] – 2026-10-23
 
@@ -1296,7 +1367,8 @@ Java 8 maintenance release with backports from 2.2.
 The first release in the public git history.
 For what it already contained, see [The History of Tentackle](src/main/docs/history.md#origins-20012015).
 
-[Unreleased]: https://github.com/krake-com/tentackle/compare/25.20.0.0...develop
+[Unreleased]: https://github.com/krake-com/tentackle/compare/25.20.1.0...develop
+[25.20.1.0]: https://github.com/krake-com/tentackle/releases/tag/25.20.1.0
 [25.20.0.0]: https://github.com/krake-com/tentackle/releases/tag/25.20.0.0
 [25.19.0.0]: https://github.com/krake-com/tentackle/releases/tag/25.19.0.0
 [25.18.2.1]: https://github.com/krake-com/tentackle/releases/tag/25.18.2.1

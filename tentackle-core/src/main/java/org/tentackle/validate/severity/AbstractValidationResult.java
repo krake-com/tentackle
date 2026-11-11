@@ -79,15 +79,24 @@ public abstract class AbstractValidationResult implements ValidationResult {
   }
 
   /**
-   * For TRIP.
+   * Creates a validation result from its serialized values.<br>
+   * The transient validator and validation context are null.<br>
+   * Subclasses must provide a {@link org.tentackle.reflect.CanonicalConstructor}
+   * for TRIP that delegates to this constructor.
+   *
+   * @param message the message
+   * @param errorCode the error code
+   * @param validationPath the validation path
+   * @param configuredScopes the configured scopes
    */
-  protected AbstractValidationResult() {
+  protected AbstractValidationResult(String message, String errorCode, String validationPath,
+                                     Class<? extends ValidationScope>[] configuredScopes) {
     this.validator = null;
     this.validationContext = null;
-    this.message = null;
-    this.errorCode = null;
-    configuredScopes = null;
-    validationPath = null;
+    this.message = message;
+    this.errorCode = errorCode;
+    this.configuredScopes = configuredScopes;
+    this.validationPath = validationPath;
   }
 
 
@@ -109,7 +118,6 @@ public abstract class AbstractValidationResult implements ValidationResult {
     }
     return buf.toString();
   }
-
 
   @Override
   public String getMessage() {
@@ -163,7 +171,7 @@ public abstract class AbstractValidationResult implements ValidationResult {
           throw new ValidationRuntimeException(
                   "no closing bracket after '" + pathPrefix + "' in validation path '" + validationPath + "'");
         }
-        // the path may end with an index, for example if an object validator failed for a collection element
+        // the path may end with an index, for example, if an object validator failed for a collection element
         int postfixStart = ndx2 + 1;
         if (postfixStart < validationPath.length() && validationPath.charAt(postfixStart) == '.') {
           postfixStart++;
@@ -188,4 +196,5 @@ public abstract class AbstractValidationResult implements ValidationResult {
 
     return indexes;
   }
+
 }

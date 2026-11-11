@@ -152,6 +152,129 @@ public class QuicTripConnectionPoolTest {
    * wrapping the original {@link CertificateException}. This is what
    * {@code LoginFailedWithUpdateHandler} looks for to trigger the client auto-update.
    */
+  @Test(timeOut = 30000)
+  public void rejectsUnknownNamedGroup() {
+    Reporter.log("rejectsUnknownNamedGroup", true);
+    // the obsolete draft group is not known to KWIK
+    QuicTripTransport transport = new QuicTripTransport(URI.create(
+      "tripq://localhost:12345?namedgroups=X25519MLKEM768,X25519Kyber768Draft00"));
+    try {
+      IllegalArgumentException exception =
+        expectThrows(IllegalArgumentException.class, () -> new QuicTripConnectionPool(transport, dictionary()));
+      assertTrue(exception.getMessage().contains("unknown named group 'X25519Kyber768Draft00'"),
+                 "unexpected message: " + exception.getMessage());
+    }
+    finally {
+      transport.close();
+    }
+  }
+
+  /**
+   * A client offering nothing but the post-quantum hybrid group {@code X25519MLKEM768} connects to a
+   * server with the default configuration. Since there is no other group to fall back to, the successful
+   * handshake proves that agent15-pqc is present on both ends and the hybrid key exchange was negotiated.
+   */
+  @Test(timeOut = 60000)
+  public void negotiatesPostQuantumKeyExchange() throws Exception {
+    Reporter.log("negotiatesPostQuantumKeyExchange", true);
+    Path serverKeyStore = QuicTestSupport.createKeyStore();
+    try {
+      int port = QuicTestSupport.freeUdpPort();
+      QuicTripTransport server = new QuicTripTransport(URI.create(
+        "tripq://localhost:" + port + "?" + QuicTestSupport.keyStoreParameters(serverKeyStore)));
+      try {
+        server.accept();
+        Thread.sleep(1000);   // let the server start accepting connections
+
+        QuicTripTransport client = new QuicTripTransport(URI.create(
+          "tripq://localhost:" + port + "?certcheck=false&namedgroups=X25519MLKEM768"));
+        try {
+          QuicTripConnectionPool pool = new QuicTripConnectionPool(client, dictionary());
+          pool.shutdown();
+        }
+        finally {
+          client.close();
+        }
+      }
+      finally {
+        server.close();
+      }
+    }
+    finally {
+      Files.deleteIfExists(serverKeyStore);
+    }
+  }
+
+  /**
+   * A server accepting nothing but {@code X25519MLKEM768} lets a client offering the same group in.
+   */
+  @Test(timeOut = 60000)
+  public void postQuantumOnlyServerAcceptsPostQuantumClient() throws Exception {
+    Reporter.log("postQuantumOnlyServerAcceptsPostQuantumClient", true);
+    connectToPostQuantumOnlyServer("&namedgroups=X25519MLKEM768",
+                                   client -> new QuicTripConnectionPool(client, dictionary()).shutdown());
+  }
+
+  /**
+   * A server accepting nothing but {@code X25519MLKEM768} must reject a client offering classical groups
+   * only, instead of silently negotiating a classical key exchange.
+   */
+  @Test(timeOut = 60000)
+  public void postQuantumOnlyServerRejectsClassicalClient() throws Exception {
+    Reporter.log("postQuantumOnlyServerRejectsClassicalClient", true);
+    connectToPostQuantumOnlyServer("&namedgroups=x25519,secp256r1",
+                                   client -> expectThrows(TripRuntimeException.class,
+                                                          () -> new QuicTripConnectionPool(client, dictionary())));
+  }
+
+  /**
+   * Same as {@link #postQuantumOnlyServerRejectsClassicalClient}, but the client offers KWIK's default groups,
+   * which are all classical.
+   */
+  @Test(timeOut = 60000)
+  public void postQuantumOnlyServerRejectsDefaultClient() throws Exception {
+    Reporter.log("postQuantumOnlyServerRejectsDefaultClient", true);
+    connectToPostQuantumOnlyServer("",
+                                   client -> expectThrows(TripRuntimeException.class,
+                                                          () -> new QuicTripConnectionPool(client, dictionary())));
+  }
+
+  /**
+   * Connects a client to a server restricted to {@code X25519MLKEM768}.
+   *
+   * @param clientParameters the additional client URI parameters, each starting with {@code &}
+   * @param test the test to run with the client transport
+   * @throws Exception if the test failed
+   */
+  private void connectToPostQuantumOnlyServer(String clientParameters, ClientTest test) throws Exception {
+    Path serverKeyStore = QuicTestSupport.createKeyStore();
+    try {
+      int port = QuicTestSupport.freeUdpPort();
+      QuicTripTransport server = new QuicTripTransport(URI.create(
+        "tripq://localhost:" + port + "?namedgroups=X25519MLKEM768&" +
+        QuicTestSupport.keyStoreParameters(serverKeyStore)));
+      try {
+        server.accept();
+        Thread.sleep(1000);   // let the server start accepting connections
+
+        QuicTripTransport client = new QuicTripTransport(URI.create(
+          "tripq://localhost:" + port + "?certcheck=false&connecttimeout=5" + clientParameters));
+        try {
+          test.run(client);
+        }
+        finally {
+          client.close();
+        }
+      }
+      finally {
+        server.close();
+      }
+    }
+    finally {
+      Files.deleteIfExists(serverKeyStore);
+    }
+  }
+
   @Test(timeOut = 60000)
   public void rejectsUntrustedCertificateWithCertcheck() throws Exception {
     Reporter.log("rejectsUntrustedCertificateWithCertcheck", true);
@@ -228,6 +351,124 @@ public class QuicTripConnectionPoolTest {
     finally {
       Files.deleteIfExists(serverKeyStore);
     }
+  }
+
+  /**
+   * A trusted certificate issued for another host than the one the client connects to must be rejected:
+   * the server's certificate is issued for {@code localhost}, but the client connects to {@code 127.0.0.1}.
+   */
+  @Test(timeOut = 60000)
+  public void rejectsCertificateOfAnotherHost() throws Exception {
+    Reporter.log("rejectsCertificateOfAnotherHost", true);
+    connectByAddress("", client -> expectThrows(TripRuntimeException.class,
+                                                () -> new QuicTripConnectionPool(client, dictionary())));
+  }
+
+  /**
+   * The escape hatch for {@link #rejectsCertificateOfAnotherHost}: with {@code hostcheck=false} the
+   * certificate chain is still verified, but not the host name.
+   */
+  @Test(timeOut = 60000)
+  public void acceptsCertificateOfAnotherHostWithoutHostcheck() throws Exception {
+    Reporter.log("acceptsCertificateOfAnotherHostWithoutHostcheck", true);
+    connectByAddress("&hostcheck=false", client -> new QuicTripConnectionPool(client, dictionary()).shutdown());
+  }
+
+  /**
+   * {@code hostcheck=false} skips the host name only: a certificate that is not trusted is still rejected.
+   */
+  @Test(timeOut = 60000)
+  public void rejectsUntrustedCertificateWithoutHostcheck() throws Exception {
+    Reporter.log("rejectsUntrustedCertificateWithoutHostcheck", true);
+    Path serverKeyStore = QuicTestSupport.createKeyStore();
+    try {
+      int port = QuicTestSupport.freeUdpPort();
+      QuicTripTransport server = new QuicTripTransport(URI.create(
+        "tripq://127.0.0.1:" + port + "?" + QuicTestSupport.keyStoreParameters(serverKeyStore)));
+      try {
+        server.accept();
+        Thread.sleep(1000);   // let the server start accepting connections
+
+        // no tsfile configured -> the JVM's default cacerts apply, which do not trust this self-signed cert
+        QuicTripTransport client = new QuicTripTransport(URI.create(
+          "tripq://127.0.0.1:" + port + "?certcheck=true&hostcheck=false"));
+        try {
+          TripRuntimeException exception =
+            expectThrows(TripRuntimeException.class, () -> new QuicTripConnectionPool(client, dictionary()));
+          SSLHandshakeException sslException = assertHandshakeException(exception);
+          assertTrue(sslException.getCause() instanceof CertificateException,
+                     "expected an SSLHandshakeException wrapping a CertificateException, got " +
+                     sslException.getCause());
+        }
+        finally {
+          client.close();
+        }
+      }
+      finally {
+        server.close();
+      }
+    }
+    finally {
+      Files.deleteIfExists(serverKeyStore);
+    }
+  }
+
+  /**
+   * Connects a client trusting the server's certificate, which is issued for {@code localhost}, by the
+   * server's IP address instead.
+   *
+   * @param clientParameters the additional client URI parameters, each starting with {@code &}
+   * @param test the test to run with the client transport
+   * @throws Exception if the test failed
+   */
+  private void connectByAddress(String clientParameters, ClientTest test) throws Exception {
+    Path serverKeyStore = QuicTestSupport.createKeyStore();
+    try {
+      Path trustStore = QuicTestSupport.deriveTrustStore(serverKeyStore);
+      try {
+        int port = QuicTestSupport.freeUdpPort();
+        QuicTripTransport server = new QuicTripTransport(URI.create(
+          "tripq://127.0.0.1:" + port + "?" + QuicTestSupport.keyStoreParameters(serverKeyStore)));
+        try {
+          server.accept();
+          Thread.sleep(1000);   // let the server start accepting connections
+
+          QuicTripTransport client = new QuicTripTransport(URI.create(
+            "tripq://127.0.0.1:" + port + "?certcheck=true&connecttimeout=5&" +
+            QuicTestSupport.trustStoreParameters(trustStore) + clientParameters));
+          try {
+            test.run(client);
+          }
+          finally {
+            client.close();
+          }
+        }
+        finally {
+          server.close();
+        }
+      }
+      finally {
+        Files.deleteIfExists(trustStore);
+      }
+    }
+    finally {
+      Files.deleteIfExists(serverKeyStore);
+    }
+  }
+
+  /**
+   * A test running against a client transport.
+   */
+  @FunctionalInterface
+  private interface ClientTest {
+
+    /**
+     * Runs the test.
+     *
+     * @param client the client transport
+     * @throws Exception if the test failed
+     */
+    void run(QuicTripTransport client) throws Exception;
   }
 
   /**

@@ -12,7 +12,7 @@ architecture deep-dives? That lives at **[tentackle.org](https://tentackle.org/)
 Tentackle is a comprehensive Java application framework for building modular,
 enterprise-grade multi-tier applications with a single, location-transparent
 programming model — from a JDBC/SQL database up to a JavaFX desktop client —
-with full JPMS support. It is distributed under the LGPL 2.1 by
+with full JPMS support. It is distributed under the LGPL 2.1 or later by
 [Krake Softwaretechnik](https://krake.de/).
 
 ## Modules

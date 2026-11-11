@@ -80,6 +80,7 @@ A table is read-only unless its configuration provides an [edit handler](#edit-h
 controls everything that happens when a value is entered in a cell. With a handler, all columns
 are editable, except those whose `editable` property is `FALSE`. Without a handler, a column is
 editable only if its `editable` property is `TRUE`; committing a value then simply ends editing.
+Either way, a cell bound to a read-only model, such as a `final` field without setter, is never editable.
 
 The configuration owns an [`FxTableBinder`](../java/org/tentackle/fx/bind/FxTableBinder.java) that
 binds the *cells* to the row objects. Don't confuse it with the controller's binder, which binds a
@@ -94,11 +95,11 @@ Each column is described by a
 whose name is the binding path (and the column's preferences key). Everything a business grid
 needs is a property, with `null` meaning "use the default derived from the column type or editor":
 
-| Aspect     | Properties                                                                          |
-|------------|-------------------------------------------------------------------------------------|
-| Display    | `displayedName`, `alignment`, `pattern` (yields a `DecimalFormat` or `DateTimeFormatter`), `blankZero` (not evaluated by the built-in cell types) |
-| Editing    | `editable`, `editor` (an `FxComponent` overriding the cell type's default), `validChars` / `invalidChars`, `unsigned`, `scale`, `maxColumns`, `caseConversion`, `autoSelect` |
-| Behavior   | `summable` (defaults to true for numeric types — see [totals](#totals)), `filterable` (see [column filters](#column-filters-autofilter)), `cellType` (overrides the type-derived cell type), `binding` |
+| Aspect   | Properties                                                                                                                                                                                             |
+|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Display  | `displayedName`, `alignment`, `pattern` (yields a `DecimalFormat` or `DateTimeFormatter`), `blankZero` (not evaluated by the built-in cell types)                                                      |
+| Editing  | `editable`, `editor` (an `FxComponent` overriding the cell type's default), `validChars` / `invalidChars`, `unsigned`, `scale`, `maxColumns`, `caseConversion`, `autoSelect`                           |
+| Behavior | `summable` (defaults to true for numeric types — see [totals](#totals)), `filterable` (see [column filters](#column-filters-autofilter)), `cellType` (overrides the type-derived cell type), `binding` |
 
 The configuration creates and caches the actual `TableColumn` or `TreeTableColumn` on demand
 (`getTableColumn()` / `getTreeTableColumn()`).
@@ -266,13 +267,13 @@ config.configure(tableView);
 
 The handler is consulted at each step of editing a cell:
 
-| Method                | When                                           | Purpose                                                                                           |
-|-----------------------|------------------------------------------------|---------------------------------------------------------------------------------------------------|
-| `isCellEditable`      | before editing starts, and during navigation   | Editability per *cell*, on top of the column's — a price that is locked once the line is invoiced. |
-| `isCommitOnFocusLost` | when editing starts                            | Whether the value is committed if the editor loses the focus. By default, it is not.              |
-| `verify`              | `ENTER` / `TAB`, before the model is touched   | Veto: a returned message keeps the editor open and is shown as its error.                         |
-| `committed`           | after the value was applied to the row object  | Modify other cells, add or remove rows, and return the cell to edit next (`null` ends editing).   |
-| `canceled`            | after `ESC`, or when the edit was abandoned    | Clean up, for example, remove a row that was appended but never filled in.                        |
+| Method                | When                                          | Purpose                                                                                            |
+|-----------------------|-----------------------------------------------|----------------------------------------------------------------------------------------------------|
+| `isCellEditable`      | before editing starts, and during navigation  | Editability per *cell*, on top of the column's — a price that is locked once the line is invoiced. |
+| `isCommitOnFocusLost` | when editing starts                           | Whether the value is committed if the editor loses the focus. By default, it is not.               |
+| `verify`              | `ENTER` / `TAB`, before the model is touched  | Veto: a returned message keeps the editor open and is shown as its error.                          |
+| `committed`           | after the value was applied to the row object | Modify other cells, add or remove rows, and return the cell to edit next (`null` ends editing).    |
+| `canceled`            | after `ESC`, or when the edit was abandoned   | Clean up, for example, remove a row that was appended but never filled in.                         |
 
 The entered value arrives as a
 [`TableCellEdit`](../java/org/tentackle/fx/table/edit/TableCellEdit.java): the cell, the old and
@@ -457,14 +458,14 @@ A controller displaying a list of invoices in an editable table:
 
 ## Package Layout
 
-| Package                                        | Content                                                                | Module            |
-|------------------------------------------------|------------------------------------------------------------------------|-------------------|
-| `org.tentackle.fx.table`                       | Configurations, providers, cell/column classes, `TotalsTableView`      | tentackle-fx      |
-| `org.tentackle.fx.table.edit`                  | Edit handlers: handler, edit context, provided handlers                | tentackle-fx      |
-| `org.tentackle.fx.table.filter`                | Column filters (autofilter): filter model, support, popup              | tentackle-fx      |
-| `org.tentackle.fx.table.type`                  | Built-in `TableCellType`s (strings, numbers, money, date/time, …)      | tentackle-fx      |
-| `org.tentackle.fx.rdc.table`                   | PDO-aware configuration, `TablePopup`, `TablePrinter`, `TableUtilities` | tentackle-fx-rdc  |
-| `org.tentackle.fx.rdc.poi`                     | Excel export replacing the CSV default                                 | tentackle-fx-rdc-poi |
+| Package                         | Content                                                                 | Module               |
+|---------------------------------|-------------------------------------------------------------------------|----------------------|
+| `org.tentackle.fx.table`        | Configurations, providers, cell/column classes, `TotalsTableView`       | tentackle-fx         |
+| `org.tentackle.fx.table.edit`   | Edit handlers: handler, edit context, provided handlers                 | tentackle-fx         |
+| `org.tentackle.fx.table.filter` | Column filters (autofilter): filter model, support, popup               | tentackle-fx         |
+| `org.tentackle.fx.table.type`   | Built-in `TableCellType`s (strings, numbers, money, date/time, …)       | tentackle-fx         |
+| `org.tentackle.fx.rdc.table`    | PDO-aware configuration, `TablePopup`, `TablePrinter`, `TableUtilities` | tentackle-fx-rdc     |
+| `org.tentackle.fx.rdc.poi`      | Excel export replacing the CSV default                                  | tentackle-fx-rdc-poi |
 
 
 ## Related Documentation

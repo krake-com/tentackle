@@ -19,6 +19,8 @@
 package org.tentackle.misc;
 
 import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.reflect.CanonicalConstructor;
+import org.tentackle.reflect.CanonicalName;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -87,7 +89,9 @@ public class CopyOnWriteCollection<E> implements Collection<E>, Serializable {
    * @param iteratorModifying true if iterators will be modifying, else readonly (avoids copy)
    * @throws IllegalArgumentException if the collection is not cloneable
    */
-  public CopyOnWriteCollection(Collection<E> collection, boolean iteratorModifying) {
+  @CanonicalConstructor
+  public CopyOnWriteCollection(@CanonicalName("collection") Collection<E> collection,
+                               @CanonicalName("iteratorModifying") boolean iteratorModifying) {
     if (!(collection instanceof Cloneable)) {
       throw new IllegalArgumentException(collection.getClass() + " does not implement Cloneable");
     }

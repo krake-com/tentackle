@@ -373,7 +373,7 @@ public final class DateHelper {
 
   /**
    * Derives the month from a day.
-   *
+   * <p>
    * The current month is kept as long as the day is at most {@code dayWindow} days ahead of
    * and at most {@code 31 - dayWindow} days behind the current day. A day further ahead
    * refers to the previous month, a day further behind to the next month.

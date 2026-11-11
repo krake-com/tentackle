@@ -28,14 +28,37 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.expectThrows;
 
 /**
  * Tests for the life cycle of {@link QuicheTripTransport} that do not need a peer.
  */
 @SuppressWarnings("missing-explicit-ctor")
 public class QuicheTripTransportTest {
+
+  @Test
+  public void translatesNamedGroupsToBoringSslCurves() {
+    assertEquals(QuicheTripTransport.toCurvesList(
+                   new String[] { "X25519MLKEM768", "x25519", "secp256r1", "secp384r1", "secp521r1" }),
+                 "X25519MLKEM768:X25519:P-256:P-384:P-521");
+  }
+
+  @Test(timeOut = 60000)
+  public void refusesUnsupportedNamedGroup() {
+    Reporter.log("refusesUnsupportedNamedGroup", true);
+    // a JDK group BoringSSL does not implement
+    QuicheTripTransport transport = new QuicheTripTransport(URI.create("tripj://localhost:12345?namedgroups=x448"));
+    try {
+      TripRuntimeException exception = expectThrows(TripRuntimeException.class, () -> transport.createConfig("trip"));
+      assertTrue(exception.getMessage().contains("namedgroups"), "unexpected message: " + exception.getMessage());
+    }
+    finally {
+      transport.close();
+    }
+  }
 
   /**
    * {@code close()} shuts down the endpoint outside the transport's monitor and marks the transport

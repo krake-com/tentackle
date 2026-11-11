@@ -23,8 +23,10 @@ import org.tentackle.fx.FxController;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.log.Logger;
 
+import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.Parent;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -38,7 +40,7 @@ import java.util.ResourceBundle;
 
 /**
  * The default implementation of a {@link NoFXMLLinker}.<br>
- * Injects the nodes, resources, invokes initialize and sets the view into the controller.
+ * Injects the nodes, resources, invokes initialize() and sets the view into the controller.
  * <p>
  * Notice that the old {@link javafx.fxml.Initializable} interface is not supported
  * and the initialize() method must be annotated with {@link javafx.fxml.FXML} to be invoked, even if public.
@@ -130,8 +132,8 @@ public class DefaultNoFXMLLinker implements NoFXMLLinker {
       throw new FxRuntimeException("unbound @FXML fields in " + controller.getClass().getName() + ": " + buf);
     }
 
-    invokeInitialize(controller.getFXMLMethods(), controller);
-    invokeInitialize(findNoFXMLMethods(view.getClass()), view);
+    invokeInitialize(controller.getFXMLMethods(), controller, FXML.class);
+    invokeInitialize(findNoFXMLMethods(view.getClass()), view, NoFXML.class);
 
     controller.setView(view);
   }
@@ -148,6 +150,10 @@ public class DefaultNoFXMLLinker implements NoFXMLLinker {
   }
 
   private void setField(Field field, Object object, Object value) throws IllegalAccessException {
+    if (Modifier.isFinal(field.getModifiers())) {
+      // never mutate final fields reflectively (JEP-500)
+      throw new FxRuntimeException("cannot inject into final field " + field);
+    }
     try {
       field.set(object, value);
     }
@@ -177,7 +183,7 @@ public class DefaultNoFXMLLinker implements NoFXMLLinker {
     return noFXMLMethods;
   }
 
-  private void invokeInitialize(Collection<Method> methods, Object object) {
+  private void invokeInitialize(Collection<Method> methods, Object object, Class<? extends Annotation> annotation) {
     for (Method method : methods) {
       if (method.getParameterCount() == 0 && method.getReturnType() == Void.TYPE &&
           !Modifier.isStatic(method.getModifiers()) &&
@@ -190,7 +196,7 @@ public class DefaultNoFXMLLinker implements NoFXMLLinker {
         }
       }
       else {
-        LOGGER.warning("unsupported method annotated with @NoFXML: {0} -> ignored", method);
+        LOGGER.warning("unsupported method annotated with @{0}: {1} -> ignored", annotation.getSimpleName(), method);
       }
     }
   }

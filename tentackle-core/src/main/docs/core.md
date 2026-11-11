@@ -231,22 +231,22 @@ tentackle-pdo, tentackle-session, tentackle-fx and tentackle-fx-rdc.
 
 ## Package Layout
 
-| Package(s)                                                                                         | Subsystem                                                            | Reference                          |
-|----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|------------------------------------|
-| `org.tentackle.trip` (+ `builder`, `creators`, `impl`, `provider`, `remote`, `transport`, `types`) | TRIP remoting/serialization                                          | [trip.md](trip.md)                 |
+| Package(s)                                                                                         | Subsystem                                                            | Reference                                                    |
+|----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|--------------------------------------------------------------|
+| `org.tentackle.trip` (+ `builder`, `creators`, `impl`, `provider`, `remote`, `transport`, `types`) | TRIP remoting/serialization                                          | [trip.md](trip.md)                                           |
 | `org.tentackle.reflect`                                                                            | Class mapping, interceptable proxies, reflection helpers             | [reflect.md](reflect.md), [interceptors.md](interceptors.md) |
-| `org.tentackle.bind`                                                                               | Model↔view binding                                                   | [binding.md](binding.md)           |
-| `org.tentackle.validate` (+ `scope`, `validator`, `severity`)                                      | Validation framework                                                 | [validation.md](validation.md)     |
-| `org.tentackle.log`                                                                                | Pluggable logging, MDC, `@Log`, method statistics                    | [logging.md](logging.md)           |
-| `org.tentackle.task`                                                                               | Serialized task dispatchers                                          | [tasks-daemon.md](tasks-daemon.md) |
-| `org.tentackle.script`                                                                             | Scripting abstraction                                                | [scripting.md](scripting.md)       |
-| `org.tentackle.io`                                                                                 | Streams, sockets, reconnection (TRIP transport building blocks)      | [io.md](io.md)                     |
-| `org.tentackle.prefs`                                                                              | Pluggable persisted preferences                                      | [preferences.md](preferences.md)   |
-| `org.tentackle.keyring`                                                                            | Secrets on the client (tokens, passwords)                            | [keyring.md](keyring.md)           |
-| `org.tentackle.daemon`                                                                             | Background-thread supervision                                        | [tasks-daemon.md](tasks-daemon.md) |
-| `org.tentackle.misc` (+ `misc.time`)                                                               | General-purpose utilities, pooling, smart date/time parsing          | [misc.md](misc.md)                 |
-| `org.tentackle.apt` (+ `apt.visitor`)                                                              | Build-time annotation processors                                     | [annotation-processors.md](annotation-processors.md) |
-| `org.tentackle.service`                                                                            | The [`Hook`](../java/org/tentackle/service/Hook.java) (`ModuleHook`) | —                                  |
+| `org.tentackle.bind`                                                                               | Model↔view binding                                                   | [binding.md](binding.md)                                     |
+| `org.tentackle.validate` (+ `scope`, `validator`, `severity`)                                      | Validation framework                                                 | [validation.md](validation.md)                               |
+| `org.tentackle.log`                                                                                | Pluggable logging, MDC, `@Log`, method statistics                    | [logging.md](logging.md)                                     |
+| `org.tentackle.task`                                                                               | Serialized task dispatchers                                          | [tasks-daemon.md](tasks-daemon.md)                           |
+| `org.tentackle.script`                                                                             | Scripting abstraction                                                | [scripting.md](scripting.md)                                 |
+| `org.tentackle.io`                                                                                 | Streams, sockets, reconnection (TRIP transport building blocks)      | [io.md](io.md)                                               |
+| `org.tentackle.prefs`                                                                              | Pluggable persisted preferences                                      | [preferences.md](preferences.md)                             |
+| `org.tentackle.keyring`                                                                            | Secrets on the client (tokens, passwords)                            | [keyring.md](keyring.md)                                     |
+| `org.tentackle.daemon`                                                                             | Background-thread supervision                                        | [tasks-daemon.md](tasks-daemon.md)                           |
+| `org.tentackle.misc` (+ `misc.time`)                                                               | General-purpose utilities, pooling, smart date/time parsing          | [misc.md](misc.md)                                           |
+| `org.tentackle.apt` (+ `apt.visitor`)                                                              | Build-time annotation processors                                     | [annotation-processors.md](annotation-processors.md)         |
+| `org.tentackle.service`                                                                            | The [`Hook`](../java/org/tentackle/service/Hook.java) (`ModuleHook`) | —                                                            |
 
 ---
 

@@ -162,16 +162,16 @@ column is easily forgotten and the number of question marks must match the numbe
 
 The DSL derives all of this from the datatype:
 
-| Written | Rendered |
-|---|---|
-| `select(TURNOVER)` | `c.turnover, c.turnover_2` |
-| `select(TURNOVER.as("total"))` | `c.turnover AS total, c.turnover_2 AS total_2` |
-| `where(TURNOVER.eq(money))` | `(c.turnover=? AND c.turnover_2=?)` — one value, two question marks |
-| `where(TURNOVER.ne(money))` | `NOT (c.turnover=? AND c.turnover_2=?)` |
-| `where(TURNOVER.isNull())` | `(c.turnover IS NULL AND c.turnover_2 IS NULL)` |
-| `where(TURNOVER.isNotNull())` | `NOT (c.turnover IS NULL AND c.turnover_2 IS NULL)` |
-| `groupBy(TURNOVER)` | `GROUP BY c.turnover, c.turnover_2` |
-| `orderBy(TURNOVER.asc())` | `ORDER BY c.turnover ASC` — the sortable columns only |
+| Written                        | Rendered                                                            |
+|--------------------------------|---------------------------------------------------------------------|
+| `select(TURNOVER)`             | `c.turnover, c.turnover_2`                                          |
+| `select(TURNOVER.as("total"))` | `c.turnover AS total, c.turnover_2 AS total_2`                      |
+| `where(TURNOVER.eq(money))`    | `(c.turnover=? AND c.turnover_2=?)` — one value, two question marks |
+| `where(TURNOVER.ne(money))`    | `NOT (c.turnover=? AND c.turnover_2=?)`                             |
+| `where(TURNOVER.isNull())`     | `(c.turnover IS NULL AND c.turnover_2 IS NULL)`                     |
+| `where(TURNOVER.isNotNull())`  | `NOT (c.turnover IS NULL AND c.turnover_2 IS NULL)`                 |
+| `groupBy(TURNOVER)`            | `GROUP BY c.turnover, c.turnover_2`                                 |
+| `orderBy(TURNOVER.asc())`      | `ORDER BY c.turnover ASC` — the sortable columns only               |
 
 Note the asymmetry of the null tests: a value spanning several columns is null only if *all* of its columns
 are null. An `I18NText` lives either in its `VARCHAR`- or in its `CLOB`-column, so testing each column to be
@@ -208,16 +208,16 @@ member of such a type is filled from all of its columns.
 
 ## Clauses
 
-| Clause | Method |
-|---|---|
-| `SELECT` | `select(...)`, `selectDistinct(...)`, no arguments for `SELECT *`; `asterisk()` and `table.asterisk()` for `*` / `c.*` among other expressions |
-| `FROM` | `from(table...)`, `table(select, alias)` for a derived table |
-| `JOIN` | `join(t).on(c)`, `leftJoin`, `rightJoin`, `fullJoin`, `join(JoinType, t)` |
-| `WHERE` | `where(condition...)` |
-| `GROUP BY` | `groupBy(expression...)` |
-| `HAVING` | `having(condition...)` |
-| `ORDER BY` | `orderBy(sortField...)`, `orderBy(expression...)` (ascending) |
-| `LIMIT`/`OFFSET` | `limit(n)`, `offset(n)` |
+| Clause           | Method                                                                                                                                         |
+|------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| `SELECT`         | `select(...)`, `selectDistinct(...)`, no arguments for `SELECT *`; `asterisk()` and `table.asterisk()` for `*` / `c.*` among other expressions |
+| `FROM`           | `from(table...)`, `table(select, alias)` for a derived table                                                                                   |
+| `JOIN`           | `join(t).on(c)`, `leftJoin`, `rightJoin`, `fullJoin`, `join(JoinType, t)`                                                                      |
+| `WHERE`          | `where(condition...)`                                                                                                                          |
+| `GROUP BY`       | `groupBy(expression...)`                                                                                                                       |
+| `HAVING`         | `having(condition...)`                                                                                                                         |
+| `ORDER BY`       | `orderBy(sortField...)`, `orderBy(expression...)` (ascending)                                                                                  |
+| `LIMIT`/`OFFSET` | `limit(n)`, `offset(n)`                                                                                                                        |
 
 The clauses may be added in any order and more than once. Conditions are combined by a logical AND, which is
 what queries assembled step by step need:
@@ -271,16 +271,16 @@ used as a sub-select must not define them.
 
 ## Executing
 
-| Method | Result |
-|---|---|
-| `toList(db, dtoClass)` | all rows as DTOs |
-| `toOptional(db, dtoClass)` | at most one row, throws if there are more |
-| `toScalarList(db, type)` | the first expression of each row |
-| `toScalar(db, type)` | the first expression of at most one row |
-| `getRowCount(db)` | the number of rows, counted by the backend (`SELECT COUNT(*)`) |
-| `execute(db)` | the raw [`ResultSetWrapper`](../java/org/tentackle/dbms/ResultSetWrapper.java), to be closed by the caller |
-| `toQuery(db)` | the [`Query`](../java/org/tentackle/dbms/Query.java), for everything else |
-| `toSql(backend)` | the SQL-code, for logging and tests |
+| Method                     | Result                                                                                                     |
+|----------------------------|------------------------------------------------------------------------------------------------------------|
+| `toList(db, dtoClass)`     | all rows as DTOs                                                                                           |
+| `toOptional(db, dtoClass)` | at most one row, throws if there are more                                                                  |
+| `toScalarList(db, type)`   | the first expression of each row                                                                           |
+| `toScalar(db, type)`       | the first expression of at most one row                                                                    |
+| `getRowCount(db)`          | the number of rows, counted by the backend (`SELECT COUNT(*)`)                                             |
+| `execute(db)`              | the raw [`ResultSetWrapper`](../java/org/tentackle/dbms/ResultSetWrapper.java), to be closed by the caller |
+| `toQuery(db)`              | the [`Query`](../java/org/tentackle/dbms/Query.java), for everything else                                  |
+| `toSql(backend)`           | the SQL-code, for logging and tests                                                                        |
 
 `fetchSize(int)`, `maxRows(int)` and `statementCached(boolean)` are passed through to the `Query`. Statement
 caching pays off for a query that is executed many times with a fixed SQL-string and changing parameters.
@@ -322,13 +322,13 @@ must be registered in the order of the question marks emitted.
 
 ## Summary
 
-| | Hand-written `Query` | Query DSL |
-|---|---|---|
-| **SQL-code** | Written by the application | Generated from typed expressions |
-| **Multi-column datatypes** | Columns and question marks counted by hand | Derived from the `DataType` |
-| **Dialect** | `SqlSupplier` per difference | Delegated to the `Backend` |
-| **Column renames** | Found at runtime | Found where the field constant is declared |
-| **Coverage** | Everything | Projection queries (`SELECT`) |
+|                            | Hand-written `Query`                       | Query DSL                                  |
+|----------------------------|--------------------------------------------|--------------------------------------------|
+| **SQL-code**               | Written by the application                 | Generated from typed expressions           |
+| **Multi-column datatypes** | Columns and question marks counted by hand | Derived from the `DataType`                |
+| **Dialect**                | `SqlSupplier` per difference               | Delegated to the `Backend`                 |
+| **Column renames**         | Found at runtime                           | Found where the field constant is declared |
+| **Coverage**               | Everything                                 | Projection queries (`SELECT`)              |
 
 ---
 

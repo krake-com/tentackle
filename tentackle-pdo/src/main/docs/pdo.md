@@ -184,8 +184,8 @@ just an `Ingot`.
    application code ───▶ │   Ingot  (dynamic proxy) │
                          └────────────┬─────────────┘
                           PdoInvocationHandler routes by interface
-                ┌──────────────────────┴───────────────────────┐
-                ▼                                                ▼
+                ┌─────────────────────┴────────────────────────┐
+                ▼                                              ▼
    ┌──────────────────────────┐                  ┌──────────────────────────┐
    │   IngotPersistenceImpl   │  (no mutual      │     IngotDomainImpl      │
    │  extends Abstract        │   dependency)    │  extends Abstract        │
@@ -630,7 +630,7 @@ List<PickupOrder> pickups = loaded.getPickups();                   // component 
 
 // Invoke domain logic (runs wherever the PDO lives)
 if (loaded.isDeliverable()) {
-  loaded.move(yard, targetYard, false, true, true);               // @Transaction
+  loaded.move(yard, targetYard, false, true, true);                // @Transaction
 }
 ```
 

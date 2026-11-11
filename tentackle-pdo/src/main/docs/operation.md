@@ -75,12 +75,14 @@ if (persistenceMixin == null && domainMixin == null) {
   throw new ClassNotFoundException("neither domain- nor persistence mapping found for '" + clazz.getName() + "'");
 }
 else if (persistenceMixin == null) {
-  persistenceMixin = new Mixin<>(clazz, PersistentOperation.class);   // dummy
+  persistenceMixin = Mixin.forImplementation(clazz, null, PersistentOperation.class);   // dummy
 }
 else if (domainMixin == null) {
-  domainMixin = new Mixin<>(clazz, DomainOperation.class);            // dummy
+  domainMixin = Mixin.forImplementation(clazz, null, DomainOperation.class);            // dummy
 }
 ```
+
+A dummy mixin creates no delegate, so the handler's delegate for that side stays `null`.
 
 ### What it keeps from the PDO pattern
 
@@ -266,8 +268,8 @@ the implementations are `@TripReferencable(NEVER)`.
    application code ───▶ │  MoveOperation  (dynamic proxy)│
                          └───────────────┬────────────────┘
                        OperationInvocationHandler routes by interface
-                ┌───────────────────────┴────────────────────────┐
-                ▼                                                  ▼
+                ┌────────────────────────┴───────────────────────┐
+                ▼                                                ▼
    ┌──────────────────────────┐                    ┌──────────────────────────┐
    │  persistence mixin       │   at least one of  │  domain mixin            │
    │  (may be a dummy)        │   the two is real  │  MoveOperationDomainImpl │
