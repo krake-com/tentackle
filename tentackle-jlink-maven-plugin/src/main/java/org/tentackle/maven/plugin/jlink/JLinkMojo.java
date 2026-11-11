@@ -62,7 +62,7 @@ import org.tentackle.maven.AbstractTentackleMojo;
  *       &lt;plugin&gt;
  *         &lt;groupId&gt;org.tentackle&lt;/groupId&gt;
  *         &lt;artifactId&gt;tentackle-jlink-maven-plugin&lt;/artifactId&gt;
- *         &lt;version&gt;${tentackle.version}&lt;/version&gt;
+ *         &lt;version&gt;${tentackle.plugin.version}&lt;/version&gt;
  *         &lt;extensions&gt;true&lt;/extensions&gt;
  *         &lt;configuration&gt;
  *           &lt;mainModule&gt;com.example&lt;/mainModule&gt;

@@ -57,7 +57,7 @@ server runs once, at the root, and is started explicitly.
 <plugin>
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-mcp-maven-plugin</artifactId>
-  <version>${tentackle.version}</version>
+  <version>${tentackle.plugin.version}</version>
   <configuration>
     <modelDefaults>${tentackle.modelDefaults}</modelDefaults>
     <backends>PostgreSQL</backends>

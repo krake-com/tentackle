@@ -75,6 +75,41 @@ mvn -Ppostgres test
 - Write a short summary line that says what changed, in the style of the existing history,
   e.g. `added connect timeout to TcpConnectionPool`.
 
+## Hotfix releases (maintainers)
+
+Maven Central limits the number of uploaded files, so a hotfix republishes only the modules it
+fixes plus `tentackle-bom` (see [Hotfix Releases](tentackle-bom/src/main/docs/bom.md#hotfix-releases)).
+A partial hotfix is possible only if:
+
+- `tentackle-parent` is unchanged (no dependency or plugin version bumps). Otherwise, the parent
+  reference of every module changes, and a full release is needed.
+- The fix is binary-compatible. The modules that depend on the fixed one are not rebuilt for
+  Central.
+- No `module-info.java` changes that other modules rely on.
+
+Procedure, e.g., for a fix in `tentackle-fx` on top of `25.20.1.0`:
+
+1. Branch off the release tag `25.20.1.0` and apply the fix.
+2. Run `mvn clean verify` while all modules still have the same version. Do not run `install`,
+   so the local repository keeps the published artifacts. The reactor then tests every module
+   that depends on `tentackle-fx` against the fix.
+3. Bump only the fixed modules and the BOM:
+   - `tentackle-fx/pom.xml`: add `<version>25.20.1.1</version>`, and keep the parent at
+     `25.20.1.0`.
+   - `tentackle-bom/pom.xml`: add `<version>25.20.1.1</version>`, and set the `tentackle-fx`
+     entry to `25.20.1.1`.
+   - Leave the `${project.version}` dependencies of the other modules alone. They keep
+     referring to the published `25.20.1.0`.
+4. Deploy/publish the whole reactor. The publishing plugin's
+   `ignorePublishedComponents` drops every component that is already on Central. Before you
+   publish the deployment in the Central portal, check that it contains only the bumped
+   modules.
+5. Tag `25.20.1.1`. In `CHANGELOG.md`, add the release and list the republished modules. Then
+   merge the fix into `develop`. The next regular release brings all modules back to the same
+   version.
+
+No Maven site is deployed for a hotfix, and the OSGi bundles (`tentackle-osgi/`) are not rebuilt.
+
 ## Coding conventions
 
 - Every Java source file starts with the LGPL header. Copy it from any existing file, such as

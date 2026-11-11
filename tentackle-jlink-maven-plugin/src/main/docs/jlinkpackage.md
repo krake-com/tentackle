@@ -228,7 +228,7 @@ like so:
       <plugin>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-jlink-maven-plugin</artifactId>
-        <version>${tentackle.version}</version>
+        <version>${tentackle.plugin.version}</version>
         <extensions>true</extensions>
         <configuration>
           <mainClass>com.example.myapp.Main</mainClass>
@@ -273,7 +273,7 @@ like so:
       <plugin>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-jlink-maven-plugin</artifactId>
-        <version>${tentackle.version}</version>
+        <version>${tentackle.plugin.version}</version>
         <extensions>true</extensions>
         <configuration>
           <mainClass>com.example.Main</mainClass>
