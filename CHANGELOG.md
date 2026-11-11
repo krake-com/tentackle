@@ -16,6 +16,12 @@ Since 8.2.2.0, a version reads `<java>.<major>.<minor>.<patch>`:
   next major level (11.7 → 17.8, 17.14 → 21.15, 21.16 → 25.17). The Java 8 line counts on its own.
 - **minor**, **patch** — enhancements and fixes within a major level.
 
+A release republishes all modules at the same version, except a **hotfix** release, which bumps
+only the `patch` digit. A hotfix republishes only the fixed modules plus `tentackle-bom`. All
+other modules keep the version of the release the hotfix is based on. The BOM version is the
+release version, and each hotfix entry below lists the modules it republished. See
+[Hotfix Releases](tentackle-bom/src/main/docs/bom.md#hotfix-releases).
+
 Older Java lines are maintained on their own branches (`java8`, `java11`, `java17`, `java21`) and
 still receive maintenance releases. The releases are therefore grouped by Java line below, newest
 line first, and listed newest-first within each line. A maintenance release lists only what changed

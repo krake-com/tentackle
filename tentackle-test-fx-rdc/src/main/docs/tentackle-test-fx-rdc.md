@@ -148,7 +148,7 @@ Add the dependency in **test scope**:
 <dependency>
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-test-fx-rdc</artifactId>
-  <version>${tentackle.version}</version>
+  <!-- version managed by tentackle-bom -->
   <scope>test</scope>
 </dependency>
 ```

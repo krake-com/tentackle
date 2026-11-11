@@ -37,6 +37,7 @@
     <wurbel.wurbelDir>\${symbol_dollar}{rootBasedir}/target/wurbel</wurbel.wurbelDir>
 
     <tentackle.version>${project.version}</tentackle.version>
+    <tentackle.plugin.version>${project.version}</tentackle.plugin.version>
     <tentackle.serviceDir>\${symbol_dollar}{project.build.directory}/generated-resources</tentackle.serviceDir>
     <tentackle.testServiceDir>\${symbol_dollar}{project.build.directory}/generated-test-resources</tentackle.testServiceDir>
     <tentackle.manifestDirectory>\${symbol_dollar}{project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
@@ -119,7 +120,7 @@
         <plugin>
           <groupId>org.tentackle</groupId>
           <artifactId>tentackle-wizard-maven-plugin</artifactId>
-          <version>\${symbol_dollar}{tentackle.version}</version>
+          <version>\${symbol_dollar}{tentackle.plugin.version}</version>
           <configuration>
             <verbosity>info</verbosity>
             <url>\${symbol_dollar}{dbUrl}</url>
@@ -180,7 +181,7 @@
             <dependency>
               <groupId>org.tentackle</groupId>
               <artifactId>tentackle-test-pdo</artifactId>
-              <version>\${symbol_dollar}{tentackle.version}</version>
+              <version>\${symbol_dollar}{tentackle.plugin.version}</version>
             </dependency>
             <dependency>
               <groupId>org.postgresql</groupId>
@@ -193,7 +194,7 @@
         <plugin>
           <groupId>org.tentackle</groupId>
           <artifactId>tentackle-maven-plugin</artifactId>
-          <version>\${symbol_dollar}{tentackle.version}</version>
+          <version>\${symbol_dollar}{tentackle.plugin.version}</version>
           <executions>
             <execution>
               <id>analyze</id>
@@ -217,7 +218,7 @@
         <plugin>
           <groupId>org.tentackle</groupId>
           <artifactId>tentackle-check-maven-plugin</artifactId>
-          <version>\${symbol_dollar}{tentackle.version}</version>
+          <version>\${symbol_dollar}{tentackle.plugin.version}</version>
           <executions>
             <execution>
               <id>bundles</id>
@@ -242,7 +243,7 @@
             <dependency>
               <groupId>org.tentackle</groupId>
               <artifactId>tentackle-script-groovy</artifactId>
-              <version>\${symbol_dollar}{tentackle.version}</version>
+              <version>\${symbol_dollar}{tentackle.plugin.version}</version>
             </dependency>
           </dependencies>
         </plugin>
@@ -250,7 +251,7 @@
         <plugin>
           <groupId>org.tentackle</groupId>
           <artifactId>tentackle-i18n-maven-plugin</artifactId>
-          <version>\${symbol_dollar}{tentackle.version}</version>
+          <version>\${symbol_dollar}{tentackle.plugin.version}</version>
           <configuration>
             <verbosity>info</verbosity>
             <locales>de</locales>
@@ -270,7 +271,7 @@
         <plugin>
           <groupId>org.tentackle</groupId>
           <artifactId>tentackle-jlink-maven-plugin</artifactId>
-          <version>\${symbol_dollar}{tentackle.version}</version>
+          <version>\${symbol_dollar}{tentackle.plugin.version}</version>
           <extensions>true</extensions>
         </plugin>
 
@@ -297,7 +298,7 @@
               <wurbletDependency>
                 <groupId>org.tentackle</groupId>
                 <artifactId>tentackle-persistence-wurblets</artifactId>
-                <version>\${symbol_dollar}{tentackle.version}</version>
+                <version>\${symbol_dollar}{tentackle.plugin.version}</version>
               </wurbletDependency>
             </wurbletDependencies>
             <verbosity>info</verbosity>
@@ -370,7 +371,7 @@
         <plugin>
           <groupId>org.tentackle</groupId>
           <artifactId>tentackle-sql-maven-plugin</artifactId>
-          <version>\${symbol_dollar}{tentackle.version}</version>
+          <version>\${symbol_dollar}{tentackle.plugin.version}</version>
           <configuration>
             <verbosity>info</verbosity>
             <modelDefaults>\${symbol_dollar}{tentackle.modelDefaults}</modelDefaults>
@@ -404,7 +405,7 @@
         <plugin>
           <groupId>org.tentackle</groupId>
           <artifactId>tentackle-mcp-maven-plugin</artifactId>
-          <version>\${symbol_dollar}{tentackle.version}</version>
+          <version>\${symbol_dollar}{tentackle.plugin.version}</version>
           <configuration>
             <modelDefaults>\${symbol_dollar}{tentackle.modelDefaults}</modelDefaults>
             <backends>postgresql, h2</backends>
@@ -429,22 +430,22 @@
               <dependency>
                 <groupId>org.tentackle</groupId>
                 <artifactId>tentackle-core</artifactId>
-                <version>\${symbol_dollar}{tentackle.version}</version>
+                <version>\${symbol_dollar}{tentackle.plugin.version}</version>
               </dependency>
               <dependency>
                 <groupId>org.tentackle</groupId>
                 <artifactId>tentackle-pdo</artifactId>
-                <version>\${symbol_dollar}{tentackle.version}</version>
+                <version>\${symbol_dollar}{tentackle.plugin.version}</version>
               </dependency>
               <dependency>
                 <groupId>org.tentackle</groupId>
                 <artifactId>tentackle-fx</artifactId>
-                <version>\${symbol_dollar}{tentackle.version}</version>
+                <version>\${symbol_dollar}{tentackle.plugin.version}</version>
               </dependency>
               <dependency>
                 <groupId>org.tentackle</groupId>
                 <artifactId>tentackle-fx-rdc</artifactId>
-                <version>\${symbol_dollar}{tentackle.version}</version>
+                <version>\${symbol_dollar}{tentackle.plugin.version}</version>
               </dependency>
               <dependency>    <!-- necessary for fx-rdc processors because deps are not recognized here -->
                 <groupId>org.openjfx</groupId>

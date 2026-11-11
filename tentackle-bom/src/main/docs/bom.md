@@ -34,12 +34,14 @@ version yourself if you need a different one.
 ## Using the BOM
 
 Import it with `<type>pom</type>` and `<scope>import</scope>` in your project's (or parent's)
-`<dependencyManagement>`. Keep the Tentackle version in a property, so the BOM and the plugins
-stay in sync:
+`<dependencyManagement>`. Keep the Tentackle versions in two properties: `tentackle.version` for
+the BOM and `tentackle.plugin.version` for the plugins (see [below](#versioning-the-plugins) and
+[Hotfix Releases](#hotfix-releases)). After a full release, both have the same value:
 
 ```xml
 <properties>
   <tentackle.version>25.20.1.0</tentackle.version>
+  <tentackle.plugin.version>25.20.1.0</tentackle.plugin.version>
 </properties>
 
 <dependencyManagement>
@@ -75,18 +77,54 @@ as the BOM already manages them as `test`:
 
 The Tentackle plugins, and any Tentackle artifacts declared as dependencies *of* a plugin (such as
 `tentackle-persistence-wurblets` for the wurbelizer, or `tentackle-script-groovy` for the check
-plugin), are resolved outside the project's dependency management. Give them the same property:
+plugin), are resolved outside the project's dependency management. The same applies to Tentackle
+artifacts listed in the compiler's `<annotationProcessorPaths>`. Give all of them the
+`tentackle.plugin.version` property:
 
 ```xml
 <plugin>
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-maven-plugin</artifactId>
-  <version>${tentackle.version}</version>
+  <version>${tentackle.plugin.version}</version>
 </plugin>
 ```
 
 Projects generated from the [project archetype](../../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md)
 already wire the BOM and the plugin versions in this way — see the [Quickstart](../../../../src/main/docs/quickstart.md).
+
+## Hotfix Releases
+
+Maven Central limits the number of files a project may upload, so a hotfix that touches only a few
+modules does not republish the whole framework. A hotfix release (the `patch` digit of
+`<java>.<major>.<minor>.<patch>`) republishes only the fixed modules plus a new `tentackle-bom`.
+Every other module keeps the version of the release the hotfix is based on.
+
+For example, a fix in `tentackle-fx` on top of `25.20.1.0` is published as:
+
+| Artifact                   | Version     |
+|----------------------------|-------------|
+| `tentackle-bom`            | `25.20.1.1` |
+| `tentackle-fx`             | `25.20.1.1` |
+| all other modules, plugins | `25.20.1.0` |
+
+The **BOM version is the release version**. It pins every module at the right version, and
+because dependency management also applies to transitive dependencies, `tentackle-fx-rdc:25.20.1.0`
+gets `tentackle-fx:25.20.1.1` in your project. To pick up a hotfix, raise only `tentackle.version`:
+
+```xml
+<properties>
+  <tentackle.version>25.20.1.1</tentackle.version>
+  <tentackle.plugin.version>25.20.1.0</tentackle.plugin.version>
+</properties>
+```
+
+`tentackle.plugin.version` changes only if the hotfix republishes the plugins as well. The release
+notes in the repository's `CHANGELOG.md` list the modules each hotfix republishes.
+
+Because modules may lag behind the BOM, never declare a Tentackle *dependency* with an explicit
+`${tentackle.version}`: leave the version to the BOM. Also note that `org.tentackle.common.Version.RELEASE`
+reports the version of `tentackle-common`. That is the base release unless the hotfix republished
+`tentackle-common` too.
 
 ## See also
 
