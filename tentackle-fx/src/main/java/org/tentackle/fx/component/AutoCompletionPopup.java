@@ -37,6 +37,7 @@ import javafx.css.SimpleStyleableIntegerProperty;
 import javafx.css.StyleConverter;
 import javafx.css.Styleable;
 import javafx.css.StyleableProperty;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -80,6 +81,8 @@ public class AutoCompletionPopup extends PopupControl {
     cellFactoryProperty = new SimpleObjectProperty<>(createCellFactory());
     setAutoHide(true);
     getStyleClass().add(STYLE_CLASS);
+    // CSS is applied to the CSSBridge, not to the popup itself: allow the CSS metadata to find the popup
+    bridge.getProperties().put(AutoCompletionPopup.class, this);
   }
 
   /**
@@ -208,34 +211,49 @@ public class AutoCompletionPopup extends PopupControl {
 
   // ------------------ CSS styling --------------------
 
-  private static final CssMetaData<AutoCompletionPopup, Number> VISIBLE_ROW_META_DATA =
+  /**
+   * Gets the popup from the styled node.<br>
+   * A {@link PopupControl} is styled via its {@code CSSBridge}, which is the node passed to the
+   * {@link CssMetaData} methods.
+   *
+   * @param styleable the styleable (usually the CSS bridge)
+   * @return the popup
+   */
+  private static AutoCompletionPopup getPopup(Styleable styleable) {
+    if (styleable instanceof AutoCompletionPopup popup) {
+      return popup;
+    }
+    return (AutoCompletionPopup) ((Node) styleable).getProperties().get(AutoCompletionPopup.class);
+  }
+
+  private static final CssMetaData<Styleable, Number> VISIBLE_ROW_META_DATA =
     new CssMetaData<>(CSS_VISIBLE_ROW_COUNT, StyleConverter.getSizeConverter(), DEFAULT_VISIBLE_ROW_COUNT) {
 
       @Override
-      public boolean isSettable(AutoCompletionPopup node) {
-        return !node.visibleRowCountProperty.isBound();
+      public boolean isSettable(Styleable styleable) {
+        return !getPopup(styleable).visibleRowCountProperty.isBound();
       }
 
       @Override
-      public StyleableProperty<Number> getStyleableProperty(AutoCompletionPopup node) {
-        return node.visibleRowCountProperty;
+      public StyleableProperty<Number> getStyleableProperty(Styleable styleable) {
+        return getPopup(styleable).visibleRowCountProperty;
       }
     };
 
   private final SimpleStyleableIntegerProperty visibleRowCountProperty = new SimpleStyleableIntegerProperty(
     VISIBLE_ROW_META_DATA, AutoCompletionPopup.this, "visibleRowCount", DEFAULT_VISIBLE_ROW_COUNT);
 
-  private static final CssMetaData<AutoCompletionPopup, Number> FIXED_CELL_SIZE_META_DATA =
+  private static final CssMetaData<Styleable, Number> FIXED_CELL_SIZE_META_DATA =
     new CssMetaData<>(CSS_FIXED_CELL_SIZE, StyleConverter.getSizeConverter(), DEFAULT_FIXED_CELL_SIZE) {
 
       @Override
-      public boolean isSettable(AutoCompletionPopup node) {
-        return !node.fixedCellSizeProperty.isBound();
+      public boolean isSettable(Styleable styleable) {
+        return !getPopup(styleable).fixedCellSizeProperty.isBound();
       }
 
       @Override
-      public StyleableProperty<Number> getStyleableProperty(AutoCompletionPopup node) {
-        return node.fixedCellSizeProperty;
+      public StyleableProperty<Number> getStyleableProperty(Styleable styleable) {
+        return getPopup(styleable).fixedCellSizeProperty;
       }
     };
   private final SimpleStyleableDoubleProperty fixedCellSizeProperty = new SimpleStyleableDoubleProperty(
