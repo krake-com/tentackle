@@ -24,6 +24,7 @@ import org.tentackle.trip.Remote;
 import org.tentackle.trip.RemoteDelegate;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TripNoSuchDelegateException;
+import org.tentackle.trip.TripPolicyViolationException;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
 import org.tentackle.trip.TripStreamClosedException;
@@ -107,10 +108,8 @@ public class CallHandler implements Runnable {
       TransportClientInfo.set(clientInfo);
       prepareResponse();
       RemoteDelegate<Remote> delegate = transport.getRegistry().lookup(remoteCall.remoteId());
-      if (delegate != null && !isDelegateAllowed()) {
-        delegate = null;    // don't tell whether it exists
-      }
-      if (delegate == null) {
+      if (delegate == null || !isDelegateAllowed()) {
+        // don't tell whether it exists
         throw new TripNoSuchDelegateException(remoteCall.remoteId());
       }
       if (remoteCall instanceof IdentifiedRemoteCall identifiedRemoteCall) {
@@ -130,8 +129,14 @@ public class CallHandler implements Runnable {
       throw ce;   // will be caught via ExecutionException in ConnectionHandler
     }
     catch (TripNoSuchDelegateException nd) {
-      LOGGER.warning(nd.getMessage());
       stream.sendError(DefaultOpCode.NO_SUCH_DELEGATE, nd);
+      if (isRestricted()) {
+        // A client that is not authenticated knows the public entry points only.
+        // Anything else is probing: close the connection, logged once by the ConnectionHandler.
+        throw new TripPolicyViolationException("not allowed before authentication: invocation of remote object " +
+                                               TransportClientInfo.redact(remoteCall.remoteId()));
+      }
+      LOGGER.warning(nd.getMessage());
     }
     catch (Throwable t) {
       // serializing the response failed
@@ -158,12 +163,20 @@ public class CallHandler implements Runnable {
       return true;
     }
     if (policy.isEnforcing()) {
-      LOGGER.warning("unauthenticated connection {0} refused to invoke remote object {1}",
-                     clientInfo, TransportClientInfo.redact(remoteCall.remoteId()));
-      return false;
+      return false;   // logged by the caller
     }
     policy.violation("invocation of a remote object not registered by name");
     return true;
+  }
+
+  /**
+   * Returns whether the client is restricted by an enforcing {@link PreAuthenticationPolicy}.
+   *
+   * @return true if not authenticated yet and the policy is enforcing
+   */
+  protected boolean isRestricted() {
+    PreAuthenticationPolicy policy = transport.getPreAuthenticationPolicy();
+    return policy != null && policy.isEnforcing() && !clientInfo.isAuthenticated();
   }
 
   /**

@@ -179,6 +179,22 @@ public interface TripStream {
   void checkSize(int size);
 
   /**
+   * Enters the contents of an object, array, collection or map while reading.<br>
+   * Must be paired with {@link #leaveNested()} in a {@code finally} block.
+   * Checked against the maximum depth of the read policy, if any.
+   *
+   * @throws TripPolicyViolationException if the read policy refuses the depth
+   */
+  void enterNested();
+
+  /**
+   * Leaves the contents of an object, array, collection or map while reading.
+   *
+   * @see #enterNested()
+   */
+  void leaveNested();
+
+  /**
    * Writes a component ordinal to the stream.
    *
    * @param ordinal the ordinal to write

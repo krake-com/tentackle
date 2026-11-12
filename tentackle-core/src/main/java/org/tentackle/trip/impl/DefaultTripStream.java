@@ -39,11 +39,16 @@ import org.tentackle.trip.TripStream;
 import org.tentackle.trip.TripStreamClosedException;
 import org.tentackle.trip.TripType;
 
+import java.time.temporal.TemporalAccessor;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TimeZone;
+import java.util.UUID;
 import java.util.function.Function;
 
 /**
@@ -106,6 +111,7 @@ public class DefaultTripStream implements TripStream {
 
   private TripFilter filter;
   private PreAuthenticationPolicy readPolicy;
+  private int depth;    // the current nesting depth while reading
 
 
   /**
@@ -273,6 +279,13 @@ public class DefaultTripStream implements TripStream {
     if (reference == null) {
       throw new TripRuntimeException("no such reference id " + referenceId + " for " + clazz);
     }
+    if (readPolicy != null && !isShareable(reference.getObject())) {
+      // A shared container turns a few bytes into an object graph whose hash code takes
+      // exponential time to compute. Without back-references, the graph is a tree bounded
+      // by the size of the message.
+      Object object = reference.getObject();
+      readPolicy.violation("back-reference to " + (object == null ? "an incomplete object" : object.getClass().getName()));
+    }
     return reference;
   }
 
@@ -304,6 +317,7 @@ public class DefaultTripStream implements TripStream {
   @Override
   public void clear() {
     applyReadLimit();
+    depth = 0;
     if (references != null && references.length == INITIAL_REF_ARRAY_SIZE) {
       // A small message: the array never grew, so neither map holds more than its length.
       // Recycling them is cheaper than allocating anew, which would happen several times per remote call.
@@ -362,6 +376,22 @@ public class DefaultTripStream implements TripStream {
         readPolicy.violation("number of elements " + size + " exceeds the maximum of " + maxElements);
       }
     }
+  }
+
+  @Override
+  public void enterNested() {
+    if (readPolicy != null) {
+      int maxDepth = readPolicy.getMaxDepth();
+      if (maxDepth > 0 && depth >= maxDepth) {
+        readPolicy.violation("nesting depth exceeds the maximum of " + maxDepth);   // throws if enforcing
+      }
+    }
+    depth++;
+  }
+
+  @Override
+  public void leaveNested() {
+    depth--;
   }
 
   @Override
@@ -633,6 +663,21 @@ public class DefaultTripStream implements TripStream {
     return readPolicy != null && readPolicy.isEnforcing() ?
              dictionary.getEntry(ordinal, readPolicy.getDictionaryWaitTime()) :
              dictionary.getEntry(ordinal);
+  }
+
+  /**
+   * Returns whether an object received before may be referenced again by a client that is not
+   * authenticated yet.<br>
+   * Only immutable values whose hash code does not depend on other objects may be shared.
+   *
+   * @param object the referenced object, null if not completely read yet
+   * @return true if allowed
+   */
+  protected boolean isShareable(Object object) {
+    return object instanceof String || object instanceof Number || object instanceof Boolean ||
+           object instanceof Character || object instanceof Enum<?> || object instanceof UUID ||
+           object instanceof Locale || object instanceof TimeZone || object instanceof Class<?> ||
+           object instanceof TemporalAccessor || object instanceof Date;
   }
 
   /**

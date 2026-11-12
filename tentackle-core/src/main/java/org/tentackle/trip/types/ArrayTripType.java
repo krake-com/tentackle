@@ -218,24 +218,30 @@ public final class ArrayTripType<T> extends AbstractDictionaryBasedTripType<T> {
         reference.markReceived();
       }
 
-      while (opCode != DefaultOpCode.END) {
-        int arrayIndex = ArrayTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode);
-        if (arrayIndex < 0 || arrayIndex >= length) {
-          throw new TripRuntimeException("array index " + arrayIndex + " out of range for " + this +
-                                         " of length " + length);
-        }
-        opCode = stream.receiveOpCode();
-        TripType<?> elementType = getComponentType();
-        if (!elementType.isFinal()) {
-          elementType = stream.deriveType(opCode);
-          if (elementType.isDictionaryBased()) {
-            opCode = stream.receiveOpCode();
+      stream.enterNested();
+      try {
+        while (opCode != DefaultOpCode.END) {
+          int arrayIndex = ArrayTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode);
+          if (arrayIndex < 0 || arrayIndex >= length) {
+            throw new TripRuntimeException("array index " + arrayIndex + " out of range for " + this +
+                                           " of length " + length);
           }
+          opCode = stream.receiveOpCode();
+          TripType<?> elementType = getComponentType();
+          if (!elementType.isFinal()) {
+            elementType = stream.deriveType(opCode);
+            if (elementType.isDictionaryBased()) {
+              opCode = stream.receiveOpCode();
+            }
+          }
+          Object element = elementType.read(stream, opCode);
+          Array.set(value, arrayIndex, element);
+          // next element
+          opCode = stream.receiveOpCode();
         }
-        Object element = elementType.read(stream, opCode);
-        Array.set(value, arrayIndex, element);
-        // next element
-        opCode = stream.receiveOpCode();
+      }
+      finally {
+        stream.leaveNested();
       }
     }
     return value;

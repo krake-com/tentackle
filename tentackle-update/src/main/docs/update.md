@@ -151,13 +151,21 @@ The update check runs before the client has logged in. On a transport with a
 [pre-authentication policy](../../../../tentackle-core/src/main/docs/trip.md#unauthenticated-peers) — such as the
 one of a `TripServer` — the service is reachable nevertheless: it is registered by name, which makes it a public
 entry point, and `ClientInfo` and `InstallationType` are annotated with `@TripPreAuth("update")`. A transport of its
-own gets no policy from `ServerUpdateUtilities`; install one before starting the service:
+own, for example on a port of its own, gets a `DefaultPreAuthenticationPolicy` from `ServerUpdateUtilities`
+before it starts accepting. Since update clients never log in, the policy restricts all of them for good. To change
+the limits, override `ServerUpdateUtilities.createPreAuthenticationPolicy` (it is a replaceable service), or install a
+policy on the transport before starting the service:
 
 ```java
 Transport transport = TransportManager.getInstance().requestTransport(URI.create(serviceUrl));
-transport.setPreAuthenticationPolicy(new DefaultPreAuthenticationPolicy());
+DefaultPreAuthenticationPolicy policy = new DefaultPreAuthenticationPolicy();
+policy.setMaxConnectionsPerHost(16);
+transport.setPreAuthenticationPolicy(policy);
 ServerUpdateUtilities.getInstance().startUpdateService(serviceUrl, downloadUrl, UpdateServiceImpl.class);
 ```
+
+A transport that is already accepting, such as one shared with a `TripServer`, keeps whatever policy its server
+installed.
 
 ### AbstractUpdateServiceImpl — the default implementation
 

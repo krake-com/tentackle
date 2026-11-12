@@ -164,6 +164,15 @@ public class UpdateServiceRemoteTest {
     assertEquals(info.checksum(), checksum);
   }
 
+  /**
+   * A transport of the update service's own gets a policy by default.
+   */
+  @Test
+  public void ownTransportIsRestricted() {
+    Transport transport = TransportManager.getInstance().requestTransport(URI.create(serviceUrl));
+    assertTrue(transport.getPreAuthenticationPolicy() instanceof DefaultPreAuthenticationPolicy);
+  }
+
   @Test
   public void reportsAnUnknownServiceName() {
     TripRuntimeException ex = expectThrows(TripRuntimeException.class,

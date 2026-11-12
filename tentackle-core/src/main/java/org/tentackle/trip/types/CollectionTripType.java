@@ -254,23 +254,29 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
   @SuppressWarnings("unchecked")
   protected void readElements(TripStream stream, T value, int size) {
     if (size > 0) {
-      OpCode opCode = stream.receiveOpCode();
-      int elementCount = 0;
-      while (elementCount < size) {
-        if (opCode == DefaultOpCode.NULL) {
-          value.add(null);  // collection allows null elements, obviously
-        }
-        else {
-          TripType<?> elementType = stream.deriveType(opCode);
-          if (elementType.isDictionaryBased()) {
+      stream.enterNested();
+      try {
+        OpCode opCode = stream.receiveOpCode();
+        int elementCount = 0;
+        while (elementCount < size) {
+          if (opCode == DefaultOpCode.NULL) {
+            value.add(null);  // collection allows null elements, obviously
+          }
+          else {
+            TripType<?> elementType = stream.deriveType(opCode);
+            if (elementType.isDictionaryBased()) {
+              opCode = stream.receiveOpCode();
+            }
+            value.add(elementType.read(stream, opCode));
+          }
+          if (++elementCount < size) {
+            // opcode for the next element
             opCode = stream.receiveOpCode();
           }
-          value.add(elementType.read(stream, opCode));
         }
-        if (++elementCount < size) {
-          // opcode for the next element
-          opCode = stream.receiveOpCode();
-        }
+      }
+      finally {
+        stream.leaveNested();
       }
     }
   }

@@ -128,10 +128,13 @@ public final class DictionaryEntryTripType extends AbstractTripType<DictionaryEn
   /**
    * Checks a dictionary entry received from a client that is not authenticated yet.
    * <p>
-   * The class must be on the allowlist. A component type must be on the allowlist as well, unless
-   * it is the type the allowed class declares for that component: the class was vetted together
-   * with the types of its components. Since the values of final component types are read without
-   * their own dictionary entry, the component types cannot be left unchecked.
+   * The class must be on the allowlist, and each component must be one the class declares: a
+   * component name the class doesn't know would be kept by the server as long as the connection
+   * lives, and the component of an array entry names the element class, which is loaded to create
+   * the array. A component type must be on the allowlist as well, unless it is the type the allowed
+   * class declares for that component: the class was vetted together with the types of its
+   * components. Since the values of final component types are read without their own dictionary
+   * entry, the component types cannot be left unchecked.
    * Dynamic proxies are refused altogether.
    *
    * @param policy the policy
@@ -146,20 +149,23 @@ public final class DictionaryEntryTripType extends AbstractTripType<DictionaryEn
       policy.violation("dynamic proxy for " + String.join(", ", componentNames));
       return;
     }
-    boolean classAllowed = policy.isClassAllowed(className);
-    if (!classAllowed) {
+    if (!policy.isClassAllowed(className)) {
       policy.violation("class " + className);
+      return;   // audit only: nothing more to check without loading the class
     }
-    Map<String, String> declaredTypes = null;
-    for (int i = 0; i < componentTypes.length; i++) {
+    if (componentNames.length == 0) {
+      return;
+    }
+    Map<String, String> declaredTypes = getDeclaredComponentTypes(className);
+    for (int i = 0; i < componentNames.length; i++) {
+      String declaredType = declaredTypes.get(componentNames[i]);
+      if (declaredType == null) {
+        policy.violation("component " + componentNames[i] + " not declared by class " + className);
+        continue;
+      }
       String typeName = componentTypes[i];
-      if (!policy.isClassAllowed(typeName)) {
-        if (declaredTypes == null) {
-          declaredTypes = classAllowed ? getDeclaredComponentTypes(className) : Map.of();
-        }
-        if (!typeName.equals(declaredTypes.get(componentNames[i]))) {
-          policy.violation("type " + typeName + " of component " + componentNames[i] + " in class " + className);
-        }
+      if (!typeName.equals(declaredType) && !policy.isClassAllowed(typeName)) {
+        policy.violation("type " + typeName + " of component " + componentNames[i] + " in class " + className);
       }
     }
   }

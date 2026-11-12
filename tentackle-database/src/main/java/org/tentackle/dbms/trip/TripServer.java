@@ -87,6 +87,12 @@ import java.util.TreeMap;
  *  {@code enforce} (default) refuses everything a login doesn't need, {@code audit} only logs it,
  *  and {@code off} accepts everything from everyone, as in former releases.
  * </li>
+ * <li>
+ * {@code maxlogins=<number>}:
+ *  The maximum number of logins processed concurrently (default 64, 0 = unlimited).
+ *  Each login holds a database session while the credentials are verified.
+ *  A login exceeding the limit waits up to 10 seconds and is then refused as "server busy".
+ * </li>
  * </ul>
  *
  * @author harald
@@ -119,6 +125,11 @@ public class TripServer {
   public static final String TIMEOUT_INTERVAL = "timeoutinterval";
 
   /**
+   * The property key for the maximum number of concurrent logins.
+   */
+  public static final String MAX_CONCURRENT_LOGINS = "maxlogins";
+
+  /**
    * The property key for the pre-authentication policy mode.
    */
   public static final String PRE_AUTHENTICATION = "preauth";
@@ -142,6 +153,7 @@ public class TripServer {
   private int sessionTimeout;                                         // default session timeout in seconds
   private long sessionTimeoutCheckInterval;                           // check interval for session timeout in milliseconds, 0 = none
   private PreAuthenticationPolicy.Mode preAuthenticationMode;         // null = no pre-authentication policy
+  private int maxConcurrentLogins;                                    // maximum number of concurrent logins, 0 = unlimited
 
 
 
@@ -185,6 +197,9 @@ public class TripServer {
     else  {
       sessionTimeoutCheckInterval = DEFAULT_CHECK_INTERVAL;
     }
+
+    val = props.getPropertyIgnoreCase(MAX_CONCURRENT_LOGINS);
+    maxConcurrentLogins = val != null ? Integer.parseInt(val) : RemoteDbSessionImpl.DEFAULT_MAX_CONCURRENT_LOGINS;
 
     val = props.getPropertyIgnoreCase(PRE_AUTHENTICATION);
     if (val == null || val.equalsIgnoreCase("enforce")) {
@@ -329,6 +344,25 @@ public class TripServer {
   }
 
   /**
+   * Gets the maximum number of logins processed concurrently.
+   *
+   * @return the maximum number, 0 if unlimited
+   */
+  public int getMaxConcurrentLogins() {
+    return maxConcurrentLogins;
+  }
+
+  /**
+   * Sets the maximum number of logins processed concurrently.<br>
+   * Must be invoked before {@link #start()}.
+   *
+   * @param maxConcurrentLogins the maximum number, 0 if unlimited
+   */
+  public void setMaxConcurrentLogins(int maxConcurrentLogins) {
+    this.maxConcurrentLogins = maxConcurrentLogins;
+  }
+
+  /**
    * Creates the pre-authentication policy for a transport.<br>
    * Applications may override this method to add classes to the allowlist or to change the limits.
    *
@@ -346,6 +380,7 @@ public class TripServer {
   public void start() {
     // start the transports in alphabetical order
     LOGGER.info("TRIP-server " + getClass().getName() + " starting...");
+    RemoteDbSessionImpl.setMaxConcurrentLogins(maxConcurrentLogins);
     for (Map.Entry<String, URI> serviceEntry : services.entrySet()) {
       String name = serviceEntry.getKey();
       URI uri = serviceEntry.getValue();

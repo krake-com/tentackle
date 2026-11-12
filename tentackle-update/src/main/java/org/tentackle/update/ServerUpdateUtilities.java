@@ -23,9 +23,11 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.io.UriHelper;
 import org.tentackle.log.Logger;
+import org.tentackle.trip.PreAuthenticationPolicy;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TransportManager;
 import org.tentackle.trip.TripRuntimeException;
+import org.tentackle.trip.impl.DefaultPreAuthenticationPolicy;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -82,6 +84,17 @@ public class ServerUpdateUtilities {
       Transport transport = TransportManager.getInstance().requestTransport(uri);
       if (!transport.isAccepting()) {
         // new transport
+        if (transport.getPreAuthenticationPolicy() == null) {
+          // the clients of an update service never log in: before accepting, the policy applies from the very beginning
+          PreAuthenticationPolicy policy = createPreAuthenticationPolicy(transport);
+          if (policy != null) {
+            transport.setPreAuthenticationPolicy(policy);
+          }
+          else {
+            LOGGER.warning("update service {0} without pre-authentication policy: clients are not restricted",
+                           UriHelper.uriToSafeString(uri));
+          }
+        }
         transport.accept();
       }
       UpdateService updateService = createUpdateServiceImpl(updateServiceImplClass, updateUrlName);
@@ -92,6 +105,22 @@ public class ServerUpdateUtilities {
     }
   }
 
+
+  /**
+   * Creates the pre-authentication policy for a transport of the update service's own.<br>
+   * Invoked only if the transport is not accepting yet and has no policy, i.e. it is not shared
+   * with another server, such as a {@code TripServer}, that already decided about its policy.
+   * <p>
+   * The clients of an update service never log in, so the policy restricts all of them for good.
+   * Applications may override this method to change the limits, or return null to accept everything
+   * from everyone (not recommended).
+   *
+   * @param transport the server transport
+   * @return the policy, null if none
+   */
+  protected PreAuthenticationPolicy createPreAuthenticationPolicy(Transport transport) {
+    return new DefaultPreAuthenticationPolicy();
+  }
 
   /**
    * Creates the update service implementation.<br>

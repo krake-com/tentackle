@@ -28,6 +28,9 @@ import org.tentackle.trip.TripPreAuth;
 import org.tentackle.trip.remote.IdentifiedRemoteCall;
 import org.tentackle.trip.remote.InitialRemoteCall;
 
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -70,6 +73,15 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
   /** Default maximum number of elements of an array, collection or map. */
   public static final int DEFAULT_MAX_ELEMENTS = 4096;
 
+  /** Default maximum nesting depth of objects, arrays, collections and maps. */
+  public static final int DEFAULT_MAX_DEPTH = 32;
+
+  /** Default maximum number of messages per connection before authentication. */
+  public static final int DEFAULT_MAX_MESSAGES = 32;
+
+  /** Maximum length of a violation message: it may contain names chosen by the client. */
+  private static final int MAX_VIOLATION_LENGTH = 200;
+
   /** Default wait time for dictionary entries in milliseconds. */
   public static final long DEFAULT_DICTIONARY_WAIT_TIME = 5000;
 
@@ -81,6 +93,9 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
 
   /** Default timeout until the first message is received in milliseconds. */
   public static final long DEFAULT_FIRST_MESSAGE_TIMEOUT = 30000;
+
+  /** Default length of the network prefix IPv6 clients are grouped by. */
+  public static final int DEFAULT_IPV6_PREFIX_LENGTH = 64;
 
   /** Maximum number of distinct violations logged in audit mode. */
   private static final int MAX_AUDITED = 1000;
@@ -111,20 +126,29 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
   private final class AdmissionImpl implements Admission {
 
     private final String host;
+    private final String hostKey;
     private final Runnable closer;
     private final BooleanSupplier authenticated;
     private volatile ScheduledFuture<?> deadline;
-    private boolean released;     // guarded by admissions
+    private volatile boolean busy;
+    private boolean released;
 
     private AdmissionImpl(String host, Runnable closer, BooleanSupplier authenticated) {
       this.host = host;
+      this.hostKey = hostKey(host);
       this.closer = closer;
       this.authenticated = authenticated;
     }
 
     @Override
     public void messageReceived() {
+      busy = true;
       cancelDeadline();
+    }
+
+    @Override
+    public void callCompleted() {
+      busy = false;
     }
 
     @Override
@@ -151,7 +175,10 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
         }
       }
       if (!authenticated.getAsBoolean()) {
-        close(this, "no message received within " + firstMessageTimeout + " ms");
+        // Closing may block, for example, a TLS socket in the middle of its handshake:
+        // the scheduler is shared by all connections and must not wait for it.
+        Thread.ofVirtual().name("TRIP pre-authentication closer")
+              .start(() -> close(this, "no message received within " + firstMessageTimeout + " ms"));
       }
     }
 
@@ -170,10 +197,13 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
 
   private volatile int maxMessageSize;
   private volatile int maxElements;
+  private volatile int maxDepth;
+  private volatile int maxMessages;
   private volatile long dictionaryWaitTime;
   private volatile int maxConnections;
   private volatile int maxConnectionsPerHost;
   private volatile long firstMessageTimeout;
+  private volatile int ipv6PrefixLength;
 
 
   /**
@@ -189,10 +219,13 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
     admissionsPerHost = new HashMap<>();
     maxMessageSize = DEFAULT_MAX_MESSAGE_SIZE;
     maxElements = DEFAULT_MAX_ELEMENTS;
+    maxDepth = DEFAULT_MAX_DEPTH;
+    maxMessages = DEFAULT_MAX_MESSAGES;
     dictionaryWaitTime = DEFAULT_DICTIONARY_WAIT_TIME;
     maxConnections = DEFAULT_MAX_CONNECTIONS;
     maxConnectionsPerHost = DEFAULT_MAX_CONNECTIONS_PER_HOST;
     firstMessageTimeout = DEFAULT_FIRST_MESSAGE_TIMEOUT;
+    ipv6PrefixLength = DEFAULT_IPV6_PREFIX_LENGTH;
     allowBuiltins();
     allowAnnotated();
   }
@@ -252,6 +285,25 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
    */
   public void setMaxElements(int maxElements) {
     this.maxElements = maxElements;
+  }
+
+  /**
+   * Sets the maximum nesting depth of objects, arrays, collections and maps.
+   *
+   * @param maxDepth the maximum depth, 0 if unlimited
+   */
+  public void setMaxDepth(int maxDepth) {
+    this.maxDepth = maxDepth;
+  }
+
+  /**
+   * Sets the maximum number of messages a connection may send before the client is authenticated.<br>
+   * Each login attempt and each update check is a message.
+   *
+   * @param maxMessages the maximum number of messages, 0 if unlimited
+   */
+  public void setMaxMessages(int maxMessages) {
+    this.maxMessages = maxMessages;
   }
 
   /**
@@ -319,6 +371,25 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
   }
 
   /**
+   * Gets the length of the network prefix IPv6 clients are grouped by.
+   *
+   * @return the prefix length in bits, 0 or 128 to group by the full address
+   */
+  public int getIpv6PrefixLength() {
+    return ipv6PrefixLength;
+  }
+
+  /**
+   * Sets the length of the network prefix IPv6 clients are grouped by for the connection limits.<br>
+   * A client usually owns a whole /64 network and can connect from any address in it.
+   *
+   * @param ipv6PrefixLength the prefix length in bits, 0 or 128 to group by the full address
+   */
+  public void setIpv6PrefixLength(int ipv6PrefixLength) {
+    this.ipv6PrefixLength = ipv6PrefixLength;
+  }
+
+  /**
    * Gets the number of currently admitted unauthenticated connections.
    *
    * @return the number of connections
@@ -341,6 +412,7 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
 
   @Override
   public void violation(String message) {
+    message = sanitize(message);
     if (mode == Mode.ENFORCE) {
       throw new TripPolicyViolationException("not allowed before authentication: " + message);
     }
@@ -371,6 +443,16 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
   }
 
   @Override
+  public int getMaxDepth() {
+    return maxDepth;
+  }
+
+  @Override
+  public int getMaxMessages() {
+    return maxMessages;
+  }
+
+  @Override
   public long getDictionaryWaitTime() {
     return dictionaryWaitTime;
   }
@@ -390,28 +472,21 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
       authenticatedAdmissions.forEach(this::remove);
 
       int perHost = maxConnectionsPerHost;
-      if (perHost > 0 && admissionsPerHost.getOrDefault(host, 0) >= perHost) {
-        for (AdmissionImpl other : admissions) {
-          if (Objects.equals(other.host, host)) {
-            evicted.add(other);
-            break;
-          }
-        }
+      if (perHost > 0 && admissionsPerHost.getOrDefault(admission.hostKey, 0) >= perHost) {
+        addVictim(admission.hostKey, evicted);
       }
       int max = maxConnections;
       if (max > 0 && admissions.size() - evicted.size() >= max) {
-        for (AdmissionImpl other : admissions) {
-          if (!evicted.contains(other)) {
-            evicted.add(other);
-            break;
-          }
-        }
+        // The host holding the most connections loses one: with many addresses at hand,
+        // an attacker can open connections faster than real users log in, but these users
+        // are spread over many hosts.
+        addVictim(getBusiestHostKey(evicted), evicted);
       }
       if (mode == Mode.ENFORCE) {
         evicted.forEach(this::remove);
       }
       admissions.add(admission);
-      admissionsPerHost.merge(host, 1, Integer::sum);
+      admissionsPerHost.merge(admission.hostKey, 1, Integer::sum);
     }
 
     for (AdmissionImpl other : evicted) {
@@ -497,6 +572,110 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
 
 
   /**
+   * Sanitizes a violation message before it is thrown or logged.<br>
+   * The message may contain names chosen by the client, such as class names: control characters
+   * are replaced, so that the client cannot forge log lines, and the length is limited.
+   *
+   * @param message the message
+   * @return the sanitized message
+   */
+  protected String sanitize(String message) {
+    if (message == null) {
+      return null;
+    }
+    boolean truncated = message.length() > MAX_VIOLATION_LENGTH;
+    StringBuilder buf = new StringBuilder(truncated ? message.substring(0, MAX_VIOLATION_LENGTH) : message);
+    for (int i = 0; i < buf.length(); i++) {
+      if (Character.isISOControl(buf.charAt(i))) {
+        buf.setCharAt(i, '?');
+      }
+    }
+    if (truncated) {
+      buf.append("...");
+    }
+    return buf.toString();
+  }
+
+  /**
+   * Determines the key a host's connections are grouped by for the limits.<br>
+   * An IPv6 address is reduced to its network prefix (see {@link #setIpv6PrefixLength(int)}),
+   * since a single client usually owns a whole /64 network and can pick any address from it.
+   *
+   * @param host the host, usually an IP address literal, null if unknown
+   * @return the key
+   */
+  protected String hostKey(String host) {
+    int prefixLength = ipv6PrefixLength;
+    if (host != null && host.indexOf(':') >= 0 && prefixLength > 0 && prefixLength < 128) {
+      String literal = host.startsWith("[") && host.endsWith("]") ? host.substring(1, host.length() - 1) : host;
+      try {
+        if (InetAddress.ofLiteral(literal) instanceof Inet6Address address) {
+          byte[] bytes = address.getAddress();
+          for (int bit = prefixLength; bit < 128; bit++) {
+            bytes[bit / 8] &= (byte) ~(0x80 >>> (bit % 8));
+          }
+          return InetAddress.getByAddress(bytes).getHostAddress() + "/" + prefixLength;
+        }
+      }
+      catch (IllegalArgumentException | UnknownHostException e) {
+        // not an IPv6 literal: take the host as is
+      }
+    }
+    return host;
+  }
+
+  /**
+   * Finds the host holding the most admitted connections.<br>
+   * Must be invoked while holding the monitor of {@link #admissions}.
+   *
+   * @param evicted the connections already chosen to be evicted
+   * @return the host key, null if no admissions
+   */
+  private String getBusiestHostKey(List<AdmissionImpl> evicted) {
+    String busiest = null;
+    int maxCount = 0;
+    for (Map.Entry<String, Integer> entry : admissionsPerHost.entrySet()) {
+      int count = entry.getValue();
+      for (AdmissionImpl other : evicted) {
+        if (Objects.equals(other.hostKey, entry.getKey())) {
+          count--;
+        }
+      }
+      if (count > maxCount) {
+        maxCount = count;
+        busiest = entry.getKey();
+      }
+    }
+    return busiest;
+  }
+
+  /**
+   * Chooses the connection of a host to be evicted.<br>
+   * The oldest connection without a call in progress, the oldest connection otherwise.
+   * Must be invoked while holding the monitor of {@link #admissions}.
+   *
+   * @param hostKey the host key
+   * @param evicted the connections chosen to be evicted, the victim is added
+   */
+  private void addVictim(String hostKey, List<AdmissionImpl> evicted) {
+    AdmissionImpl victim = null;
+    for (AdmissionImpl other : admissions) {
+      if (Objects.equals(other.hostKey, hostKey) && !evicted.contains(other)) {
+        if (!other.busy) {
+          victim = other;
+          break;
+        }
+        if (victim == null) {
+          victim = other;
+        }
+      }
+    }
+    if (victim != null) {
+      evicted.add(victim);
+    }
+  }
+
+  /**
    * Closes an unauthenticated connection, or only logs it in audit mode.
    *
    * @param admission the connection's admission
@@ -527,7 +706,7 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
     if (!admission.released) {
       admission.released = true;
       admissions.remove(admission);
-      admissionsPerHost.computeIfPresent(admission.host, (_, count) -> count > 1 ? count - 1 : null);
+      admissionsPerHost.computeIfPresent(admission.hostKey, (_, count) -> count > 1 ? count - 1 : null);
     }
   }
 

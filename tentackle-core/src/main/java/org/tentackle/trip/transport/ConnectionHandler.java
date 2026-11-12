@@ -221,34 +221,33 @@ public class ConnectionHandler implements Runnable {
    * @param admission the admission by the policy, null if none
    */
   private void handleConnection(PreAuthenticationPolicy policy, PreAuthenticationPolicy.Admission admission) {
-    int versionSkew;
+    UUID id;
+    TripStream stream;
     try {
-      versionSkew = readMagic();
+      int versionSkew = readMagic();
       if (versionSkew != 0) {
         // For an auto-updatable client, this will happen only once per client with the update URL endpoint.
         // The client then updates itself and automatically uses the latest protocol.
         LOGGER.warning("client connection {0} uses an outdated version of TRIP, version skew = {1}",
                        new TransportClientInfo(transport, null, connectionName, null), versionSkew);
       }
+      id = readUUID();
+      boolean clientDictionaryEmpty = true;
+      if (versionSkew == 0) {
+        clientDictionaryEmpty = readDictionaryFlag();
+      }
+      stream = createStream(id, clientDictionaryEmpty);
     }
     catch (TripRuntimeException e) {
-      if (ExceptionHelper.extractException(IOException.class, true, e) != null) {
-        // SSL handshake exception, peer closed, etc... -> just log the messages, no stacktrace
-        LOGGER.warning("connection {0} aborted: {1}",
-                       new TransportClientInfo(transport, null, connectionName, null),
-                       ExceptionHelper.concatenateMessages(e));
-        return;
-      }
-      throw e;
+      // SSL handshake exception, peer closed, invalid magic, stale client transport, etc...
+      // -> just log the messages, no stacktrace: anybody can open a connection and send garbage
+      LOGGER.warning("connection {0} aborted: {1}",
+                     new TransportClientInfo(transport, null, connectionName, null),
+                     ExceptionHelper.concatenateMessages(e));
+      return;
     }
-
-    UUID id = readUUID();
-    boolean clientDictionaryEmpty = true;
-    if (versionSkew == 0) {
-      clientDictionaryEmpty = readDictionaryFlag();
-    }
-    TripStream stream = createStream(id, clientDictionaryEmpty);
     clientInfo = new TransportClientInfo(transport, stream.getDictionary(), connectionName, id);
+    int messageCount = 0;   // number of messages received before authentication
     boolean closedByClient = false;
     LOGGER.info("connection " + clientInfo + " opened");
 
@@ -268,16 +267,24 @@ public class ConnectionHandler implements Runnable {
           call = tripType.read(stream, stream.receiveOpCode());
           if (admission != null) {
             checkMessageSize(policy, stream);
+            checkMessageCount(policy, ++messageCount);
             admission.messageReceived();
           }
           if (call instanceof RemoteCall remoteCall) {
-            // dispatch to call handler ...
-            transport.getCallThreadPool().submit(transport.createCallHandler(stream, clientInfo, remoteCall))
-                     // ... and wait for the call to finish _before_ clearing the stream.
-                     // The submitted call handler runs asynchronously in a regular thread
-                     // of a thread pool. Blocking virtual threads is much cheaper
-                     // than blocking regular threads.
-                     .get();
+            try {
+              // dispatch to call handler ...
+              transport.getCallThreadPool().submit(transport.createCallHandler(stream, clientInfo, remoteCall))
+                       // ... and wait for the call to finish _before_ clearing the stream.
+                       // The submitted call handler runs asynchronously in a regular thread
+                       // of a thread pool. Blocking virtual threads is much cheaper
+                       // than blocking regular threads.
+                       .get();
+            }
+            finally {
+              if (admission != null) {
+                admission.callCompleted();
+              }
+            }
           }
           else {
             throw new TripRuntimeException("not a remote call: " + call.getClass());
@@ -288,6 +295,16 @@ public class ConnectionHandler implements Runnable {
         }
       }
       catch (TripError e) {
+        if (admission != null) {
+          // The client failed to serialize its call. Not expected before the login, and the text is the client's:
+          // don't log it, and don't allow the client to repeat it.
+          if (policy.isEnforcing()) {
+            LOGGER.warning("unauthenticated connection {0} sent an error ({1} characters) -> closed",
+                           clientInfo, e.getMessage() == null ? 0 : e.getMessage().length());
+            break;
+          }
+          policy.violation("error sent by the client");
+        }
         LOGGER.severe("serialization error received from client", e);
         // ignore the call and continue reading from the stream
       }
@@ -298,6 +315,12 @@ public class ConnectionHandler implements Runnable {
       catch (ExecutionException xe) {
         if (xe.getCause() instanceof TripStreamClosedException ce) {
           LOGGER.warning("client closed connection while sending response for {0} ({1})", call, ce.getMessage());
+          break;
+        }
+        if (xe.getCause() instanceof TripPolicyViolationException pv) {
+          // the call handler already answered the call
+          LOGGER.warning("unauthenticated connection {0} violates the pre-authentication policy: {1}",
+                         clientInfo, pv.getMessage());
           break;
         }
         try {
@@ -349,6 +372,19 @@ public class ConnectionHandler implements Runnable {
       if (size > maxMessageSize) {
         policy.violation("message exceeds the maximum size of " + maxMessageSize + " bytes");
       }
+    }
+  }
+
+  /**
+   * Checks the number of messages received before authentication.
+   *
+   * @param policy the policy
+   * @param messageCount the number of messages received so far, including the current one
+   */
+  private void checkMessageCount(PreAuthenticationPolicy policy, int messageCount) {
+    int maxMessages = policy.getMaxMessages();
+    if (maxMessages > 0 && messageCount > maxMessages) {
+      policy.violation("more than " + maxMessages + " messages before authentication");
     }
   }
 

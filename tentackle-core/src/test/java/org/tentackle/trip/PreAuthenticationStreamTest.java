@@ -27,7 +27,9 @@ import org.tentackle.trip.impl.EchoTransceiver;
 import org.tentackle.trip.impl.TestClass;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -51,6 +53,9 @@ public class PreAuthenticationStreamTest {
   /** Set by the static initializer of {@link ComponentGadget}. */
   static volatile boolean componentGadgetInitialized;
 
+  /** Set by the static initializer of {@link ArrayGadget}. */
+  static volatile boolean arrayGadgetInitialized;
+
   /** Set by the static initializer of {@link AuditedGadget}. */
   static volatile boolean auditedGadgetInitialized;
 
@@ -71,6 +76,16 @@ public class PreAuthenticationStreamTest {
   public static class ComponentGadget {
     static {
       componentGadgetInitialized = true;
+    }
+    public String value;
+  }
+
+  /**
+   * Same as {@link Gadget}, but sent as the component name of an allowed array class.
+   */
+  public static class ArrayGadget {
+    static {
+      arrayGadgetInitialized = true;
     }
     public String value;
   }
@@ -173,6 +188,56 @@ public class PreAuthenticationStreamTest {
     TripPolicyViolationException ex = expectThrows(TripPolicyViolationException.class, in::receiveDictionary);
     assertTrue(ex.getMessage().contains("ComponentGadget"), ex.getMessage());
     assertFalse(componentGadgetInitialized, "static initializer of a refused component type was run");
+  }
+
+  @Test
+  void testForgedArrayComponentIsNeverInitialized() {
+    // the component of an array entry names the element class, which is loaded to create the array
+    EchoTransceiver transceiver = createClientToServer();
+    TripStream out = transceiver.getStream();
+    out.getSerializer().serializeOpCode(DefaultOpCode.ARRAY);
+    writeEntry(out, -1, Harmless[].class.getName(), false,
+               new String[] { "org.tentackle.trip.PreAuthenticationStreamTest$ArrayGadget" },
+               new String[] { Harmless.class.getName() });
+    TripFactory.getInstance().getType(Integer.class).write(1, out);   // length
+    out.getSerializer().serializeOpCode(DefaultOpCode.END);
+    transceiver.echo();
+    TripStream in = transceiver.getStream();
+    in.setReadPolicy(createPolicy(PreAuthenticationPolicy.Mode.ENFORCE));
+
+    TripType<Harmless[]> type = in.getType(Harmless[].class);
+    TripPolicyViolationException ex = expectThrows(TripPolicyViolationException.class,
+                                                   () -> type.read(in, in.getDeserializer().deserializeOpCode()));
+    assertTrue(ex.getMessage().contains("ArrayGadget"), ex.getMessage());
+    assertFalse(arrayGadgetInitialized, "static initializer of a refused array component was run");
+  }
+
+  @Test
+  void testUnknownComponentNamesAreRefused() {
+    // otherwise, an entry can carry thousands of names the server keeps as long as the connection lives
+    String[] names = new String[1000];
+    String[] types = new String[names.length];
+    for (int i = 0; i < names.length; i++) {
+      names[i] = "c" + i;
+      types[i] = String.class.getName();
+    }
+    EchoTransceiver transceiver = createClientToServer();
+    writeEntry(transceiver.getStream(), -1, Harmless.class.getName(), false, names, types);
+    transceiver.echo();
+    TripStream in = transceiver.getStream();
+    in.setReadPolicy(createPolicy(PreAuthenticationPolicy.Mode.ENFORCE));
+
+    TripPolicyViolationException ex = expectThrows(TripPolicyViolationException.class, in::receiveDictionary);
+    assertTrue(ex.getMessage().contains("component c0"), ex.getMessage());
+  }
+
+  @Test
+  void testViolationMessageIsSanitized() {
+    DefaultPreAuthenticationPolicy policy = createPolicy(PreAuthenticationPolicy.Mode.ENFORCE);
+    TripPolicyViolationException ex = expectThrows(TripPolicyViolationException.class,
+                                                   () -> policy.violation("class Foo\n2026-11-12 SEVERE forged" + "x".repeat(1000)));
+    assertFalse(ex.getMessage().contains("\n"), ex.getMessage());
+    assertTrue(ex.getMessage().length() < 300, ex.getMessage());
   }
 
   @Test
@@ -307,6 +372,108 @@ public class PreAuthenticationStreamTest {
     assertTrue(elapsed < 3000, "waited " + elapsed + " ms");
   }
 
+  /**
+   * Creates a hash chain: two sets per level, each referencing both sets of the next level.<br>
+   * A few bytes per level, but computing the hash code of the root takes 2^depth steps.
+   */
+  private Set<Object> createHashChain(int depth) {
+    Set<Object> root = new HashSet<>();
+    Set<Object> s1 = root;
+    Set<Object> s2 = new HashSet<>();
+    for (int i = 0; i < depth; i++) {
+      Set<Object> t1 = new HashSet<>();
+      Set<Object> t2 = new HashSet<>();
+      t1.add("x");    // the two sets of a level must differ
+      s1.add(t1);
+      s1.add(t2);
+      s2.add(t1);
+      s2.add(t2);
+      s1 = t1;
+      s2 = t2;
+    }
+    return root;
+  }
+
+  @Test(timeOut = 10000)
+  void testHashChainIsRefused() {
+    Set<Object> chain = createHashChain(30);    // below the maximum depth: minutes to deserialize without the policy
+    TripPolicyViolationException ex = expectThrows(TripPolicyViolationException.class,
+                                                   () -> echo(chain, createPolicy(PreAuthenticationPolicy.Mode.ENFORCE)));
+    assertTrue(ex.getMessage().contains("back-reference"), ex.getMessage());
+    // no restrictions once authenticated
+    assertEquals(echo(createHashChain(4), null).size(), 2);
+  }
+
+  @Test
+  void testSharedValuesAllowed() {
+    // immutable values may be shared, containers may not
+    String shared = "shared";
+    List<Object> list = new ArrayList<>(List.of(shared, shared, Logger.Level.INFO, Logger.Level.INFO));
+    List<Object> echo = echo(list, createPolicy(PreAuthenticationPolicy.Mode.ENFORCE));
+    assertEquals(echo, list);
+
+    List<Object> inner = new ArrayList<>(List.of("a"));
+    List<Object> outer = new ArrayList<>(List.of(inner, inner));
+    expectThrows(TripPolicyViolationException.class, () -> echo(outer, createPolicy(PreAuthenticationPolicy.Mode.ENFORCE)));
+
+    List<Object> self = new ArrayList<>();
+    self.add(self);
+    expectThrows(TripPolicyViolationException.class, () -> echo(self, createPolicy(PreAuthenticationPolicy.Mode.ENFORCE)));
+  }
+
+  @Test
+  void testTooDeep() {
+    DefaultPreAuthenticationPolicy policy = createPolicy(PreAuthenticationPolicy.Mode.ENFORCE);
+    policy.setMaxDepth(8);
+    List<Object> root = new ArrayList<>();
+    List<Object> list = root;
+    for (int i = 1; i < 8; i++) {
+      List<Object> next = new ArrayList<>();
+      list.add(next);
+      list = next;
+    }
+    list.add("leaf");
+    assertEquals(echo(root, policy), root);   // 8 levels: just fits
+
+    list.set(0, new ArrayList<>(List.of("leaf")));
+    TripPolicyViolationException ex = expectThrows(TripPolicyViolationException.class, () -> echo(root, policy));
+    assertTrue(ex.getMessage().contains("depth"), ex.getMessage());
+
+    // objects count as well
+    Harmless harmless = new Harmless();
+    harmless.name = "deep";
+    list.set(0, harmless);
+    expectThrows(TripPolicyViolationException.class, () -> echo(root, policy));
+  }
+
+  @Test
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  void testDeepNestingDoesNotOverflow() throws InterruptedException {
+    // without a limit, a few hundred KB of nested lists overflow the stack of the reader
+    List<Object> root = new ArrayList<>();
+    List<Object> list = root;
+    for (int i = 0; i < 100_000; i++) {
+      List<Object> next = new ArrayList<>();
+      list.add(next);
+      list = next;
+    }
+    EchoTransceiver transceiver = createClientToServer();
+    TripType<List<Object>> type = transceiver.getStream().getType((Class) ArrayList.class);
+    // the sender recurses as well: give it a stack large enough
+    Thread writer = new Thread(null, () -> type.write(root, transceiver.getStream()), "deep writer", 1L << 30);
+    writer.start();
+    writer.join();
+    transceiver.echo();
+
+    DefaultPreAuthenticationPolicy policy = createPolicy(PreAuthenticationPolicy.Mode.ENFORCE);
+    policy.setMaxMessageSize(0);
+    TripStream in = transceiver.getStream();
+    in.setReadPolicy(policy);
+    TripPolicyViolationException ex = expectThrows(TripPolicyViolationException.class,
+                                                   () -> type.read(in, in.getDeserializer().deserializeOpCode()));
+    assertTrue(ex.getMessage().contains("depth"), ex.getMessage());
+  }
+
   @Test
   void testClassNames() {
     DefaultPreAuthenticationPolicy policy = createPolicy(PreAuthenticationPolicy.Mode.ENFORCE);
@@ -329,6 +496,64 @@ public class PreAuthenticationStreamTest {
     assertFalse(policy.isClassAllowed("[L;"));
     assertFalse(policy.isClassAllowed(""));
     assertFalse(policy.isClassAllowed(null));
+  }
+
+  @Test
+  void testBusiestHostIsEvicted() {
+    DefaultPreAuthenticationPolicy policy = new DefaultPreAuthenticationPolicy();
+    policy.setFirstMessageTimeout(0);
+    policy.setMaxConnectionsPerHost(0);
+    policy.setMaxConnections(4);
+
+    AtomicInteger closedUser = new AtomicInteger();
+    AtomicInteger closedAttacker = new AtomicInteger();
+    policy.admit("10.0.0.1", closedUser::incrementAndGet, () -> false);     // the oldest
+    for (int i = 0; i < 10; i++) {
+      policy.admit("10.6.6.6", closedAttacker::incrementAndGet, () -> false);
+    }
+    assertEquals(closedUser.get(), 0, "user evicted instead of the attacker");
+    assertEquals(closedAttacker.get(), 7);
+    assertEquals(policy.getAdmittedConnections(), 4);
+  }
+
+  @Test
+  void testIpv6NetworkCountsAsOneHost() {
+    DefaultPreAuthenticationPolicy policy = new DefaultPreAuthenticationPolicy();
+    policy.setFirstMessageTimeout(0);
+    policy.setMaxConnectionsPerHost(2);
+
+    AtomicInteger closed = new AtomicInteger();
+    policy.admit("[2001:db8:0:1::1]", closed::incrementAndGet, () -> false);
+    policy.admit("[2001:db8:0:1::2]", closed::incrementAndGet, () -> false);
+    policy.admit("[2001:db8:0:2::1]", closed::incrementAndGet, () -> false);   // another network
+    assertEquals(closed.get(), 0);
+    policy.admit("[2001:db8:0:1:ffff::3]", closed::incrementAndGet, () -> false);   // same /64
+    assertEquals(closed.get(), 1);
+
+    policy.setIpv6PrefixLength(128);    // full address
+    policy.admit("[2001:db8:0:1::4]", closed::incrementAndGet, () -> false);
+    policy.admit("[2001:db8:0:1::5]", closed::incrementAndGet, () -> false);
+    assertEquals(closed.get(), 1);
+  }
+
+  @Test
+  void testBusyConnectionIsEvictedLast() {
+    DefaultPreAuthenticationPolicy policy = new DefaultPreAuthenticationPolicy();
+    policy.setFirstMessageTimeout(0);
+    policy.setMaxConnectionsPerHost(2);
+
+    AtomicInteger closedBusy = new AtomicInteger();
+    AtomicInteger closedIdle = new AtomicInteger();
+    PreAuthenticationPolicy.Admission busy = policy.admit("a", closedBusy::incrementAndGet, () -> false);
+    busy.messageReceived();   // a login in progress
+    policy.admit("a", closedIdle::incrementAndGet, () -> false);
+    policy.admit("a", () -> { }, () -> false);
+    assertEquals(closedBusy.get(), 0);
+    assertEquals(closedIdle.get(), 1);
+
+    busy.callCompleted();
+    policy.admit("a", () -> { }, () -> false);
+    assertEquals(closedBusy.get(), 1);
   }
 
   @Test

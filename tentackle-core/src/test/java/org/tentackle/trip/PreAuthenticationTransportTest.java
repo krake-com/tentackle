@@ -27,8 +27,13 @@ import org.tentackle.trip.impl.TestClass;
 import org.tentackle.trip.impl.TripError;
 import org.tentackle.trip.transport.TransportClientInfo;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -129,6 +134,19 @@ public class PreAuthenticationTransportTest {
     return transport.lookup(PublicService.class, "public");
   }
 
+  /**
+   * Asserts that the server closed the connection.<br>
+   * Depending on unread data, the server's TCP stack resets the connection instead of closing it gracefully.
+   */
+  private void assertClosed(InputStream in) throws IOException {
+    try {
+      assertEquals(in.read(), -1);
+    }
+    catch (SocketException reset) {
+      // closed as well
+    }
+  }
+
   private TestClass createTestObject() {
     TestClass testObject = new TestClass();
     testObject.name = "not on the allowlist";
@@ -160,8 +178,61 @@ public class PreAuthenticationTransportTest {
     PrivateService session = service.login(false);
     TripError error = expectThrows(TripError.class, () -> session.echo("hello"));
     assertEquals(error.getOpCode(), DefaultOpCode.NO_SUCH_DELEGATE);
-    // the connection is still usable
-    assertEquals(service.echo("hello"), "hello");
+    // probing is not repeatable: the connection is closed, but other clients are served
+    assertEquals(connect().echo("hello"), "hello");
+  }
+
+  @Test
+  void testTooManyMessages() throws Exception {
+    DefaultPreAuthenticationPolicy policy = new DefaultPreAuthenticationPolicy();
+    policy.setMaxMessages(3);
+    startServer(policy);
+
+    PublicService service = connect();    // the lookup is the first message
+    assertEquals(service.echo("1"), "1");
+    assertEquals(service.echo("2"), "2");
+    TripError error = expectThrows(TripError.class, () -> service.echo("3"));
+    assertTrue(error.getMessage().contains("messages"), error.getMessage());
+
+    // no limit once authenticated
+    PublicService other = connect();
+    other.login(true);
+    for (int i = 0; i < 10; i++) {
+      assertEquals(other.echo(i), i);
+    }
+  }
+
+  @Test
+  void testErrorBeforeAuthenticationClosesConnection() throws Exception {
+    startServer(new DefaultPreAuthenticationPolicy());
+
+    try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), uri.getPort())) {
+      socket.setSoTimeout(5000);
+      OutputStream out = socket.getOutputStream();
+      out.write(TripConstants.MAGIC);
+      out.write(new byte[16]);    // UUID
+      out.write(1);               // client dictionary empty
+      TripFactory factory = TripFactory.getInstance();
+      TripStream stream = factory.createStream(factory.createDictionary(UUID.randomUUID(), false),
+                                               factory.createSerializer(out),
+                                               factory.createDeserializer(socket.getInputStream()));
+      // otherwise logged with a stacktrace, and the connection kept open for the next one
+      stream.sendError(DefaultOpCode.SERVER_SERIALIZATION_ERROR, new RuntimeException("forged\nlog line"));
+      assertClosed(socket.getInputStream());
+    }
+  }
+
+  @Test
+  void testGarbageHandshake() throws Exception {
+    startServer(new DefaultPreAuthenticationPolicy());
+
+    try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), uri.getPort())) {
+      socket.setSoTimeout(5000);
+      socket.getOutputStream().write(new byte[] { 1, 2, 3, 4 });
+      assertClosed(socket.getInputStream());
+    }
+    // the server is still accepting
+    assertEquals(connect().echo("hello"), "hello");
   }
 
   @Test

@@ -259,40 +259,46 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
   @SuppressWarnings("unchecked")
   protected void readEntries(TripStream stream, T value, int size) {
     if (size > 0) {
-      OpCode opCode = stream.receiveOpCode();
-      int elementCount = 0;
-      while (elementCount < size) {
-        Object elementKey;
-        if (opCode == DefaultOpCode.NULL) {
-          elementKey = null;    // map allows null keys, obviously
-        }
-        else {
-          TripType<?> elementType = stream.deriveType(opCode);
-          if (elementType.isDictionaryBased()) {
-            opCode = stream.receiveOpCode();
+      stream.enterNested();
+      try {
+        OpCode opCode = stream.receiveOpCode();
+        int elementCount = 0;
+        while (elementCount < size) {
+          Object elementKey;
+          if (opCode == DefaultOpCode.NULL) {
+            elementKey = null;    // map allows null keys, obviously
           }
-          elementKey = elementType.read(stream, opCode);
-        }
-
-        opCode = stream.receiveOpCode();
-        Object elementValue;
-        if (opCode == DefaultOpCode.NULL) {
-          elementValue = null;    // map allows null values, obviously
-        }
-        else {
-          TripType<?> elementType = stream.deriveType(opCode);
-          if (elementType.isDictionaryBased()) {
-            opCode = stream.receiveOpCode();
+          else {
+            TripType<?> elementType = stream.deriveType(opCode);
+            if (elementType.isDictionaryBased()) {
+              opCode = stream.receiveOpCode();
+            }
+            elementKey = elementType.read(stream, opCode);
           }
-          elementValue = elementType.read(stream, opCode);
-        }
 
-        value.put(elementKey, elementValue);
-
-        if (++elementCount < size) {
-          // opcode for the next element
           opCode = stream.receiveOpCode();
+          Object elementValue;
+          if (opCode == DefaultOpCode.NULL) {
+            elementValue = null;    // map allows null values, obviously
+          }
+          else {
+            TripType<?> elementType = stream.deriveType(opCode);
+            if (elementType.isDictionaryBased()) {
+              opCode = stream.receiveOpCode();
+            }
+            elementValue = elementType.read(stream, opCode);
+          }
+
+          value.put(elementKey, elementValue);
+
+          if (++elementCount < size) {
+            // opcode for the next element
+            opCode = stream.receiveOpCode();
+          }
         }
+      }
+      finally {
+        stream.leaveNested();
       }
     }
   }

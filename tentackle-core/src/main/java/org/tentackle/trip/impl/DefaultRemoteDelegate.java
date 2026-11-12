@@ -123,22 +123,25 @@ public class DefaultRemoteDelegate<T extends Remote> implements RemoteDelegate<T
 
   @Override
   public InitialRemoteResponse invoke(InitialRemoteCall call) {
+    Method method;
     try {
-      Method method = findRemoteMethod(call.methodName(), call.parameterTypes());
-      int methodIndex = methodCache.add(method);
-      try {
-        return new InitialRemoteResponse(methodIndex,
-                                         processResult(method.invoke(target, call.parameters())), null);
-      }
-      catch (InvocationTargetException e) {
-        return new InitialRemoteResponse(methodIndex, null, e.getCause());
-      }
-      catch (IllegalAccessException e) {
-        return new InitialRemoteResponse(methodIndex, null, e);
-      }
+      method = findRemoteMethod(call.methodName(), call.parameterTypes());
     }
-    catch (NoSuchMethodException e) {
+    catch (NoSuchMethodException | RuntimeException e) {
+      // RuntimeException: a forged call without a method name or with null parameter types
       return new InitialRemoteResponse(-1, null, e);
+    }
+    int methodIndex = methodCache.add(method);
+    try {
+      return new InitialRemoteResponse(methodIndex,
+                                       processResult(method.invoke(target, call.parameters())), null);
+    }
+    catch (InvocationTargetException e) {
+      return new InitialRemoteResponse(methodIndex, null, e.getCause());
+    }
+    catch (IllegalAccessException | IllegalArgumentException e) {
+      // IllegalArgumentException: the arguments don't match the parameters, i.e. the call was forged
+      return new InitialRemoteResponse(methodIndex, null, e);
     }
   }
 
@@ -155,7 +158,8 @@ public class DefaultRemoteDelegate<T extends Remote> implements RemoteDelegate<T
     catch (InvocationTargetException e) {
       return new IdentifiedRemoteResponse(null, e.getCause());
     }
-    catch (IllegalAccessException e) {
+    catch (IllegalAccessException | IllegalArgumentException e) {
+      // IllegalArgumentException: the arguments don't match the parameters, i.e. the call was forged
       return new IdentifiedRemoteResponse(null, e);
     }
   }

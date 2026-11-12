@@ -30,7 +30,8 @@ import java.util.function.BooleanSupplier;
  * a server with a policy installed (see {@link Transport#setPreAuthenticationPolicy(PreAuthenticationPolicy)}):
  * <ul>
  *   <li>resolves only the class names on the allowlist, checked <em>before</em> any class is loaded,</li>
- *   <li>limits the size of a message and the number of elements of arrays, collections and maps,</li>
+ *   <li>limits the size of a message, the number of elements of arrays, collections and maps, and the nesting depth,</li>
+ *   <li>refuses back-references to anything but immutable values, so that the received object graph is a tree,</li>
  *   <li>does not wait for dictionary entries the client never sent,</li>
  *   <li>serves only the registry and the remote objects registered by name,</li>
  *   <li>limits the number of unauthenticated connections and the time until their first message.</li>
@@ -60,10 +61,16 @@ public interface PreAuthenticationPolicy {
   interface Admission {
 
     /**
-     * Notifies that a complete message was received.<br>
+     * Notifies that a complete message was received and its call is about to be processed.<br>
      * Ends the deadline for the first message.
      */
     void messageReceived();
+
+    /**
+     * Notifies that the call of the last message received was processed.<br>
+     * A connection with a call in progress is evicted only if there is no other choice.
+     */
+    void callCompleted();
 
     /**
      * Releases the admission.<br>
@@ -130,6 +137,20 @@ public interface PreAuthenticationPolicy {
    * @return the maximum number of elements, 0 if unlimited
    */
   int getMaxElements();
+
+  /**
+   * Gets the maximum nesting depth of objects, arrays, collections and maps.
+   *
+   * @return the maximum depth, 0 if unlimited
+   */
+  int getMaxDepth();
+
+  /**
+   * Gets the maximum number of messages a connection may send before the client is authenticated.
+   *
+   * @return the maximum number of messages, 0 if unlimited
+   */
+  int getMaxMessages();
 
   /**
    * Gets the time to wait for a dictionary entry referenced by an ordinal not received yet.

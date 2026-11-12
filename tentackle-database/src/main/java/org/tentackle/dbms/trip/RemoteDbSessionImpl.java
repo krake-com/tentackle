@@ -60,9 +60,12 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * User session within the application server.
@@ -83,6 +86,49 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    */
   private static final Set<WeakReference<RemoteDbSessionImpl>> SESSIONS = ConcurrentHashMap.newKeySet();
 
+
+  /**
+   * Serializes the verification of the session info and the registration of the new session.<br>
+   * The credentials themselves are verified without holding it (see {@link #verifySessionInfo(SessionInfo)}).
+   */
+  private static final ReentrantLock LOGIN_LOCK = new ReentrantLock();
+
+  /** Default maximum number of logins processed concurrently. */
+  public static final int DEFAULT_MAX_CONCURRENT_LOGINS = 64;
+
+  /** Default milliseconds a login waits for its turn if the maximum number of concurrent logins is reached. */
+  public static final long DEFAULT_LOGIN_WAIT_TIME = 10000;
+
+  /** Milliseconds a login waits for its turn if the maximum number of concurrent logins is reached. */
+  private static volatile long loginWaitTime = DEFAULT_LOGIN_WAIT_TIME;
+
+  /**
+   * Limits the number of logins processed concurrently, null if unlimited.<br>
+   * Each login holds a session from the pool while it is verified.
+   */
+  private static volatile Semaphore loginPermits = new Semaphore(DEFAULT_MAX_CONCURRENT_LOGINS);
+
+  /**
+   * Sets the maximum number of logins processed concurrently.<br>
+   * Each login holds a database session while the credentials are verified. Without a limit,
+   * clients that cannot log in could exhaust the session pool (or the database's connections)
+   * just by trying.
+   *
+   * @param maxConcurrentLogins the maximum number, 0 if unlimited
+   */
+  public static void setMaxConcurrentLogins(int maxConcurrentLogins) {
+    loginPermits = maxConcurrentLogins > 0 ? new Semaphore(maxConcurrentLogins) : null;
+  }
+
+  /**
+   * Sets the time a login waits for its turn if the maximum number of concurrent logins is reached.
+   *
+   * @param loginWaitTime the wait time in milliseconds
+   * @see #setMaxConcurrentLogins(int)
+   */
+  public static void setLoginWaitTime(long loginWaitTime) {
+    RemoteDbSessionImpl.loginWaitTime = loginWaitTime;
+  }
 
   /**
    * The session cleanup thread.
@@ -342,6 +388,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
     masterSerialEvents = new ConcurrentLinkedQueue<>();
     invokingThread = new AtomicReference<>();
 
+    Semaphore permits = acquireLoginPermit();
     Db db = null;
     try {
       TransportClientInfo transportInfo = TransportClientInfo.get();
@@ -366,12 +413,16 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
       // before SESSIONS.add: from then on, the cleanup thread checks this session for timeouts
       timeout = determineTimeout(db, clientInfo, serverInfo);
       resources.name = toString();    // chicken egg...
-      synchronized (SESSIONS) {   // prevents race condition between verifySessionInfo and SESSIONS.add
+      LOGIN_LOCK.lock();    // prevents race condition between verifySessionInfo and SESSIONS.add
+      try {
         this.clientInfo.setSince(System.currentTimeMillis());
         db.makeCurrent();   // authentication providers may need the persistence layer to look up the user
         verifySessionInfo(this.clientInfo);
         db.setSessionInfo(this.clientInfo);  // switch to client info for the lifetime of this remote session
         SESSIONS.add(new WeakReference<>(this));
+      }
+      finally {
+        LOGIN_LOCK.unlock();
       }
       if (transportInfo != null && dictionary != null) {
         // logged in: the transport's pre-authentication policy no longer applies to this client
@@ -396,6 +447,11 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
         throw ex;
       }
       throw new PersistenceException("could not setup remote session", ex);
+    }
+    finally {
+      if (permits != null) {
+        permits.release();
+      }
     }
 
     cleanable = CLEANER.register(this, resources);
@@ -493,13 +549,75 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    * or writing an audit record. They should invoke {@code super.verifySessionInfo(sessionInfo)}
    * first, so the credentials are still verified by the provider chain.
    * <p>
+   * This method is invoked while holding a lock that makes it atomic with the registration of the
+   * new session. The default implementation, however, releases the lock while it verifies the
+   * credentials (see {@link #authenticate(SessionInfo)}), so that a slow verification doesn't
+   * serialize the logins of all clients. Session concerns must therefore be checked <em>after</em>
+   * invoking {@code super.verifySessionInfo}.
+   * <p>
    * Throws LoginFailedException if login is not allowed for whatever reason.
    *
    * @param sessionInfo the session info
    */
   public void verifySessionInfo(SessionInfo sessionInfo) {
-    authentication = AuthenticationManager.getInstance().authenticate(sessionInfo.getCredentials());
+    // Invoked while holding a lock that serializes all logins, so that a session concern, such as
+    // refusing a second login of the same user, and the registration of the session are atomic.
+    // Verifying the credentials, however, takes time: hashing a password, asking a directory or an
+    // identity provider. It must not serialize the logins of all clients, or anybody able to reach
+    // the server could keep the real users from logging in just by trying.
+    // The lock is therefore released while the credentials are verified.
+    int holdCount = LOGIN_LOCK.getHoldCount();
+    for (int i = 0; i < holdCount; i++) {
+      LOGIN_LOCK.unlock();
+    }
+    try {
+      authentication = authenticate(sessionInfo);
+    }
+    finally {
+      for (int i = 0; i < holdCount; i++) {
+        LOGIN_LOCK.lock();
+      }
+    }
     applyAuthentication(sessionInfo, authentication);
+  }
+
+  /**
+   * Verifies the credentials of the session info.<br>
+   * Invoked by {@link #verifySessionInfo(SessionInfo)} without holding the lock that serializes the logins.
+   * <p>
+   * The default implementation hands the credentials to the {@link AuthenticationManager}.
+   *
+   * @param sessionInfo the session info
+   * @return the proven identity
+   * @throws LoginFailedException if the credentials are not valid
+   */
+  protected Authentication authenticate(SessionInfo sessionInfo) {
+    return AuthenticationManager.getInstance().authenticate(sessionInfo.getCredentials());
+  }
+
+  /**
+   * Acquires a permit to log in.
+   *
+   * @return the permits to release, null if unlimited
+   * @throws LoginFailedException if the server is too busy
+   */
+  private static Semaphore acquireLoginPermit() {
+    Semaphore permits = loginPermits;
+    if (permits != null) {
+      boolean acquired;
+      try {
+        acquired = permits.tryAcquire(loginWaitTime, TimeUnit.MILLISECONDS);
+      }
+      catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        acquired = false;
+      }
+      if (!acquired) {
+        LOGGER.warning("login refused: too many concurrent logins");
+        throw new LoginFailedException((Session) null, "server busy, please try again later");
+      }
+    }
+    return permits;
   }
 
   /**

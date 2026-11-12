@@ -487,74 +487,80 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
       reference.markReceived();
     }
 
-    int lastOrdinal = -1;
-    while (opCode != DefaultOpCode.END) {
-      int ordinal;
-      if (opCode.isComponentOrdinal()) {
-        lastOrdinal = ordinal = stream.readNextComponentOrdinal(lastOrdinal, opCode);   // component ordinal in the dictionary
-        opCode = stream.receiveOpCode();
-      }
-      else {
-        ordinal = ++lastOrdinal;
-      }
-      TripComponent component = entry.getTypeComponent(ordinal);
-
-      if (component == null) {
-        // not provided locally -> consume the value with the type the sender's dictionary names
-        TripComponent.readValue(entry.getComponent(ordinal).getType(), stream, opCode);
-        // next component
-        opCode = stream.receiveOpCode();
-        continue;
-      }
-
-      if (componentValues == null && value != null) {
-        // The common case: the object exists, so the component reads straight into it. This is
-        // the only branch a primitive component can serve without boxing, which is why it is
-        // separated from the delayed-construction ones below.
-        component.read(value, stream, opCode);
-        // next component
-        opCode = stream.receiveOpCode();
-        continue;
-      }
-
-      // The object does not exist yet (delayed construction), or the instance creator builds it
-      // from the values: either way the value cannot be assigned, only collected.
-      Object componentValue = component.readValue(stream, opCode);
-      if (componentValues != null) {
-        componentValues.put(component, componentValue);
-      }
-      else if (canonicalBuilderInfo != null) {
-        Method method = canonicalBuilderInfo.getMethod(component.getName());
-        if (method == null) {
-          throw new TripInstantiationException(getObjectClass(), "no builder method for " + component);
+    stream.enterNested();
+    try {
+      int lastOrdinal = -1;
+      while (opCode != DefaultOpCode.END) {
+        int ordinal;
+        if (opCode.isComponentOrdinal()) {
+          lastOrdinal = ordinal = stream.readNextComponentOrdinal(lastOrdinal, opCode);   // component ordinal in the dictionary
+          opCode = stream.receiveOpCode();
         }
-        try {
-          method.invoke(canonicalBuilder, componentValue);
+        else {
+          ordinal = ++lastOrdinal;
         }
-        catch (IllegalAccessException | InvocationTargetException e) {
-          // the method must be public (no setAccessible)
-          throw new TripInstantiationException(getObjectClass(), "cannot invoke builder method " + method, e);
+        TripComponent component = entry.getTypeComponent(ordinal);
+
+        if (component == null) {
+          // not provided locally -> consume the value with the type the sender's dictionary names
+          TripComponent.readValue(entry.getComponent(ordinal).getType(), stream, opCode);
+          // next component
+          opCode = stream.receiveOpCode();
+          continue;
         }
-      }
-      else if (canonicalConstructor != null) {
-        // the local component's own ordinal, not the stream's: for the receiver the two
-        // differ whenever the sender declares the components in another order
-        int canonicalIndex = getCanonicalIndex(component.getOrdinal());
-        if (canonicalIndex >= 0) {
-          canonicalArgs[canonicalIndex] = componentValue;
-          if (!canonicalArgsAssigned[canonicalIndex]) {
-            // count each argument once: a repeated ordinal must not create the object early,
-            // i.e., with arguments that were not read from the stream yet
-            canonicalArgsAssigned[canonicalIndex] = true;
-            if (--canonicalArgsMissing == 0) {
-              // we got all canonical fields -> create the object
-              value = createFromCanonicalArgs(stream, reference, initializer, canonicalArgs);
+
+        if (componentValues == null && value != null) {
+          // The common case: the object exists, so the component reads straight into it. This is
+          // the only branch a primitive component can serve without boxing, which is why it is
+          // separated from the delayed-construction ones below.
+          component.read(value, stream, opCode);
+          // next component
+          opCode = stream.receiveOpCode();
+          continue;
+        }
+
+        // The object does not exist yet (delayed construction), or the instance creator builds it
+        // from the values: either way the value cannot be assigned, only collected.
+        Object componentValue = component.readValue(stream, opCode);
+        if (componentValues != null) {
+          componentValues.put(component, componentValue);
+        }
+        else if (canonicalBuilderInfo != null) {
+          Method method = canonicalBuilderInfo.getMethod(component.getName());
+          if (method == null) {
+            throw new TripInstantiationException(getObjectClass(), "no builder method for " + component);
+          }
+          try {
+            method.invoke(canonicalBuilder, componentValue);
+          }
+          catch (IllegalAccessException | InvocationTargetException e) {
+            // the method must be public (no setAccessible)
+            throw new TripInstantiationException(getObjectClass(), "cannot invoke builder method " + method, e);
+          }
+        }
+        else if (canonicalConstructor != null) {
+          // the local component's own ordinal, not the stream's: for the receiver the two
+          // differ whenever the sender declares the components in another order
+          int canonicalIndex = getCanonicalIndex(component.getOrdinal());
+          if (canonicalIndex >= 0) {
+            canonicalArgs[canonicalIndex] = componentValue;
+            if (!canonicalArgsAssigned[canonicalIndex]) {
+              // count each argument once: a repeated ordinal must not create the object early,
+              // i.e., with arguments that were not read from the stream yet
+              canonicalArgsAssigned[canonicalIndex] = true;
+              if (--canonicalArgsMissing == 0) {
+                // we got all canonical fields -> create the object
+                value = createFromCanonicalArgs(stream, reference, initializer, canonicalArgs);
+              }
             }
           }
         }
+        // next component
+        opCode = stream.receiveOpCode();
       }
-      // next component
-      opCode = stream.receiveOpCode();
+    }
+    finally {
+      stream.leaveNested();
     }
 
     if (value == null && canonicalConstructor != null && canonicalBuilderInfo == null && componentValues == null) {
