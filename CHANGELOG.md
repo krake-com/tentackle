@@ -35,6 +35,13 @@ requires Java 11.
 
 ## Java 25 line (25.x)
 
+### [25.20.1.1] – 2026-11-12
+
+Hotfix for `tentackle-fx`:
+- Auto-completion popup fails to show when application-specific CSS is applied.
+
+See [Tentackle BOM](https://tentackle.org/bom/) for how to use hotfix releases.
+
 ### [25.20.1.0] – 2026-11-11
 
 ### Added
@@ -1373,7 +1380,8 @@ Java 8 maintenance release with backports from 2.2.
 The first release in the public git history.
 For what it already contained, see [The History of Tentackle](src/main/docs/history.md#origins-20012015).
 
-[Unreleased]: https://github.com/krake-com/tentackle/compare/25.20.1.0...develop
+[Unreleased]: https://github.com/krake-com/tentackle/compare/25.20.1.1...develop
+[25.20.1.1]: https://github.com/krake-com/tentackle/releases/tag/25.20.1.1
 [25.20.1.0]: https://github.com/krake-com/tentackle/releases/tag/25.20.1.0
 [25.20.0.0]: https://github.com/krake-com/tentackle/releases/tag/25.20.0.0
 [25.19.0.0]: https://github.com/krake-com/tentackle/releases/tag/25.19.0.0
