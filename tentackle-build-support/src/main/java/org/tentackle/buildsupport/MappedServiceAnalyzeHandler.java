@@ -74,8 +74,8 @@ public class MappedServiceAnalyzeHandler extends AbstractAnalyzeHandler {
       if (element.getKind().equals(ElementKind.ANNOTATION_TYPE)) {
         continue;   // ignore annotated annotations (such as in tentackle-core)
       }
-      if (element.getKind().equals(ElementKind.CLASS) ||
-          element.getKind().equals(ElementKind.INTERFACE)) {    // only annotated classes or interfaces
+      if (element.getKind().isClass() ||      // classes, enums and records
+          element.getKind().isInterface()) {  // interfaces (annotation types are skipped above)
 
         String servicingClassName = element.toString();   // annotated class, the provider
 
@@ -155,7 +155,7 @@ public class MappedServiceAnalyzeHandler extends AbstractAnalyzeHandler {
         }
       }
       else {
-        print(Kind.ERROR, "annotated element '" + element + "' is not a class or interface", element);
+        print(Kind.ERROR, "annotated element '" + element + "' is not a class, enum, record or interface", element);
       }
     }
   }
