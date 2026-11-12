@@ -9,6 +9,7 @@ package ${package}.common;
 
 import org.tentackle.common.EncryptedProperties;
 import org.tentackle.session.DefaultSessionInfo;
+import org.tentackle.trip.TripPreAuth;
 
 import java.io.Serial;
 import java.util.Locale;
@@ -16,6 +17,7 @@ import java.util.Locale;
 /**
  * Application-specific session info.
  */
+@TripPreAuth("login")    // sent by the client before it is authenticated
 public class ${application}SessionInfo extends DefaultSessionInfo {
 
   @Serial

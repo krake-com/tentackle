@@ -373,7 +373,7 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
    * @return the collection header
    */
   protected CollectionHeader<T> readHeader(TripStream stream, OpCode opCode) {
-    int size = checkSize(CollectionTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
+    int size = checkSize(stream, CollectionTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
     // the collection grows while its elements are read, so the size is only a capacity hint
     return new CollectionHeader<>(size, isDelayedConstruction() ? null : createCollection(limitPreAllocation(size)));
   }

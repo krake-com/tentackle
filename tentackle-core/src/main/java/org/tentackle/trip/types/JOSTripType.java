@@ -105,7 +105,7 @@ public final class JOSTripType extends AbstractTripType<Object> {
       }
     }
     else {
-      int size = deserializer.deserializeInt();
+      int size = checkSize(stream, deserializer.deserializeInt());
       byte[] data = new byte[size];
       deserializer.deserialize(data, 0, size);
       try (ObjectInputStream is = new ObjectInputStream(new ByteArrayInputStream(data))) {

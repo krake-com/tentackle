@@ -143,6 +143,24 @@ public interface Transport {
   Registry getRegistry();
 
   /**
+   * Sets the policy restricting clients that are not authenticated yet.<br>
+   * Server transports only.
+   * <p>
+   * Without a policy, a server accepts everything from every client, as before.
+   *
+   * @param policy the policy, null for none
+   * @see org.tentackle.trip.transport.TransportClientInfo#authenticate()
+   */
+  void setPreAuthenticationPolicy(PreAuthenticationPolicy policy);
+
+  /**
+   * Gets the policy restricting clients that are not authenticated yet.
+   *
+   * @return the policy, null if none
+   */
+  PreAuthenticationPolicy getPreAuthenticationPolicy();
+
+  /**
    * Gets the client's remote lookup for the remote registry.
    *
    * @return the remote lookup

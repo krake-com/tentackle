@@ -100,7 +100,7 @@ public final class BigDecimalTripType extends AbstractTripType<BigDecimal> {
         value = BigDecimal.valueOf(deserializer.deserializeLong(), deserializer.deserializeInt());
       }
       else {
-        byte[] bytes = new byte[deserializer.deserializeInt()];
+        byte[] bytes = new byte[checkSize(stream, deserializer.deserializeInt())];
         deserializer.deserialize(bytes, 0, bytes.length);
         value = new BigDecimal(new BigInteger(bytes), deserializer.deserializeInt());
       }

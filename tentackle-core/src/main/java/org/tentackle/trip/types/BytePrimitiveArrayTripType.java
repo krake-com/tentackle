@@ -107,7 +107,7 @@ public final class BytePrimitiveArrayTripType extends AbstractPredefinedArrayTri
     Deserializer deserializer = stream.getDeserializer();
     Reference<byte[]> reference = receiveReference(stream, stream.receiveOpCode());
     if (reference.isObjectFollowing()) {
-      int length = readArrayLength(deserializer, opCode);
+      int length = checkSize(stream, readArrayLength(deserializer, opCode));
       byte[] result = new byte[length];
       int count = 0;
       while (count < length) {

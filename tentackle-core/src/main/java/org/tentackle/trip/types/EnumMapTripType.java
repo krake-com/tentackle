@@ -97,13 +97,13 @@ public class EnumMapTripType<T extends EnumMap> extends MapTripType<T> {
   @Override
   @SuppressWarnings("unchecked")
   protected MapHeader<T> readHeader(TripStream stream, OpCode opCode) {
-    int size = EnumMapTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode);
+    int size = checkSize(stream, EnumMapTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
     Deserializer deserializer = stream.getDeserializer();
     if (deserializer.deserializeBoolean()) {
       Class keyType = EnumMapTypeHolder.CLASS_TRIP_TYPE.read(stream, stream.receiveOpCode());
       return new MapHeader<>(size, (T) new EnumMap(keyType));
     }
-    byte[] data = new byte[deserializer.deserializeInt()];
+    byte[] data = new byte[checkSize(stream, deserializer.deserializeInt())];
     deserializer.deserialize(data, 0, data.length);
     try (ObjectInputStream is = new ObjectInputStream(new ByteArrayInputStream(data))) {
       return new MapHeader<>(size, (T) is.readObject());

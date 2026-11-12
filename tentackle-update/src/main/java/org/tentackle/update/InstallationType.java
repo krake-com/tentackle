@@ -18,9 +18,12 @@
 
 package org.tentackle.update;
 
+import org.tentackle.trip.TripPreAuth;
+
 /**
  * The installation type of the client application.
  */
+@TripPreAuth("update")
 public enum InstallationType {
 
   /**

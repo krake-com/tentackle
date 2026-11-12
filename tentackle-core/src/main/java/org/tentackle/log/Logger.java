@@ -18,6 +18,8 @@
 
 package org.tentackle.log;
 
+import org.tentackle.trip.TripPreAuth;
+
 import java.lang.StackWalker.Option;
 import java.util.function.Supplier;
 
@@ -68,6 +70,7 @@ public interface Logger {
    *  <li>SEVERE</li>
    * </ul>
    */
+  @TripPreAuth("login")
   enum Level {
 
     /**

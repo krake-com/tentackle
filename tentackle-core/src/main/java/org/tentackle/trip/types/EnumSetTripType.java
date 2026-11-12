@@ -70,7 +70,7 @@ public class EnumSetTripType<T extends EnumSet> extends CollectionTripType<T> {
   @Override
   @SuppressWarnings("unchecked")
   protected CollectionHeader<T> readHeader(TripStream stream, OpCode opCode) {
-    int size = EnumSetTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode);
+    int size = checkSize(stream, EnumSetTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
     Class elementType = EnumSetTypeHolder.CLASS_TRIP_TYPE.read(stream, stream.receiveOpCode());
     return new CollectionHeader<>(size, (T) EnumSet.noneOf(elementType));
   }

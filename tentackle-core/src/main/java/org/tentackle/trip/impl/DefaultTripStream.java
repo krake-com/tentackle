@@ -26,6 +26,7 @@ import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.DictionaryEntry;
 import org.tentackle.trip.OpCode;
+import org.tentackle.trip.PreAuthenticationPolicy;
 import org.tentackle.trip.PredefinedArrayType;
 import org.tentackle.trip.Reference;
 import org.tentackle.trip.Serializer;
@@ -104,6 +105,7 @@ public class DefaultTripStream implements TripStream {
   private final Function<Class<?>, TripType<?>> typeResolver;
 
   private TripFilter filter;
+  private PreAuthenticationPolicy readPolicy;
 
 
   /**
@@ -138,7 +140,7 @@ public class DefaultTripStream implements TripStream {
         // Do not size the cache from an ordinal read off the stream: a corrupted one would
         // allocate gigabytes. Beyond the cache the dictionary is asked every time, which is
         // where an unknown ordinal is rejected anyway.
-        return dictionary.getEntry(ordinal);
+        return lookupEntry(ordinal);
       }
       if (dictionaryEntries == null) {
         dictionaryEntries = new DictionaryEntry[alignDictionarySize(INITIAL_DICTIONARY_ARRAY_SIZE, ordinal)];
@@ -151,7 +153,7 @@ public class DefaultTripStream implements TripStream {
       }
       DictionaryEntry entry = dictionaryEntries[ordinal];
       if (entry == null) {
-        entry = dictionary.getEntry(ordinal);
+        entry = lookupEntry(ordinal);
         dictionaryEntries[ordinal] = entry;
       }
       return entry;
@@ -160,7 +162,7 @@ public class DefaultTripStream implements TripStream {
       // -ordinal would overflow for Integer.MIN_VALUE, mapping it to a positive index again
       int index = ordinal == Integer.MIN_VALUE ? MAX_CACHED_DICTIONARY_ENTRIES : -ordinal - 1;
       if (index >= MAX_CACHED_DICTIONARY_ENTRIES) {
-        return dictionary.getEntry(ordinal);    // see above
+        return lookupEntry(ordinal);    // see above
       }
       if (temporaryDictionaryEntries == null) {
         temporaryDictionaryEntries = new DictionaryEntry[alignDictionarySize(INITIAL_DICTIONARY_ARRAY_SIZE, index)];
@@ -171,7 +173,7 @@ public class DefaultTripStream implements TripStream {
       }
       DictionaryEntry entry = temporaryDictionaryEntries[index];
       if (entry == null) {
-        entry = dictionary.getEntry(ordinal);
+        entry = lookupEntry(ordinal);
         temporaryDictionaryEntries[index] = entry;
       }
       // when server entries replace client-only entries, client-entries become obsolete
@@ -301,6 +303,7 @@ public class DefaultTripStream implements TripStream {
 
   @Override
   public void clear() {
+    applyReadLimit();
     if (references != null && references.length == INITIAL_REF_ARRAY_SIZE) {
       // A small message: the array never grew, so neither map holds more than its length.
       // Recycling them is cheaper than allocating anew, which would happen several times per remote call.
@@ -338,6 +341,27 @@ public class DefaultTripStream implements TripStream {
   @Override
   public TripFilter getFilter() {
     return filter;
+  }
+
+  @Override
+  public void setReadPolicy(PreAuthenticationPolicy readPolicy) {
+    this.readPolicy = readPolicy;
+    applyReadLimit();
+  }
+
+  @Override
+  public PreAuthenticationPolicy getReadPolicy() {
+    return readPolicy;
+  }
+
+  @Override
+  public void checkSize(int size) {
+    if (readPolicy != null) {
+      int maxElements = readPolicy.getMaxElements();
+      if (maxElements > 0 && size > maxElements) {
+        readPolicy.violation("number of elements " + size + " exceeds the maximum of " + maxElements);
+      }
+    }
   }
 
   @Override
@@ -493,6 +517,13 @@ public class DefaultTripStream implements TripStream {
       // must be the ordinal
       int ordinal = readDictionaryOrdinal(opCode);
       entry = getDictionaryEntry(ordinal);
+      if (readPolicy != null && entry != null && !entry.isClientOnly()) {
+        // A permanent entry was created by the server for a class it sent to the client.
+        // The client's own entries were checked when received, but these must be checked as well.
+        if (entry.isProxy() || !readPolicy.isClassAllowed(entry.getClassName())) {
+          readPolicy.violation("class " + entry.getClassName());
+        }
+      }
     }
     return entry;
   }
@@ -590,6 +621,27 @@ public class DefaultTripStream implements TripStream {
     return map;
   }
 
+
+  /**
+   * Looks up a dictionary entry not cached by this stream.<br>
+   * A client that is not authenticated yet is not waited for that long.
+   *
+   * @param ordinal the ordinal
+   * @return the entry
+   */
+  private DictionaryEntry lookupEntry(int ordinal) {
+    return readPolicy != null && readPolicy.isEnforcing() ?
+             dictionary.getEntry(ordinal, readPolicy.getDictionaryWaitTime()) :
+             dictionary.getEntry(ordinal);
+  }
+
+  /**
+   * Applies the size limit of the read policy to the deserializer.<br>
+   * Starts a new message as far as the limit is concerned.
+   */
+  private void applyReadLimit() {
+    deserializer.setReadLimit(readPolicy != null && readPolicy.isEnforcing() ? readPolicy.getMaxMessageSize() : 0);
+  }
 
   private <T> Reference<T> createAndAddReference(T object) {
     if (nextReferenceId == Integer.MAX_VALUE) {

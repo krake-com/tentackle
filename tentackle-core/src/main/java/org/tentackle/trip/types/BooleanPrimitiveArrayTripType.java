@@ -106,7 +106,7 @@ public final class BooleanPrimitiveArrayTripType extends AbstractPredefinedArray
     Deserializer deserializer = stream.getDeserializer();
     Reference<boolean[]> reference = receiveReference(stream, stream.receiveOpCode());
     if (reference.isObjectFollowing()) {
-      int length = readArrayLength(deserializer, opCode);
+      int length = checkSize(stream, readArrayLength(deserializer, opCode));
       boolean[] result = new boolean[length];
       int count = 0;
       while (count < length) {

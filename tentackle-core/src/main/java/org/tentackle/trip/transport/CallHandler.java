@@ -19,6 +19,7 @@
 package org.tentackle.trip.transport;
 
 import org.tentackle.log.Logger;
+import org.tentackle.trip.PreAuthenticationPolicy;
 import org.tentackle.trip.Remote;
 import org.tentackle.trip.RemoteDelegate;
 import org.tentackle.trip.Transport;
@@ -106,6 +107,9 @@ public class CallHandler implements Runnable {
       TransportClientInfo.set(clientInfo);
       prepareResponse();
       RemoteDelegate<Remote> delegate = transport.getRegistry().lookup(remoteCall.remoteId());
+      if (delegate != null && !isDelegateAllowed()) {
+        delegate = null;    // don't tell whether it exists
+      }
       if (delegate == null) {
         throw new TripNoSuchDelegateException(remoteCall.remoteId());
       }
@@ -138,6 +142,28 @@ public class CallHandler implements Runnable {
       TransportClientInfo.set(null);
       finalizeResponse();
     }
+  }
+
+  /**
+   * Checks whether the client may invoke the remote object of the call.<br>
+   * As long as the client is not authenticated, the {@link PreAuthenticationPolicy} of the
+   * transport, if any, decides.
+   *
+   * @return true if allowed
+   */
+  protected boolean isDelegateAllowed() {
+    PreAuthenticationPolicy policy = transport.getPreAuthenticationPolicy();
+    if (policy == null || clientInfo.isAuthenticated() ||
+        policy.isDelegateAllowed(transport.getRegistry(), remoteCall.remoteId())) {
+      return true;
+    }
+    if (policy.isEnforcing()) {
+      LOGGER.warning("unauthenticated connection {0} refused to invoke remote object {1}",
+                     clientInfo, TransportClientInfo.redact(remoteCall.remoteId()));
+      return false;
+    }
+    policy.violation("invocation of a remote object not registered by name");
+    return true;
   }
 
   /**

@@ -23,6 +23,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.misc.Pool;
 import org.tentackle.trip.Connection;
 import org.tentackle.trip.Dictionary;
+import org.tentackle.trip.PreAuthenticationPolicy;
 import org.tentackle.trip.Registry;
 import org.tentackle.trip.Remote;
 import org.tentackle.trip.RemoteLookup;
@@ -73,6 +74,7 @@ public abstract class AbstractTransport implements Transport {
   private Registry registry;                          // the server's registry
   private RemoteLookup remoteLookup;                  // the cached remote lookup
   private volatile boolean closed;                    // true if the transport is closed (cannot be used anymore)
+  private volatile PreAuthenticationPolicy preAuthenticationPolicy;   // restrictions for unauthenticated clients [server]
 
   /**
    * A server-side map with weak UUIDs mapped to weak references to dictionaries.
@@ -192,7 +194,7 @@ public abstract class AbstractTransport implements Transport {
         // new dictionary would make it send ordinals we never learned, so it has to establish a
         // new transport, which gives both sides a fresh dictionary.
         LOGGER.warning("client transport {0} has a populated dictionary but {1} has none for it " +
-                       "-> the client must establish a new transport", id, this);
+                       "-> the client must establish a new transport", TransportClientInfo.redact(id), this);
         return null;
       }
       // Drop a stale entry first: put() would keep its collected UUID instance as the key, and
@@ -208,6 +210,16 @@ public abstract class AbstractTransport implements Transport {
   @Override
   public Registry getRegistry() {
     return registry;
+  }
+
+  @Override
+  public void setPreAuthenticationPolicy(PreAuthenticationPolicy policy) {
+    preAuthenticationPolicy = policy;
+  }
+
+  @Override
+  public PreAuthenticationPolicy getPreAuthenticationPolicy() {
+    return preAuthenticationPolicy;
   }
 
   @Override

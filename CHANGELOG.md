@@ -32,6 +32,22 @@ requires Java 11.
 
 ## [Unreleased]
 
+### Added
+
+- TRIP: a new `PreAuthenticationPolicy` restricts what a server accepts from a client that has not logged in yet.
+  See [Unauthenticated peers](tentackle-core/src/main/docs/trip.md#unauthenticated-peers).
+- `TripServer` installs an enforcing pre-authentication policy by default, and `RemoteDbSessionImpl` authenticates
+  the client once `verifySessionInfo` accepted the credentials. The backend property `preauth=enforce|audit|off`
+  selects the mode.
+
+### Changed
+
+- Applications that subclass `SessionInfo` or `Credentials` must annotate the subclass with `@TripPreAuth("login")`,
+  or the login is refused (or set `preauth=off`).
+- A TRIP server refuses dictionary entries with permanent ordinals from its clients, which only ever send temporary
+  ones.
+- The UUID of a client transport is logged abbreviated, since it now carries the client's authentication state.
+
 
 ## Java 25 line (25.x)
 

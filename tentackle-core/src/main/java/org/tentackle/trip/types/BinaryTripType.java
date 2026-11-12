@@ -77,7 +77,7 @@ public final class BinaryTripType extends AbstractTripType<AbstractBinary<?>> {
     Deserializer deserializer = stream.getDeserializer();
     if (opCode == DefaultOpCode.BINARY) {
       byte subType = deserializer.deserializeByte();
-      int length = deserializer.deserializeInt();
+      int length = checkSize(stream, deserializer.deserializeInt());
       boolean frozen = deserializer.deserializeBoolean();
       byte[] data = new byte[length];
       deserializer.deserialize(data, 0, length);

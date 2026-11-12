@@ -22,6 +22,7 @@ import org.tentackle.common.EncryptedProperties;
 import org.tentackle.misc.Immutable;
 import org.tentackle.session.auth.Credentials;
 import org.tentackle.session.auth.PasswordCredentials;
+import org.tentackle.trip.TripPreAuth;
 
 import java.io.Serializable;
 import java.util.Locale;
@@ -46,6 +47,7 @@ import java.util.TimeZone;
  *
  * @author harald
  */
+@TripPreAuth("login")
 public interface SessionInfo extends Immutable, Serializable {
 
   /**

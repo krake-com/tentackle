@@ -24,9 +24,11 @@ import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.io.UriHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.session.SessionInfo;
+import org.tentackle.trip.PreAuthenticationPolicy;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TransportManager;
 import org.tentackle.trip.TripRuntimeException;
+import org.tentackle.trip.impl.DefaultPreAuthenticationPolicy;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -79,6 +81,12 @@ import java.util.TreeMap;
  *  The default session timeout (in polling-intervals) for dead client connections.
  *  Defaults to 30, i.e., 30 seconds.
  * </li>
+ * <li>
+ * {@code preauth=enforce|audit|off}:
+ *  What a client may send before it has logged in (see {@link PreAuthenticationPolicy}).
+ *  {@code enforce} (default) refuses everything a login doesn't need, {@code audit} only logs it,
+ *  and {@code off} accepts everything from everyone, as in former releases.
+ * </li>
  * </ul>
  *
  * @author harald
@@ -111,6 +119,11 @@ public class TripServer {
   public static final String TIMEOUT_INTERVAL = "timeoutinterval";
 
   /**
+   * The property key for the pre-authentication policy mode.
+   */
+  public static final String PRE_AUTHENTICATION = "preauth";
+
+  /**
    * Default timeout check interval in milliseconds (1s).
    */
   private static final long DEFAULT_CHECK_INTERVAL = 1000;
@@ -128,6 +141,7 @@ public class TripServer {
   private Class<? extends RemoteDbConnection> connectionClass;        // class for connection object
   private int sessionTimeout;                                         // default session timeout in seconds
   private long sessionTimeoutCheckInterval;                           // check interval for session timeout in milliseconds, 0 = none
+  private PreAuthenticationPolicy.Mode preAuthenticationMode;         // null = no pre-authentication policy
 
 
 
@@ -170,6 +184,22 @@ public class TripServer {
     }
     else  {
       sessionTimeoutCheckInterval = DEFAULT_CHECK_INTERVAL;
+    }
+
+    val = props.getPropertyIgnoreCase(PRE_AUTHENTICATION);
+    if (val == null || val.equalsIgnoreCase("enforce")) {
+      preAuthenticationMode = PreAuthenticationPolicy.Mode.ENFORCE;
+    }
+    else if (val.equalsIgnoreCase("audit")) {
+      preAuthenticationMode = PreAuthenticationPolicy.Mode.AUDIT;
+    }
+    else if (val.equalsIgnoreCase("off")) {
+      preAuthenticationMode = null;
+      LOGGER.warning("pre-authentication policy turned off: unauthenticated clients are not restricted");
+    }
+    else {
+      throw new TentackleRuntimeException("invalid value '" + val + "' for " + PRE_AUTHENTICATION +
+                                          ", expected enforce, audit or off");
     }
 
     // first pass: collect the raw (unexpanded) service configurations
@@ -280,6 +310,37 @@ public class TripServer {
   }
 
   /**
+   * Gets the mode of the pre-authentication policy.
+   *
+   * @return the mode, null if the transports accept everything from unauthenticated clients
+   */
+  public PreAuthenticationPolicy.Mode getPreAuthenticationMode() {
+    return preAuthenticationMode;
+  }
+
+  /**
+   * Sets the mode of the pre-authentication policy.<br>
+   * Must be invoked before {@link #start()}.
+   *
+   * @param preAuthenticationMode the mode, null to accept everything from unauthenticated clients
+   */
+  public void setPreAuthenticationMode(PreAuthenticationPolicy.Mode preAuthenticationMode) {
+    this.preAuthenticationMode = preAuthenticationMode;
+  }
+
+  /**
+   * Creates the pre-authentication policy for a transport.<br>
+   * Applications may override this method to add classes to the allowlist or to change the limits.
+   *
+   * @param transport the server transport
+   * @param mode the mode
+   * @return the policy, null if none
+   */
+  protected PreAuthenticationPolicy createPreAuthenticationPolicy(Transport transport, PreAuthenticationPolicy.Mode mode) {
+    return new DefaultPreAuthenticationPolicy(mode);
+  }
+
+  /**
    * Starts the TRIP server.
    */
   public void start() {
@@ -291,6 +352,10 @@ public class TripServer {
       LOGGER.info("starting transport" + (name.isEmpty() ? ": " : (" '" + name + "': ")) + UriHelper.uriToSafeString(uri));
       try {
         Transport transport = TransportManager.getInstance().requestTransport(uri);
+        if (preAuthenticationMode != null && transport.getPreAuthenticationPolicy() == null) {
+          // before accepting: the policy applies to a connection from its very beginning
+          transport.setPreAuthenticationPolicy(createPreAuthenticationPolicy(transport, preAuthenticationMode));
+        }
         if (!transport.isAccepting()) {
           // new transport
           transport.accept();

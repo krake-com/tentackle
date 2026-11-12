@@ -20,6 +20,7 @@ package org.tentackle.trip.transport;
 
 import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.Transport;
+import org.tentackle.trip.TripRuntimeException;
 
 import java.util.UUID;
 
@@ -36,6 +37,37 @@ import java.util.UUID;
 public record TransportClientInfo(Transport transport, Dictionary dictionary, String connectionName, UUID clientId) {
 
   private static final ThreadLocal<TransportClientInfo> TL_CLIENT_INFO = new ThreadLocal<>();
+
+  /** Number of leading characters of a client transport UUID shown in logs. */
+  private static final int REDACTED_LENGTH = 8;
+
+  /**
+   * Abbreviates the UUID of a client transport for logging.
+   *
+   * @param clientId the client transport's UUID
+   * @return the abbreviated UUID, "null" if null
+   */
+  public static String redact(UUID clientId) {
+    return clientId == null ? "null" : clientId.toString().substring(0, REDACTED_LENGTH) + "...";
+  }
+
+  /**
+   * Gets the client host address from a connection name.
+   *
+   * @param connectionName the connection name, usually of the form {@code /host:port}
+   * @return the address, null if no connection name
+   */
+  public static String getHost(String connectionName) {
+    if (connectionName != null) {
+      int startNdx = connectionName.indexOf('/') + 1;   // skip the leading '/'
+      int endNdx = connectionName.lastIndexOf(':'); // cut port number (IPv6 addresses contain colons)
+      if (endNdx < startNdx) {
+        endNdx = connectionName.length();
+      }
+      return connectionName.substring(startNdx, endNdx);
+    }
+    return null;
+  }
 
   /**
    * Gets the client info from the thread local variable.
@@ -68,12 +100,33 @@ public record TransportClientInfo(Transport transport, Dictionary dictionary, St
    * @return the address, null if no connection name
    */
   public String getHost() {
-    if (connectionName != null) {
-      int startNdx = connectionName.indexOf('/') + 1; // skip the leading '/'
-      int endNdx = connectionName.indexOf(':', startNdx);   // cut port number
-      return connectionName.substring(startNdx, endNdx == -1 ? connectionName.length() : endNdx);
+    return getHost(connectionName);
+  }
+
+  /**
+   * Returns whether the client is authenticated.<br>
+   * The state is shared by all connections of the client's transport.
+   *
+   * @return true if authenticated
+   * @see org.tentackle.trip.PreAuthenticationPolicy
+   */
+  public boolean isAuthenticated() {
+    return dictionary != null && dictionary.isAuthenticated();
+  }
+
+  /**
+   * Marks the client as authenticated.<br>
+   * Invoked by the application when the client has logged in successfully.
+   * From then on, the {@link org.tentackle.trip.PreAuthenticationPolicy} of the transport
+   * no longer applies to any connection of the client's transport.
+   *
+   * @throws TripRuntimeException if there is no server dictionary
+   */
+  public void authenticate() {
+    if (dictionary == null) {
+      throw new TripRuntimeException("no dictionary to authenticate " + this);
     }
-    return null;
+    dictionary.setAuthenticated();
   }
 
   @Override
@@ -81,7 +134,7 @@ public record TransportClientInfo(Transport transport, Dictionary dictionary, St
     StringBuilder buf = new StringBuilder();
     buf.append(transport).append(" >< ").append(connectionName);
     if (clientId != null) {
-      buf.append('|').append(clientId);
+      buf.append('|').append(redact(clientId));
     }
     return buf.toString();
   }

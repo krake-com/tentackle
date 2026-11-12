@@ -147,6 +147,18 @@ The implementation class must provide a public constructor with a single `String
 download base URL. Transport failures are wrapped in a `TripRuntimeException`, while a class that cannot be
 instantiated raises a `TentackleRuntimeException`.
 
+The update check runs before the client has logged in. On a transport with a
+[pre-authentication policy](../../../../tentackle-core/src/main/docs/trip.md#unauthenticated-peers) — such as the
+one of a `TripServer` — the service is reachable nevertheless: it is registered by name, which makes it a public
+entry point, and `ClientInfo` and `InstallationType` are annotated with `@TripPreAuth("update")`. A transport of its
+own gets no policy from `ServerUpdateUtilities`; install one before starting the service:
+
+```java
+Transport transport = TransportManager.getInstance().requestTransport(URI.create(serviceUrl));
+transport.setPreAuthenticationPolicy(new DefaultPreAuthenticationPolicy());
+ServerUpdateUtilities.getInstance().startUpdateService(serviceUrl, downloadUrl, UpdateServiceImpl.class);
+```
+
 ### AbstractUpdateServiceImpl — the default implementation
 
 [`AbstractUpdateServiceImpl`](../java/org/tentackle/update/AbstractUpdateServiceImpl.java) implements

@@ -132,7 +132,7 @@ public final class CharacterArrayTripType extends AbstractPredefinedArrayTripTyp
     Deserializer deserializer = stream.getDeserializer();
     Reference<Character[]> reference = receiveReference(stream, stream.receiveOpCode());
     if (reference.isObjectFollowing()) {
-      int length = readArrayLength(deserializer, opCode);
+      int length = checkSize(stream, readArrayLength(deserializer, opCode));
       Character[] result = new Character[length];
       int count = 0;
       while (count < length) {

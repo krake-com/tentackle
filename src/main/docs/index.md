@@ -64,7 +64,7 @@ topic-grouped listing of every document, see the
 - **DataTypes (application-specific)** — [Embedded vs. DataType](./embedded-vs-datatype.md), [Binding](../../../tentackle-core/src/main/docs/binding.md), [Freezable](../../../tentackle-common/src/main/docs/freezable.md)
 - **Date/time parsing (smart syntax, shortcuts)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md)
 - **Date/time input (reference date `@`, sliding year window)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#date-and-time-input)
-- **Deserialization hardening (allowlisting, untrusted data)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md)
+- **Deserialization hardening (allowlisting, untrusted data, unauthenticated clients)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#hardening-deserialization)
 - **DB2 (backend peculiarities)** — [The DB2 Backend](../../../tentackle-sql/src/main/docs/db2.md)
 - **DDL generation** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Deduplication (wire format)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md)
@@ -230,6 +230,7 @@ topic-grouped listing of every document, see the
 - **Preloading PDO caches (`@PreloadCache`)** — [PDO Caching](../../../tentackle-pdo/src/main/docs/cache.md#preloading-caches-at-startup-preloadcache), [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md)
 - **Preloading remote delegates (`@PreloadRemoteDelegate`)** — [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#preloading-remote-delegates), [TRIP](../../../tentackle-core/src/main/docs/trip.md#returning-several-remote-objects-at-once)
 - **Pre-/post-commit methods (`@PreCommit`, `@PostCommit`)** — [Interceptors](../../../tentackle-core/src/main/docs/interceptors.md#precommit-and-postcommit--deferred-until-the-commit), [Transactions](../../../tentackle-pdo/src/main/docs/transaction.md)
+- **Pre-authentication policy (`@TripPreAuth`, unauthenticated clients, `preauth`)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#unauthenticated-peers), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#before-the-login), [Tentackle Update](../../../tentackle-update/src/main/docs/update.md#serverupdateutilities--registering-the-service)
 - **PDO-bound components (`F2`/`F3`, drag and drop, self-loading combo boxes)** — [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#pdo-bound-components)
 - **Placeholders in property values (`@{name?default}`, `${…}`)** — [Backend Properties](../../../tentackle-session/src/main/docs/backend-properties.md#overview-and-motivation), [Tentackle Common](../../../tentackle-common/src/main/docs/common.md#helper-utilities)
 
@@ -312,6 +313,7 @@ topic-grouped listing of every document, see the
 ## U
 
 - **Unexpected (deviations from mainstream Java frameworks)** — [What a Seasoned Java Developer Would Not Expect](./unexpected.md)
+- **Unauthenticated clients (pre-authentication policy)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#unauthenticated-peers), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#before-the-login)
 - **Unique domain key (UDK)** — [Domain Keys](../../../tentackle-pdo/src/main/docs/domain-key.md)
 - **Update (self-update service)** — [Tentackle Update](../../../tentackle-update/src/main/docs/update.md), [FX RDC Update](../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)
 - **UserResolver (principal → user entity)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#from-a-principal-to-a-user-the-userresolver), [Single Sign-On with Google](./google-sso.md)

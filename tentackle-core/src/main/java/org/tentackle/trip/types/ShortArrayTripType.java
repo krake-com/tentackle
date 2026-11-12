@@ -132,7 +132,7 @@ public final class ShortArrayTripType extends AbstractPredefinedArrayTripType<Sh
     Deserializer deserializer = stream.getDeserializer();
     Reference<Short[]> reference = receiveReference(stream, stream.receiveOpCode());
     if (reference.isObjectFollowing()) {
-      int length = readArrayLength(deserializer, opCode);
+      int length = checkSize(stream, readArrayLength(deserializer, opCode));
       Short[] result = new Short[length];
       int count = 0;
       while (count < length) {

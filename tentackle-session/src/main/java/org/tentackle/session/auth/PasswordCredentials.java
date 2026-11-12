@@ -20,6 +20,7 @@ package org.tentackle.session.auth;
 
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.misc.Secret;
+import org.tentackle.trip.TripPreAuth;
 import org.tentackle.trip.TripReferencable;
 
 import java.io.Serial;
@@ -33,6 +34,7 @@ import java.io.Serial;
  *
  * @author harald
  */
+@TripPreAuth("login")
 @TripReferencable(TripReferencable.NEVER)
 public class PasswordCredentials implements Credentials, Cloneable {
 

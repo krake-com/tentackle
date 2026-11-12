@@ -29,6 +29,7 @@ import org.tentackle.misc.ImmutableException;
 import org.tentackle.misc.PropertiesUtilities;
 import org.tentackle.session.auth.Credentials;
 import org.tentackle.session.auth.PasswordCredentials;
+import org.tentackle.trip.TripPreAuth;
 import org.tentackle.trip.TripReferencable;
 
 import java.io.FileNotFoundException;
@@ -49,6 +50,7 @@ import java.util.TimeZone;
  * @author harald
  */
 @TripReferencable(TripReferencable.NEVER)
+@TripPreAuth("login")
 public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
   @Serial

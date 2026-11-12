@@ -94,7 +94,7 @@ public final class StringArrayTripType extends AbstractPredefinedArrayTripType<S
     Deserializer deserializer = stream.getDeserializer();
     Reference<String[]> reference = receiveReference(stream, stream.receiveOpCode());
     if (reference.isObjectFollowing()) {
-      int length = readArrayLength(deserializer, opCode);
+      int length = checkSize(stream, readArrayLength(deserializer, opCode));
       String[] result = new String[length];
       int count = 0;
       while (count < length) {

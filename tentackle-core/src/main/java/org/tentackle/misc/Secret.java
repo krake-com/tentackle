@@ -20,6 +20,7 @@ package org.tentackle.misc;
 
 import org.tentackle.common.Cryptor;
 import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.trip.TripPreAuth;
 import org.tentackle.trip.TripReferencable;
 
 import java.io.Serial;
@@ -44,6 +45,7 @@ import java.util.Arrays;
  *
  * @author harald
  */
+@TripPreAuth("login")
 @TripReferencable(TripReferencable.NEVER)
 public class Secret implements Serializable, Cloneable {
 

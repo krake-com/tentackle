@@ -115,7 +115,7 @@ public final class CharacterPrimitiveArrayTripType extends AbstractPredefinedArr
     Deserializer deserializer = stream.getDeserializer();
     Reference<char[]> reference = receiveReference(stream, stream.receiveOpCode());
     if (reference.isObjectFollowing()) {
-      int length = readArrayLength(deserializer, opCode);
+      int length = checkSize(stream, readArrayLength(deserializer, opCode));
       char[] result = new char[length];
       int count = 0;
       while (count < length) {

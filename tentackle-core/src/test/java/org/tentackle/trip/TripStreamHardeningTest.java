@@ -55,6 +55,21 @@ public class TripStreamHardeningTest {
       return null;    // never waits, unlike the default implementation
     }
 
+    @Override
+    public DictionaryEntry getEntry(int ordinal, long maxWaitTime) {
+      return null;
+    }
+
+    @Override
+    public boolean isAuthenticated() {
+      return false;
+    }
+
+    @Override
+    public void setAuthenticated() {
+
+    }
+
     @Override public UUID getId() { return delegate.getId(); }
     @Override public boolean isServer() { return delegate.isServer(); }
     @Override public boolean isEmpty() { return delegate.isEmpty(); }

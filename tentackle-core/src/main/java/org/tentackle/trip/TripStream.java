@@ -153,6 +153,32 @@ public interface TripStream {
   TripFilter getFilter();
 
   /**
+   * Sets the policy restricting what is read from a client that is not authenticated yet.<br>
+   * The policy applies to reading only and is not reset by {@link #clear()}, which, however,
+   * starts a new message as far as the policy's size limit is concerned.
+   *
+   * @param policy the policy, null if no restrictions apply (default)
+   */
+  void setReadPolicy(PreAuthenticationPolicy policy);
+
+  /**
+   * Gets the policy restricting what is read from a client that is not authenticated yet.
+   *
+   * @return the policy, null if no restrictions apply
+   */
+  PreAuthenticationPolicy getReadPolicy();
+
+  /**
+   * Checks the number of elements of an array, collection or map read from the stream.<br>
+   * Invoked before anything is allocated for the elements.
+   * Does nothing if there is no read policy.
+   *
+   * @param size the number of elements
+   * @throws TripPolicyViolationException if the read policy refuses the size
+   */
+  void checkSize(int size);
+
+  /**
    * Writes a component ordinal to the stream.
    *
    * @param ordinal the ordinal to write

@@ -23,13 +23,18 @@ import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.DictionaryEntry;
 import org.tentackle.trip.DictionaryEntryComponent;
 import org.tentackle.trip.OpCode;
+import org.tentackle.trip.PreAuthenticationPolicy;
 import org.tentackle.trip.PredefinedArray;
+import org.tentackle.trip.TripComponent;
 import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
 import org.tentackle.trip.TripType;
 import org.tentackle.trip.TripTypeService;
 import org.tentackle.trip.impl.DefaultOpCode;
+
+import java.util.HashMap;
+import java.util.Map;
 
 
 interface DictionaryEntryTypeHolder {
@@ -98,12 +103,79 @@ public final class DictionaryEntryTripType extends AbstractTripType<DictionaryEn
       opCode = stream.receiveOpCode();
       componentTypes = DictionaryEntryTypeHolder.STRING_ARRAY_INSTANCE.read(stream, opCode);
     }
+    if (componentTypes.length != componentNames.length) {
+      throw new TripRuntimeException("number of component types " + componentTypes.length +
+                                     " differs from the number of components " + componentNames.length + " of " + className);
+    }
+    if (dictionary.isServer() && ordinal >= 0) {
+      // only the server assigns permanent ordinals: a client sends temporary entries only
+      throw new TripRuntimeException("permanent dictionary entry " + ordinal + " received for " + className);
+    }
+    PreAuthenticationPolicy policy = stream.getReadPolicy();
+    if (policy != null) {
+      // before anything is loaded: the static initializer of an arbitrary class must not even run
+      checkPreAuthentication(policy, className, isProxy, componentNames, componentTypes);
+    }
     DictionaryEntryComponent[] components = new DictionaryEntryComponent[componentNames.length];
     for (int i = 0; i < componentNames.length; i++) {
       components[i] = dictionary.createComponent(componentNames[i],
                                                  TripFactory.getInstance().getType(componentTypes[i]));
     }
     return dictionary.createEntry(ordinal, className, isProxy, components);
+  }
+
+
+  /**
+   * Checks a dictionary entry received from a client that is not authenticated yet.
+   * <p>
+   * The class must be on the allowlist. A component type must be on the allowlist as well, unless
+   * it is the type the allowed class declares for that component: the class was vetted together
+   * with the types of its components. Since the values of final component types are read without
+   * their own dictionary entry, the component types cannot be left unchecked.
+   * Dynamic proxies are refused altogether.
+   *
+   * @param policy the policy
+   * @param className the class name
+   * @param isProxy true if a dynamic proxy
+   * @param componentNames the component names, the interface names for a proxy
+   * @param componentTypes the component types
+   */
+  private void checkPreAuthentication(PreAuthenticationPolicy policy, String className, boolean isProxy,
+                                      String[] componentNames, String[] componentTypes) {
+    if (isProxy) {
+      policy.violation("dynamic proxy for " + String.join(", ", componentNames));
+      return;
+    }
+    boolean classAllowed = policy.isClassAllowed(className);
+    if (!classAllowed) {
+      policy.violation("class " + className);
+    }
+    Map<String, String> declaredTypes = null;
+    for (int i = 0; i < componentTypes.length; i++) {
+      String typeName = componentTypes[i];
+      if (!policy.isClassAllowed(typeName)) {
+        if (declaredTypes == null) {
+          declaredTypes = classAllowed ? getDeclaredComponentTypes(className) : Map.of();
+        }
+        if (!typeName.equals(declaredTypes.get(componentNames[i]))) {
+          policy.violation("type " + typeName + " of component " + componentNames[i] + " in class " + className);
+        }
+      }
+    }
+  }
+
+  /**
+   * Gets the declared types of the components of an allowed class.
+   *
+   * @param className the class name
+   * @return the serializable type names mapped by component name
+   */
+  private Map<String, String> getDeclaredComponentTypes(String className) {
+    Map<String, String> declaredTypes = new HashMap<>();
+    for (TripComponent<?, ?> component : TripFactory.getInstance().getType(className).getComponents()) {
+      declaredTypes.put(component.getName(), ReflectionHelper.getSerializableClassName(component.getType().getObjectClass()));
+    }
+    return declaredTypes;
   }
 
 }

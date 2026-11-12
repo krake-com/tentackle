@@ -23,10 +23,13 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import org.tentackle.common.FileHelper;
+import org.tentackle.trip.Transport;
 import org.tentackle.trip.TransportManager;
 import org.tentackle.trip.TripRuntimeException;
+import org.tentackle.trip.impl.DefaultPreAuthenticationPolicy;
 
 import java.io.File;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -140,6 +143,25 @@ public class UpdateServiceRemoteTest {
 
     assertTrue(info.urlStr().endsWith("-mac-aarch64-pkg.zip"), info.urlStr());
     assertEquals(info.updateExecutor(), "update.sh");
+  }
+
+  /**
+   * The update check runs before the client has logged in.<br>
+   * A server enforcing a pre-authentication policy must still answer it.
+   */
+  @Test
+  public void answersAnUnauthenticatedClientOfAnEnforcingServer() throws Exception {
+    int port = UpdateTestSupport.freeTcpPort();
+    String enforcingServiceUrl = "trip://localhost:" + port + "/Update";
+    Transport transport = TransportManager.getInstance().requestTransport(URI.create(enforcingServiceUrl));
+    transport.setPreAuthenticationPolicy(new DefaultPreAuthenticationPolicy());
+    ServerUpdateUtilities.getInstance().startUpdateService(
+      enforcingServiceUrl, downloadServer.getBaseUrl() + BASE_PATH, TestUpdateServiceImpl.class);
+
+    UpdateService service = ClientUpdateUtilities.getInstance().getUpdateService("trip://127.0.0.1:" + port + "/Update");
+    UpdateInfo info = service.getUpdateInfo(CLIENT);
+    assertEquals(info.version(), TestUpdateServiceImpl.VERSION);
+    assertEquals(info.checksum(), checksum);
   }
 
   @Test

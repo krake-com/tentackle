@@ -22,10 +22,12 @@ import org.tentackle.common.ExceptionHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.Dictionary;
+import org.tentackle.trip.PreAuthenticationPolicy;
 import org.tentackle.trip.Serializer;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TripConstants;
 import org.tentackle.trip.TripFactory;
+import org.tentackle.trip.TripPolicyViolationException;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
 import org.tentackle.trip.TripStreamClosedException;
@@ -63,6 +65,8 @@ public class ConnectionHandler implements Runnable {
   private final String connectionName;
   private final InputStream inputStream;
   private final OutputStream outputStream;
+  private volatile TransportClientInfo clientInfo;
+  private volatile boolean evicted;
 
   /**
    * Creates a new handler.
@@ -126,100 +130,55 @@ public class ConnectionHandler implements Runnable {
    */
   @Override
   public void run() {
-    int versionSkew;
-    try {
-      versionSkew = readMagic();
-      if (versionSkew != 0) {
-        // For an auto-updatable client, this will happen only once per client with the update URL endpoint.
-        // The client then updates itself and automatically uses the latest protocol.
-        LOGGER.warning("client connection {0} uses an outdated version of TRIP, version skew = {1}",
-                       new TransportClientInfo(transport, null, connectionName, null), versionSkew);
-      }
-    }
-    catch (TripRuntimeException e) {
-      if (ExceptionHelper.extractException(IOException.class, true, e) != null) {
-        // SSL handshake exception, peer closed, etc... -> just log the messages, no stacktrace
-        LOGGER.warning("connection {0} aborted: {1}",
-                       new TransportClientInfo(transport, null, connectionName, null),
-                       ExceptionHelper.concatenateMessages(e));
+    PreAuthenticationPolicy policy = transport.getPreAuthenticationPolicy();
+    PreAuthenticationPolicy.Admission admission = null;
+    if (policy != null) {
+      admission = policy.admit(TransportClientInfo.getHost(connectionName), this::evict, this::isAuthenticated);
+      if (admission == null) {
+        LOGGER.warning("connection {0} refused: too many unauthenticated connections", connectionName);
         return;
       }
-      throw e;
     }
-
-    UUID id = readUUID();
-    boolean clientDictionaryEmpty = true;
-    if (versionSkew == 0) {
-      clientDictionaryEmpty = readDictionaryFlag();
+    try {
+      handleConnection(policy, admission);
     }
-    TripStream stream = createStream(id, clientDictionaryEmpty);
-    TransportClientInfo transportClientInfo = new TransportClientInfo(transport, stream.getDictionary(), connectionName, id);
-    boolean closedByClient = false;
-    LOGGER.info("connection " + transportClientInfo + " opened");
-
-    while (isConnectionAlive()) {
-      TripType<?> tripType = null;
-      Object call = null;
-      try {
-        stream.clear();
-        tripType = stream.deriveType();
-        if (tripType.isDictionaryBased()) {   // all remote calls are dictionary-based
-          call = tripType.read(stream, stream.receiveOpCode());
-          if (call instanceof RemoteCall remoteCall) {
-            // dispatch to call handler ...
-            transport.getCallThreadPool().submit(transport.createCallHandler(stream, transportClientInfo, remoteCall))
-                     // ... and wait for the call to finish _before_ clearing the stream.
-                     // The submitted call handler runs asynchronously in a regular thread
-                     // of a thread pool. Blocking virtual threads is much cheaper
-                     // than blocking regular threads.
-                     .get();
-          }
-          else {
-            throw new TripRuntimeException("not a remote call: " + call.getClass());
-          }
-        }
-        else {
-          throw new TripRuntimeException("unexpected type received: " + tripType);
-        }
-      }
-      catch (TripError e) {
-        LOGGER.severe("serialization error received from client", e);
-        // ignore the call and continue reading from the stream
-      }
-      catch (TripStreamClosedException ce) {
-        closedByClient = true;
-        break;
-      }
-      catch (ExecutionException xe) {
-        if (xe.getCause() instanceof TripStreamClosedException ce) {
-          LOGGER.warning("client closed connection while sending response for {0} ({1})", call, ce.getMessage());
-          break;
-        }
-        try {
-          stream.clearModifiable();
-          stream.sendError(DefaultOpCode.SERVER_SERIALIZATION_ERROR, xe.getCause());
-        }
-        catch (TripStreamClosedException ce) {
-          closedByClient = true;
-          break;
-        }
-      }
-      catch (Throwable t) {
-        // deserializing the remote call failed
-        if (tripType == null) {
-          LOGGER.severe("cannot derive remote call type", t);
-        }
-        else {
-          LOGGER.severe("failed to deserialize remote call " + tripType, t);
-        }
-        stream.clearModifiable();
-        stream.sendError(DefaultOpCode.SERVER_DESERIALIZATION_ERROR, t);
-        break;    // close the connection since we don't know what's still in the stream
+    finally {
+      if (admission != null) {
+        admission.release();
       }
     }
-    LOGGER.info("connection {0} closed{1}", transportClientInfo, closedByClient ? " by client" : "");
   }
 
+
+  /**
+   * Returns whether the client of this connection is authenticated.
+   *
+   * @return true if authenticated, false if not or the handshake is not complete yet
+   */
+  protected boolean isAuthenticated() {
+    TransportClientInfo info = clientInfo;
+    return info != null && info.isAuthenticated();
+  }
+
+  /**
+   * Closes the connection on behalf of the pre-authentication policy.<br>
+   * Unblocks the thread reading from the connection.
+   */
+  protected void evict() {
+    evicted = true;
+    try {
+      inputStream.close();
+    }
+    catch (IOException | RuntimeException ex) {
+      LOGGER.fine("closing input stream of {0} failed: {1}", connectionName, ex.getMessage());
+    }
+    try {
+      outputStream.close();
+    }
+    catch (IOException | RuntimeException ex) {
+      LOGGER.fine("closing output stream of {0} failed: {1}", connectionName, ex.getMessage());
+    }
+  }
 
   /**
    * Checks whether the connection is still alive.
@@ -249,10 +208,149 @@ public class ConnectionHandler implements Runnable {
       return factory.createStream(serverDictionary, serializer, deserializer);
     }
     else {
-      throw new TripStreamClosedException("no such dictionary " + id + " in transport " + transport + " (stale client transport?)");
+      throw new TripStreamClosedException("no such dictionary " + TransportClientInfo.redact(id) + " in transport " + transport +
+                                          " (stale client transport?)");
     }
   }
 
+
+  /**
+   * Handles the connection.
+   *
+   * @param policy the pre-authentication policy, null if none
+   * @param admission the admission by the policy, null if none
+   */
+  private void handleConnection(PreAuthenticationPolicy policy, PreAuthenticationPolicy.Admission admission) {
+    int versionSkew;
+    try {
+      versionSkew = readMagic();
+      if (versionSkew != 0) {
+        // For an auto-updatable client, this will happen only once per client with the update URL endpoint.
+        // The client then updates itself and automatically uses the latest protocol.
+        LOGGER.warning("client connection {0} uses an outdated version of TRIP, version skew = {1}",
+                       new TransportClientInfo(transport, null, connectionName, null), versionSkew);
+      }
+    }
+    catch (TripRuntimeException e) {
+      if (ExceptionHelper.extractException(IOException.class, true, e) != null) {
+        // SSL handshake exception, peer closed, etc... -> just log the messages, no stacktrace
+        LOGGER.warning("connection {0} aborted: {1}",
+                       new TransportClientInfo(transport, null, connectionName, null),
+                       ExceptionHelper.concatenateMessages(e));
+        return;
+      }
+      throw e;
+    }
+
+    UUID id = readUUID();
+    boolean clientDictionaryEmpty = true;
+    if (versionSkew == 0) {
+      clientDictionaryEmpty = readDictionaryFlag();
+    }
+    TripStream stream = createStream(id, clientDictionaryEmpty);
+    clientInfo = new TransportClientInfo(transport, stream.getDictionary(), connectionName, id);
+    boolean closedByClient = false;
+    LOGGER.info("connection " + clientInfo + " opened");
+
+    while (isConnectionAlive()) {
+      TripType<?> tripType = null;
+      Object call = null;
+      try {
+        if (admission != null && clientInfo.isAuthenticated()) {
+          // the client logged in (on this or another connection): no restrictions anymore
+          admission.release();
+          admission = null;
+        }
+        stream.setReadPolicy(admission != null ? policy : null);
+        stream.clear();
+        tripType = stream.deriveType();
+        if (tripType.isDictionaryBased()) {   // all remote calls are dictionary-based
+          call = tripType.read(stream, stream.receiveOpCode());
+          if (admission != null) {
+            checkMessageSize(policy, stream);
+            admission.messageReceived();
+          }
+          if (call instanceof RemoteCall remoteCall) {
+            // dispatch to call handler ...
+            transport.getCallThreadPool().submit(transport.createCallHandler(stream, clientInfo, remoteCall))
+                     // ... and wait for the call to finish _before_ clearing the stream.
+                     // The submitted call handler runs asynchronously in a regular thread
+                     // of a thread pool. Blocking virtual threads is much cheaper
+                     // than blocking regular threads.
+                     .get();
+          }
+          else {
+            throw new TripRuntimeException("not a remote call: " + call.getClass());
+          }
+        }
+        else {
+          throw new TripRuntimeException("unexpected type received: " + tripType);
+        }
+      }
+      catch (TripError e) {
+        LOGGER.severe("serialization error received from client", e);
+        // ignore the call and continue reading from the stream
+      }
+      catch (TripStreamClosedException ce) {
+        closedByClient = !evicted;
+        break;
+      }
+      catch (ExecutionException xe) {
+        if (xe.getCause() instanceof TripStreamClosedException ce) {
+          LOGGER.warning("client closed connection while sending response for {0} ({1})", call, ce.getMessage());
+          break;
+        }
+        try {
+          stream.clearModifiable();
+          stream.sendError(DefaultOpCode.SERVER_SERIALIZATION_ERROR, xe.getCause());
+        }
+        catch (TripStreamClosedException ce) {
+          closedByClient = true;
+          break;
+        }
+      }
+      catch (Throwable t) {
+        // deserializing the remote call failed
+        TripPolicyViolationException pv = ExceptionHelper.extractException(TripPolicyViolationException.class, true, t);
+        if (pv != null) {
+          // no stacktrace: the client could flood the log otherwise
+          LOGGER.warning("unauthenticated connection {0} violates the pre-authentication policy: {1}",
+                         clientInfo, pv.getMessage());
+          stream.clearModifiable();
+          stream.sendError(DefaultOpCode.SERVER_DESERIALIZATION_ERROR, pv);
+          break;
+        }
+        if (tripType == null) {
+          LOGGER.severe("cannot derive remote call type", t);
+        }
+        else {
+          LOGGER.severe("failed to deserialize remote call " + tripType, t);
+        }
+        stream.clearModifiable();
+        stream.sendError(DefaultOpCode.SERVER_DESERIALIZATION_ERROR, t);
+        break;    // close the connection since we don't know what's still in the stream
+      }
+    }
+    LOGGER.info("connection {0} closed{1}", clientInfo,
+                closedByClient ? " by client" : (evicted ? " by the pre-authentication policy" : ""));
+  }
+
+  /**
+   * Logs a message exceeding the size limit of a policy that only audits.<br>
+   * An enforcing policy already stopped reading it.
+   *
+   * @param policy the policy
+   * @param stream the stream
+   */
+  private void checkMessageSize(PreAuthenticationPolicy policy, TripStream stream) {
+    int maxMessageSize = policy.getMaxMessageSize();
+    if (!policy.isEnforcing() && maxMessageSize > 0) {
+      long size = stream.getDeserializer().getBytesRead();
+      if (size > maxMessageSize) {
+        policy.violation("message exceeds the maximum size of " + maxMessageSize + " bytes");
+      }
+    }
+  }
 
   /**
    * Reads the magic number and derives the version-skew.

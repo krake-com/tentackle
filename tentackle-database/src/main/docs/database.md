@@ -534,6 +534,28 @@ of a remote insert/update/delete back to the client. [`SQLExceptionComponentProv
 exceptions serialize correctly across the wire, and [`DefaultMasterSerial`](../java/org/tentackle/dbms/trip/DefaultMasterSerial.java)
 carries the master modification serial back to clients.
 
+### Before the login
+
+Until a client has logged in, the server doesn't trust it: server-only TLS encrypts the traffic but
+lets anyone talk to the server. `TripServer` therefore installs a
+[pre-authentication policy](../../../../tentackle-core/src/main/docs/trip.md#unauthenticated-peers) on its
+transports, which accepts only what a lookup, a login and the update check need. `RemoteDbSessionImpl`
+lifts the restrictions for all connections of the client's transport as soon as `verifySessionInfo` has
+accepted the credentials.
+
+The backend property `preauth` of the server selects the mode:
+
+| Value               | Meaning                                                                                   |
+|---------------------|-------------------------------------------------------------------------------------------|
+| `enforce` (default) | refuses everything a login doesn't need and closes the connection                         |
+| `audit`             | refuses nothing, but logs each distinct violation once — to find out what a client sends  |
+| `off`               | accepts everything from everyone, as in former releases                                   |
+
+An application whose `SessionInfo` or `Credentials` are subclassed must annotate them with
+`@TripPreAuth("login")`, or the login is refused. To add more classes or change the limits, override
+`TripServer.createPreAuthenticationPolicy`. Remote objects registered by name, like the
+`RemoteDbConnection`, are public entry points, reachable before the login.
+
 ### Preloading remote delegates
 
 Delegates are created lazily: the first time a class needs one, `Db.getRemoteDelegate(int)` asks the

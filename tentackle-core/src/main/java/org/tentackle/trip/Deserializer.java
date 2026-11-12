@@ -171,4 +171,20 @@ public interface Deserializer {
    */
   String deserializeUtf8(int length);
 
+  /**
+   * Limits the number of bytes read from the input stream from now on.<br>
+   * Also resets the count of {@link #getBytesRead()}.
+   *
+   * @param limit the maximum number of bytes, 0 if unlimited
+   * @throws TripPolicyViolationException when the limit is exceeded by a later read
+   */
+  void setReadLimit(int limit);
+
+  /**
+   * Gets the number of bytes read from the input stream since the last {@link #setReadLimit(int)}.
+   *
+   * @return the number of bytes
+   */
+  long getBytesRead();
+
 }

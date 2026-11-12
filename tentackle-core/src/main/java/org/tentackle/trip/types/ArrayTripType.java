@@ -209,7 +209,7 @@ public final class ArrayTripType<T> extends AbstractDictionaryBasedTripType<T> {
     }
 
     if (readContent) {
-      int length = checkSize(ArrayTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
+      int length = checkSize(stream, ArrayTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
       opCode = stream.receiveOpCode();
       value = (T) Array.newInstance(getComponentClass(entry), length);
 

@@ -373,6 +373,10 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
         db.setSessionInfo(this.clientInfo);  // switch to client info for the lifetime of this remote session
         SESSIONS.add(new WeakReference<>(this));
       }
+      if (transportInfo != null && dictionary != null) {
+        // logged in: the transport's pre-authentication policy no longer applies to this client
+        transportInfo.authenticate();
+      }
       if (dictionary == null) {
         LOGGER.warning("no dictionary assigned to {0}", this);
       }

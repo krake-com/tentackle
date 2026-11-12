@@ -94,7 +94,7 @@ public final class FloatArrayTripType extends AbstractPredefinedArrayTripType<Fl
     Deserializer deserializer = stream.getDeserializer();
     Reference<Float[]> reference = receiveReference(stream, stream.receiveOpCode());
     if (reference.isObjectFollowing()) {
-      int length = readArrayLength(deserializer, opCode);
+      int length = checkSize(stream, readArrayLength(deserializer, opCode));
       Float[] result = new Float[length];
       int count = 0;
       while (count < length) {

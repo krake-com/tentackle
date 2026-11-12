@@ -526,6 +526,21 @@ public class TripModificationLogSerializer implements ModificationLogSerializer 
     }
 
     @Override
+    public DictionaryEntry getEntry(int ordinal, long maxWaitTime) {
+      return null;
+    }
+
+    @Override
+    public boolean isAuthenticated() {
+      return false;
+    }
+
+    @Override
+    public void setAuthenticated() {
+
+    }
+
+    @Override
     public DictionaryEntry getEntry(String className) {
       DictionaryEntry entry = pending.byName.get(className);
       return entry != null ? entry : committed.getEntry(className);
@@ -608,6 +623,21 @@ public class TripModificationLogSerializer implements ModificationLogSerializer 
                                                " -> rebuild required (receiver restarted or modlogs skipped?)");
       }
       return entry;
+    }
+
+    @Override
+    public DictionaryEntry getEntry(int ordinal, long maxWaitTime) {
+      return null;
+    }
+
+    @Override
+    public boolean isAuthenticated() {
+      return false;
+    }
+
+    @Override
+    public void setAuthenticated() {
+
     }
 
     @Override

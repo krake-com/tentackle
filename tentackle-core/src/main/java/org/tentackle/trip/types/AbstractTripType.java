@@ -227,6 +227,22 @@ public abstract class AbstractTripType<T> implements TripType<T> {
   }
 
   /**
+   * Validates a size or length read from the stream, also against the stream's read policy.<br>
+   * Must be invoked before anything is allocated for the elements.
+   *
+   * @param stream the stream
+   * @param size the size read from the stream
+   * @return the size, never negative
+   * @throws TripRuntimeException if the size is negative or exceeds the limit of the read policy
+   * @see TripStream#checkSize(int)
+   */
+  protected int checkSize(TripStream stream, int size) {
+    checkSize(size);
+    stream.checkSize(size);
+    return size;
+  }
+
+  /**
    * Limits a size read from the stream to what may be pre-allocated for it.
    * <p>
    * Containers that grow while their elements are read must not be sized by the stream: a

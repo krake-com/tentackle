@@ -933,7 +933,9 @@ argument-validating constructors — where such a class typically enforces its i
 see those values. As long as the bytes come from a trusted peer over a secured channel (your own
 client or server, connected via the `trips`/`tripcs` SSL transports, the `tripe`/`tripce` PSK-encrypted transports, or
 [QUIC](../../../../tentackle-quic/src/main/docs/quic.md)), that is fine: the sender validated the
-objects before serializing them.
+objects before serializing them. Note, however, that an encrypted channel does not make the peer
+trusted: with server-only TLS, *anyone* with a route to the server can talk TRIP to it. The bytes a
+client sends before it has logged in are covered in [Unauthenticated peers](#unauthenticated-peers).
 
 The picture changes when the bytes do **not** come from a trusted, live peer — for example when
 serialized objects are stored as BLOBs in a database and read back later. Such data may have been
@@ -1033,10 +1035,91 @@ types registered via `@TripTypeService` or `@TripTypeBuilderService` — take pr
 fallback builder and are unaffected. The allowlist governs exactly the dangerous path: arbitrary
 object classes the application never intended to receive.
 
+### Unauthenticated peers
+
+Server-only TLS (`trips`, `tripq`, `tripj`) encrypts the traffic, but it does not authenticate the
+client. An attacker with a route to the server can write their own TRIP client: a TrustManager that
+accepts any certificate is all it takes, no truststore is needed. Such a client can never log in, but
+before the login, the server would deserialize whatever it sends. Mutual TLS (`clientauth=need`) and
+the PSK transports (`tripe`/`tripce`) keep it out, but only as long as the client distribution stays
+private. A client that can be downloaded, by the [update service](../../../../tentackle-update/src/main/docs/update.md)
+for example, gives its key away.
+
+A [`PreAuthenticationPolicy`](../java/org/tentackle/trip/PreAuthenticationPolicy.java) therefore
+restricts what a server accepts from a client **until the application marks the client as
+authenticated**. Once authenticated, the client is trusted, and the policy costs nothing.
+
+```java
+Transport server = TransportManager.getInstance().requestTransport(uri);
+server.setPreAuthenticationPolicy(new DefaultPreAuthenticationPolicy());    // before accept()!
+server.accept();
+```
+
+The authentication state belongs to the client's transport, not to a single connection: the server
+keeps one [dictionary](#dictionary-lifetime-and-the-connection-handshake) per client transport UUID,
+shared by all its pooled TCP sockets and QUIC streams, and the dictionary carries the state. The
+application sets it when the login succeeded:
+
+```java
+TransportClientInfo.get().authenticate();    // in the remote login method, after verifying the credentials
+```
+
+The [`TripServer`](../../../../tentackle-database/src/main/docs/database.md) of the session layer does
+both: it installs an enforcing policy on its transports, and the remote session authenticates the
+client once `verifySessionInfo` accepted the credentials.
+
+Since the server grants the state to every connection that presents the UUID in its handshake, the UUID
+is a secret: it travels encrypted, and the logs show only its first eight hex digits.
+
+Before the client is authenticated, the [`DefaultPreAuthenticationPolicy`](../java/org/tentackle/trip/impl/DefaultPreAuthenticationPolicy.java) enforces:
+
+| Restriction            | What it prevents                                                                                                                                                                                                                                                                                                                                                                             |
+|------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Class allowlist**    | Every class name in a received dictionary entry is checked *as a string, before it is loaded*, so not even the static initializer of a foreign class runs. The component types of an entry must be allowed as well, or be the types the allowed class declares. Dynamic proxies are refused. An entry the server created itself, for a class it sent to the client, is checked when the client refers to it. Since `@TripViaJOS` classes and lambdas are not on the list, neither can be reached before the login. |
+| **Message size**       | A message may not exceed `maxMessageSize` bytes (default 256 KiB), counted after decompression.                                                                                                                                                                                                                                                                                               |
+| **Element count**      | Arrays, collections and maps may not exceed `maxElements` (default 4096), checked *before* anything is allocated for them.                                                                                                                                                                                                                                                                    |
+| **No waiting**         | An ordinal of a dictionary entry the client never sent fails after `dictionaryWaitTime` (default 5 s) instead of parking the thread for 5 minutes.                                                                                                                                                                                                                                            |
+| **Public entry points** | Only the registry and the remote objects **registered by name** can be invoked. Every other remote object is answered with "no such delegate", as if it didn't exist.                                                                                                                                                                                                                       |
+| **Connections**        | At most `maxConnections` (default 1024) unauthenticated connections, and `maxConnectionsPerHost` (default 64) per host. When a limit is reached, the oldest unauthenticated connection is closed. A connection that didn't complete its first message within `firstMessageTimeout` (default 30 s), including the TLS handshake, is closed as well.                                                  |
+
+Closing the oldest connection favors clients that log in quickly over connections kept open without
+logging in. There is deliberately no short idle timeout *between* messages: a user who is still typing
+the password must not lose the connection, because the client would then have to set up a new
+transport (see [Dictionary lifetime](#dictionary-lifetime-and-the-connection-handshake)).
+
+A violation closes the connection and is logged as a single line without a stacktrace, so that a
+client cannot flood the log. The connection limits apply to all transports sharing the same policy
+instance.
+
+The allowlist holds the TRIP remote calls, the boxed primitives, `String`, `UUID`, `Locale`,
+`TimeZone`, `EncryptedProperties`, the plain JDK lists, sets and maps, and every type annotated with
+[`@TripPreAuth`](../java/org/tentackle/trip/TripPreAuth.java). Types travelling as fixed-type opcodes
+(dates, `BigDecimal`, the predefined arrays) never pass through the dictionary and need no entry.
+Annotate the types a client must send to log in, and nothing else:
+
+```java
+@TripPreAuth("login")
+public class MySessionInfo extends DefaultSessionInfo { ... }
+```
+
+The framework annotates its own: `SessionInfo`, `DefaultSessionInfo`, `PasswordCredentials`,
+`TokenCredentials`, `Secret` and `Logger.Level` for the login, `ClientInfo` and `InstallationType` for
+the update check. The annotations are collected at build time, like the other mapped services, so the
+allowlist is read as plain class names without loading a single class. An application may also add
+classes with `DefaultPreAuthenticationPolicy.allow(...)`.
+
+**Remote objects registered by name are public**: anybody can invoke them before the login. Keep them
+to the login and the update check.
+
+To find out what an application really sends before the login, run the policy in
+`PreAuthenticationPolicy.Mode.AUDIT` first. It refuses nothing, but logs each distinct violation once.
+
 ### Practical guidance
 
-- Application-to-application TRIP traffic over the encrypting transports needs no allowlist —
-  both ends are the same trusted code base.
+- Application-to-application TRIP traffic from **authenticated** clients needs no allowlist —
+  both ends are the same trusted code base. Before the login, the server must not trust the client:
+  install a [`PreAuthenticationPolicy`](#unauthenticated-peers), or use a `TripServer`, which does
+  that by default.
 - Serialized objects that **leave the live session** (BLOB columns, files, message queues) should
   be treated as untrusted on the way back in: prefer records for the payload classes, and install
   an allowlisting builder in the tier that reads them.
