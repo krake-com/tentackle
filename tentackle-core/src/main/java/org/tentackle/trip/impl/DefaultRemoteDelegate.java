@@ -24,6 +24,7 @@ import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.trip.Registry;
 import org.tentackle.trip.Remote;
 import org.tentackle.trip.RemoteDelegate;
+import org.tentackle.trip.RemoteLookup;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.remote.DelegateDescriptor;
 import org.tentackle.trip.remote.IdentifiedRemoteCall;
@@ -71,6 +72,11 @@ public class DefaultRemoteDelegate<T extends Remote> implements RemoteDelegate<T
   private static final ClassValue<Collection<Class<? extends Remote>>> REMOTE_INTERFACES = new ClassValue<>() {
     @Override
     protected Collection<Class<? extends Remote>> computeValue(Class<?> type) {
+      if (Registry.class.isAssignableFrom(type)) {
+        // The registry is a special case, since it must export only the lookup method.
+        // All others are only used within the server.
+        return List.of(RemoteLookup.class);
+      }
       // immutable, since it is shared by all delegates of that class
       return List.copyOf(ReflectionHelper.findAllInterfaces(type, Remote.class));
     }
