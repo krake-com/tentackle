@@ -24,6 +24,7 @@ import org.tentackle.trip.Remote;
 import org.tentackle.trip.RemoteDelegate;
 import org.tentackle.trip.RemoteRoot;
 import org.tentackle.trip.TripRuntimeException;
+import org.tentackle.trip.transport.TransportClientInfo;
 
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -63,7 +64,8 @@ public class DefaultRegistry implements Registry {
     if (id != null) {
       throw new TripRuntimeException("name '" + name + "' already registered for ID " + id);
     }
-    RemoteDelegate<T> remoteDelegate = register(remoteObject);
+    // a named remote object is a public entry point: no owner
+    RemoteDelegate<T> remoteDelegate = register(remoteObject, (UUID) null);
     id = remoteDelegate.getRemoteId();
     nameMap.put(name, id);
     reverseNameMap.put(id, name);
@@ -72,6 +74,19 @@ public class DefaultRegistry implements Registry {
 
   @Override
   public synchronized <T extends Remote> RemoteDelegate<T> register(T remoteObject) {
+    // an unnamed remote object is private to the client transport that registers it, if any
+    return register(remoteObject, currentOwnerId());
+  }
+
+  /**
+   * Registers a remote object with an explicit owner.
+   *
+   * @param remoteObject the remote object
+   * @param ownerId the owning client transport UUID, or null if the delegate is public
+   * @return the remote delegate
+   * @param <T> the type of the remote object
+   */
+  private synchronized <T extends Remote> RemoteDelegate<T> register(T remoteObject, UUID ownerId) {
     if (remoteObject == null) {
       throw new TripRuntimeException("cannot register null object");
     }
@@ -86,16 +101,36 @@ public class DefaultRegistry implements Registry {
       }
       throw new TripRuntimeException("object already registered with ID " + id);
     }
-    id = remoteObject instanceof Registry ? Registry.REGISTRY_ID : UUID.randomUUID();
+    if (remoteObject instanceof Registry) {
+      id = Registry.REGISTRY_ID;
+      ownerId = null;   // the registry is always public
+    }
+    else {
+      id = UUID.randomUUID();
+    }
 
     RemoteDelegate<T> remoteDelegate = createRemoteDelegate(
-      id, remoteObject,
+      id, ownerId, remoteObject,
       classMap.computeIfAbsent(remoteObject.getClass(),
                                _ -> new IndexedMethodCache(remoteObject.getClass())));  // one thread-safe method map per class
 
     idMap.put(id, remoteDelegate);
     reverseTargetMap.put(remoteObject, id);
     return remoteDelegate;
+  }
+
+  /**
+   * Determines the owner for an unnamed registration.
+   * <p>
+   * While a client call is being served, the current {@link TransportClientInfo} identifies the
+   * calling client; its transport UUID becomes the owner. Outside a client call (e.g. during server
+   * setup) there is no owner and the delegate is public.
+   *
+   * @return the owning client transport UUID, or null if no client call is in progress
+   */
+  private UUID currentOwnerId() {
+    TransportClientInfo info = TransportClientInfo.get();
+    return info == null ? null : info.clientId();
   }
 
   @Override
@@ -150,16 +185,17 @@ public class DefaultRegistry implements Registry {
    * Creates a new {@link RemoteDelegate}.
    *
    * @param remoteId the ID of the remote delegate
+   * @param ownerId the owning client transport UUID, or null if the delegate is public
    * @param remoteObject the target object of the remote delegate
    * @param methodCache the method cache for the target object (must be thread-safe!)
    * @return the new remote delegate
    * @param <T> the type of the target object
    */
-  protected <T extends Remote> RemoteDelegate<T> createRemoteDelegate(UUID remoteId, T remoteObject, IndexedMethodCache methodCache) {
+  protected <T extends Remote> RemoteDelegate<T> createRemoteDelegate(UUID remoteId, UUID ownerId, T remoteObject, IndexedMethodCache methodCache) {
     if (remoteObject instanceof RemoteRoot remoteRoot) {
       remoteRoot.setRegistryCoordinates(this, remoteId);
     }
-    return new DefaultRemoteDelegate<>(this, remoteId, remoteObject, methodCache);
+    return new DefaultRemoteDelegate<>(this, remoteId, ownerId, remoteObject, methodCache);
   }
 
 }

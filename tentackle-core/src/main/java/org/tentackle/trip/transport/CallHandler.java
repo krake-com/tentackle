@@ -35,6 +35,8 @@ import org.tentackle.trip.remote.InitialRemoteCall;
 import org.tentackle.trip.remote.InitialRemoteResponse;
 import org.tentackle.trip.remote.RemoteCall;
 
+import java.util.UUID;
+
 /**
  * Handles a remote call.<br>
  * Runs in a regular thread.
@@ -108,7 +110,7 @@ public class CallHandler implements Runnable {
       TransportClientInfo.set(clientInfo);
       prepareResponse();
       RemoteDelegate<Remote> delegate = transport.getRegistry().lookup(remoteCall.remoteId());
-      if (delegate == null || !isDelegateAllowed()) {
+      if (delegate == null || !isDelegateAllowed() || !isOwnedByCaller(delegate)) {
         // don't tell whether it exists
         throw new TripNoSuchDelegateException(remoteCall.remoteId());
       }
@@ -167,6 +169,28 @@ public class CallHandler implements Runnable {
     }
     policy.violation("invocation of a remote object not registered by name");
     return true;
+  }
+
+  /**
+   * Checks whether the calling client owns the remote object of the call.
+   * <p>
+   * An unnamed remote object is private to the client transport that created it: only that client
+   * may invoke it. Public remote objects (registered by name, the registry itself, or registered
+   * without a client call in progress) have no owner and are invocable by everyone.
+   * A client invoking a remote object owned by another client is answered with
+   * {@code "no such delegate"}, as if it did not exist, but the attempt is logged.
+   *
+   * @return true if the delegate is public or owned by the calling client
+   */
+  protected boolean isOwnedByCaller(RemoteDelegate<Remote> delegate) {
+    UUID ownerId = delegate.getOwnerId();
+    if (ownerId == null || ownerId.equals(clientInfo.clientId())) {
+      return true;
+    }
+    LOGGER.warning("client {0} attempted to invoke foreign remote object {1}",
+                   TransportClientInfo.redact(clientInfo.clientId()),
+                   TransportClientInfo.redact(remoteCall.remoteId()));
+    return false;
   }
 
   /**

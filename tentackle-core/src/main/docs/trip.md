@@ -1119,6 +1119,31 @@ to the login and the update check.
 To find out what an application really sends before the login, run the policy in
 `PreAuthenticationPolicy.Mode.AUDIT` first. It refuses nothing, but logs each distinct violation once.
 
+### Per-client remote objects
+
+A remote object's UUID is known to the client that holds it, and nothing stops another client from
+putting that UUID on the wire. So the registry records, for every object it registers while a client
+call is being served, the **owner**: the client transport UUID of that call. Only the owner may invoke
+the object. A call from any other client is answered with "no such delegate", as if the object didn't
+exist — the attempt is logged with the two UUIDs redacted. This holds after the login as well, so one
+authenticated client can never reach another's objects.
+
+Ownership follows the public/private seam already drawn above:
+
+- **Registered by name** (and the registry itself) → **public**, no owner: every client may invoke it.
+  This is how an application shares an object between clients — a login entry point, for example.
+- **Unnamed**, registered while serving a client call → **private** to that call's client. This is the
+  normal case: the remote objects an application returns from a method, such as the session from
+  `login()` and the whole tree of objects reached through it, are minted during that client's call and
+  belong to it.
+- **Unnamed**, registered with no client call in progress (during server setup, say) → no owner, hence
+  public. Give such an object a name if it must stay reachable, since its UUID is otherwise never
+  handed out.
+
+Ownership is per client **transport**, not per connection: all of a client's pooled sockets and QUIC
+streams, and a transport that reconnects with the same UUID, share one owner, exactly like the
+authentication state and the dictionary.
+
 ### Practical guidance
 
 - Application-to-application TRIP traffic from **authenticated** clients needs no allowlist —

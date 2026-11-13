@@ -84,6 +84,7 @@ public class DefaultRemoteDelegate<T extends Remote> implements RemoteDelegate<T
 
   private final Registry registry;
   private final UUID remoteId;
+  private final UUID ownerId;
   private final T target;
   private final IndexedMethodCache methodCache;
   private final List<WeakReference<RemoteDelegate<?>>> registeredDelegates;
@@ -94,12 +95,14 @@ public class DefaultRemoteDelegate<T extends Remote> implements RemoteDelegate<T
    *
    * @param registry the registry
    * @param remoteId the ID of the remote object
+   * @param ownerId the owning client transport UUID, or null if the delegate is public
    * @param target the target object
    * @param methodCache the method cache for the target object
    */
-  public DefaultRemoteDelegate(Registry registry, UUID remoteId, T target, IndexedMethodCache methodCache) {
+  public DefaultRemoteDelegate(Registry registry, UUID remoteId, UUID ownerId, T target, IndexedMethodCache methodCache) {
     this.registry = registry;
     this.remoteId = remoteId;
+    this.ownerId = ownerId;
     this.target = target;
     this.methodCache = methodCache;
     registeredDelegates = new ArrayList<>();
@@ -114,6 +117,11 @@ public class DefaultRemoteDelegate<T extends Remote> implements RemoteDelegate<T
   @Override
   public UUID getRemoteId() {
     return remoteId;
+  }
+
+  @Override
+  public UUID getOwnerId() {
+    return ownerId;
   }
 
   @Override
