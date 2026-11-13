@@ -50,7 +50,8 @@ plugs everything together.
 - **No secrets in the payload.** `UpdateInfo` is *not* encrypted by itself. To protect it in transit, publish the
   service over the PSK-encrypted (pre-shared key) `tripe` transport rather than over TLS: a new server version may
   come with a new certificate that the outdated client does not trust yet. The download itself is plain HTTP(S)
-  and is protected by a **SHA-256 checksum** rather than by transport encryption.
+  and is protected by a **SHA-256 checksum** rather than by transport encryption. Encryption alone does not keep
+  an attacker out, though — see [The Threat Model](#the-threat-model).
 - **Convention-based artifact layout.** The server derives the download URLs purely from a naming convention
   (`<artifact>-<version>-<platform>-<arch>[-pkg].zip` plus a matching `.sha256` file) under a configurable base
   URL, so adding a new platform/architecture is a matter of publishing the right files — no server code changes.
@@ -304,6 +305,55 @@ The end-to-end flow, as wired up by [`tentackle-fx-rdc-update`](../../../../tent
    The script waits for this process to exit, overwrites the image files, and relaunches the application. The client
    then `System.exit(0)`s. Optionally, the encrypted username/password are handed to the new process via
    environment variables so the user does not have to log in again.
+
+---
+
+## The Threat Model
+
+The update check runs **before the login**, and the `UpdateService` is registered by name, which makes it a public
+entry point. Encrypting the channel does not change that: with server-only TLS (`trips`, `tripq`, `tripj`), the
+client verifies the server, but the server does not verify the client. An attacker who gained access to the network
+can happily establish a connection to the TLS-encrypted endpoint and talk TRIP to it, because no shared secret is
+required.
+
+Therefore, publish the update service over one of these:
+
+- the **PSK transport** `tripe` (or `tripce`), which encrypts with a pre-shared key, or
+- **TLS with a client certificate**, i.e. a server URI with `clientauth=need` and a client presenting a certificate
+  from its keystore (see [SSL/TLS configuration](../../../../tentackle-core/src/main/docs/trip.md#ssltls-configuration)).
+
+Either way, a client must know a shared secret — the pre-shared key or the client certificate — before the server
+deserializes a single byte from it. Of the two, `tripe` is the default for the update service, because a new server
+version may come with a new certificate that the outdated client does not trust yet.
+
+The secret ships with the client, however. The pre-shared key is the passphrase of the application's
+[`Cryptor`](../../../../tentackle-common/src/main/docs/cryptor.md#threat-model-and-limits), compiled into the image,
+and the client certificate sits in the keystore next to it. As TRIP's chapter on
+[unauthenticated peers](../../../../tentackle-core/src/main/docs/trip.md#unauthenticated-peers) puts it, a client
+that can be downloaded gives its key away. What such a client can send before the login is limited by the
+pre-authentication policy (see *ServerUpdateUtilities* above), which
+remains the last line of defense.
+
+Further hardening:
+
+- **Add a secret that is not part of the image** to the client info, entered manually or taken from an external
+  source, such as the [OS credential store](../../../../tentackle-keyring/src/main/docs/platform-keyring.md), a
+  mounted volume or a platform secret store, and check it in the `AbstractUpdateServiceImpl` subclass. `ClientInfo`
+  is a record without a field for it, so this takes an application-specific request type, annotated with
+  `@TripPreAuth`, and a service contract of its own.
+- **Keep the image private.** Whoever gets the ZIP gets the key. Protect the download URL with signed or short-lived
+  CDN URLs, by authentication, or by a mirror that is reachable only through the company VPN.
+- **Use a transport of its own for the update service**, on a port of its own and with a key of its own, apart from
+  the transport of the application server. A leaked update key then reaches only the update check, which the
+  pre-authentication policy confines.
+- **Authenticate the server.** The client downloads the URL and runs the script the server names, so whoever can
+  impersonate the update server can run code on the client. The SHA-256 checksum detects a tampered download, but
+  not a forged `UpdateInfo`, since the checksum comes from the same reply. With `tripe`, impersonating the server
+  takes the pre-shared key, which is one more reason to keep it out of reach. With TLS, put a long-lived, private CA
+  into the client's truststore rather than the server certificate itself, so that renewing the server certificate
+  does not lock out the outdated clients.
+- **Restrict the network.** A firewall or VPN that admits only known networks to the update port keeps most
+  attackers from getting a connection at all.
 
 ---
 

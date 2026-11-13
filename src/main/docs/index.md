@@ -315,7 +315,7 @@ topic-grouped listing of every document, see the
 - **Unexpected (deviations from mainstream Java frameworks)** — [What a Seasoned Java Developer Would Not Expect](./unexpected.md)
 - **Unauthenticated clients (pre-authentication policy)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#unauthenticated-peers), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#before-the-login)
 - **Unique domain key (UDK)** — [Domain Keys](../../../tentackle-pdo/src/main/docs/domain-key.md)
-- **Update (self-update service)** — [Tentackle Update](../../../tentackle-update/src/main/docs/update.md), [FX RDC Update](../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)
+- **Update (self-update service)** — [Tentackle Update](../../../tentackle-update/src/main/docs/update.md), [threat model](../../../tentackle-update/src/main/docs/update.md#the-threat-model), [FX RDC Update](../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)
 - **UserResolver (principal → user entity)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#from-a-principal-to-a-user-the-userresolver), [Single Sign-On with Google](./google-sso.md)
 
 ## V

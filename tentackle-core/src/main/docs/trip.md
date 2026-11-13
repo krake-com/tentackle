@@ -1043,7 +1043,7 @@ accepts any certificate is all it takes, no truststore is needed. Such a client 
 before the login, the server would deserialize whatever it sends. Mutual TLS (`clientauth=need`) and
 the PSK transports (`tripe`/`tripce`) keep it out, but only as long as the client distribution stays
 private. A client that can be downloaded, by the [update service](../../../../tentackle-update/src/main/docs/update.md)
-for example, gives its key away.
+for example, gives its key away (see its [threat model](../../../../tentackle-update/src/main/docs/update.md#the-threat-model)).
 
 A [`PreAuthenticationPolicy`](../java/org/tentackle/trip/PreAuthenticationPolicy.java) therefore
 restricts what a server accepts from a client **until the application marks the client as
