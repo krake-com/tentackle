@@ -627,12 +627,12 @@ public class TripModificationLogSerializer implements ModificationLogSerializer 
 
     @Override
     public DictionaryEntry getEntry(int ordinal, long maxWaitTime) {
-      return null;
+      return getEntry(ordinal);
     }
 
     @Override
     public boolean isAuthenticated() {
-      return false;
+      return true;
     }
 
     @Override
