@@ -48,7 +48,7 @@ public record TransportClientInfo(Transport transport, Dictionary dictionary, St
    * @return the abbreviated UUID, "null" if null
    */
   public static String redact(UUID clientId) {
-    return clientId == null ? "null" : clientId.toString().substring(0, REDACTED_LENGTH) + "...";
+    return clientId == null ? "null" : clientId.toString().substring(0, REDACTED_LENGTH);
   }
 
   /**
