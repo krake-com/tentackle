@@ -30,6 +30,7 @@ import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.auth.Authentication;
+import org.tentackle.session.auth.AuthenticationException;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -95,12 +96,15 @@ public class RemoteDbLoginTest {
   public void setUp() {
     previousSession = Session.getCurrentSession();
     conMgr = new DefaultConnectionManager("remote-login-test", 8, 8, 1, 0, 0);
+    RemoteDbSessionImpl.setLoginFailureDelay(0, 0);
   }
 
   @AfterMethod(alwaysRun = true)
   public void tearDown() {
     RemoteDbSessionImpl.setMaxConcurrentLogins(RemoteDbSessionImpl.DEFAULT_MAX_CONCURRENT_LOGINS);
     RemoteDbSessionImpl.setLoginWaitTime(RemoteDbSessionImpl.DEFAULT_LOGIN_WAIT_TIME);
+    RemoteDbSessionImpl.setLoginFailureDelay(RemoteDbSessionImpl.DEFAULT_LOGIN_FAILURE_MIN_DELAY,
+                                             RemoteDbSessionImpl.DEFAULT_LOGIN_FAILURE_MAX_DELAY);
     authenticationHook = null;
     DBS.forEach(Db::close);
     DBS.clear();
@@ -172,6 +176,89 @@ public class RemoteDbLoginTest {
     // the permit is released again
     authenticationHook = () -> { };
     new TestSession(new DefaultSessionInfo());
+  }
+
+
+  /**
+   * Performs a login and measures its duration.
+   *
+   * @param expectFailure true if the login must fail
+   * @return the milliseconds until the login was answered
+   */
+  private static long timedLogin(boolean expectFailure) {
+    long start = System.nanoTime();
+    if (expectFailure) {
+      expectThrows(AuthenticationException.class, () -> new TestSession(new DefaultSessionInfo()));
+    }
+    else {
+      new TestSession(new DefaultSessionInfo());
+    }
+    return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+  }
+
+  @Test
+  public void failedLoginIsDelayed() {
+    RemoteDbSessionImpl.setLoginFailureDelay(300, 400);
+    authenticationHook = () -> { throw new AuthenticationException("wrong password"); };
+    long elapsed = timedLogin(true);
+    assertTrue(elapsed >= 300, "failed login answered after " + elapsed + "ms");
+  }
+
+  @Test
+  public void delayPadsVerificationTime() {
+    RemoteDbSessionImpl.setLoginFailureDelay(300, 300);
+    authenticationHook = () -> {
+      try {
+        Thread.sleep(200);
+      }
+      catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+      throw new AuthenticationException("wrong password");
+    };
+    long elapsed = timedLogin(true);
+    assertTrue(elapsed >= 300, "failed login answered after " + elapsed + "ms");
+    assertTrue(elapsed < 480, "verification time added to the delay instead of padded: " + elapsed + "ms");
+  }
+
+  @Test
+  public void successfulLoginNotDelayed() {
+    RemoteDbSessionImpl.setLoginFailureDelay(1000, 1000);
+    authenticationHook = () -> { };
+    long elapsed = timedLogin(false);
+    assertTrue(elapsed < 1000, "successful login answered after " + elapsed + "ms");
+  }
+
+  @Test
+  public void delayHoldsNoPermit() throws Exception {
+    RemoteDbSessionImpl.setMaxConcurrentLogins(1);
+    RemoteDbSessionImpl.setLoginWaitTime(200);
+    RemoteDbSessionImpl.setLoginFailureDelay(2000, 2000);
+    CountDownLatch failing = new CountDownLatch(1);
+    authenticationHook = () -> {
+      failing.countDown();
+      throw new AuthenticationException("wrong password");
+    };
+    List<Throwable> failures = new CopyOnWriteArrayList<>();
+    Thread failed = login(failures);
+    assertTrue(failing.await(10, TimeUnit.SECONDS));
+    Thread.sleep(100);    // let the failed login release its permit and enter the delay
+
+    authenticationHook = () -> { };
+    long elapsed = timedLogin(false);
+    assertTrue(failed.isAlive(), "failed login not delayed");
+    assertTrue(elapsed < 1000, "login blocked by a delayed failed login for " + elapsed + "ms");
+
+    failed.join();
+    assertEquals(failures.size(), 1);
+    assertTrue(failures.getFirst() instanceof AuthenticationException, failures.toString());
+  }
+
+  @Test
+  public void invalidDelays() {
+    expectThrows(IllegalArgumentException.class, () -> RemoteDbSessionImpl.setLoginFailureDelay(-1, 100));
+    expectThrows(IllegalArgumentException.class, () -> RemoteDbSessionImpl.setLoginFailureDelay(200, 100));
+    RemoteDbSessionImpl.setLoginFailureDelay(200, 0);    // disabled
   }
 
 }

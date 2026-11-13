@@ -39,6 +39,9 @@ requires Java 11.
 - `TripServer` installs an enforcing pre-authentication policy by default, and `RemoteDbSessionImpl` authenticates
   the client once `verifySessionInfo` accepted the credentials. The backend property `preauth=enforce|audit|off`
   selects the mode.
+- A failed remote login is answered after a random time within a configurable interval (backend properties
+  `loginfailmindelay`/`loginfailmaxdelay`, default 1–5 s). The response time no longer reveals whether a user
+  exists, and brute-force attacks are throttled.
 
 ### Changed
 

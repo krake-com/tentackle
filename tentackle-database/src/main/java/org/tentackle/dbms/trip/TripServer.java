@@ -130,6 +130,16 @@ public class TripServer {
   public static final String MAX_CONCURRENT_LOGINS = "maxlogins";
 
   /**
+   * The property key for the minimum milliseconds until a failed login is answered.
+   */
+  public static final String LOGIN_FAILURE_MIN_DELAY = "loginfailmindelay";
+
+  /**
+   * The property key for the maximum milliseconds until a failed login is answered.
+   */
+  public static final String LOGIN_FAILURE_MAX_DELAY = "loginfailmaxdelay";
+
+  /**
    * The property key for the pre-authentication policy mode.
    */
   public static final String PRE_AUTHENTICATION = "preauth";
@@ -154,6 +164,8 @@ public class TripServer {
   private long sessionTimeoutCheckInterval;                           // check interval for session timeout in milliseconds, 0 = none
   private PreAuthenticationPolicy.Mode preAuthenticationMode;         // null = no pre-authentication policy
   private int maxConcurrentLogins;                                    // maximum number of concurrent logins, 0 = unlimited
+  private long loginFailureMinDelay;                                  // minimum response time of a failed login in milliseconds
+  private long loginFailureMaxDelay;                                  // maximum response time of a failed login in milliseconds, 0 = immediately
 
 
 
@@ -200,6 +212,12 @@ public class TripServer {
 
     val = props.getPropertyIgnoreCase(MAX_CONCURRENT_LOGINS);
     maxConcurrentLogins = val != null ? Integer.parseInt(val) : RemoteDbSessionImpl.DEFAULT_MAX_CONCURRENT_LOGINS;
+
+    val = props.getPropertyIgnoreCase(LOGIN_FAILURE_MIN_DELAY);
+    loginFailureMinDelay = val != null ? Long.parseLong(val) : RemoteDbSessionImpl.DEFAULT_LOGIN_FAILURE_MIN_DELAY;
+
+    val = props.getPropertyIgnoreCase(LOGIN_FAILURE_MAX_DELAY);
+    loginFailureMaxDelay = val != null ? Long.parseLong(val) : RemoteDbSessionImpl.DEFAULT_LOGIN_FAILURE_MAX_DELAY;
 
     val = props.getPropertyIgnoreCase(PRE_AUTHENTICATION);
     if (val == null || val.equalsIgnoreCase("enforce")) {
@@ -363,6 +381,39 @@ public class TripServer {
   }
 
   /**
+   * Gets the minimum time until a failed login is answered.
+   *
+   * @return the minimum delay in milliseconds
+   */
+  public long getLoginFailureMinDelay() {
+    return loginFailureMinDelay;
+  }
+
+  /**
+   * Gets the maximum time until a failed login is answered.
+   *
+   * @return the maximum delay in milliseconds, 0 if answered immediately
+   */
+  public long getLoginFailureMaxDelay() {
+    return loginFailureMaxDelay;
+  }
+
+  /**
+   * Sets the interval for the response time of a failed login.<br>
+   * A failed login is answered after a random time within this interval, so that an attacker cannot tell
+   * from the response time whether the user doesn't exist or the credentials are just wrong.
+   * Must be invoked before {@link #start()}.
+   *
+   * @param minDelay the minimum delay in milliseconds
+   * @param maxDelay the maximum delay in milliseconds, 0 to answer failed logins immediately
+   * @see RemoteDbSessionImpl#setLoginFailureDelay(long, long)
+   */
+  public void setLoginFailureDelay(long minDelay, long maxDelay) {
+    this.loginFailureMinDelay = minDelay;
+    this.loginFailureMaxDelay = maxDelay;
+  }
+
+  /**
    * Creates the pre-authentication policy for a transport.<br>
    * Applications may override this method to add classes to the allowlist or to change the limits.
    *
@@ -381,6 +432,7 @@ public class TripServer {
     // start the transports in alphabetical order
     LOGGER.info("TRIP-server " + getClass().getName() + " starting...");
     RemoteDbSessionImpl.setMaxConcurrentLogins(maxConcurrentLogins);
+    RemoteDbSessionImpl.setLoginFailureDelay(loginFailureMinDelay, loginFailureMaxDelay);
     for (Map.Entry<String, URI> serviceEntry : services.entrySet()) {
       String name = serviceEntry.getKey();
       URI uri = serviceEntry.getValue();

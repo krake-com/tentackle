@@ -52,6 +52,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -128,6 +129,72 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    */
   public static void setLoginWaitTime(long loginWaitTime) {
     RemoteDbSessionImpl.loginWaitTime = loginWaitTime;
+  }
+
+  /** Default minimum milliseconds until a failed login is answered. */
+  public static final long DEFAULT_LOGIN_FAILURE_MIN_DELAY = 1000;
+
+  /** Default maximum milliseconds until a failed login is answered. */
+  public static final long DEFAULT_LOGIN_FAILURE_MAX_DELAY = 5000;
+
+  /** Random source for the response time of failed logins. */
+  private static final SecureRandom LOGIN_FAILURE_RANDOM = new SecureRandom();
+
+  /** Minimum milliseconds until a failed login is answered. */
+  private static volatile long loginFailureMinDelay = DEFAULT_LOGIN_FAILURE_MIN_DELAY;
+
+  /** Maximum milliseconds until a failed login is answered, 0 if not delayed. */
+  private static volatile long loginFailureMaxDelay = DEFAULT_LOGIN_FAILURE_MAX_DELAY;
+
+  /**
+   * Sets the interval for the response time of a failed login.
+   * <p>
+   * A failed login is answered after a random time within the given interval, measured from the
+   * start of the login. This hides how long the credentials were verified, so an attacker cannot
+   * tell from the response time whether the user doesn't exist or the credentials are just wrong.
+   * It also throttles brute-force attacks. The verification time stays hidden as long as it is
+   * shorter than the minimum delay.
+   * <p>
+   * Neither a session nor a login permit is held while the answer is delayed.
+   *
+   * @param minDelay the minimum delay in milliseconds
+   * @param maxDelay the maximum delay in milliseconds, 0 to answer failed logins immediately
+   * @throws IllegalArgumentException if a delay is negative or {@code minDelay > maxDelay > 0}
+   */
+  public static void setLoginFailureDelay(long minDelay, long maxDelay) {
+    if (minDelay < 0 || maxDelay < 0) {
+      throw new IllegalArgumentException("login failure delays must not be negative");
+    }
+    if (maxDelay > 0 && minDelay > maxDelay) {
+      throw new IllegalArgumentException("minimum login failure delay " + minDelay +
+                                         " exceeds the maximum " + maxDelay);
+    }
+    // a concurrent login may see a mix of old and new values: delayFailedLogin tolerates that
+    loginFailureMinDelay = maxDelay > 0 ? minDelay : 0;
+    loginFailureMaxDelay = maxDelay;
+  }
+
+  /**
+   * Delays the answer to a failed login until a random time within the configured interval has
+   * elapsed since the login started.
+   *
+   * @param loginStarted the {@link System#nanoTime()} when the login started
+   */
+  private static void delayFailedLogin(long loginStarted) {
+    long minDelay = loginFailureMinDelay;
+    long maxDelay = loginFailureMaxDelay;
+    if (maxDelay > 0 && minDelay <= maxDelay) {
+      long target = minDelay + LOGIN_FAILURE_RANDOM.nextLong(maxDelay - minDelay + 1);
+      long remaining = target - TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - loginStarted);
+      if (remaining > 0) {
+        try {
+          Thread.sleep(remaining);
+        }
+        catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    }
   }
 
   /**
@@ -388,6 +455,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
     masterSerialEvents = new ConcurrentLinkedQueue<>();
     invokingThread = new AtomicReference<>();
 
+    long loginStarted = System.nanoTime();
     Semaphore permits = acquireLoginPermit();
     Db db = null;
     try {
@@ -444,6 +512,12 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
         }
       }
       if (ex instanceof LoginFailedException) {
+        // the delay must not hold a permit, or failing logins could keep the real users out
+        if (permits != null) {
+          permits.release();
+          permits = null;
+        }
+        delayFailedLogin(loginStarted);
         throw ex;
       }
       throw new PersistenceException("could not setup remote session", ex);
