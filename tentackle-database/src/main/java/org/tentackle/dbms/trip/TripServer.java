@@ -90,7 +90,7 @@ import java.util.TreeMap;
  * <li>
  * {@code maxlogins=<number>}:
  *  The maximum number of logins processed concurrently (default 64, 0 = unlimited).
- *  Each login holds a database session while the credentials are verified.
+ *  Each login holds a session while the credentials are verified.
  *  A login exceeding the limit waits up to 10 seconds and is then refused as "server busy".
  * </li>
  * </ul>

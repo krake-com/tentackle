@@ -556,7 +556,7 @@ An application whose `SessionInfo` or `Credentials` are subclassed must annotate
 `TripServer.createPreAuthenticationPolicy`. Remote objects registered by name, like the
 `RemoteDbConnection`, are public entry points, reachable before the login.
 
-Each login holds a database session while the credentials are verified. The backend property
+Each login holds a session while the credentials are verified. The backend property
 `maxlogins` (default 64, `0` = unlimited) limits the logins processed concurrently: a login exceeding it
 waits up to 10 seconds and is then refused as "server busy". The verification itself (hashing a password,
 asking a directory or an identity provider) runs in parallel. Only what an overridden `verifySessionInfo`
