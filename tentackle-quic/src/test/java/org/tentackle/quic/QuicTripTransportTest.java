@@ -83,6 +83,39 @@ public class QuicTripTransportTest {
   }
 
   @Test(timeOut = 60000)
+  public void refusesToAcceptWithClientCertificatesNeeded() throws Exception {
+    Reporter.log("refusesToAcceptWithClientCertificatesNeeded", true);
+    // KWIK cannot request client certificates: a server that needs them must not silently accept anybody
+    int port = QuicTestSupport.freeUdpPort();
+    QuicTripTransport transport = new QuicTripTransport(URI.create(
+      "tripq://localhost:" + port + "?clientauth=need&" + QuicTestSupport.keyStoreParameters(keyStore)));
+    try {
+      TripRuntimeException exception = expectThrows(TripRuntimeException.class, transport::accept);
+      assertTrue(exception.getMessage().contains("clientauth=need"), "unexpected message: " + exception.getMessage());
+      assertFalse(transport.isAccepting());
+    }
+    finally {
+      transport.close();
+    }
+  }
+
+  @Test(timeOut = 60000)
+  public void acceptsWithClientCertificatesWanted() throws Exception {
+    Reporter.log("acceptsWithClientCertificatesWanted", true);
+    // "want" is a mere offer: ignored with a warning
+    int port = QuicTestSupport.freeUdpPort();
+    QuicTripTransport transport = new QuicTripTransport(URI.create(
+      "tripq://localhost:" + port + "?clientauth=want&" + QuicTestSupport.keyStoreParameters(keyStore)));
+    try {
+      transport.accept();
+      assertTrue(transport.isAccepting());
+    }
+    finally {
+      transport.close();
+    }
+  }
+
+  @Test(timeOut = 60000)
   public void acceptsWithNamedGroups() throws Exception {
     Reporter.log("acceptsWithNamedGroups", true);
     // the server accepts only the given groups, see QuicTripConnectionPoolTest for the handshakes

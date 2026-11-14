@@ -43,9 +43,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 
 /**
  * Handler for a new incoming connection.
@@ -67,6 +70,7 @@ public class ConnectionHandler implements Runnable {
   private final String connectionName;
   private final InputStream inputStream;
   private final OutputStream outputStream;
+  private final Supplier<List<X509Certificate>> peerCertificates;
   private volatile TransportClientInfo clientInfo;
   private volatile boolean evicted;
 
@@ -79,10 +83,28 @@ public class ConnectionHandler implements Runnable {
    * @param outputStream the output stream associated with this connection
    */
   public ConnectionHandler(Transport transport, String connectionName, InputStream inputStream, OutputStream outputStream) {
+    this(transport, connectionName, inputStream, outputStream, List::of);
+  }
+
+  /**
+   * Creates a new handler for a connection that may provide peer certificates.
+   * <p>
+   * The certificates are requested once the connection request has been read, i.e. when the TLS handshake,
+   * if any, is complete. They are passed on to the {@link TransportClientInfo}.
+   *
+   * @param transport the transport associated with this handler
+   * @param connectionName the name of the connection
+   * @param inputStream the input stream associated with this connection
+   * @param outputStream the output stream associated with this connection
+   * @param peerCertificates supplies the verified certificate chain of the peer, leaf first, empty if none
+   */
+  public ConnectionHandler(Transport transport, String connectionName, InputStream inputStream, OutputStream outputStream,
+                           Supplier<List<X509Certificate>> peerCertificates) {
     this.transport = Objects.requireNonNull(transport, "missing transport");
     this.connectionName = Objects.requireNonNull(connectionName, "missing connection name");
     this.inputStream = Objects.requireNonNull(inputStream, "missing input stream");
     this.outputStream = Objects.requireNonNull(outputStream, "missing output stream");
+    this.peerCertificates = Objects.requireNonNull(peerCertificates, "missing peer certificates supplier");
   }
 
   /**
@@ -186,6 +208,24 @@ public class ConnectionHandler implements Runnable {
   }
 
   /**
+   * Gets the verified certificate chain of the peer.<br>
+   * Invoked once the connection request has been read.
+   *
+   * @return the certificates, leaf first, empty if none
+   * @throws TripRuntimeException if the certificates cannot be determined
+   */
+  protected List<X509Certificate> getPeerCertificates() {
+    List<X509Certificate> certificates;
+    try {
+      certificates = peerCertificates.get();
+    }
+    catch (RuntimeException ex) {
+      throw new TripRuntimeException("cannot determine the peer certificates", ex);
+    }
+    return certificates == null ? List.of() : certificates;
+  }
+
+  /**
    * Returns whether rejections are delayed by the {@link RejectionDelay}.<br>
    * A peer must not tell from the response time why it was rejected, or whether it talks to a TRIP server at all.
    *
@@ -238,6 +278,7 @@ public class ConnectionHandler implements Runnable {
   private void handleConnection(PreAuthenticationPolicy policy, PreAuthenticationPolicy.Admission admission) {
     UUID id;
     TripStream stream;
+    List<X509Certificate> certificates;
     long started = System.nanoTime();
     try {
       // The magic and the UUID are read as one block, so that the server does not decide after the
@@ -268,6 +309,8 @@ public class ConnectionHandler implements Runnable {
         clientDictionaryEmpty = readDictionaryFlag();
       }
       stream = createStream(id, clientDictionaryEmpty);
+      // the TLS handshake, if any, is complete: the peer's certificates are known now
+      certificates = getPeerCertificates();
     }
     catch (TripRuntimeException e) {
       // SSL handshake exception, peer closed, stale client transport, decryption failed, etc...
@@ -281,7 +324,7 @@ public class ConnectionHandler implements Runnable {
       reject(started);
       return;
     }
-    clientInfo = new TransportClientInfo(transport, stream.getDictionary(), connectionName, id);
+    clientInfo = new TransportClientInfo(transport, stream.getDictionary(), connectionName, id, certificates);
     int messageCount = 0;   // number of messages received before authentication
     boolean closedByClient = false;
     LOGGER.info("connection " + clientInfo + " opened");

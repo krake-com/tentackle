@@ -22,19 +22,29 @@ import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TripRuntimeException;
 
+import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.UUID;
 
 /**
  * The client information.
  * <p>
  * Used in servers only and exposed by thread local variable.
+ * <p>
+ * The peer certificates are the client certificate chain the TLS layer of the transport has verified
+ * against the server's truststore. They are present only if the transport is TLS-based and
+ * requests client certificates (see {@link org.tentackle.io.SslParameters}, {@code clientauth}).
+ * Unlike anything the client sends through TRIP, they are proven by the TLS handshake and can be
+ * used to authenticate the client.
  *
  * @param transport the server transport
  * @param dictionary the client's dictionary
  * @param connectionName the client's connection name
  * @param clientId the client's transport UUID
+ * @param peerCertificates the verified certificate chain of the client, leaf first, empty if none
  */
-public record TransportClientInfo(Transport transport, Dictionary dictionary, String connectionName, UUID clientId) {
+public record TransportClientInfo(Transport transport, Dictionary dictionary, String connectionName, UUID clientId,
+                                  List<X509Certificate> peerCertificates) {
 
   private static final ThreadLocal<TransportClientInfo> TL_CLIENT_INFO = new ThreadLocal<>();
 
@@ -68,6 +78,32 @@ public record TransportClientInfo(Transport transport, Dictionary dictionary, St
     }
     return null;
   }
+
+  /**
+   * Creates a client info.
+   *
+   * @param transport the server transport
+   * @param dictionary the client's dictionary
+   * @param connectionName the client's connection name
+   * @param clientId the client's transport UUID
+   * @param peerCertificates the verified certificate chain of the client, leaf first, null or empty if none
+   */
+  public TransportClientInfo {
+    peerCertificates = peerCertificates == null ? List.of() : List.copyOf(peerCertificates);
+  }
+
+  /**
+   * Creates a client info without peer certificates.
+   *
+   * @param transport the server transport
+   * @param dictionary the client's dictionary
+   * @param connectionName the client's connection name
+   * @param clientId the client's transport UUID
+   */
+  public TransportClientInfo(Transport transport, Dictionary dictionary, String connectionName, UUID clientId) {
+    this(transport, dictionary, connectionName, clientId, List.of());
+  }
+
 
   /**
    * Gets the client info from the thread local variable.
@@ -104,6 +140,15 @@ public record TransportClientInfo(Transport transport, Dictionary dictionary, St
   }
 
   /**
+   * Gets the client's certificate.
+   *
+   * @return the leaf of the verified certificate chain, null if the client presented no certificate
+   */
+  public X509Certificate getPeerCertificate() {
+    return peerCertificates.isEmpty() ? null : peerCertificates.getFirst();
+  }
+
+  /**
    * Returns whether the client is authenticated.<br>
    * The state is shared by all connections of the client's transport.
    *
@@ -135,6 +180,10 @@ public record TransportClientInfo(Transport transport, Dictionary dictionary, St
     buf.append(transport).append(" >< ").append(connectionName);
     if (clientId != null) {
       buf.append('|').append(redact(clientId));
+    }
+    X509Certificate certificate = getPeerCertificate();
+    if (certificate != null) {
+      buf.append(" [").append(certificate.getSubjectX500Principal().getName()).append(']');
     }
     return buf.toString();
   }

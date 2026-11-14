@@ -58,13 +58,31 @@ public interface AuthenticationManager {
   }
 
   /**
-   * Authenticates the credentials presented by a client.
+   * Authenticates the credentials presented by a client.<br>
+   * Same as {@link #authenticate(Credentials, AuthenticationContext)} with an empty context.
    *
    * @param credentials the credentials, null if the client presented none
    * @return the proven identity, never null
    * @throws org.tentackle.session.LoginFailedException if the login must be refused
    */
   Authentication authenticate(Credentials credentials);
+
+  /**
+   * Authenticates the credentials presented by a client within the context of its connection.
+   * <p>
+   * The context is handed to the providers, see
+   * {@link AuthenticationProvider#authenticate(Credentials, AuthenticationContext)}.
+   * The default implementation ignores the context and invokes {@link #authenticate(Credentials)},
+   * so that managers written before the context existed keep working.
+   *
+   * @param credentials the credentials, null if the client presented none
+   * @param context the context of the client's connection, never null
+   * @return the proven identity, never null
+   * @throws org.tentackle.session.LoginFailedException if the login must be refused
+   */
+  default Authentication authenticate(Credentials credentials, AuthenticationContext context) {
+    return authenticate(credentials);
+  }
 
   /**
    * Gets the provider chain in the order it is asked.

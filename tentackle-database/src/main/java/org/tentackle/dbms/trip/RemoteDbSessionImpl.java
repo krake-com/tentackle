@@ -36,8 +36,10 @@ import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
 import org.tentackle.session.SessionPoolProvider;
 import org.tentackle.session.auth.Authentication;
+import org.tentackle.session.auth.AuthenticationContext;
 import org.tentackle.session.auth.AuthenticationManager;
 import org.tentackle.session.auth.AuthenticationProvider;
+import org.tentackle.session.auth.DefaultAuthenticationContext;
 import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.Registry;
 import org.tentackle.trip.RejectionDelay;
@@ -53,8 +55,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -344,6 +348,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   private final long sessionNumber;                           // unique session number
   private final String clientHost;                            // the client host string
   private final String clientProtocol;                        // the TRIP protocol of the client's transport
+  private final List<X509Certificate> clientCertificates;     // the verified certificate chain of the client, empty if none
   private final Dictionary dictionary;                        // to prevent GC as long as this session is open
   private final Map<String, Logger> loggers;                  // logger-name :: logger
   private volatile int timeout;                               // timeout in polling intervals of the RemoteDbSessionCleanupThread (read by that thread)
@@ -354,6 +359,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   private UUID remoteId;                                      // the remote delegate ID of this session
   private RemoteDbSessionInvocationFilter invocationFilter;   // optional invocation filter
   private Authentication authentication;                      // the proven identity, null if not authenticated yet
+  private AuthenticationContext authenticationContext;        // the context of the authentication, null if not authenticated yet
   private final AtomicBoolean modificationTrackerSession;     // true if this the remote ModificationTracker's session
   private final Queue<MasterSerialEvent> masterSerialEvents;  // master serial event queue
   private final AtomicReference<Thread> invokingThread;       // the thread invoking a delegate method, null if none
@@ -400,6 +406,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
         // and is not fixed for further invocations for this session
         clientHost = transportInfo.getHost();
         clientProtocol = transportInfo.transport() == null ? null : transportInfo.transport().getUri().getScheme();
+        clientCertificates = transportInfo.peerCertificates();
         // Since the dictionary is shared among all TRIP connections of the same client,
         // it must not be GC'd as long as a single session for this client is still open.
         // TCP connections remain open until explicitly closed.
@@ -411,6 +418,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
       else {
         clientHost = "?";
         clientProtocol = null;
+        clientCertificates = List.of();
         dictionary = null;
       }
       db = openDb();
@@ -600,14 +608,28 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    * Verifies the credentials of the session info.<br>
    * Invoked by {@link #verifySessionInfo(SessionInfo)} without holding the lock that serializes the logins.
    * <p>
-   * The default implementation hands the credentials to the {@link AuthenticationManager}.
+   * The default implementation hands the credentials to the {@link AuthenticationManager}, along with the
+   * {@link AuthenticationContext} created by {@link #createAuthenticationContext()}.
    *
    * @param sessionInfo the session info
    * @return the proven identity
    * @throws LoginFailedException if the credentials are not valid
    */
   protected Authentication authenticate(SessionInfo sessionInfo) {
-    return AuthenticationManager.getInstance().authenticate(sessionInfo.getCredentials());
+    authenticationContext = createAuthenticationContext();
+    return AuthenticationManager.getInstance().authenticate(sessionInfo.getCredentials(), authenticationContext);
+  }
+
+  /**
+   * Creates the context of the client's connection for the authentication.
+   * <p>
+   * The context carries what the server itself knows about the client: the host, the protocol and,
+   * if the transport requested client certificates, the certificate chain verified by the TLS handshake.
+   *
+   * @return the context, never null
+   */
+  protected AuthenticationContext createAuthenticationContext() {
+    return new DefaultAuthenticationContext(clientHost, clientProtocol, clientCertificates);
   }
 
   /**
@@ -662,6 +684,27 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    */
   public Authentication getAuthentication() {
     return authentication;
+  }
+
+  /**
+   * Gets the context the client was authenticated in.
+   * <p>
+   * Provides the application with what the server knew about the client at login, such as the
+   * verified client certificate.
+   *
+   * @return the context, null if the application authenticated without the provider chain
+   */
+  public AuthenticationContext getAuthenticationContext() {
+    return authenticationContext;
+  }
+
+  /**
+   * Gets the verified certificate chain the client presented.
+   *
+   * @return the certificates, leaf first, empty if the client presented none
+   */
+  public List<X509Certificate> getClientCertificates() {
+    return clientCertificates;
   }
 
   /**

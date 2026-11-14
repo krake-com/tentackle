@@ -151,8 +151,14 @@ never comes cannot park it for good.
 ## Server side
 
 1. The keystore, alias and password are resolved by `SslParameters`, exactly as for the TCP transports.
-   The server never asks its clients for a certificate: they authenticate through TRIP once the
-   connection stands.
+   By default, the server does not ask its clients for a certificate: they authenticate through TRIP once
+   the connection stands. With `clientauth=want` or `need` it does, and BoringSSL verifies the certificate
+   against the truststore (`tsfile`, or the JVM's default CAs). The verified certificate reaches the
+   application via `TransportClientInfo.peerCertificates()`, see
+   [TRIP](../../../../tentackle-core/src/main/docs/trip.md#client-certificates-reach-the-application).
+   quiche's C API provides the peer's own certificate only, so the list holds just the leaf. BoringSSL
+   admits a client without a certificate even when it verifies the peer, so `need` is enforced when the
+   client opens a stream: a QUIC connection without a certificate is closed, without a reason phrase.
 2. Because quiche accepts **PEM file paths and nothing else**, `PemExporter` writes the certificate chain
    and the private key (PKCS#8) to temporary files with owner-only permissions. Quiche reads them right
    away, so they are deleted as soon as they are loaded, and only a JVM crash in between could leave one
@@ -249,14 +255,15 @@ tripj://host:port/service?parameter=value&...
 
 | Parameter        | Side   | Default                                        | Meaning                                                                                                                                                          |
 |------------------|--------|------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `ksfile`         | server | `tentackle.ssl.keyStore`                       | keystore holding the server certificate; required here or via the system property                                                                                |
-| `kspass`         | server | `tentackle.ssl.keyStorePassword`               | keystore password                                                                                                                                                |
-| `ksalias`        | server | sole key entry                                 | alias of the certificate to present; required only for a multi-entry keystore                                                                                    |
-| `kstype`         | server | `tentackle.ssl.keyStoreType` / JDK default     | keystore type                                                                                                                                                    |
-| `kmpass`         | server | `kspass`                                       | private key password                                                                                                                                             |
-| `tsfile`         | client | `tentackle.ssl.trustStore` / JVM's default CAs | truststore verifying the server, used when `certcheck=true`                                                                                                      |
-| `tspass`         | client | `tentackle.ssl.trustStorePassword`             | truststore password                                                                                                                                              |
-| `tstype`         | client | `tentackle.ssl.trustStoreType` / JDK default   | truststore type                                                                                                                                                  |
+| `ksfile`         | both   | `tentackle.ssl.keyStore`                       | server: the server certificate, required here or via the system property; client: the certificate to present                                                     |
+| `kspass`         | both   | `tentackle.ssl.keyStorePassword`               | keystore password; on a client, see the `KeyStorePasswordProvider`                                                                                               |
+| `ksalias`        | both   | sole key entry                                 | alias of the certificate to present; required only for a multi-entry keystore                                                                                    |
+| `kstype`         | both   | `tentackle.ssl.keyStoreType` / JDK default     | keystore type                                                                                                                                                    |
+| `kmpass`         | both   | `kspass`                                       | private key password                                                                                                                                             |
+| `tsfile`         | both   | `tentackle.ssl.trustStore` / JVM's default CAs | client: verifies the server, used when `certcheck=true`; server: verifies the client certificates                                                                |
+| `tspass`         | both   | `tentackle.ssl.trustStorePassword`             | truststore password                                                                                                                                              |
+| `tstype`         | both   | `tentackle.ssl.trustStoreType` / JDK default   | truststore type                                                                                                                                                  |
+| `clientauth`     | server | `none`                                         | client-certificate policy: `none`, `want` or `need`, see [Server side](#server-side)                                                                             |
 | `alpnid`         | both   | the URI scheme                                 | ALPN protocol name; both ends must agree. The default reveals the service, see [Fingerprinting](../../../../tentackle-core/src/main/docs/trip.md#fingerprinting) |
 | `maxstreams`     | both   | 128                                            | concurrent bidirectional streams granted to the peer, >= 1; the default of the pool's `maximum`                                                                  |
 | `streamwindow`   | both   | 250000                                         | flow control window per stream in bytes, >= 1500                                                                                                                 |

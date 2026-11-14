@@ -57,6 +57,9 @@ import java.util.Map;
 @TransportService(QuicTripTransport.PROTOCOL)
 public class QuicTripTransport extends AbstractTransport {
 
+  // not imported: KWIK's logger is
+  private static final org.tentackle.log.Logger LOGGER = org.tentackle.log.Logger.get(QuicTripTransport.class);
+
   /**
    * The protocol name for QUIC.
    */
@@ -149,6 +152,20 @@ public class QuicTripTransport extends AbstractTransport {
       throw new TripRuntimeException(
         "keystore-file (ksfile) and certificate-alias (ksalias, or a single-entry keystore) must be specified");
     }
+
+    /*
+     * KWIK cannot ask a client for its certificate. Silently accepting clients without one would turn
+     * a security setting into a no-op, so "need" is refused. "want" is a mere offer and is ignored.
+     */
+    switch (sslParameters.getClientAuth()) {
+      case NEED -> throw new TripRuntimeException(
+        "client certificates (clientauth=need) are not supported by KWIK, use the quiche transport instead: " +
+        UriHelper.uriToSafeString(uri));
+      case WANT -> LOGGER.warning("client certificates (clientauth=want) are not supported by KWIK -> ignored: {0}",
+                                  UriHelper.uriToSafeString(uri));
+      case NONE -> { }
+    }
+
     // the key-exchange groups the server accepts, null for all groups KWIK supports
     List<NamedGroup> namedGroups;
     try {

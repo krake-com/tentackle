@@ -24,8 +24,11 @@ import org.tentackle.trip.transport.TransportClientInfo;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 
 /**
  * The transport layer.
@@ -186,14 +189,35 @@ public interface Transport {
   ExecutorService getConnectionThreadPool();
 
   /**
-   * Creates a connection handler for the given streams.
+   * Creates a connection handler for the given streams.<br>
+   * The connection does not provide any peer certificates.
    *
    * @param connectionName the name of the connection
    * @param inputStream the input stream
    * @param outputStream the output stream
    * @return the connection handler
    */
-  Runnable createConnectionHandler(String connectionName, InputStream inputStream, OutputStream outputStream);
+  default Runnable createConnectionHandler(String connectionName, InputStream inputStream, OutputStream outputStream) {
+    return createConnectionHandler(connectionName, inputStream, outputStream, List::of);
+  }
+
+  /**
+   * Creates a connection handler for the given streams and the certificates the peer presented.
+   * <p>
+   * The certificates are those the TLS layer of the transport has verified, i.e. the client certificate chain
+   * of a mutually authenticated connection. They are provided lazily, since the TLS handshake of a TCP
+   * connection takes place on the first read, which is done by the handler. The handler asks for them only
+   * after it has received the connection request, when the handshake is complete.
+   * See {@link TransportClientInfo#peerCertificates()}.
+   *
+   * @param connectionName the name of the connection
+   * @param inputStream the input stream
+   * @param outputStream the output stream
+   * @param peerCertificates supplies the verified certificate chain of the peer, leaf first, empty if none
+   * @return the connection handler
+   */
+  Runnable createConnectionHandler(String connectionName, InputStream inputStream, OutputStream outputStream,
+                                   Supplier<List<X509Certificate>> peerCertificates);
 
   /**
    * Gets the server's call handling thread pool.

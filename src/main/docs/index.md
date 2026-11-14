@@ -16,6 +16,7 @@ topic-grouped listing of every document, see the
 - **Archetype (project scaffolding)** — [Tentackle Project Archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md), [Quickstart](./quickstart.md)
 - **AtlantaFX theme** — [tentackle-fx-atlanta](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md)
 - **Authentication (login, credentials, providers)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md)
+- **AuthenticationContext (client host, TLS client certificate)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#client-certificates)
 - **AuthenticationProvider / AuthenticationManager** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-provider-chain)
 - **Auto-completion (text field suggestions)** — [Auto-Completion](../../../tentackle-fx/src/main/docs/auto-completion.md), [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md)
 - **Auto-update** — [Tentackle Update](../../../tentackle-update/src/main/docs/update.md), [FX RDC Update](../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)
@@ -39,8 +40,10 @@ topic-grouped listing of every document, see the
 - **Cache / caching** — [PDO Caching](../../../tentackle-pdo/src/main/docs/cache.md), [Multi-Tier Cascade](./tiers.md)
 - **Cache preloading (`@PreloadCache`)** — [PDO Caching](../../../tentackle-pdo/src/main/docs/cache.md#preloading-caches-at-startup-preloadcache), [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md)
 - **Canonical construction (`@CanonicalConstructor`, builders)** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md), [TRIP](../../../tentackle-core/src/main/docs/trip.md)
+- **CertificateCredentials / certificate login** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#client-certificates)
 - **Class variables (per-class persistence metadata)** — [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md#class-variables), [Persistence Wurblets](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md)
 - **ClassMapper / class mapping** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md), [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md)
+- **Client certificates (mutual TLS, `clientauth`, certificate login)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#client-certificates), [TRIP](../../../tentackle-core/src/main/docs/trip.md#client-certificates-reach-the-application), [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md#server-side)
 - **CockroachDB (backend peculiarities, selection by name)** — [The CockroachDB Backend](../../../tentackle-sql/src/main/docs/cockroachdb.md)
 - **Collections (tracked, copy-on-write, immutable)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md), [Immutable](../../../tentackle-core/src/main/docs/immutable.md)
 - **Column defaults (database)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md) (defaults stored as source text)
@@ -52,7 +55,7 @@ topic-grouped listing of every document, see the
 - **Core module (runtime foundation)** — [Tentackle Core](../../../tentackle-core/src/main/docs/core.md)
 - **Correctness guarantees** — [Correctness First](./correctness-first.md)
 - **Cryptor / encryption of secrets** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md)
-- **Credentials (password, token, custom)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-credential-model)
+- **Credentials (password, token, certificate, custom)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-credential-model)
 - **Cursors (streaming large result sets)** — [Cursors](../../../tentackle-persistence/src/main/docs/cursors.md), [PdoSelectList / PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md)
 - **Combo / choice boxes (prefix selection, deselect, short/long text)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#combo-and-choice-boxes), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#pdo-bound-components)
 - **CRUD and search dialogs (`PdoCrud`, `PdoSearch`, `PdoEvent`, dialog caching)** — [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#configuring-crud-and-search-dialogs)
@@ -157,6 +160,7 @@ topic-grouped listing of every document, see the
 - **Keychain (macOS), Credential Manager (Windows), Secret Service (Linux)** — [OS Credential Stores](../../../tentackle-keyring/src/main/docs/platform-keyring.md)
 - **Keyring (secrets on the client)** — [Keyring](../../../tentackle-core/src/main/docs/keyring.md), [OS Credential Stores](../../../tentackle-keyring/src/main/docs/platform-keyring.md), [Single Sign-On with Google](./google-sso.md)
 - **Keyboard handling (ENTER navigation, `Ctrl-Z`/`Ctrl-Y`, `F1`)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#keyboard-handling), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#pdo-bound-components) (`F2`/`F3`)
+- **KeyStorePasswordProvider (keystore password entered by the user)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#the-keystore-password), [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-two-secrets)
 
 ## L
 
@@ -185,6 +189,7 @@ topic-grouped listing of every document, see the
 - **ModuleLayer (isolated dependency versions)** — [Isolated Module Layers](../../../tentackle-common/src/main/docs/layers.md), [jlinkpackage.md](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md#isolated-module-layers)
 - **Module ordering / service precedence (`@ModuleOrdinal`, `@ClasspathFirst`)** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#ordering-and-overriding)
 - **Modules** — [Tentackle Modules](./modules.md)
+- **mTLS (mutual TLS)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#client-certificates), [TRIP](../../../tentackle-core/src/main/docs/trip.md#client-certificates-reach-the-application)
 - **Multi-tier deployment** — [Multi-Tier Cascade](./tiers.md)
 - **MySQL / MariaDB (backend peculiarities)** — [The MySQL and MariaDB Backends](../../../tentackle-sql/src/main/docs/mysql.md)
 
@@ -218,6 +223,7 @@ topic-grouped listing of every document, see the
 - **Parallel builds (`mvn -T`, thread-safe plugins and wurblets)** — [Tentackle Maven Support](../../../tentackle-maven-support/src/main/docs/tentackle-maven-support.md#parallel-builds), [Wurblets](../../../tentackle-wurblets/src/main/docs/wurblets.md#parallel-builds), [The Wurblet API](../../../tentackle-wurblets/src/main/docs/wurblet-api.md#thread-safety)
 - **Password input (`char[]`, `FxPasswordField`)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#secure-password-input)
 - **Passwords / credentials (storage, encryption)** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md), [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-credential-model), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
+- **PIN (second factor of a certificate login, `authenticationSecret`)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-two-secrets), [Backend Properties](../../../tentackle-session/src/main/docs/backend-properties.md)
 - **PKCE (authorization code flow with proof key)** — [Single Sign-On with Google](./google-sso.md)
 - **Permissions / grantees** — [Security](../../../tentackle-pdo/src/main/docs/security.md)
 - **Persistence layer** — [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md)

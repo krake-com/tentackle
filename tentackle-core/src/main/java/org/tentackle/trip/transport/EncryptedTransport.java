@@ -30,6 +30,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.URI;
+import java.security.cert.X509Certificate;
+import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Transport implementation for encrypted TCP.<br>
@@ -75,11 +78,13 @@ public class EncryptedTransport extends TcpTransport {
   }
 
   @Override
-  public Runnable createConnectionHandler(String connectionName, InputStream inputStream, OutputStream outputStream) {
+  public Runnable createConnectionHandler(String connectionName, InputStream inputStream, OutputStream outputStream,
+                                          Supplier<List<X509Certificate>> peerCertificates) {
     EncryptedChannel channel = createChannel(inputStream, outputStream, true);
     return super.createConnectionHandler(connectionName,
                                          createDecryptingInputStream(channel),
-                                         createEncryptingOutputStream(channel));
+                                         createEncryptingOutputStream(channel),
+                                         peerCertificates);
   }
 
 

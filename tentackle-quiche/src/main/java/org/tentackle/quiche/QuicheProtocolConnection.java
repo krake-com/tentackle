@@ -18,10 +18,12 @@
 
 package org.tentackle.quiche;
 
+import org.tentackle.io.SslParameters;
 import org.tentackle.log.Logger;
 import org.tentackle.quiche.engine.QuicheConnection;
 import org.tentackle.quiche.engine.QuicheStream;
 import org.tentackle.quiche.engine.StreamListener;
+import org.tentackle.trip.RejectionLog;
 import org.tentackle.trip.transport.MultiplexedConnectionGuard;
 
 import java.io.IOException;
@@ -82,13 +84,24 @@ class QuicheProtocolConnection implements StreamListener {
       if (connectionThreadPool == null) {
         throw new IllegalStateException("transport " + transport + " is not accepting connections (anymore)");
       }
-      MultiplexedConnectionGuard guard = guards.get(quicStream.getConnection());
+      QuicheConnection connection = quicStream.getConnection();
+      MultiplexedConnectionGuard guard = guards.get(connection);
       connectionThreadPool.execute(() -> {
         Runnable handler = null;
         try {
+          if (transport.getClientAuth() == SslParameters.ClientAuth.NEED && connection.getPeerCertificates().isEmpty()) {
+            // BoringSSL lets a client without a certificate pass the handshake. No reason phrase: it would tell
+            // the peer what it talks to.
+            if (RejectionLog.isLoggable()) {
+              LOGGER.warning("{0} refused: no client certificate", connection);
+            }
+            connection.closeGracefully(0, "");
+            return;
+          }
           String connectionName = quicStream.toString();
           handler = transport.createConnectionHandler(connectionName,
-                                                      quicStream.getInputStream(), quicStream.getOutputStream());
+                                                      quicStream.getInputStream(), quicStream.getOutputStream(),
+                                                      connection::getPeerCertificates);
           if (guard != null) {
             guard.streamOpened(handler);
           }

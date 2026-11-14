@@ -28,6 +28,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The default authentication manager.
@@ -106,6 +107,12 @@ public class DefaultAuthenticationManager implements AuthenticationManager {
 
   @Override
   public Authentication authenticate(Credentials credentials) {
+    return authenticate(credentials, AuthenticationContext.NONE);
+  }
+
+  @Override
+  public Authentication authenticate(Credentials credentials, AuthenticationContext context) {
+    Objects.requireNonNull(context, "missing authentication context");
     if (credentials == null) {
       throw new AuthenticationException("no credentials presented");
     }
@@ -115,7 +122,7 @@ public class DefaultAuthenticationManager implements AuthenticationManager {
 
     for (AuthenticationProvider provider: providers) {
       if (provider.supports(credentials)) {
-        authentication = provider.authenticate(credentials);   // may throw to veto the login
+        authentication = provider.authenticate(credentials, context);   // may throw to veto the login
         if (authentication != null) {
           authenticatingProvider = provider;
           break;

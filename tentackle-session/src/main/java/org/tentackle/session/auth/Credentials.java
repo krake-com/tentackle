@@ -30,8 +30,9 @@ import java.io.Serializable;
  * {@link AuthenticationProvider}s that {@link AuthenticationProvider#supports(Credentials) support}
  * them.
  * <p>
- * Tentackle ships {@link PasswordCredentials} (the traditional username/password login) and
- * {@link TokenCredentials} (bearer tokens, such as OAuth2 access tokens or OIDC ID tokens).
+ * Tentackle ships {@link PasswordCredentials} (the traditional username/password login),
+ * {@link TokenCredentials} (bearer tokens, such as OAuth2 access tokens or OIDC ID tokens) and
+ * {@link CertificateCredentials} (a login by the TLS client certificate, with an optional PIN).
  * Applications may add their own, as long as they are serializable and their package is opened
  * to {@code org.tentackle.core} for TRIP.
  * <p>

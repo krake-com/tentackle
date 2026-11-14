@@ -114,6 +114,29 @@ public class CredentialsTest {
   }
 
   @Test
+  public void testCertificateCredentialsClearTheSecret() {
+    CertificateCredentials credentials = new CertificateCredentials("1234".toCharArray());
+    Assert.assertEquals(credentials.getScheme(), CertificateCredentials.SCHEME);
+    Assert.assertTrue(credentials.isSecretSet());
+    Assert.assertFalse(credentials.toString().contains("1234"));
+
+    CertificateCredentials clone = credentials.clone();
+    credentials.clear();
+    Assert.assertFalse(credentials.isSecretSet());
+    Assert.assertNull(credentials.getSecret());
+    Assert.assertEquals(clone.getSecret(), "1234".toCharArray());
+
+    Assert.assertFalse(new CertificateCredentials().isSecretSet());
+  }
+
+  @Test
+  public void testCertificateCredentialsProviderIsRegistered() {
+    CredentialsProvider provider = CredentialsProvider.getInstance(CertificateCredentials.SCHEME);
+    Assert.assertTrue(provider instanceof CertificateCredentialsProvider);
+    Assert.assertTrue(provider.isInteractive());
+  }
+
+  @Test
   public void testPasswordCredentialsProviderIsRegistered() {
     Assert.assertTrue(CredentialsProvider.getInstance((String) null) instanceof PasswordCredentialsProvider);
     Assert.assertTrue(CredentialsProvider.getMethods().contains(PasswordCredentials.SCHEME));

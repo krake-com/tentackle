@@ -30,6 +30,9 @@ import org.tentackle.trip.transport.FastCompressedOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.security.cert.X509Certificate;
+import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Transport implementation for QUIC with compression, scheme {@value #PROTOCOL}.<br>
@@ -54,10 +57,12 @@ public class CompressedQuicTripTransport extends QuicTripTransport {
   }
 
   @Override
-  public Runnable createConnectionHandler(String connectionName, InputStream inputStream, OutputStream outputStream) {
+  public Runnable createConnectionHandler(String connectionName, InputStream inputStream, OutputStream outputStream,
+                                          Supplier<List<X509Certificate>> peerCertificates) {
     return super.createConnectionHandler(connectionName,
                                          createCompressedInputStream(inputStream),
-                                         createCompressedOutputStream(outputStream));
+                                         createCompressedOutputStream(outputStream),
+                                         peerCertificates);
   }
 
   @Override

@@ -39,6 +39,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.net.URI;
+import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -49,6 +51,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 /**
  * Base class for transport implementations.
@@ -251,8 +254,9 @@ public abstract class AbstractTransport implements Transport {
   }
 
   @Override
-  public Runnable createConnectionHandler(String connectionName, InputStream inputStream, OutputStream outputStream) {
-    return new ConnectionHandler(this, connectionName, inputStream, outputStream);
+  public Runnable createConnectionHandler(String connectionName, InputStream inputStream, OutputStream outputStream,
+                                          Supplier<List<X509Certificate>> peerCertificates) {
+    return new ConnectionHandler(this, connectionName, inputStream, outputStream, peerCertificates);
   }
 
   @Override

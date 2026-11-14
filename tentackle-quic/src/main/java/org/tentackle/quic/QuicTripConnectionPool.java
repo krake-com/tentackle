@@ -38,10 +38,13 @@ import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.net.URI;
 import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -106,9 +109,11 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
   private final int keepAliveSeconds;
   private final int connectTimeoutSeconds;
   private final int streamTimeoutSeconds;
-  private final X509TrustManager trustManager;    // checks the server certificate, null if certcheck is disabled
-  private final List<NamedGroup> namedGroups;     // the key-exchange groups to offer, null for the KWIK default
-  private final boolean hostCheck;                // true if the server's host name is verified (if certcheck)
+  private final X509TrustManager trustManager;      // checks the server certificate, null if certcheck is disabled
+  private final List<NamedGroup> namedGroups;       // the key-exchange groups to offer, null for the KWIK default
+  private final boolean hostCheck;                  // true if the server's host name is verified (if certcheck)
+  private final X509Certificate clientCertificate;  // the certificate presented to the server, null if none
+  private final PrivateKey clientKey;               // the private key of the client certificate, null if none
   private QuicClientConnection connection;
 
   /**
@@ -158,6 +163,33 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     SslParameters sslParameters = new SslParameters(uri);
     namedGroups = toNamedGroups(sslParameters.getNamedGroups(), uri);
     hostCheck = sslParameters.isHostCheck();
+    KeyStore keyStore = sslParameters.getKeyStore();
+    if (keyStore != null) {
+      // like the TCP transports, the client presents its certificate if the server asks for one
+      String alias = sslParameters.getCertificateAlias();
+      if (alias == null) {
+        throw new TripRuntimeException(
+          "the client keystore holds more than one key: the certificate-alias (ksalias) must be specified");
+      }
+      char[] password = sslParameters.getKeyPassword();
+      try {
+        clientCertificate = (X509Certificate) keyStore.getCertificate(alias);
+        clientKey = (PrivateKey) keyStore.getKey(alias, password);
+      }
+      catch (GeneralSecurityException | ClassCastException e) {
+        throw new TripRuntimeException("cannot load the client certificate '" + alias + "' for " +
+                                       UriHelper.uriToSafeString(uri), e);
+      }
+      finally {
+        if (password != null) {
+          Arrays.fill(password, ' ');
+        }
+      }
+    }
+    else {
+      clientCertificate = null;
+      clientKey = null;
+    }
 
     connect();
   }
@@ -427,6 +459,10 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     if (namedGroups != null) {
       // KWIK sends a key share for the first group and falls back to a HelloRetryRequest for the others
       builder.supportedGroups(namedGroups);
+    }
+    if (clientCertificate != null && clientKey != null) {
+      builder.clientCertificate(clientCertificate)
+             .clientCertificateKey(clientKey);
     }
     QuicClientConnection quicConnection = builder.build();
     try {

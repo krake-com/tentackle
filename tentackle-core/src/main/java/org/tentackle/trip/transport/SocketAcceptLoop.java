@@ -21,13 +21,20 @@ package org.tentackle.trip.transport;
 import org.tentackle.log.Logger;
 import org.tentackle.trip.Transport;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Supplier;
 
 /**
  * The server socket accept-loop for incoming TCP connections.
@@ -82,6 +89,38 @@ public class SocketAcceptLoop implements Runnable {
   }
 
   /**
+   * Creates the supplier of the peer certificates of an accepted socket.
+   * <p>
+   * The TLS handshake of an {@link SSLSocket} takes place on the first read, which is done by the
+   * connection handler. Hence, the certificates are determined only when the handler asks for them.
+   * A client that presented no certificate (client authentication {@code want}) yields an empty list.
+   * With {@code need}, it would not have passed the handshake.
+   *
+   * @param socket the accepted socket
+   * @return the supplier of the verified certificate chain, leaf first
+   */
+  public static Supplier<List<X509Certificate>> peerCertificates(Socket socket) {
+    if (socket instanceof SSLSocket sslSocket) {
+      return () -> {
+        try {
+          List<X509Certificate> certificates = new ArrayList<>();
+          for (Certificate certificate : sslSocket.getSession().getPeerCertificates()) {
+            if (certificate instanceof X509Certificate x509Certificate) {
+              certificates.add(x509Certificate);
+            }
+          }
+          return certificates;
+        }
+        catch (SSLPeerUnverifiedException ex) {
+          return List.of();     // no client certificate
+        }
+      };
+    }
+    return List::of;
+  }
+
+
+  /**
    * Accepts connections from the server socket and executes connection handlers.
    *
    * @param connectionThreadPool the thread pool for connection handlers
@@ -101,7 +140,8 @@ public class SocketAcceptLoop implements Runnable {
               }
               SocketAddress remoteSocketAddress = sock.getRemoteSocketAddress();
               String connectionName = remoteSocketAddress != null ? remoteSocketAddress.toString() : "0.0.0.0";
-              transport.createConnectionHandler(connectionName, sock.getInputStream(), sock.getOutputStream()).run();
+              transport.createConnectionHandler(connectionName, sock.getInputStream(), sock.getOutputStream(),
+                                                peerCertificates(sock)).run();
             }
             catch (Exception e) {
               LOGGER.warning("cannot handle connection: " + sock, e);
@@ -159,7 +199,6 @@ public class SocketAcceptLoop implements Runnable {
       }
     }
   }
-
 
   /**
    * Closes the given socket, ignoring any exceptions.

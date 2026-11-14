@@ -124,6 +124,7 @@ public class QuicheTripTransport extends AbstractTransport {
   private QuicheServer server;              // the accept policy of that endpoint
   private QuicheConfig serverConfig;        // outlives every connection created from it
   private volatile boolean accepting;       // volatile: isAccepting() is not synchronized
+  private volatile SslParameters.ClientAuth clientAuth = SslParameters.ClientAuth.NONE;   // the client-certificate policy
   private boolean closing;                  // true once close() was invoked
 
   /**
@@ -135,6 +136,14 @@ public class QuicheTripTransport extends AbstractTransport {
     super(uri);
   }
 
+  /**
+   * Gets the client-certificate policy of the accepting transport.
+   *
+   * @return the policy, {@link SslParameters.ClientAuth#NONE} if not accepting or no certificates are requested
+   */
+  public SslParameters.ClientAuth getClientAuth() {
+    return clientAuth;
+  }
 
   @Override
   public synchronized void accept() {
@@ -174,10 +183,34 @@ public class QuicheTripTransport extends AbstractTransport {
     boolean started = false;
     try {
       // validates the URI parameters, before the private key leaves the keystore
-      config = createConfig(alpnId)
-                 // a Tentackle server does not ask its clients for a certificate; they authenticate
-                 // through TRIP once the connection stands
-                 .verifyPeer(false);
+      config = createConfig(alpnId);
+
+      /*
+       * By default, a Tentackle server does not ask its clients for a certificate: they authenticate
+       * through TRIP once the connection stands. With clientauth=want|need it does, and BoringSSL verifies
+       * the certificate against the truststore (tsfile), or the JVM's default CAs, just like the TCP transports.
+       * BoringSSL accepts a client without a certificate even if verifying the peer, i.e., it always behaves
+       * like "want". "need" is therefore enforced when the client opens a stream, see QuicheProtocolConnection.
+       */
+      SslParameters.ClientAuth policy = sslParameters.getClientAuth();
+      if (policy == SslParameters.ClientAuth.NONE) {
+        config.verifyPeer(false);
+      }
+      else {
+        KeyStore trustStore = QuicheTripConnectionPool.trustStore(sslParameters);
+        if (trustStore == null) {
+          throw new TripRuntimeException("no CAs to verify the client certificates against (tsfile) in " +
+                                         UriHelper.uriToSafeString(uri));
+        }
+        config.verifyPeer(true);
+        Path trusted = PemExporter.writeTrustedCertificates(trustStore);
+        try {
+          config.loadVerifyLocations(trusted);
+        }
+        finally {
+          PemExporter.delete(trusted);    // read by quiche right away
+        }
+      }
 
       // quiche takes PEM file paths, not a KeyStore, so the entry has to be exported. Quiche reads the
       // files right away, so they are deleted as soon as they are loaded.
@@ -204,6 +237,7 @@ public class QuicheTripTransport extends AbstractTransport {
       newEndpoint.setServer(newServer);
 
       serverConfig = config;
+      clientAuth = policy;
       endpoint = newEndpoint;
       server = newServer;
       accepting = true;

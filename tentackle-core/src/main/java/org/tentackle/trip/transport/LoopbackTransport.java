@@ -27,6 +27,9 @@ import org.tentackle.trip.remote.RemoteCall;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.security.cert.X509Certificate;
+import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Loopback transport for testing purposes.
@@ -77,7 +80,8 @@ public class LoopbackTransport extends AbstractTransport {
   }
 
   @Override
-  public Runnable createConnectionHandler(String connectionName, InputStream inputStream, OutputStream outputStream) {
+  public Runnable createConnectionHandler(String connectionName, InputStream inputStream, OutputStream outputStream,
+                                          Supplier<List<X509Certificate>> peerCertificates) {
     return new LoopbackConnectionHandler(this, connectionName, inputStream, outputStream);
   }
 

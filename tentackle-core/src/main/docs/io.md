@@ -106,7 +106,11 @@ verification).
 Constructed without arguments they behave as plain TCP factories; constructed with an
 [`SslParameters`](../java/org/tentackle/io/SslParameters.java) they build an `SSLContext` and produce
 configured `SSLSocket`/`SSLServerSocket`s. Client certificates are supported by simply providing a
-keystore (and optionally an alias) on the client side.
+keystore (and optionally an alias) on the client side. The server requests them with `clientauth`, and
+the TRIP transports hand the verified chain on to the application (see
+[TRIP](trip.md#client-certificates-reach-the-application)). A keystore password that is not configured is
+taken from the [`KeyStorePasswordProvider`](../java/org/tentackle/io/KeyStorePasswordProvider.java), so that
+the user can enter it instead.
 
 [`SslParameters`](../java/org/tentackle/io/SslParameters.java) resolves each configuration value from
 the transport URI's query string, falling back to a `tentackle.ssl.<name>` system property and then,

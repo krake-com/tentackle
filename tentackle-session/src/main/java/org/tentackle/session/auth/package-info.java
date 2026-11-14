@@ -28,6 +28,11 @@
  * {@link org.tentackle.session.auth.UserResolver} maps the proven identity onto the application's
  * user entity.
  * <p>
+ * Along with the credentials, the providers receive the {@link org.tentackle.session.auth.AuthenticationContext}:
+ * what the server itself knows about the client, such as the client certificate verified by a mutually
+ * authenticated TLS connection. A client can thus log in by its certificate, see
+ * {@link org.tentackle.session.auth.CertificateCredentials}.
+ * <p>
  * Authentication answers "who is this?"; authorization — Tentackle's {@code SecurityManager},
  * permissions, and rules — answers "what may they do?" and lives in {@code tentackle-pdo}.
  */

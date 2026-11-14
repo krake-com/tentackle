@@ -182,6 +182,45 @@ trips://0.0.0.0:18000/myapp?ksfile=server.p12&kspass=secret&ksalias=server&tsfil
 Client certificates are supported symmetrically: a client presents one by providing `ksfile`
 (and, to pick a specific one, `ksalias`).
 
+#### Client certificates reach the application
+
+The server's truststore (`tsfile`) holds the CAs whose client certificates it accepts. Always
+configure one when requesting client certificates: without it, the JSSE default trust store
+applies, and any certificate issued by a public CA would pass the handshake.
+
+The chain the TLS handshake verified is not lost after the handshake. Each server connection hands it
+to its [`TransportClientInfo`](../java/org/tentackle/trip/transport/TransportClientInfo.java)
+(`peerCertificates()`, leaf first, empty if the client presented none), which a remote method reads via
+`TransportClientInfo.get()`. Unlike anything the client sends through TRIP, the certificate is proven by
+the handshake, so it can authenticate the client: the application server passes it to the
+authentication providers in the `AuthenticationContext`. See
+[Authentication](../../../../tentackle-session/src/main/docs/authentication.md#client-certificates).
+
+The connection handler asks for the certificates only after it has read the connection request.
+The TLS handshake of a TCP connection runs on the first read, so it is still subject to the
+pre-authentication policy and the rejection delay, like any other step of the connection setup.
+
+With `clientauth=want`, a client without a certificate is admitted, and the list is empty. With
+`clientauth=need`, it fails the handshake. The QUIC transports differ:
+
+- `tripj`/`tripcj` (quiche) support both policies. quiche only provides the peer's own certificate,
+  not its intermediate CAs, so the list holds the leaf only. BoringSSL lets a client without a
+  certificate pass the handshake even when the server verifies its peer, so `need` is enforced when the
+  client opens its first stream: the QUIC connection is closed.
+- `tripq`/`tripcq` (KWIK) cannot request a client certificate. A server with `clientauth=need` refuses
+  to start, rather than silently admitting everybody, and `want` is ignored with a warning. A KWIK
+  *client* does present its certificate, for example to a quiche server.
+
+#### The keystore password
+
+A client that authenticates by its certificate should not have its keystore password in
+`backend.properties`, where anybody who can read the file can use the key. If `kspass` (and `kmpass`) is
+left out, `SslParameters` takes the password from the
+[`KeyStorePasswordProvider`](../java/org/tentackle/io/KeyStorePasswordProvider.java), where the client
+registers what the user entered before the connection is established. The `certificate` login method does
+that automatically. A configured password always wins. With nothing registered, the keystore is loaded
+without a password, as before.
+
 #### Post-quantum key exchange
 
 Since Java 27 ([JEP 527](https://openjdk.org/jeps/527)), TLS 1.3 negotiates the hybrid post-quantum

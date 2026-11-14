@@ -48,6 +48,7 @@ import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 
@@ -190,6 +191,7 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
       else {
         newConfig.verifyPeer(false);
       }
+      loadClientCertificate(newConfig, sslParameters);
     }
     catch (RuntimeException e) {
       newConfig.close();
@@ -448,6 +450,51 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
     }
     // derived: no idle timeout at all (quicidle=0) means there is nothing to keep alive
     return Math.min(Math.max(idleMillis / 3, MIN_KEEP_ALIVE_MILLIS), idleMillis / 2);
+  }
+
+  /**
+   * Loads the client certificate, if a keystore is configured.<br>
+   * The client presents it if the server asks for one ({@code clientauth=want|need}), so that the server can
+   * authenticate the client by its certificate. Like the TCP transports, the certificate is selected by
+   * {@code ksalias}, or is the only key entry of the keystore. The keystore password may be provided by the
+   * {@link org.tentackle.io.KeyStorePasswordProvider}.
+   *
+   * @param config the client configuration
+   * @param sslParameters the SSL parameters
+   */
+  static void loadClientCertificate(QuicheConfig config, SslParameters sslParameters) {
+    KeyStore keyStore = sslParameters.getKeyStore();
+    if (keyStore == null) {
+      return;     // no client certificate
+    }
+    String alias = sslParameters.getCertificateAlias();
+    if (alias == null) {
+      throw new TripRuntimeException("the client keystore holds more than one key: the certificate-alias (ksalias) must be specified");
+    }
+    // quiche takes PEM file paths, not a KeyStore. It reads them right away, so they are deleted as soon as loaded.
+    Path certificateChain = PemExporter.writeCertificateChain(keyStore, alias);
+    try {
+      config.loadCertChain(certificateChain);
+    }
+    finally {
+      PemExporter.delete(certificateChain);
+    }
+    char[] password = sslParameters.getKeyPassword();
+    Path privateKey;
+    try {
+      privateKey = PemExporter.writePrivateKey(keyStore, alias, password);
+    }
+    finally {
+      if (password != null) {
+        Arrays.fill(password, ' ');
+      }
+    }
+    try {
+      config.loadPrivateKey(privateKey);
+    }
+    finally {
+      PemExporter.delete(privateKey);
+    }
   }
 
   /**
