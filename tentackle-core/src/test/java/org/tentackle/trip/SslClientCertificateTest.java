@@ -52,7 +52,7 @@ import static org.testng.Assert.expectThrows;
  * {@link TransportClientInfo}, and that the keystore password can be provided by the
  * {@link KeyStorePasswordProvider} instead of the configuration.
  */
-@SuppressWarnings("missing-explicit-ctor")
+@SuppressWarnings({ "missing-explicit-ctor", "exports" })
 public class SslClientCertificateTest {
 
   private static final String STORE_PASSWORD = "secret";
