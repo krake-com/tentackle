@@ -101,6 +101,7 @@ nav:
       - Tentackle Session: session.md
       - Authentication — Credentials, Providers, SSO: authentication.md
       - Single Sign-On with Google: google-sso.md
+      - Client Certificate Login: client-certificate-login.md
       - Table Names — Schemas & Prefixes: table-names.md
       - Modification Tracking: modification-tracking.md
       - Backend Properties: backend-properties.md

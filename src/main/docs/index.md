@@ -7,7 +7,7 @@ topic-grouped listing of every document, see the
 
 ## A
 
-- **Address validation (QUIC retry tokens)** — [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md#server-side)
+- **Address validation (QUIC retry tokens)** — [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md#server-side), [Client Certificate Login](./client-certificate-login.md)
 - **Aggregates** — [PDO](../../../tentackle-pdo/src/main/docs/pdo.md), [rootId / rootClassId Columns](../../../tentackle-pdo/src/main/docs/root-columns.md)
 - **AI agents / coding agents (MCP, batch modes, skills)** — [AI Agent Tooling Support](./ai-agents.md), [MCP Maven Plugin](../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md), [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md)
 - **Application bootstrap / lifecycle** — [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md), [Multi-Tier Cascade](./tiers.md)
@@ -40,7 +40,8 @@ topic-grouped listing of every document, see the
 - **Cache / caching** — [PDO Caching](../../../tentackle-pdo/src/main/docs/cache.md), [Multi-Tier Cascade](./tiers.md)
 - **Cache preloading (`@PreloadCache`)** — [PDO Caching](../../../tentackle-pdo/src/main/docs/cache.md#preloading-caches-at-startup-preloadcache), [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md)
 - **Canonical construction (`@CanonicalConstructor`, builders)** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md), [TRIP](../../../tentackle-core/src/main/docs/trip.md)
-- **CertificateCredentials / certificate login** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#client-certificates)
+- **CertificateCredentials / certificate login** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#client-certificates), [Client Certificate Login](./client-certificate-login.md)
+- **Certificate authority (CA), keystores and truststores for client certificates** — [Client Certificate Login](./client-certificate-login.md)
 - **Class variables (per-class persistence metadata)** — [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md#class-variables), [Persistence Wurblets](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md)
 - **ClassMapper / class mapping** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md), [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md)
 - **Client certificates (mutual TLS, `clientauth`, certificate login)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#client-certificates), [TRIP](../../../tentackle-core/src/main/docs/trip.md#client-certificates-reach-the-application), [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md#server-side)
@@ -189,7 +190,7 @@ topic-grouped listing of every document, see the
 - **ModuleLayer (isolated dependency versions)** — [Isolated Module Layers](../../../tentackle-common/src/main/docs/layers.md), [jlinkpackage.md](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md#isolated-module-layers)
 - **Module ordering / service precedence (`@ModuleOrdinal`, `@ClasspathFirst`)** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#ordering-and-overriding)
 - **Modules** — [Tentackle Modules](./modules.md)
-- **mTLS (mutual TLS)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#client-certificates), [TRIP](../../../tentackle-core/src/main/docs/trip.md#client-certificates-reach-the-application)
+- **mTLS (mutual TLS)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#client-certificates), [TRIP](../../../tentackle-core/src/main/docs/trip.md#client-certificates-reach-the-application), [Client Certificate Login](./client-certificate-login.md)
 - **Multi-tier deployment** — [Multi-Tier Cascade](./tiers.md)
 - **MySQL / MariaDB (backend peculiarities)** — [The MySQL and MariaDB Backends](../../../tentackle-sql/src/main/docs/mysql.md)
 
