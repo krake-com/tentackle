@@ -29,7 +29,8 @@
 
   <properties>
     <rootBasedir>${symbol_dollar}{project.parent.basedir}</rootBasedir>
-    <cert.dname>cn=${symbol_dollar}{serverHost}, ou=${application}, o=Example, c=US</cert.dname>
+    <!-- every TLS client sees the subject, also one that never logs in: keep the application name out of it -->
+    <cert.dname>cn=${symbol_dollar}{serverHost}</cert.dname>
     <cert.password>didoedeldu</cert.password>
     <cert.dir>${symbol_dollar}{project.build.directory}/pkcs12</cert.dir>
     <cert.file>${symbol_dollar}{project.parent.basedir}/server/target/server.cer</cert.file>

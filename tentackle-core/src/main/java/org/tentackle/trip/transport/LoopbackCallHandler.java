@@ -56,6 +56,18 @@ public class LoopbackCallHandler extends CallHandler {
     return false;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The loopback client waits for an answer.
+   *
+   * @return false
+   */
+  @Override
+  protected boolean isErrorSuppressed() {
+    return false;
+  }
+
   @Override
   public void finalizeResponse() {
     super.finalizeResponse();

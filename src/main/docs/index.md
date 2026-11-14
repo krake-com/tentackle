@@ -100,6 +100,7 @@ topic-grouped listing of every document, see the
 
 - **FFM API (native bindings)** — [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md), [OS Credential Stores](../../../tentackle-keyring/src/main/docs/platform-keyring.md)
 - **Final fields / JEP-500 (deserialization)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#final-fields-jep-500), [Reflection](../../../tentackle-core/src/main/docs/reflect.md#canonical-construction)
+- **Fingerprinting (hiding a TRIP server from probes)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#fingerprinting)
 - **Fetch size / `FetchList` (fetching cursor rows in blocks)** — [Cursors](../../../tentackle-persistence/src/main/docs/cursors.md#fetching-in-blocks-fetch)
 - **Filtering (column autofilter in table headers)** — [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md#column-filters-autofilter)
 - **Firebird (backend peculiarities)** — [The Firebird Backend](../../../tentackle-sql/src/main/docs/firebird.md)
@@ -231,6 +232,7 @@ topic-grouped listing of every document, see the
 - **Preloading remote delegates (`@PreloadRemoteDelegate`)** — [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#preloading-remote-delegates), [TRIP](../../../tentackle-core/src/main/docs/trip.md#returning-several-remote-objects-at-once)
 - **Pre-/post-commit methods (`@PreCommit`, `@PostCommit`)** — [Interceptors](../../../tentackle-core/src/main/docs/interceptors.md#precommit-and-postcommit--deferred-until-the-commit), [Transactions](../../../tentackle-pdo/src/main/docs/transaction.md)
 - **Pre-authentication policy (`@TripPreAuth`, unauthenticated clients, `preauth`)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#unauthenticated-peers), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#before-the-login), [Tentackle Update](../../../tentackle-update/src/main/docs/update.md#serverupdateutilities--registering-the-service)
+- **PSK encryption (`tripe`/`tripce`, `EncryptedChannel`, `Cryptor.deriveKey`)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#psk-encryption), [I/O and Networking](../../../tentackle-core/src/main/docs/io.md#encryption)
 - **PDO-bound components (`F2`/`F3`, drag and drop, self-loading combo boxes)** — [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#pdo-bound-components)
 - **Placeholders in property values (`@{name?default}`, `${…}`)** — [Backend Properties](../../../tentackle-session/src/main/docs/backend-properties.md#overview-and-motivation), [Tentackle Common](../../../tentackle-common/src/main/docs/common.md#helper-utilities)
 
@@ -246,6 +248,7 @@ topic-grouped listing of every document, see the
 - **Reflection (proxies, class mapping, helpers)** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md), [Interceptors](../../../tentackle-core/src/main/docs/interceptors.md)
 - **Relations (object, list, reversed, N:M)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [PdoSelectList / PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md), [Eager Relations](../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md)
 - **Reconnection (dead resources, policies)** — [I/O and Networking](../../../tentackle-core/src/main/docs/io.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md)
+- **Rejection delay (`RejectionDelay`, uniform response time of rejections)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#delayed-rejection)
 - **`@RecordDTO` (generating DTOs from records)** — [The DTO Wurblet and `@RecordDTO`](../../../tentackle-wurblets/src/main/docs/dto-wurblet.md)
 - **Remote delegates (naming, lookup, preloading)** — [Naming Rules](../../../tentackle-common/src/main/docs/naming-rules.md), [Multi-Tier Cascade](./tiers.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#preloading-remote-delegates)
 - **Remoting** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md), [QUIC on quiche](../../../tentackle-quiche/src/main/docs/quiche.md), [vs. REST, RMI and Spring Remoting](./remoting-comparison.md)

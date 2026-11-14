@@ -124,8 +124,8 @@ public class ConnectionHandler implements Runnable {
    * Handles the new connection.
    * <ul>
    *   <li>reads the connection request: the TRIP magic followed by the UUID of the client's transport
-   *   and whether the client's dictionary is still empty. An invalid magic closes the connection
-   *   after the {@link RejectionDelay}.</li>
+   *   and whether the client's dictionary is still empty. An invalid magic, a stale dictionary or any other
+   *   failure of the handshake closes the connection after the {@link RejectionDelay}.</li>
    *   <li>the UUID is used to determine the dictionary and a TRIP stream is created</li>
    *   <li>reads the remote calls from the stream and dispatches them to the call handler thread pool.</li>
    * </ul>
@@ -183,6 +183,16 @@ public class ConnectionHandler implements Runnable {
   }
 
   /**
+   * Returns whether rejections are delayed by the {@link RejectionDelay}.<br>
+   * A peer must not tell from the response time why it was rejected, or whether it talks to a TRIP server at all.
+   *
+   * @return true if delayed (default)
+   */
+  protected boolean isRejectionDelayed() {
+    return true;
+  }
+
+  /**
    * Checks whether the connection is still alive.
    *
    * @return true if the connection is still alive, false to terminate the handler
@@ -225,15 +235,18 @@ public class ConnectionHandler implements Runnable {
   private void handleConnection(PreAuthenticationPolicy policy, PreAuthenticationPolicy.Admission admission) {
     UUID id;
     TripStream stream;
+    long started = System.nanoTime();
     try {
-      long started = System.nanoTime();
-      int versionSkew = readMagic();
+      // The magic and the UUID are read as one block, so that the server does not decide after the
+      // first two bytes: that would tell a prober the length of the magic.
+      byte[] preamble = readPreamble();
+      int versionSkew = getVersionSkew(preamble);
       if (versionSkew < 0) {
         // Not a TRIP client, or someone guessing the magic: close as late as a failed login,
         // so that the response time tells nothing. Don't log what was received: anybody can send garbage.
         LOGGER.warning("connection {0} sent an invalid magic -> closed",
                        new TransportClientInfo(transport, null, connectionName, null));
-        RejectionDelay.await(started);
+        reject(started);
         return;
       }
       if (versionSkew != 0) {
@@ -242,7 +255,7 @@ public class ConnectionHandler implements Runnable {
         LOGGER.warning("client connection {0} uses an outdated version of TRIP, version skew = {1}",
                        new TransportClientInfo(transport, null, connectionName, null), versionSkew);
       }
-      id = readUUID();
+      id = getUUID(preamble);
       boolean clientDictionaryEmpty = true;
       if (versionSkew == 0) {
         clientDictionaryEmpty = readDictionaryFlag();
@@ -250,11 +263,13 @@ public class ConnectionHandler implements Runnable {
       stream = createStream(id, clientDictionaryEmpty);
     }
     catch (TripRuntimeException e) {
-      // SSL handshake exception, peer closed, stale client transport, etc...
-      // -> just log the messages, no stacktrace: anybody can open a connection and send garbage
+      // SSL handshake exception, peer closed, stale client transport, decryption failed, etc...
+      // -> just log the messages, no stacktrace: anybody can open a connection and send garbage.
+      // Close as late as an invalid magic: an immediate close of a stale client would confirm the magic.
       LOGGER.warning("connection {0} aborted: {1}",
                      new TransportClientInfo(transport, null, connectionName, null),
                      ExceptionHelper.concatenateMessages(e));
+      reject(started);
       return;
     }
     clientInfo = new TransportClientInfo(transport, stream.getDictionary(), connectionName, id);
@@ -321,6 +336,7 @@ public class ConnectionHandler implements Runnable {
           if (policy.isEnforcing()) {
             LOGGER.warning("unauthenticated connection {0} sent an error ({1} characters) -> closed",
                            clientInfo, e.getMessage() == null ? 0 : e.getMessage().length());
+            reject(System.nanoTime());
             break;
           }
           policy.violation("error sent by the client");
@@ -330,6 +346,13 @@ public class ConnectionHandler implements Runnable {
       }
       catch (TripStreamClosedException ce) {
         closedByClient = !evicted;
+        if (ce.getCause() != null && !clientInfo.isAuthenticated()) {
+          // not the end of the stream, but a broken one, such as a packet that failed to decrypt:
+          // close as late as any other rejection
+          LOGGER.warning("unauthenticated connection {0} failed: {1}", clientInfo, ce.getCause().getMessage());
+          closedByClient = false;
+          reject(System.nanoTime());
+        }
         break;
       }
       catch (ExecutionException xe) {
@@ -341,13 +364,21 @@ public class ConnectionHandler implements Runnable {
           // the call handler did not answer: close the connection as late as a failed login.
           // The delay runs in this virtual thread, not in the platform thread of the call handler.
           LOGGER.warning("unauthenticated connection {0} rejected: {1}", clientInfo, rx.getMessage());
-          RejectionDelay.await(callReceived);
+          reject(callReceived);
           break;
         }
         if (xe.getCause() instanceof TripPolicyViolationException pv) {
-          // the call handler already answered the call
+          // the call handler did not answer
           LOGGER.warning("unauthenticated connection {0} violates the pre-authentication policy: {1}",
                          clientInfo, pv.getMessage());
+          reject(callReceived);
+          break;
+        }
+        if (isErrorSuppressed(policy, admission)) {
+          // the error message would tell the client that it talks to a TRIP server
+          LOGGER.warning("processing the call of unauthenticated connection {0} failed -> closed: {1}",
+                         clientInfo, ExceptionHelper.concatenateMessages(xe.getCause()));
+          reject(callReceived);
           break;
         }
         try {
@@ -363,11 +394,25 @@ public class ConnectionHandler implements Runnable {
         // deserializing the remote call failed
         TripPolicyViolationException pv = ExceptionHelper.extractException(TripPolicyViolationException.class, true, t);
         if (pv != null) {
-          // no stacktrace: the client could flood the log otherwise
+          // no stacktrace: the client could flood the log otherwise.
+          // No answer either: the error would tell the client that it talks to a TRIP server.
           LOGGER.warning("unauthenticated connection {0} violates the pre-authentication policy: {1}",
                          clientInfo, pv.getMessage());
-          stream.clearModifiable();
-          stream.sendError(DefaultOpCode.SERVER_DESERIALIZATION_ERROR, pv);
+          if (isErrorSuppressed(policy, admission)) {
+            reject(System.nanoTime());
+          }
+          else {
+            stream.clearModifiable();
+            stream.sendError(DefaultOpCode.SERVER_DESERIALIZATION_ERROR, pv);
+          }
+          break;
+        }
+        if (isErrorSuppressed(policy, admission)) {
+          // garbage after a valid handshake: no stacktrace, no answer, and not the message, which may contain
+          // names chosen by the client
+          LOGGER.warning("unauthenticated connection {0} sent an undecodable message ({1}) -> closed",
+                         clientInfo, t.getClass().getName());
+          reject(System.nanoTime());
           break;
         }
         if (tripType == null) {
@@ -416,27 +461,73 @@ public class ConnectionHandler implements Runnable {
   }
 
   /**
-   * Reads the magic number and derives the version-skew.
+   * Returns whether errors are not answered.<br>
+   * As long as the client is not authenticated by an enforcing policy, the server sends nothing but
+   * the responses of successful calls. An error message would tell a prober that it talks to a TRIP server.
    *
-   * @return the version-skew, 0 if the client is using the current version, -1 if the magic is invalid
+   * @param policy the pre-authentication policy, null if none
+   * @param admission the admission, null if none or authenticated
+   * @return true if errors are not answered
    */
-  private int readMagic() {
+  protected boolean isErrorSuppressed(PreAuthenticationPolicy policy, PreAuthenticationPolicy.Admission admission) {
+    return admission != null && policy.isEnforcing();
+  }
+
+  /**
+   * Waits for the rejection delay before the connection is closed.<br>
+   * Returns at once if the policy evicted the connection, since its streams are already closed.
+   *
+   * @param startedNanos the {@link System#nanoTime()} when the rejected request started
+   */
+  private void reject(long startedNanos) {
+    if (isRejectionDelayed() && !evicted) {
+      RejectionDelay.await(startedNanos);
+    }
+  }
+
+  /**
+   * Reads the magic number followed by the UUID of the client's transport.
+   *
+   * @return the 18 bytes of the preamble without the dictionary flag
+   */
+  private byte[] readPreamble() {
     try {
-      byte[] magic = inputStream.readNBytes(2);
-      if (magic.length != 2) {
-        throw new TripStreamClosedException("end of stream while reading magic");
+      byte[] preamble = inputStream.readNBytes(TripConstants.MAGIC.length + 16);
+      if (preamble.length != TripConstants.MAGIC.length + 16) {
+        throw new TripStreamClosedException("end of stream while reading the connection request");
       }
-      if (magic[0] == TripConstants.MAGIC[0] && magic[1] == TripConstants.MAGIC[1]) {
-        return 0;   // current version
-      }
-      else if (magic[0] == TripConstants.MAGIC_1[0] && magic[1] == TripConstants.MAGIC_1[1]) {
-        return 1;  // one version behind w/o the dictionary flag
-      }
-      return -1;
+      return preamble;
     }
     catch (IOException e) {
-      throw new TripRuntimeException("reading magic failed", e);
+      throw new TripRuntimeException("reading the connection request failed", e);
     }
+  }
+
+  /**
+   * Derives the version-skew from the magic number.
+   *
+   * @param preamble the preamble
+   * @return the version-skew, 0 if the client is using the current version, -1 if the magic is invalid
+   */
+  private int getVersionSkew(byte[] preamble) {
+    if (preamble[0] == TripConstants.MAGIC[0] && preamble[1] == TripConstants.MAGIC[1]) {
+      return 0;   // current version
+    }
+    if (preamble[0] == TripConstants.MAGIC_1[0] && preamble[1] == TripConstants.MAGIC_1[1]) {
+      return 1;  // one version behind w/o the dictionary flag
+    }
+    return -1;
+  }
+
+  /**
+   * Gets the UUID of the client's transport from the preamble.
+   *
+   * @param preamble the preamble
+   * @return the UUID of the client's transport
+   */
+  private UUID getUUID(byte[] preamble) {
+    ByteBuffer bb = ByteBuffer.wrap(preamble, TripConstants.MAGIC.length, 16);
+    return new UUID(bb.getLong(), bb.getLong());
   }
 
   /**
@@ -454,27 +545,6 @@ public class ConnectionHandler implements Runnable {
     }
     catch (IOException e) {
       throw new TripRuntimeException("reading the dictionary flag failed", e);
-    }
-  }
-
-  /**
-   * Reads the UUID of the client's transport.
-   *
-   * @return the UUID of the client's transport
-   */
-  private UUID readUUID() {
-    try {
-      byte[] uuidBytes = inputStream.readNBytes(16);
-      if (uuidBytes.length != 16) {
-        throw new TripStreamClosedException("end of stream while reading UUID");
-      }
-      ByteBuffer bb = ByteBuffer.wrap(uuidBytes);
-      long firstLong = bb.getLong();
-      long secondLong = bb.getLong();
-      return new UUID(firstLong, secondLong);
-    }
-    catch (IOException e) {
-      throw new TripRuntimeException("reading UUID failed", e);
     }
   }
 

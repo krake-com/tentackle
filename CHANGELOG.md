@@ -49,6 +49,9 @@ requires Java 11.
   regular thread of the call pool: a remote method answered late invokes `RejectionDelay.defer`.
   DefaultPreAuthenticationPolicy.idleTimeout` (default 30 s) closes an unauthenticated connection that sends
   no further message after a call.
+- `Cryptor.deriveKey` derives independent AES keys from the cryptor's key via HKDF-SHA256.
+- TRIP: a section on [fingerprinting](tentackle-core/src/main/docs/trip.md#fingerprinting) describes what a peer
+  that can't log in may still learn about a TRIP server, and how a deployment avoids it.
 
 ### Changed
 
@@ -62,6 +65,7 @@ requires Java 11.
   authenticated users only, after the random delay of a failed login.
 - An unauthenticated client looking up a wrong service name gets a `TripStreamClosedException` instead of
   "remote object not found".
+- many improvements hardening TRIP service endpoints
 
 
 ## Java 25 line (25.x)

@@ -21,13 +21,16 @@ package org.tentackle.common;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KDF;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
@@ -265,6 +268,35 @@ public class Cryptor implements Function<String, String> {
     }
     catch (InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
       throw new TentackleRuntimeException("decryption failed", e);
+    }
+  }
+
+  /**
+   * Derives an AES key from the key of this cryptor via HKDF-SHA256 (RFC 5869).<br>
+   * The key of the cryptor never leaves this object. Different salts or infos yield independent keys,
+   * so that each purpose, such as an encrypted connection and its direction, gets a key of its own.
+   * <p>
+   * Unlike {@link #encrypt(byte[])}, the derived key is meant for authenticated encryption, such as AES-GCM.
+   *
+   * @param salt the salt, usually random
+   * @param info the context and purpose of the key
+   * @param keyStrength the key strength in bits (128, 192 or 256)
+   * @return the derived key
+   * @throws TentackleRuntimeException if the key could not be derived
+   */
+  public SecretKey deriveKey(byte[] salt, byte[] info, int keyStrength) {
+    if (keyStrength != 128 && keyStrength != 192 && keyStrength != 256) {
+      throw new IllegalArgumentException("invalid AES key strength " + keyStrength);
+    }
+    try {
+      KDF hkdf = KDF.getInstance("HKDF-SHA256");
+      return hkdf.deriveKey("AES", HKDFParameterSpec.ofExtract()
+                                                    .addIKM(key)
+                                                    .addSalt(salt)
+                                                    .thenExpand(info, keyStrength / 8));
+    }
+    catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException | RuntimeException e) {
+      throw new TentackleRuntimeException("deriving key failed", e);
     }
   }
 

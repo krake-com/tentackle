@@ -25,7 +25,6 @@ import org.testng.annotations.Test;
 import org.tentackle.trip.impl.DefaultOpCode;
 import org.tentackle.trip.impl.DefaultPreAuthenticationPolicy;
 import org.tentackle.trip.impl.TestClass;
-import org.tentackle.trip.impl.TripError;
 import org.tentackle.trip.transport.TransportClientInfo;
 
 import java.io.IOException;
@@ -188,9 +187,20 @@ public class PreAuthenticationTransportTest {
     assertEquals(service.echo(UUID.fromString("00000000-0000-0000-0000-000000000042")),
                  UUID.fromString("00000000-0000-0000-0000-000000000042"));
 
-    TripError error = expectThrows(TripError.class, () -> service.echo(createTestObject()));
-    assertEquals(error.getOpCode(), DefaultOpCode.SERVER_DESERIALIZATION_ERROR);
-    assertTrue(error.getMessage().contains("not allowed before authentication"), error.getMessage());
+    // not answered: the error would tell a prober that it talks to a TRIP server
+    expectThrows(TripStreamClosedException.class, () -> service.echo(createTestObject()));
+  }
+
+  @Test
+  void testViolationIsDelayed() throws Exception {
+    startServer(new DefaultPreAuthenticationPolicy());
+
+    PublicService service = connect();
+    RejectionDelay.setInterval(300, 400);
+    long start = System.nanoTime();
+    expectThrows(TripStreamClosedException.class, () -> service.echo(createTestObject()));
+    long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+    assertTrue(elapsed >= 300, "violation rejected after " + elapsed + "ms");
   }
 
   @Test
@@ -199,8 +209,13 @@ public class PreAuthenticationTransportTest {
 
     PublicService service = connect();
     PrivateService session = service.login(false);
-    TripError error = expectThrows(TripError.class, () -> session.echo("hello"));
-    assertEquals(error.getOpCode(), DefaultOpCode.NO_SUCH_DELEGATE);
+    RejectionDelay.setInterval(300, 400);
+    long start = System.nanoTime();
+    // not even "no such delegate": the connection is closed after the rejection delay
+    expectThrows(TripStreamClosedException.class, () -> session.echo("hello"));
+    long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+    assertTrue(elapsed >= 300, "probing rejected after " + elapsed + "ms");
+    RejectionDelay.setInterval(0, 0);
     // probing is not repeatable: the connection is closed, but other clients are served
     assertEquals(connect().echo("hello"), "hello");
   }
@@ -214,8 +229,7 @@ public class PreAuthenticationTransportTest {
     PublicService service = connect();    // the lookup is the first message
     assertEquals(service.echo("1"), "1");
     assertEquals(service.echo("2"), "2");
-    TripError error = expectThrows(TripError.class, () -> service.echo("3"));
-    assertTrue(error.getMessage().contains("messages"), error.getMessage());
+    expectThrows(TripStreamClosedException.class, () -> service.echo("3"));
 
     // no limit once authenticated
     PublicService other = connect();
@@ -251,7 +265,7 @@ public class PreAuthenticationTransportTest {
 
     try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), uri.getPort())) {
       socket.setSoTimeout(5000);
-      socket.getOutputStream().write(new byte[] { 1, 2, 3, 4 });
+      socket.getOutputStream().write(new byte[32]);
       assertClosed(socket.getInputStream());
     }
     // the server is still accepting
@@ -266,10 +280,61 @@ public class PreAuthenticationTransportTest {
     try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), uri.getPort())) {
       socket.setSoTimeout(5000);
       long start = System.nanoTime();
-      socket.getOutputStream().write(new byte[] { 0, 0 });
+      socket.getOutputStream().write(new byte[18]);   // magic + UUID
       assertClosed(socket.getInputStream());
       long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
       assertTrue(elapsed >= 300, "invalid magic rejected after " + elapsed + "ms");
+    }
+  }
+
+  @Test
+  void testInvalidMagicNotDecidedAfterTwoBytes() throws Exception {
+    startServer(new DefaultPreAuthenticationPolicy());
+
+    try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), uri.getPort())) {
+      socket.setSoTimeout(500);
+      socket.getOutputStream().write(new byte[] { 0, 0 });
+      // the server waits for the whole preamble: closing now would tell the length of the magic
+      expectThrows(SocketTimeoutException.class, () -> socket.getInputStream().read());
+    }
+  }
+
+  @Test
+  void testStaleDictionaryIsDelayed() throws Exception {
+    startServer(new DefaultPreAuthenticationPolicy());
+    RejectionDelay.setInterval(300, 400);
+
+    try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), uri.getPort())) {
+      socket.setSoTimeout(5000);
+      long start = System.nanoTime();
+      OutputStream out = socket.getOutputStream();
+      out.write(TripConstants.MAGIC);
+      out.write(new byte[16]);    // UUID unknown to the server
+      out.write(0);               // client dictionary not empty -> stale
+      assertClosed(socket.getInputStream());
+      long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+      // as late as an invalid magic, otherwise the immediate close would confirm the magic
+      assertTrue(elapsed >= 300, "stale client rejected after " + elapsed + "ms");
+    }
+  }
+
+  @Test
+  void testGarbageAfterHandshakeIsNotAnswered() throws Exception {
+    startServer(new DefaultPreAuthenticationPolicy());
+    RejectionDelay.setInterval(300, 400);
+
+    try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), uri.getPort())) {
+      socket.setSoTimeout(5000);
+      long start = System.nanoTime();
+      OutputStream out = socket.getOutputStream();
+      out.write(TripConstants.MAGIC);
+      out.write(new byte[16]);    // UUID
+      out.write(1);               // client dictionary empty
+      out.write(new byte[] { (byte) 0x7f, (byte) 0xff, (byte) 0xff, (byte) 0xff });   // not a remote call
+      out.flush();
+      assertClosed(socket.getInputStream());    // not a single byte received
+      long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+      assertTrue(elapsed >= 300, "garbage rejected after " + elapsed + "ms");
     }
   }
 
@@ -399,7 +464,7 @@ public class PreAuthenticationTransportTest {
 
     // another client is still restricted
     PublicService otherService = connect();
-    expectThrows(TripError.class, () -> otherService.echo(createTestObject()));
+    expectThrows(TripStreamClosedException.class, () -> otherService.echo(createTestObject()));
   }
 
   @Test

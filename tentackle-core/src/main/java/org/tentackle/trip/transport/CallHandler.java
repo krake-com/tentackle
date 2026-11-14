@@ -61,6 +61,7 @@ public class CallHandler implements Runnable {
   private final RemoteCall remoteCall;
   private RejectionDelay.Deferral deferral;     // the deferral of the response, null if not deferred
   private Runnable deferredWriter;              // writes the deferred response
+  private boolean discarded;                    // true if the response is not sent at all
 
   /**
    * Creates a new handler.
@@ -164,23 +165,36 @@ public class CallHandler implements Runnable {
       throw rx;   // not answered: the ConnectionHandler closes the connection after the rejection delay
     }
     catch (TripNoSuchDelegateException nd) {
-      stream.sendError(DefaultOpCode.NO_SUCH_DELEGATE, nd);
       if (isRestricted()) {
         // A client that is not authenticated knows the public entry points only.
-        // Anything else is probing: close the connection, logged once by the ConnectionHandler.
+        // Anything else is probing: not answered, the ConnectionHandler logs it once and closes the connection
+        // after the rejection delay.
+        if (isErrorSuppressed()) {
+          discarded = true;
+        }
+        else {
+          stream.sendError(DefaultOpCode.NO_SUCH_DELEGATE, nd);
+        }
         throw new TripPolicyViolationException("not allowed before authentication: invocation of remote object " +
                                                TransportClientInfo.redact(remoteCall.remoteId()));
       }
+      stream.sendError(DefaultOpCode.NO_SUCH_DELEGATE, nd);
       LOGGER.warning(nd.getMessage());
     }
     catch (Throwable t) {
       // serializing the response failed
+      if (isErrorSuppressed()) {
+        // not answered: the error message would tell the client that it talks to a TRIP server.
+        // Don't flush what was serialized so far either.
+        discarded = true;
+        throw t;
+      }
       LOGGER.severe("failure processing " + remoteCall, t);
       stream.sendError(DefaultOpCode.SERVER_SERIALIZATION_ERROR, t);
     }
     finally {
       TransportClientInfo.set(null);
-      if (!deferred) {
+      if (!deferred && !discarded) {
         finalizeResponse();
       }
     }
@@ -219,12 +233,18 @@ public class CallHandler implements Runnable {
     }
     catch (Throwable t) {
       // serializing the response failed
+      if (isErrorSuppressed()) {
+        discarded = true;
+        throw t;    // not answered, see run()
+      }
       LOGGER.severe("failure processing " + remoteCall, t);
       stream.sendError(DefaultOpCode.SERVER_SERIALIZATION_ERROR, t);
     }
     finally {
       TransportClientInfo.set(null);
-      finalizeResponse();
+      if (!discarded) {
+        finalizeResponse();
+      }
     }
   }
 
@@ -308,6 +328,18 @@ public class CallHandler implements Runnable {
   protected boolean isRestricted() {
     PreAuthenticationPolicy policy = transport.getPreAuthenticationPolicy();
     return policy != null && policy.isEnforcing() && !clientInfo.isAuthenticated();
+  }
+
+  /**
+   * Returns whether errors are not answered.<br>
+   * As long as the client is {@link #isRestricted() restricted}, a failed call is not answered at all:
+   * the error message would tell a prober that it talks to a TRIP server. The connection handler closes
+   * the connection after the {@link RejectionDelay}.
+   *
+   * @return true if restricted (default)
+   */
+  protected boolean isErrorSuppressed() {
+    return isRestricted();
   }
 
   /**
