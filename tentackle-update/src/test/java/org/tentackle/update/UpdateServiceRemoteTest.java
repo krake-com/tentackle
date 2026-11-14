@@ -23,9 +23,10 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import org.tentackle.common.FileHelper;
+import org.tentackle.trip.RejectionDelay;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TransportManager;
-import org.tentackle.trip.TripRuntimeException;
+import org.tentackle.trip.TripStreamClosedException;
 import org.tentackle.trip.impl.DefaultPreAuthenticationPolicy;
 
 import java.io.File;
@@ -173,12 +174,21 @@ public class UpdateServiceRemoteTest {
     assertTrue(transport.getPreAuthenticationPolicy() instanceof DefaultPreAuthenticationPolicy);
   }
 
+  /**
+   * An unauthenticated client looking up an unknown service name gets no answer:
+   * the server closes the connection after the rejection delay.
+   */
   @Test
-  public void reportsAnUnknownServiceName() {
-    TripRuntimeException ex = expectThrows(TripRuntimeException.class,
-                 () -> ClientUpdateUtilities.getInstance().getUpdateService(
-                   clientServiceUrl.replace("/Update", "/NoSuchService")));
-    assertTrue(ex.getMessage().contains("remote object not found"), ex.getMessage());
+  public void rejectsAnUnknownServiceName() {
+    RejectionDelay.setInterval(0, 0);
+    try {
+      expectThrows(TripStreamClosedException.class,
+                   () -> ClientUpdateUtilities.getInstance().getUpdateService(
+                     clientServiceUrl.replace("/Update", "/NoSuchService")));
+    }
+    finally {
+      RejectionDelay.setInterval(RejectionDelay.DEFAULT_MIN_DELAY, RejectionDelay.DEFAULT_MAX_DELAY);
+    }
   }
 
 }

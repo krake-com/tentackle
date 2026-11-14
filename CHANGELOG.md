@@ -42,6 +42,13 @@ requires Java 11.
 - A failed remote login is answered after a random time within a configurable interval (backend properties
   `loginfailmindelay`/`loginfailmaxdelay`, default 1–5 s). The response time no longer reveals whether a user
   exists, and brute-force attacks are throttled.
+- TRIP: the same random delay (`RejectionDelay`) applies to the other rejections of an unauthenticated peer. A
+  connection with an invalid magic is closed after the delay. The lookup of an unknown remote object name is not
+  answered, and the connection is closed after the delay. The response time doesn't reveal which rejection occurred.
+  Every delay, including the one of a failed login, waits in the virtual thread of the connection and blocks no
+  regular thread of the call pool: a remote method answered late invokes `RejectionDelay.defer`.
+  DefaultPreAuthenticationPolicy.idleTimeout` (default 30 s) closes an unauthenticated connection that sends
+  no further message after a call.
 
 ### Changed
 
@@ -50,6 +57,11 @@ requires Java 11.
 - A TRIP server refuses dictionary entries with permanent ordinals from its clients, which only ever send temporary
   ones.
 - The UUID of a client transport is logged abbreviated, since it now carries the client's authentication state.
+- The client's version is checked only after its credentials were verified: `RemoteDbSessionImpl` invokes
+  `RemoteDbConnectionImpl.checkClientVersion` after `verifySessionInfo`, so a `VersionIncompatibleException` reaches
+  authenticated users only, after the random delay of a failed login.
+- An unauthenticated client looking up a wrong service name gets a `TripStreamClosedException` instead of
+  "remote object not found".
 
 
 ## Java 25 line (25.x)

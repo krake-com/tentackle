@@ -294,7 +294,9 @@ The end-to-end flow, as wired up by [`tentackle-fx-rdc-update`](../../../../tent
    ([`LoginFailedWithUpdateHandler`](../../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)). When the client gets a
    `VersionIncompatibleException` (or an SSL handshake error caused by a server upgrade) *and* it runs from an
    updatable image, it builds a `ClientInfo` and calls `UpdateService.getUpdateInfo(...)` on the service named by
-   its own `updateService` property.
+   its own `updateService` property. The server reports an incompatible version only after the credentials were
+   verified (see [Failed logins](../../../../tentackle-database/src/main/docs/database.md#failed-logins)), so the
+   update is offered to a user who entered valid credentials.
 4. **Decision.** If `updateInfo.version()` differs from the running version, the user is asked whether to install
    (with an optional countdown for unattended/kiosk setups). Applications may override this to update silently.
 5. **Download & verify.** `ClientUpdateUtilities.downloadZip(...)` fetches the ZIP into an `update` directory

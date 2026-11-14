@@ -19,6 +19,7 @@
 package org.tentackle.trip;
 
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import org.tentackle.trip.impl.DefaultOpCode;
@@ -34,12 +35,15 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
 
@@ -57,6 +61,8 @@ public class PreAuthenticationTransportTest {
     Object echo(Object value);
 
     PrivateService login(boolean authenticate);
+
+    void failLogin();
 
   }
 
@@ -83,7 +89,18 @@ public class PreAuthenticationTransportTest {
       }
       return new PrivateServiceImpl();
     }
+
+    @Override
+    public void failLogin() {
+      long started = System.nanoTime();
+      RejectionDelay.defer(started);
+      failedLoginMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
+      throw new TripRuntimeException("login failed");
+    }
   }
+
+  /** How long the failed login took on the server, without the deferred delay. */
+  private static volatile long failedLoginMillis;
 
   public static class PrivateServiceImpl implements PrivateService {
 
@@ -99,8 +116,14 @@ public class PreAuthenticationTransportTest {
   private URI uri;
 
 
+  @BeforeMethod
+  void noRejectionDelay() {
+    RejectionDelay.setInterval(0, 0);    // only the tests of the delay need one
+  }
+
   @AfterMethod(alwaysRun = true)
   void closeTransports() {
+    RejectionDelay.setInterval(RejectionDelay.DEFAULT_MIN_DELAY, RejectionDelay.DEFAULT_MAX_DELAY);
     transports.forEach(Transport::close);
     transports.clear();
     if (server != null) {
@@ -233,6 +256,135 @@ public class PreAuthenticationTransportTest {
     }
     // the server is still accepting
     assertEquals(connect().echo("hello"), "hello");
+  }
+
+  @Test
+  void testInvalidMagicIsDelayed() throws Exception {
+    startServer(new DefaultPreAuthenticationPolicy());
+    RejectionDelay.setInterval(300, 400);
+
+    try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), uri.getPort())) {
+      socket.setSoTimeout(5000);
+      long start = System.nanoTime();
+      socket.getOutputStream().write(new byte[] { 0, 0 });
+      assertClosed(socket.getInputStream());
+      long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+      assertTrue(elapsed >= 300, "invalid magic rejected after " + elapsed + "ms");
+    }
+  }
+
+  @Test
+  void testValidMagicKeepsConnectionOpen() throws Exception {
+    startServer(new DefaultPreAuthenticationPolicy());
+    RejectionDelay.setInterval(100, 100);
+
+    try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), uri.getPort())) {
+      socket.setSoTimeout(500);
+      socket.getOutputStream().write(TripConstants.MAGIC);
+      // the server waits for the rest of the handshake
+      expectThrows(SocketTimeoutException.class, () -> socket.getInputStream().read());
+    }
+  }
+
+  @Test
+  void testSingleByteClosedAtDeadline() throws Exception {
+    DefaultPreAuthenticationPolicy policy = new DefaultPreAuthenticationPolicy();
+    policy.setFirstMessageTimeout(300);
+    startServer(policy);
+
+    try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), uri.getPort())) {
+      socket.setSoTimeout(5000);
+      long start = System.nanoTime();
+      socket.getOutputStream().write(TripConstants.MAGIC[0]);   // the server blocks reading the magic
+      assertClosed(socket.getInputStream());
+      long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+      assertTrue(elapsed >= 300, "closed after " + elapsed + "ms");
+    }
+    // the server is still accepting
+    assertEquals(connect().echo("hello"), "hello");
+  }
+
+  @Test
+  void testIdleUnauthenticatedConnectionClosed() throws Exception {
+    DefaultPreAuthenticationPolicy policy = new DefaultPreAuthenticationPolicy();
+    policy.setIdleTimeout(300);
+    startServer(policy);
+
+    PublicService service = connect();
+    assertEquals(service.echo(1), 1);
+    Thread.sleep(700);
+    expectThrows(TripStreamClosedException.class, () -> service.echo(2));
+  }
+
+  @Test
+  void testIdleAuthenticatedConnectionKeptOpen() throws Exception {
+    DefaultPreAuthenticationPolicy policy = new DefaultPreAuthenticationPolicy();
+    policy.setIdleTimeout(300);
+    startServer(policy);
+
+    PublicService service = connect();
+    service.login(true);
+    Thread.sleep(700);
+    assertEquals(service.echo(1), 1);
+  }
+
+  @Test
+  void testUnknownNameIsRejectedDelayed() throws Exception {
+    startServer(new DefaultPreAuthenticationPolicy());
+    RejectionDelay.setInterval(300, 400);
+
+    Transport transport = TripFactory.getInstance().createTransport(uri);
+    transports.add(transport);
+    long start = System.nanoTime();
+    expectThrows(TripStreamClosedException.class, () -> transport.lookup(PublicService.class, "nope"));
+    long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+    assertTrue(elapsed >= 300, "unknown name rejected after " + elapsed + "ms");
+
+    // other clients are served
+    RejectionDelay.setInterval(0, 0);
+    assertEquals(connect().echo("hello"), "hello");
+  }
+
+  @Test
+  void testUnknownNameAfterAuthentication() throws Exception {
+    startServer(new DefaultPreAuthenticationPolicy());
+    RejectionDelay.setInterval(2000, 2000);
+
+    Transport transport = TripFactory.getInstance().createTransport(uri);
+    transports.add(transport);
+    PublicService service = transport.lookup(PublicService.class, "public");
+    assertNotNull(service.login(true));
+    long start = System.nanoTime();
+    TripRuntimeException ex = expectThrows(TripRuntimeException.class, () -> transport.lookup(PublicService.class, "nope"));
+    long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+    assertTrue(ex.getMessage().contains("remote object not found"), ex.getMessage());
+    assertTrue(elapsed < 2000, "authenticated lookup delayed by " + elapsed + "ms");
+  }
+
+  @Test
+  void testFailedLoginDelayedOutsideCallThread() throws Exception {
+    startServer(new DefaultPreAuthenticationPolicy());
+    RejectionDelay.setInterval(300, 400);
+    failedLoginMillis = -1;
+
+    PublicService service = connect();
+    long start = System.nanoTime();
+    expectThrows(RuntimeException.class, service::failLogin);
+    long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+    assertTrue(elapsed >= 300, "failed login answered after " + elapsed + "ms");
+    assertTrue(failedLoginMillis >= 0 && failedLoginMillis < 100,
+               "the delay blocked the call thread for " + failedLoginMillis + "ms");
+    // the connection is still usable
+    assertEquals(service.echo("hello"), "hello");
+  }
+
+  @Test
+  void testDeferOutsideCallWaits() {
+    RejectionDelay.setInterval(200, 200);
+    long start = System.nanoTime();
+    RejectionDelay.defer(start);
+    long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+    assertTrue(elapsed >= 200, "defer outside a call returned after " + elapsed + "ms");
   }
 
   @Test

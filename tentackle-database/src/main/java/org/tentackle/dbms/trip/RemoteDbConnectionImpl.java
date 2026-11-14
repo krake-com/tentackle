@@ -79,7 +79,9 @@ public abstract class RemoteDbConnectionImpl implements RemoteDbConnection {
    * Checks the client's version.
    * <p>
    * The default implementation does nothing.
-   * It is invoked only for remote connections.
+   * It is invoked only for remote connections, by the {@link RemoteDbSessionImpl} <em>after</em> the
+   * client's credentials were verified. Thus, an unauthenticated client never learns whether its
+   * version is compatible, nor the server's version, which the exception usually carries.
    * <p>
    * Throws {@link VersionIncompatibleException} if versions are not compatible.
    *
@@ -102,16 +104,8 @@ public abstract class RemoteDbConnectionImpl implements RemoteDbConnection {
   // ------------------ implements RemoteDbConnection -----------------
 
   @Override
-  public String getServerVersion() {
-    return null;
-  }
-
-
-  @Override
   public RemoteDbSession login(SessionInfo clientInfo) {
-    // check client compatibility
-    checkClientVersion(clientInfo.getClientVersion());
-    // create the session
+    // the session verifies the credentials, then checks the client's version (see checkClientVersion)
     return createSession(clientInfo);
   }
 

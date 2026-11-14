@@ -563,6 +563,32 @@ asking a directory or an identity provider) runs in parallel. Only what an overr
 checks *after* `super.verifySessionInfo`, such as refusing a second login of the same user, is atomic with
 the registration of the new session.
 
+### Failed logins
+
+A failed login is answered after a random time within the interval set by the backend properties
+`loginfailmindelay` and `loginfailmaxdelay` (default 1–5 s, `loginfailmaxdelay=0` answers immediately).
+The time is measured from the start of the login, so it also hides how long the credentials were verified:
+an attacker can tell neither whether the user exists nor whether only the password was wrong. It also throttles
+brute-force attacks. Neither a session nor a login permit is held during the delay, so failing logins can't
+keep the real users out. Nor is a thread of the server's call pool: the login returns at once, and the
+virtual thread of the TRIP connection waits before it sends the response.
+
+The interval is the [`RejectionDelay`](../../../../tentackle-core/src/main/java/org/tentackle/trip/RejectionDelay.java)
+of TRIP, which also applies to a connection with an invalid magic and to the lookup of an unknown
+service name (see [Unauthenticated peers](../../../../tentackle-core/src/main/docs/trip.md#unauthenticated-peers)).
+All rejections share one interval, so the response time doesn't tell which one occurred.
+
+The **client's version is checked only after its credentials were verified**: `RemoteDbSessionImpl` invokes
+`RemoteDbConnectionImpl.checkClientVersion` right after `verifySessionInfo`, before the session is registered
+and the client is marked as authenticated. A client with wrong credentials therefore always gets the plain
+`LoginFailedException`. A `VersionIncompatibleException`, which usually carries the server's version, reaches
+only a user who could have logged in, and it is delayed like any failed login. The auto-update of an outdated
+client is triggered as before, once the user entered valid credentials.
+
+For the same reason, the client gets the server's version from the session (`RemoteDbSession.getServerVersion`,
+overridden in the application's `RemoteDbSessionImpl`) and checks it with `SessionInfo.checkServerVersion` after the
+login.
+
 ### Preloading remote delegates
 
 Delegates are created lazily: the first time a class needs one, `Db.getRemoteDelegate(int)` asks the

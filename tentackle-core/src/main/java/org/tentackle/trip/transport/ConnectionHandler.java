@@ -23,8 +23,10 @@ import org.tentackle.log.Logger;
 import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.PreAuthenticationPolicy;
+import org.tentackle.trip.RejectionDelay;
 import org.tentackle.trip.Serializer;
 import org.tentackle.trip.Transport;
+import org.tentackle.trip.TripConnectionRejectedException;
 import org.tentackle.trip.TripConstants;
 import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripPolicyViolationException;
@@ -40,7 +42,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.util.HexFormat;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -123,7 +124,8 @@ public class ConnectionHandler implements Runnable {
    * Handles the new connection.
    * <ul>
    *   <li>reads the connection request: the TRIP magic followed by the UUID of the client's transport
-   *   and whether the client's dictionary is still empty</li>
+   *   and whether the client's dictionary is still empty. An invalid magic closes the connection
+   *   after the {@link RejectionDelay}.</li>
    *   <li>the UUID is used to determine the dictionary and a TRIP stream is created</li>
    *   <li>reads the remote calls from the stream and dispatches them to the call handler thread pool.</li>
    * </ul>
@@ -224,7 +226,16 @@ public class ConnectionHandler implements Runnable {
     UUID id;
     TripStream stream;
     try {
+      long started = System.nanoTime();
       int versionSkew = readMagic();
+      if (versionSkew < 0) {
+        // Not a TRIP client, or someone guessing the magic: close as late as a failed login,
+        // so that the response time tells nothing. Don't log what was received: anybody can send garbage.
+        LOGGER.warning("connection {0} sent an invalid magic -> closed",
+                       new TransportClientInfo(transport, null, connectionName, null));
+        RejectionDelay.await(started);
+        return;
+      }
       if (versionSkew != 0) {
         // For an auto-updatable client, this will happen only once per client with the update URL endpoint.
         // The client then updates itself and automatically uses the latest protocol.
@@ -239,7 +250,7 @@ public class ConnectionHandler implements Runnable {
       stream = createStream(id, clientDictionaryEmpty);
     }
     catch (TripRuntimeException e) {
-      // SSL handshake exception, peer closed, invalid magic, stale client transport, etc...
+      // SSL handshake exception, peer closed, stale client transport, etc...
       // -> just log the messages, no stacktrace: anybody can open a connection and send garbage
       LOGGER.warning("connection {0} aborted: {1}",
                      new TransportClientInfo(transport, null, connectionName, null),
@@ -254,6 +265,7 @@ public class ConnectionHandler implements Runnable {
     while (isConnectionAlive()) {
       TripType<?> tripType = null;
       Object call = null;
+      long callReceived = 0;    // System.nanoTime() when the call was received
       try {
         if (admission != null && clientInfo.isAuthenticated()) {
           // the client logged in (on this or another connection): no restrictions anymore
@@ -265,6 +277,7 @@ public class ConnectionHandler implements Runnable {
         tripType = stream.deriveType();
         if (tripType.isDictionaryBased()) {   // all remote calls are dictionary-based
           call = tripType.read(stream, stream.receiveOpCode());
+          callReceived = System.nanoTime();
           if (admission != null) {
             checkMessageSize(policy, stream);
             checkMessageCount(policy, ++messageCount);
@@ -272,13 +285,20 @@ public class ConnectionHandler implements Runnable {
           }
           if (call instanceof RemoteCall remoteCall) {
             try {
+              Runnable callHandler = transport.createCallHandler(stream, clientInfo, remoteCall);
               // dispatch to call handler ...
-              transport.getCallThreadPool().submit(transport.createCallHandler(stream, clientInfo, remoteCall))
+              transport.getCallThreadPool().submit(callHandler)
                        // ... and wait for the call to finish _before_ clearing the stream.
                        // The submitted call handler runs asynchronously in a regular thread
                        // of a thread pool. Blocking virtual threads is much cheaper
                        // than blocking regular threads.
                        .get();
+              if (callHandler instanceof CallHandler handler && handler.getDeferral() != null) {
+                // answered late, e.g. a failed login: wait here, not in the regular thread of the call handler.
+                // The call is still in progress for the admission until the response is sent.
+                handler.getDeferral().await();
+                handler.sendDeferredResponse();
+              }
             }
             finally {
               if (admission != null) {
@@ -315,6 +335,13 @@ public class ConnectionHandler implements Runnable {
       catch (ExecutionException xe) {
         if (xe.getCause() instanceof TripStreamClosedException ce) {
           LOGGER.warning("client closed connection while sending response for {0} ({1})", call, ce.getMessage());
+          break;
+        }
+        if (xe.getCause() instanceof TripConnectionRejectedException rx) {
+          // the call handler did not answer: close the connection as late as a failed login.
+          // The delay runs in this virtual thread, not in the platform thread of the call handler.
+          LOGGER.warning("unauthenticated connection {0} rejected: {1}", clientInfo, rx.getMessage());
+          RejectionDelay.await(callReceived);
           break;
         }
         if (xe.getCause() instanceof TripPolicyViolationException pv) {
@@ -391,7 +418,7 @@ public class ConnectionHandler implements Runnable {
   /**
    * Reads the magic number and derives the version-skew.
    *
-   * @return the version-skew, 0 if the client is using the current version
+   * @return the version-skew, 0 if the client is using the current version, -1 if the magic is invalid
    */
   private int readMagic() {
     try {
@@ -405,7 +432,7 @@ public class ConnectionHandler implements Runnable {
       else if (magic[0] == TripConstants.MAGIC_1[0] && magic[1] == TripConstants.MAGIC_1[1]) {
         return 1;  // one version behind w/o the dictionary flag
       }
-      throw new TripRuntimeException("invalid magic: " + HexFormat.ofDelimiter(", ").withPrefix("0x").formatHex(magic));
+      return -1;
     }
     catch (IOException e) {
       throw new TripRuntimeException("reading magic failed", e);

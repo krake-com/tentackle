@@ -34,7 +34,7 @@ import java.util.function.BooleanSupplier;
  *   <li>refuses back-references to anything but immutable values, so that the received object graph is a tree,</li>
  *   <li>does not wait for dictionary entries the client never sent,</li>
  *   <li>serves only the registry and the remote objects registered by name,</li>
- *   <li>limits the number of unauthenticated connections and the time until their first message.</li>
+ *   <li>limits the number of unauthenticated connections and how long they may wait before sending their first or next message.</li>
  * </ul>
  * Once authenticated, none of these restrictions applies anymore and the policy costs nothing.
  * <p>
@@ -62,12 +62,13 @@ public interface PreAuthenticationPolicy {
 
     /**
      * Notifies that a complete message was received and its call is about to be processed.<br>
-     * Ends the deadline for the first message.
+     * Ends the deadline for the next message.
      */
     void messageReceived();
 
     /**
      * Notifies that the call of the last message received was processed.<br>
+     * Starts the deadline for the next message.
      * A connection with a call in progress is evicted only if there is no other choice.
      */
     void callCompleted();
@@ -164,7 +165,7 @@ public interface PreAuthenticationPolicy {
    * Invoked before anything is read from the connection.
    *
    * @param host the client's host, null if unknown
-   * @param closer closes the connection, invoked to evict it or when its first message is overdue
+   * @param closer closes the connection, invoked to evict it or when its next message is overdue
    * @param authenticated tells whether the client got authenticated meanwhile
    * @return the admission, null if the connection is refused
    */

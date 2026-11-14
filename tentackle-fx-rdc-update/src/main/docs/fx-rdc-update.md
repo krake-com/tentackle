@@ -158,8 +158,8 @@ The client-side half of the end-to-end update flow (the server side is set up vi
 
 1. **Launch.** The application's main class extends `UpdatableDesktopApplication`. On `initialize()`, if it runs
    from an updatable image, it takes the PID lockfile to guarantee it is the only instance.
-2. **Login fails with a version mismatch.** The user tries to connect to an upgraded server and gets a
-   `VersionIncompatibleException` (or a TLS handshake error). The RDC framework routes this to
+2. **Login fails with a version mismatch.** The user tries to connect to an upgraded server and, once the
+   credentials were verified, gets a `VersionIncompatibleException` (or a TLS handshake error). The RDC framework routes this to
    `LoginFailedWithUpdateHandler.handle(...)`.
 3. **Check.** If the image is updatable and an `updateService` property is configured, the handler asks the remote
    `UpdateService` for the matching `UpdateInfo`.

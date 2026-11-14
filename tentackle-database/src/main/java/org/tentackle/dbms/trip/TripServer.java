@@ -25,6 +25,7 @@ import org.tentackle.io.UriHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.trip.PreAuthenticationPolicy;
+import org.tentackle.trip.RejectionDelay;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TransportManager;
 import org.tentackle.trip.TripRuntimeException;
@@ -130,12 +131,14 @@ public class TripServer {
   public static final String MAX_CONCURRENT_LOGINS = "maxlogins";
 
   /**
-   * The property key for the minimum milliseconds until a failed login is answered.
+   * The property key for the minimum milliseconds until a failed login is answered.<br>
+   * Applies to all rejections of unauthenticated clients (see {@link RejectionDelay}).
    */
   public static final String LOGIN_FAILURE_MIN_DELAY = "loginfailmindelay";
 
   /**
-   * The property key for the maximum milliseconds until a failed login is answered.
+   * The property key for the maximum milliseconds until a failed login is answered.<br>
+   * Applies to all rejections of unauthenticated clients (see {@link RejectionDelay}).
    */
   public static final String LOGIN_FAILURE_MAX_DELAY = "loginfailmaxdelay";
 
@@ -214,10 +217,10 @@ public class TripServer {
     maxConcurrentLogins = val != null ? Integer.parseInt(val) : RemoteDbSessionImpl.DEFAULT_MAX_CONCURRENT_LOGINS;
 
     val = props.getPropertyIgnoreCase(LOGIN_FAILURE_MIN_DELAY);
-    loginFailureMinDelay = val != null ? Long.parseLong(val) : RemoteDbSessionImpl.DEFAULT_LOGIN_FAILURE_MIN_DELAY;
+    loginFailureMinDelay = val != null ? Long.parseLong(val) : RejectionDelay.DEFAULT_MIN_DELAY;
 
     val = props.getPropertyIgnoreCase(LOGIN_FAILURE_MAX_DELAY);
-    loginFailureMaxDelay = val != null ? Long.parseLong(val) : RemoteDbSessionImpl.DEFAULT_LOGIN_FAILURE_MAX_DELAY;
+    loginFailureMaxDelay = val != null ? Long.parseLong(val) : RejectionDelay.DEFAULT_MAX_DELAY;
 
     val = props.getPropertyIgnoreCase(PRE_AUTHENTICATION);
     if (val == null || val.equalsIgnoreCase("enforce")) {
@@ -402,11 +405,13 @@ public class TripServer {
    * Sets the interval for the response time of a failed login.<br>
    * A failed login is answered after a random time within this interval, so that an attacker cannot tell
    * from the response time whether the user doesn't exist or the credentials are just wrong.
+   * The same interval applies to every rejection of an unauthenticated client: an invalid TRIP magic,
+   * the lookup of an unknown service name, and an incompatible client version.
    * Must be invoked before {@link #start()}.
    *
    * @param minDelay the minimum delay in milliseconds
    * @param maxDelay the maximum delay in milliseconds, 0 to answer failed logins immediately
-   * @see RemoteDbSessionImpl#setLoginFailureDelay(long, long)
+   * @see RejectionDelay#setInterval(long, long)
    */
   public void setLoginFailureDelay(long minDelay, long maxDelay) {
     this.loginFailureMinDelay = minDelay;
@@ -432,7 +437,7 @@ public class TripServer {
     // start the transports in alphabetical order
     LOGGER.info("TRIP-server " + getClass().getName() + " starting...");
     RemoteDbSessionImpl.setMaxConcurrentLogins(maxConcurrentLogins);
-    RemoteDbSessionImpl.setLoginFailureDelay(loginFailureMinDelay, loginFailureMaxDelay);
+    RejectionDelay.setInterval(loginFailureMinDelay, loginFailureMaxDelay);
     for (Map.Entry<String, URI> serviceEntry : services.entrySet()) {
       String name = serviceEntry.getKey();
       URI uri = serviceEntry.getValue();

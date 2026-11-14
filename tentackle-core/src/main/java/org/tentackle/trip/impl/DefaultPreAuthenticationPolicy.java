@@ -60,6 +60,9 @@ import java.util.function.BooleanSupplier;
  * The policy also keeps track of the unauthenticated connections of the transports it is installed
  * on. When a limit is reached, the oldest unauthenticated connection is closed to admit the new one.
  * This favors clients that log in quickly over connections kept open without logging in.
+ * A connection that sends nothing within {@link #setFirstMessageTimeout(long) firstMessageTimeout}
+ * after it was opened, or within {@link #setIdleTimeout(long) idleTimeout} after its last call,
+ * is closed as well.
  * <p>
  * In {@link Mode#AUDIT} mode, each distinct violation is logged once and nothing is refused.
  */
@@ -94,6 +97,9 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
   /** Default timeout until the first message is received in milliseconds. */
   public static final long DEFAULT_FIRST_MESSAGE_TIMEOUT = 30000;
 
+  /** Default timeout until the next message is received after a call in milliseconds. */
+  public static final long DEFAULT_IDLE_TIMEOUT = 30000;
+
   /** Default length of the network prefix IPv6 clients are grouped by. */
   public static final int DEFAULT_IPV6_PREFIX_LENGTH = 64;
 
@@ -105,7 +111,7 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
 
 
   /**
-   * Holds the scheduler for the first message deadlines.<br>
+   * Holds the scheduler for the message deadlines.<br>
    * Shared by all policies, created on first use.
    */
   private static final class SchedulerHolder {
@@ -149,6 +155,11 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
     @Override
     public void callCompleted() {
       busy = false;
+      long timeout = idleTimeout;
+      if (timeout > 0) {
+        // a client that stops sending after a call must not keep the connection forever
+        startDeadline(timeout, "idle for " + timeout + " ms");
+      }
     }
 
     @Override
@@ -159,6 +170,17 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
       }
     }
 
+    /**
+     * Starts the deadline for the next message.
+     *
+     * @param timeout the timeout in milliseconds
+     * @param reason the reason logged when the connection is closed
+     */
+    private void startDeadline(long timeout, String reason) {
+      cancelDeadline();
+      deadline = SchedulerHolder.SCHEDULER.schedule(() -> deadlineReached(reason), timeout, TimeUnit.MILLISECONDS);
+    }
+
     private void cancelDeadline() {
       ScheduledFuture<?> future = deadline;
       if (future != null) {
@@ -167,18 +189,18 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
       }
     }
 
-    private void deadlineReached() {
+    private void deadlineReached(String reason) {
       deadline = null;
       synchronized (admissions) {
         if (released) {
           return;
         }
       }
-      if (!authenticated.getAsBoolean()) {
+      if (!busy && !authenticated.getAsBoolean()) {   // busy: a message arrived just in time
         // Closing may block, for example, a TLS socket in the middle of its handshake:
         // the scheduler is shared by all connections and must not wait for it.
         Thread.ofVirtual().name("TRIP pre-authentication closer")
-              .start(() -> close(this, "no message received within " + firstMessageTimeout + " ms"));
+              .start(() -> close(this, reason));
       }
     }
 
@@ -203,6 +225,7 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
   private volatile int maxConnections;
   private volatile int maxConnectionsPerHost;
   private volatile long firstMessageTimeout;
+  private volatile long idleTimeout;
   private volatile int ipv6PrefixLength;
 
 
@@ -225,6 +248,7 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
     maxConnections = DEFAULT_MAX_CONNECTIONS;
     maxConnectionsPerHost = DEFAULT_MAX_CONNECTIONS_PER_HOST;
     firstMessageTimeout = DEFAULT_FIRST_MESSAGE_TIMEOUT;
+    idleTimeout = DEFAULT_IDLE_TIMEOUT;
     ipv6PrefixLength = DEFAULT_IPV6_PREFIX_LENGTH;
     allowBuiltins();
     allowAnnotated();
@@ -371,6 +395,27 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
   }
 
   /**
+   * Gets the time an unauthenticated connection may stay idle after a call.
+   *
+   * @return the timeout in milliseconds, 0 if none
+   */
+  public long getIdleTimeout() {
+    return idleTimeout;
+  }
+
+  /**
+   * Sets the time an unauthenticated connection may stay idle after a call.<br>
+   * If the next message is not received within this time, the connection is closed.
+   * Without it, a client could send a single message and then keep the connection open
+   * without ever logging in.
+   *
+   * @param idleTimeout the timeout in milliseconds, 0 if none
+   */
+  public void setIdleTimeout(long idleTimeout) {
+    this.idleTimeout = idleTimeout;
+  }
+
+  /**
    * Gets the length of the network prefix IPv6 clients are grouped by.
    *
    * @return the prefix length in bits, 0 or 128 to group by the full address
@@ -495,7 +540,7 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
 
     long timeout = firstMessageTimeout;
     if (timeout > 0) {
-      admission.deadline = SchedulerHolder.SCHEDULER.schedule(admission::deadlineReached, timeout, TimeUnit.MILLISECONDS);
+      admission.startDeadline(timeout, "no message received within " + timeout + " ms");
     }
     return admission;
   }

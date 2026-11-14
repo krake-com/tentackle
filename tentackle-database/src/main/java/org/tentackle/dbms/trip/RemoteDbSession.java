@@ -41,6 +41,16 @@ public interface RemoteDbSession extends Remote {
   SessionInfo getClientSessionInfo();
 
   /**
+   * Gets the application-specific version of the server.
+   * <p>
+   * Only available after the login, so that the server version is never revealed to an
+   * unauthenticated client.
+   *
+   * @return the server version
+   */
+  String getServerVersion();
+
+  /**
    * Closes a session.
    */
   void close();

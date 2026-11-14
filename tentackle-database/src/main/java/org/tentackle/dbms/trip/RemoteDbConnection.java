@@ -32,14 +32,6 @@ import org.tentackle.trip.Remote;
 public interface RemoteDbConnection extends Remote {
 
   /**
-   * Gets the application-specific version of the server.
-   *
-   * @return the server version
-   */
-  String getServerVersion();
-
-
-  /**
    * Login to TRIP server.
    *
    * @param clientInfo the session information

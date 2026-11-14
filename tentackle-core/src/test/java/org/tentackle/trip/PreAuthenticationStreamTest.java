@@ -502,6 +502,7 @@ public class PreAuthenticationStreamTest {
   void testBusiestHostIsEvicted() {
     DefaultPreAuthenticationPolicy policy = new DefaultPreAuthenticationPolicy();
     policy.setFirstMessageTimeout(0);
+    policy.setIdleTimeout(0);
     policy.setMaxConnectionsPerHost(0);
     policy.setMaxConnections(4);
 
@@ -520,6 +521,7 @@ public class PreAuthenticationStreamTest {
   void testIpv6NetworkCountsAsOneHost() {
     DefaultPreAuthenticationPolicy policy = new DefaultPreAuthenticationPolicy();
     policy.setFirstMessageTimeout(0);
+    policy.setIdleTimeout(0);
     policy.setMaxConnectionsPerHost(2);
 
     AtomicInteger closed = new AtomicInteger();
@@ -540,6 +542,7 @@ public class PreAuthenticationStreamTest {
   void testBusyConnectionIsEvictedLast() {
     DefaultPreAuthenticationPolicy policy = new DefaultPreAuthenticationPolicy();
     policy.setFirstMessageTimeout(0);
+    policy.setIdleTimeout(0);
     policy.setMaxConnectionsPerHost(2);
 
     AtomicInteger closedBusy = new AtomicInteger();
@@ -560,6 +563,7 @@ public class PreAuthenticationStreamTest {
   void testAdmissions() throws InterruptedException {
     DefaultPreAuthenticationPolicy policy = new DefaultPreAuthenticationPolicy();
     policy.setFirstMessageTimeout(0);
+    policy.setIdleTimeout(0);
     policy.setMaxConnectionsPerHost(2);
     policy.setMaxConnections(3);
 
@@ -606,6 +610,50 @@ public class PreAuthenticationStreamTest {
     Thread.sleep(500);
     assertEquals(closedLate.get(), 1);
     assertEquals(closedInTime.get(), 0);
+  }
+
+  @Test
+  void testIdleDeadline() throws InterruptedException {
+    DefaultPreAuthenticationPolicy policy = new DefaultPreAuthenticationPolicy();
+    policy.setFirstMessageTimeout(0);
+    policy.setIdleTimeout(100);
+
+    // idle after a call
+    AtomicInteger closedIdle = new AtomicInteger();
+    PreAuthenticationPolicy.Admission idle = policy.admit("a", closedIdle::incrementAndGet, () -> false);
+    idle.messageReceived();
+    idle.callCompleted();
+
+    // call still in progress, e.g. a login
+    AtomicInteger closedBusy = new AtomicInteger();
+    policy.admit("b", closedBusy::incrementAndGet, () -> false).messageReceived();
+
+    // next message received in time
+    AtomicInteger closedActive = new AtomicInteger();
+    PreAuthenticationPolicy.Admission active = policy.admit("c", closedActive::incrementAndGet, () -> false);
+    active.messageReceived();
+    active.callCompleted();
+    active.messageReceived();
+
+    // logged in meanwhile
+    AtomicInteger closedAuthenticated = new AtomicInteger();
+    PreAuthenticationPolicy.Admission authenticated = policy.admit("d", closedAuthenticated::incrementAndGet, () -> true);
+    authenticated.messageReceived();
+    authenticated.callCompleted();
+
+    // released
+    AtomicInteger closedReleased = new AtomicInteger();
+    PreAuthenticationPolicy.Admission released = policy.admit("e", closedReleased::incrementAndGet, () -> false);
+    released.messageReceived();
+    released.callCompleted();
+    released.release();
+
+    Thread.sleep(500);
+    assertEquals(closedIdle.get(), 1);
+    assertEquals(closedBusy.get(), 0);
+    assertEquals(closedActive.get(), 0);
+    assertEquals(closedAuthenticated.get(), 0);
+    assertEquals(closedReleased.get(), 0);
   }
 
 }
