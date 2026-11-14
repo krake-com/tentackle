@@ -343,6 +343,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   private final SessionInfo serverInfo;                       // the server info for creating a new session
   private final long sessionNumber;                           // unique session number
   private final String clientHost;                            // the client host string
+  private final String clientProtocol;                        // the TRIP protocol of the client's transport
   private final Dictionary dictionary;                        // to prevent GC as long as this session is open
   private final Map<String, Logger> loggers;                  // logger-name :: logger
   private volatile int timeout;                               // timeout in polling intervals of the RemoteDbSessionCleanupThread (read by that thread)
@@ -398,6 +399,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
         // use only the host address since the port-number is the one at this moment
         // and is not fixed for further invocations for this session
         clientHost = transportInfo.getHost();
+        clientProtocol = transportInfo.transport() == null ? null : transportInfo.transport().getUri().getScheme();
         // Since the dictionary is shared among all TRIP connections of the same client,
         // it must not be GC'd as long as a single session for this client is still open.
         // TCP connections remain open until explicitly closed.
@@ -408,6 +410,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
       }
       else {
         clientHost = "?";
+        clientProtocol = null;
         dictionary = null;
       }
       db = openDb();
@@ -815,6 +818,16 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    */
   public String getClientHostString() {
     return clientHost;
+  }
+
+  /**
+   * Gets the TRIP protocol the client is connected through.<br>
+   * This is the URI scheme of the server transport, such as {@code trip} or {@code tripcq}.
+   *
+   * @return the protocol, null if unknown
+   */
+  public String getClientProtocol() {
+    return clientProtocol;
   }
 
   /**

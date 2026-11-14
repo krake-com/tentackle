@@ -132,9 +132,12 @@ public interface AdminExtension extends DomainContextDependable {
     String getTimeZone();
 
     /**
-     * Gets the client host string determined by the middle tier.
+     * Gets the client host string determined by the middle tier.<br>
+     * Unless the client is connected via plain {@code trip}, the transport is appended separated by a slash,
+     * for example {@code 127.0.0.1/cq} for {@code tripcq}.
+     * Application-specific transports not beginning with {@code trip} are appended as a whole.
      *
-     * @return usually the IP-address
+     * @return usually the IP-address, optionally followed by the transport
      */
     @Bindable
     String getClientHost();

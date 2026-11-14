@@ -33,6 +33,7 @@ import org.tentackle.security.SecurityException;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.SecurityResult;
 import org.tentackle.session.SessionInfo;
+import org.tentackle.trip.transport.TcpTransport;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -155,6 +156,25 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDbDelegateImp
 
 
   /**
+   * Creates the client host string shown in the session data.<br>
+   * The transport is appended, separated by a slash, unless it is plain {@code trip}.
+   * For TRIP protocols the leading {@code trip} is omitted, i.e. {@code 127.0.0.1} over {@code tripcq}
+   * becomes {@code 127.0.0.1/cq}. Application-specific protocols are appended as a whole.
+   *
+   * @param host the client host address
+   * @param protocol the TRIP protocol of the client's transport, null if unknown
+   * @return the client host string
+   */
+  static String toClientHost(String host, String protocol) {
+    if (protocol == null || protocol.isEmpty() || protocol.equals(TcpTransport.PROTOCOL)) {
+      return host;
+    }
+    return host + "/" + (protocol.startsWith(TcpTransport.PROTOCOL) ?
+                         protocol.substring(TcpTransport.PROTOCOL.length()) : protocol);
+  }
+
+
+  /**
    * DTO to transfer the session data.
    */
   private static class SessionDataImpl implements SessionData {
@@ -199,7 +219,7 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDbDelegateImp
       else {
         timeZone = null;
       }
-      clientHost = remoteSession.getClientHostString();
+      clientHost = toClientHost(remoteSession.getClientHostString(), remoteSession.getClientProtocol());
       sessionNumber = remoteSession.getSessionNumber();
       sessionGroup = remoteSession.getSession().getExportedSessionGroupId();
       options = remoteSession.getOptions();
