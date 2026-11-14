@@ -163,6 +163,8 @@ public class QuicTripTransport extends AbstractTransport {
     ServerConnectionConfig serverConnectionConfig =
       ServerConnectionConfig.builder()
                             .maxOpenPeerInitiatedBidirectionalStreams(getMaxStreams())
+                            // validate the client's address before any connection state is kept
+                            .retryRequired(isRetryRequired())
                             // configured explicitly so that both ends agree instead of relying on
                             // the differing KWIK client- and server defaults
                             .maxIdleTimeoutInSeconds(getMaxIdleSeconds())
@@ -251,6 +253,22 @@ public class QuicTripTransport extends AbstractTransport {
    */
   public int getMaxIdleSeconds() {
     return getUriPars().getOrDefault("quicidle", DEFAULT_MAX_IDLE_SECONDS);
+  }
+
+  /**
+   * Returns whether the server validates the address of a client before it accepts the connection.<br>
+   * The server answers the first Initial packet with a Retry carrying a token, which the client must
+   * echo (see RFC-9000, 8.1). Only then does the server keep any state for the connection and run the
+   * TLS handshake. Without it, Initial packets with spoofed source addresses make the server allocate
+   * connections and spend CPU on handshakes for addresses that never answer. It costs one round trip
+   * per connection.
+   * <p>
+   * Configured with the URI parameter {@code retry}: {@code 0} turns it off. Server only.
+   *
+   * @return true if required (default)
+   */
+  public boolean isRetryRequired() {
+    return getUriPars().getOrDefault("retry", 1) != 0;
   }
 
   /**

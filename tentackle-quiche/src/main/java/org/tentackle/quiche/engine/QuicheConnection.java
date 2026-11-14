@@ -797,9 +797,11 @@ public class QuicheConnection implements AutoCloseable {
    */
   @Override
   public void close() {
+    boolean freed = false;
     lock.lock();
     try {
       if (!conn.isFreed()) {
+        freed = true;
         failed = true;
         if (failure == null) {
           failure = "the connection was closed";
@@ -813,6 +815,15 @@ public class QuicheConnection implements AutoCloseable {
       lock.unlock();
     }
     streams.clear();
+    StreamListener listener = streamListener;
+    if (freed && listener != null) {
+      try {
+        listener.connectionClosed(this);
+      }
+      catch (RuntimeException e) {
+        LOGGER.warning("the listener of " + this + " failed", e);
+      }
+    }
   }
 
   @Override

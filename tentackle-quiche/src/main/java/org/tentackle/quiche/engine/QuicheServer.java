@@ -280,6 +280,11 @@ public class QuicheServer {
     }
 
     QuicheConnection connection = new QuicheConnection(endpoint, conn, scid, peer, false);
+    if (listener != null && !listener.connectionAccepted(connection)) {
+      // refused: never registered, so nothing but the native connection has to be freed
+      connection.close();
+      return;
+    }
     endpoint.register(connection);
     LOGGER.fine("accepted {0}", connection);
 

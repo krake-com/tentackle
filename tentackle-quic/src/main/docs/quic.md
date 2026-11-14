@@ -143,6 +143,9 @@ contract. Server and client responsibilities are clearly separated.
    a single client may open. The max idle timeout is set from `quicidle` (see
    [Idle timeout and keep-alive](#idle-timeout-and-keep-alive)), and the flow
    control windows from `streamwindow` (see [Flow control](#flow-control)).
+   `retryRequired` makes the server validate the client's address with a Retry
+   packet before it keeps any state for the connection (`retry=0` turns it off,
+   see [Denial of service](#denial-of-service)).
 3. **Bind address** — the host/port come from the URI. A host of `"0"` binds all
    interfaces (IPv4 and IPv6) via `withPort(port)`; any other host binds a
    specific `DatagramSocket`.
@@ -156,7 +159,10 @@ handed to `transport.createConnectionHandler(...)` and run on a **virtual thread
 from the transport's connection thread pool — exactly the same handler path used
 by every other TRIP transport, so call dispatch, registry lookups, and serialization
 behave identically. The stream is closed in a `finally` block when the handler
-returns.
+returns. The stream's connection is named after the client's address
+(`stream <id> of QUIC connection to /<ip>:<port>`), since the
+[pre-authentication policy](../../../../tentackle-core/src/main/docs/trip.md#unauthenticated-peers)
+groups its connection limits by the host it finds in the name.
 
 The factory declares **no** unidirectional streams
 (`maxConcurrentPeerInitiatedUnidirectionalStreams() == 0`, since TRIP is
@@ -327,7 +333,7 @@ shape is used on both client and server (with host `0` / `0.0.0.0` selecting the
 server bind-all case).
 
 ```
-tripq://<host>:<port>?ksfile=...&kspass=...&ksalias=...[&kstype=...][&kmpass=...][&tsfile=...][&tspass=...][&tstype=...][&alpnid=...][&maxstreams=...][&streamwindow=...][&certcheck=...][&hostcheck=...][&connecttimeout=...][&streamtimeout=...][&quicidle=...][&keepalive=...][&namedgroups=...]
+tripq://<host>:<port>?ksfile=...&kspass=...&ksalias=...[&kstype=...][&kmpass=...][&tsfile=...][&tspass=...][&tstype=...][&alpnid=...][&maxstreams=...][&streamwindow=...][&retry=...][&certcheck=...][&hostcheck=...][&connecttimeout=...][&streamtimeout=...][&quicidle=...][&keepalive=...][&namedgroups=...]
 tripcq://<host>:<port>?...same as tripq...&mincompress=1024
 ```
 
@@ -351,6 +357,7 @@ also honors a `tentackle.ssl.<name>` system property and, as a fallback, the sta
 | `alpnid`         | both            | the URI scheme (`tripq` / `tripcq`)                                           | ALPN application-protocol identifier. Client and server must match. The default reveals the service, see [Fingerprinting](../../../../tentackle-core/src/main/docs/trip.md#fingerprinting). |
 | `maxstreams`     | both            | `128`                                                                         | Maximum concurrent peer-initiated bidirectional streams per connection; must be >= 1. On the client, it is the default of the pool's `maximum`, see [Stream limit](#stream-limit).          |
 | `streamwindow`   | both            | `250000`                                                                      | Flow control window per stream in bytes; must be >= 1500. See below.                                                                                                                        |
+| `retry`          | server          | `1`                                                                           | `0` turns off the address validation by a Retry packet (RFC-9000, 8.1). See [Denial of service](#denial-of-service).                                                                        |
 | `certcheck`      | client          | `true`                                                                        | When `true`, the client validates the server certificate against `tsfile`. Any other value skips validation.                                                                                |
 | `hostcheck`      | client          | `tentackle.ssl.hostCheck` / `true`                                            | Verify the server's host name against its certificate, used when `certcheck=true`. Any value but `true` turns it off; the certificate chain is still validated.                             |
 | `connecttimeout` | client          | `10`                                                                          | Seconds to wait for the QUIC handshake before giving up. Must be > 0.                                                                                                                       |
@@ -473,6 +480,24 @@ to cover ordinary calls in full, and only needs raising when calls routinely car
 > calls fit into it keeps the number of streams blocked on flow control — and with it the exposure — small.
 
 ---
+
+### Denial of service
+
+The [pre-authentication policy](../../../../tentackle-core/src/main/docs/trip.md#unauthenticated-peers) of the
+server applies to the QUIC connections themselves, not only to their streams. `QuicProtocolConnectionFactory`
+admits each QUIC connection through a `MultiplexedConnectionGuard` as an unauthenticated connection of the
+client's host. A connection that opens no stream within the policy's `firstMessageTimeout`, or no new one within
+its `idleTimeout` after the last one was closed, is closed. A connection the policy refuses, because the host
+exceeds its connection rate, is closed at once. Once the client logged in on one of its streams, the guard no
+longer restricts the connection. See [Denial of service](../../../../tentackle-core/src/main/docs/trip.md#denial-of-service)
+for the whole picture.
+
+KWIK hands a connection to the factory only after the TLS handshake. Unlike the TCP transports, a connection
+above the rate has therefore cost the server its handshake already. The Retry (`retry=1`, the default) makes sure
+that the client can at least receive at the address it claims: without it, Initial packets with spoofed source
+addresses would make the server keep connections and run handshakes for addresses that never answer. It costs one
+round trip per connection. The `tripj` transport of [tentackle-quiche](../../../../tentackle-quiche/src/main/docs/quiche.md)
+always sends a Retry, and checks the policy before the handshake.
 
 ## Build and packaging
 

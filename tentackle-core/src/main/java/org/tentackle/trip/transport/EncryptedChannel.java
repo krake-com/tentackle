@@ -44,7 +44,7 @@ import java.util.Objects;
  * <ol>
  *   <li>The client sends its random 32-byte salt, followed by the TRIP connection request (magic, UUID and
  *   dictionary flag) encrypted with a key derived from that salt. The hello has a fixed size of
- *   {@value #HELLO_SIZE} bytes, and the client proves with it that it knows the pre-shared key before the
+ *   {@link #HELLO_SIZE} bytes, and the client proves with it that it knows the pre-shared key before the
  *   server sends a single byte.</li>
  *   <li>The server verifies the hello. If it is not authentic, the server sends nothing, and the connection
  *   handler closes the connection after the {@link org.tentackle.trip.RejectionDelay}.
@@ -176,7 +176,7 @@ public class EncryptedChannel {
   /**
    * Client: sends the hello.
    *
-   * @param connectionRequest the connection request of {@value #REQUEST_SIZE} bytes
+   * @param connectionRequest the connection request of {@link #REQUEST_SIZE} bytes
    * @throws IOException if sending failed
    */
   private synchronized void sendHello(byte[] connectionRequest) throws IOException {

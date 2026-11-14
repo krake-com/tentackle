@@ -34,7 +34,8 @@ import java.util.function.BooleanSupplier;
  *   <li>refuses back-references to anything but immutable values, so that the received object graph is a tree,</li>
  *   <li>does not wait for dictionary entries the client never sent,</li>
  *   <li>serves only the registry and the remote objects registered by name,</li>
- *   <li>limits the number of unauthenticated connections and how long they may wait before sending their first or next message.</li>
+ *   <li>limits the number of unauthenticated connections and how long they may wait before sending their first or next message,</li>
+ *   <li>limits the rate at which a host opens new connections.</li>
  * </ul>
  * Once authenticated, none of these restrictions applies anymore and the policy costs nothing.
  * <p>

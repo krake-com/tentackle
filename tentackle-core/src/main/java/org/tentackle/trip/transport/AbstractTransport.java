@@ -25,6 +25,7 @@ import org.tentackle.trip.Connection;
 import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.PreAuthenticationPolicy;
 import org.tentackle.trip.Registry;
+import org.tentackle.trip.RejectionLog;
 import org.tentackle.trip.Remote;
 import org.tentackle.trip.RemoteLookup;
 import org.tentackle.trip.Transport;
@@ -193,8 +194,10 @@ public abstract class AbstractTransport implements Transport {
         // were closed and its dictionary was collected, or this server was restarted. Giving it a
         // new dictionary would make it send ordinals we never learned, so it has to establish a
         // new transport, which gives both sides a fresh dictionary.
-        LOGGER.warning("client transport {0} has a populated dictionary but {1} has none for it " +
-                       "-> the client must establish a new transport", TransportClientInfo.redact(id), this);
+        if (RejectionLog.isLoggable()) {
+          LOGGER.warning("client transport {0} has a populated dictionary but {1} has none for it " +
+                         "-> the client must establish a new transport", TransportClientInfo.redact(id), this);
+        }
         return null;
       }
       // Drop a stale entry first: put() would keep its collected UUID instance as the key, and

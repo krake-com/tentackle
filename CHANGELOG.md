@@ -52,6 +52,14 @@ requires Java 11.
 - `Cryptor.deriveKey` derives independent AES keys from the cryptor's key via HKDF-SHA256.
 - TRIP: a section on [fingerprinting](tentackle-core/src/main/docs/trip.md#fingerprinting) describes what a peer
   that can't log in may still learn about a TRIP server, and how a deployment avoids it.
+- TRIP: `DefaultPreAuthenticationPolicy.connectionRate`/`connectionBurst` (default 20/s, bursts of 64) limit the
+  new connections per host.
+- TRIP: the QUIC connections of `tripq`/`tripcq`/`tripj`/`tripcj` are subject to the pre-authentication policy
+  themselves (`MultiplexedConnectionGuard`). A QUIC connection that opens no stream in time is closed, instead of
+  being kept open by its keep-alive forever.
+- TRIP: the log messages about unauthenticated peers are throttled by `RejectionLog` (default 100 per minute).
+- TRIP: a section on [denial of service](tentackle-core/src/main/docs/trip.md#denial-of-service) describes what
+  bounds the resources a peer that can't log in may bind, and what remains up to the deployment.
 
 ### Changed
 
@@ -65,7 +73,15 @@ requires Java 11.
   authenticated users only, after the random delay of a failed login.
 - An unauthenticated client looking up a wrong service name gets a `TripStreamClosedException` instead of
   "remote object not found".
+- `tripq`/`tripcq` validate the client's address with a Retry packet before the handshake (URI parameter
+  `retry=0` turns it off).
+- `ConnectionHandler.isAuthenticated` is public.
 - many improvements hardening TRIP service endpoints
+
+### Fixed
+
+- `tripq`/`tripcq`: the pre-authentication policy grouped the connection limits by stream number instead of by
+  the client's address, since KWIK names a stream by its number only.
 
 
 ## Java 25 line (25.x)

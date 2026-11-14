@@ -19,7 +19,8 @@
 package org.tentackle.quiche.engine;
 
 /**
- * Notified when the peer opens a stream.
+ * Notified when the peer opens a stream.<br>
+ * A server's listener is also notified when a connection was accepted and when it was closed.
  */
 @FunctionalInterface
 public interface StreamListener {
@@ -35,5 +36,28 @@ public interface StreamListener {
    * @param stream the new stream
    */
   void streamOpened(QuicheStream stream);
+
+  /**
+   * Invoked when the server accepted a new connection, before anything of it is processed.
+   * <p>
+   * Runs on the endpoint's event loop thread, see {@link #streamOpened(QuicheStream)}.
+   *
+   * @param connection the new connection
+   * @return true to keep it, false to drop it at once
+   */
+  default boolean connectionAccepted(QuicheConnection connection) {
+    return true;
+  }
+
+  /**
+   * Invoked once, when a connection whose streams this listener handles was closed and freed.
+   * <p>
+   * Runs on the thread closing the connection, usually the endpoint's event loop thread. Must not block or throw.
+   *
+   * @param connection the closed connection
+   */
+  default void connectionClosed(QuicheConnection connection) {
+    // nothing to do by default
+  }
 
 }

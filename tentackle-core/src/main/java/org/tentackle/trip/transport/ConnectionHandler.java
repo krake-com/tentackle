@@ -24,6 +24,7 @@ import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.PreAuthenticationPolicy;
 import org.tentackle.trip.RejectionDelay;
+import org.tentackle.trip.RejectionLog;
 import org.tentackle.trip.Serializer;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TripConnectionRejectedException;
@@ -137,7 +138,9 @@ public class ConnectionHandler implements Runnable {
     if (policy != null) {
       admission = policy.admit(TransportClientInfo.getHost(connectionName), this::evict, this::isAuthenticated);
       if (admission == null) {
-        LOGGER.warning("connection {0} refused: too many unauthenticated connections", connectionName);
+        if (RejectionLog.isLoggable()) {
+          LOGGER.warning("connection {0} refused: too many unauthenticated connections", connectionName);
+        }
         return;
       }
     }
@@ -157,7 +160,7 @@ public class ConnectionHandler implements Runnable {
    *
    * @return true if authenticated, false if not or the handshake is not complete yet
    */
-  protected boolean isAuthenticated() {
+  public boolean isAuthenticated() {
     TransportClientInfo info = clientInfo;
     return info != null && info.isAuthenticated();
   }
@@ -244,16 +247,20 @@ public class ConnectionHandler implements Runnable {
       if (versionSkew < 0) {
         // Not a TRIP client, or someone guessing the magic: close as late as a failed login,
         // so that the response time tells nothing. Don't log what was received: anybody can send garbage.
-        LOGGER.warning("connection {0} sent an invalid magic -> closed",
-                       new TransportClientInfo(transport, null, connectionName, null));
+        if (RejectionLog.isLoggable()) {
+          LOGGER.warning("connection {0} sent an invalid magic -> closed",
+                         new TransportClientInfo(transport, null, connectionName, null));
+        }
         reject(started);
         return;
       }
       if (versionSkew != 0) {
         // For an auto-updatable client, this will happen only once per client with the update URL endpoint.
         // The client then updates itself and automatically uses the latest protocol.
-        LOGGER.warning("client connection {0} uses an outdated version of TRIP, version skew = {1}",
-                       new TransportClientInfo(transport, null, connectionName, null), versionSkew);
+        if (RejectionLog.isLoggable()) {
+          LOGGER.warning("client connection {0} uses an outdated version of TRIP, version skew = {1}",
+                         new TransportClientInfo(transport, null, connectionName, null), versionSkew);
+        }
       }
       id = getUUID(preamble);
       boolean clientDictionaryEmpty = true;
@@ -266,9 +273,11 @@ public class ConnectionHandler implements Runnable {
       // SSL handshake exception, peer closed, stale client transport, decryption failed, etc...
       // -> just log the messages, no stacktrace: anybody can open a connection and send garbage.
       // Close as late as an invalid magic: an immediate close of a stale client would confirm the magic.
-      LOGGER.warning("connection {0} aborted: {1}",
-                     new TransportClientInfo(transport, null, connectionName, null),
-                     ExceptionHelper.concatenateMessages(e));
+      if (RejectionLog.isLoggable()) {
+        LOGGER.warning("connection {0} aborted: {1}",
+                       new TransportClientInfo(transport, null, connectionName, null),
+                       ExceptionHelper.concatenateMessages(e));
+      }
       reject(started);
       return;
     }
@@ -334,8 +343,10 @@ public class ConnectionHandler implements Runnable {
           // The client failed to serialize its call. Not expected before the login, and the text is the client's:
           // don't log it, and don't allow the client to repeat it.
           if (policy.isEnforcing()) {
-            LOGGER.warning("unauthenticated connection {0} sent an error ({1} characters) -> closed",
-                           clientInfo, e.getMessage() == null ? 0 : e.getMessage().length());
+            if (RejectionLog.isLoggable()) {
+              LOGGER.warning("unauthenticated connection {0} sent an error ({1} characters) -> closed",
+                             clientInfo, e.getMessage() == null ? 0 : e.getMessage().length());
+            }
             reject(System.nanoTime());
             break;
           }
@@ -349,7 +360,9 @@ public class ConnectionHandler implements Runnable {
         if (ce.getCause() != null && !clientInfo.isAuthenticated()) {
           // not the end of the stream, but a broken one, such as a packet that failed to decrypt:
           // close as late as any other rejection
-          LOGGER.warning("unauthenticated connection {0} failed: {1}", clientInfo, ce.getCause().getMessage());
+          if (RejectionLog.isLoggable()) {
+            LOGGER.warning("unauthenticated connection {0} failed: {1}", clientInfo, ce.getCause().getMessage());
+          }
           closedByClient = false;
           reject(System.nanoTime());
         }
@@ -363,21 +376,27 @@ public class ConnectionHandler implements Runnable {
         if (xe.getCause() instanceof TripConnectionRejectedException rx) {
           // the call handler did not answer: close the connection as late as a failed login.
           // The delay runs in this virtual thread, not in the platform thread of the call handler.
-          LOGGER.warning("unauthenticated connection {0} rejected: {1}", clientInfo, rx.getMessage());
+          if (RejectionLog.isLoggable()) {
+            LOGGER.warning("unauthenticated connection {0} rejected: {1}", clientInfo, rx.getMessage());
+          }
           reject(callReceived);
           break;
         }
         if (xe.getCause() instanceof TripPolicyViolationException pv) {
           // the call handler did not answer
-          LOGGER.warning("unauthenticated connection {0} violates the pre-authentication policy: {1}",
-                         clientInfo, pv.getMessage());
+          if (RejectionLog.isLoggable()) {
+            LOGGER.warning("unauthenticated connection {0} violates the pre-authentication policy: {1}",
+                           clientInfo, pv.getMessage());
+          }
           reject(callReceived);
           break;
         }
         if (isErrorSuppressed(policy, admission)) {
           // the error message would tell the client that it talks to a TRIP server
-          LOGGER.warning("processing the call of unauthenticated connection {0} failed -> closed: {1}",
-                         clientInfo, ExceptionHelper.concatenateMessages(xe.getCause()));
+          if (RejectionLog.isLoggable()) {
+            LOGGER.warning("processing the call of unauthenticated connection {0} failed -> closed: {1}",
+                           clientInfo, ExceptionHelper.concatenateMessages(xe.getCause()));
+          }
           reject(callReceived);
           break;
         }
@@ -396,8 +415,10 @@ public class ConnectionHandler implements Runnable {
         if (pv != null) {
           // no stacktrace: the client could flood the log otherwise.
           // No answer either: the error would tell the client that it talks to a TRIP server.
-          LOGGER.warning("unauthenticated connection {0} violates the pre-authentication policy: {1}",
-                         clientInfo, pv.getMessage());
+          if (RejectionLog.isLoggable()) {
+            LOGGER.warning("unauthenticated connection {0} violates the pre-authentication policy: {1}",
+                           clientInfo, pv.getMessage());
+          }
           if (isErrorSuppressed(policy, admission)) {
             reject(System.nanoTime());
           }
@@ -410,8 +431,10 @@ public class ConnectionHandler implements Runnable {
         if (isErrorSuppressed(policy, admission)) {
           // garbage after a valid handshake: no stacktrace, no answer, and not the message, which may contain
           // names chosen by the client
-          LOGGER.warning("unauthenticated connection {0} sent an undecodable message ({1}) -> closed",
-                         clientInfo, t.getClass().getName());
+          if (RejectionLog.isLoggable()) {
+            LOGGER.warning("unauthenticated connection {0} sent an undecodable message ({1}) -> closed",
+                           clientInfo, t.getClass().getName());
+          }
           reject(System.nanoTime());
           break;
         }

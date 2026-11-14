@@ -22,8 +22,10 @@ import tech.kwik.core.QuicStream;
 import tech.kwik.core.server.ApplicationProtocolConnection;
 
 import org.tentackle.log.Logger;
+import org.tentackle.trip.transport.MultiplexedConnectionGuard;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -36,27 +38,82 @@ public class QuicProtocolConnection implements ApplicationProtocolConnection {
 
 
   private final QuicTripTransport transport;
+  private final InetSocketAddress peer;
+  private final MultiplexedConnectionGuard guard;
+  private final boolean refused;
 
   /**
    * Creates a protocol connection.
+   * <p>
+   * The peer's address names each stream's connection, which is what the
+   * {@link org.tentackle.trip.PreAuthenticationPolicy} groups the connection limits by.
+   * KWIK's stream names carry only the stream number.
+   *
+   * @param transport the transport the streams belong to
+   * @param peer the client's address, null if unknown
+   * @param guard the guard of the QUIC connection, null if none
+   * @param refused true if the pre-authentication policy refused the QUIC connection: its streams are closed at once
+   */
+  public QuicProtocolConnection(QuicTripTransport transport, InetSocketAddress peer,
+                                MultiplexedConnectionGuard guard, boolean refused) {
+    this.transport = transport;
+    this.peer = peer;
+    this.guard = guard;
+    this.refused = refused;
+  }
+
+  /**
+   * Creates a protocol connection without a guard.
+   *
+   * @param transport the transport the streams belong to
+   * @param peer the client's address, null if unknown
+   */
+  public QuicProtocolConnection(QuicTripTransport transport, InetSocketAddress peer) {
+    this(transport, peer, null, false);
+  }
+
+  /**
+   * Creates a protocol connection for an unknown peer.
    *
    * @param transport the transport the streams belong to
    */
   public QuicProtocolConnection(QuicTripTransport transport) {
-    this.transport = transport;
+    this(transport, null);
+  }
+
+  /**
+   * Gets the name of a stream's TRIP connection.<br>
+   * Same format as the one of quiche: {@code "stream <id> of QUIC connection to /<ip>:<port>"}, so that
+   * {@link org.tentackle.trip.transport.TransportClientInfo#getHost(String)} finds the host.
+   *
+   * @param quicStream the stream
+   * @return the connection name
+   */
+  protected String getConnectionName(QuicStream quicStream) {
+    return peer == null ? quicStream.toString() : "stream " + quicStream.getStreamId() + " of QUIC connection to " + peer;
   }
 
   @Override
   public void acceptPeerInitiatedStream(QuicStream quicStream) {
+    if (refused) {
+      // the pre-authentication policy refused the QUIC connection, which is being closed
+      closeStream(quicStream);
+      return;
+    }
     try {
       ExecutorService connectionThreadPool = transport.getConnectionThreadPool();
       if (connectionThreadPool == null) {
         throw new IllegalStateException("transport " + transport + " is not accepting connections (anymore)");
       }
       connectionThreadPool.execute(() -> {
+        Runnable handler = null;
         try {
-          String connectionName = quicStream.toString();
-          transport.createConnectionHandler(connectionName, quicStream.getInputStream(), quicStream.getOutputStream()).run();
+          String connectionName = getConnectionName(quicStream);
+          handler = transport.createConnectionHandler(connectionName, quicStream.getInputStream(), quicStream.getOutputStream());
+          if (guard != null) {
+            guard.streamOpened(handler);
+          }
+          handler.run();
         }
         catch (Exception e) {
           LOGGER.warning("cannot handle QUIC stream: " + quicStream, e);
@@ -67,6 +124,9 @@ public class QuicProtocolConnection implements ApplicationProtocolConnection {
         finally {
           // connection is closed, some server error, whatever
           closeStream(quicStream);
+          if (guard != null && handler != null) {
+            guard.streamClosed(handler);
+          }
         }
       });
     }

@@ -21,6 +21,11 @@ package org.tentackle.quic;
 import tech.kwik.core.QuicConnection;
 import tech.kwik.core.server.ApplicationProtocolConnection;
 import tech.kwik.core.server.ApplicationProtocolConnectionFactory;
+import tech.kwik.core.server.ServerConnection;
+
+import org.tentackle.trip.transport.MultiplexedConnectionGuard;
+
+import java.net.InetSocketAddress;
 
 /**
  * The factory KWIK's server connector uses to create a {@link QuicProtocolConnection} for each incoming
@@ -41,7 +46,23 @@ public class QuicProtocolConnectionFactory implements ApplicationProtocolConnect
 
   @Override
   public ApplicationProtocolConnection createConnection(String protocol, QuicConnection quicConnection) {
-    return new QuicProtocolConnection(transport);
+    // the peer's address: the connection limits of the pre-authentication policy are per host
+    InetSocketAddress peer = quicConnection instanceof ServerConnection serverConnection ?
+                               serverConnection.getInitialRemoteAddress() : null;
+    if (quicConnection == null) {
+      return new QuicProtocolConnection(transport, peer);
+    }
+    // The QUIC connection itself is subject to the policy as well: without streams, it would not be
+    // restricted at all, and the keep-alive keeps it open forever.
+    // Not closed in this thread: it is KWIK's, and the closer may be invoked while evicting another connection.
+    MultiplexedConnectionGuard guard = MultiplexedConnectionGuard.admit(
+      transport, "QUIC connection to " + peer,
+      () -> Thread.ofVirtual().name("TRIP QUIC closer").start(quicConnection::close));
+    if (guard == null) {
+      return new QuicProtocolConnection(transport, peer, null, true);
+    }
+    quicConnection.setConnectionListener(_ -> guard.closed());
+    return new QuicProtocolConnection(transport, peer, guard, false);
   }
 
   /**

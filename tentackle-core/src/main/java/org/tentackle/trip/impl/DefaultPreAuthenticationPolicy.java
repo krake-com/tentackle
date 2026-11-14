@@ -23,6 +23,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.trip.PreAuthenticationPolicy;
 import org.tentackle.trip.Registry;
+import org.tentackle.trip.RejectionLog;
 import org.tentackle.trip.TripPolicyViolationException;
 import org.tentackle.trip.TripPreAuth;
 import org.tentackle.trip.remote.IdentifiedRemoteCall;
@@ -62,7 +63,8 @@ import java.util.function.BooleanSupplier;
  * This favors clients that log in quickly over connections kept open without logging in.
  * A connection that sends nothing within {@link #setFirstMessageTimeout(long) firstMessageTimeout}
  * after it was opened, or within {@link #setIdleTimeout(long) idleTimeout} after its last call,
- * is closed as well.
+ * is closed as well. A host opening more new connections than {@link #setConnectionRate(int) connectionRate}
+ * per second, beyond a {@link #setConnectionBurst(int) burst}, is refused before anything is read from them.
  * <p>
  * In {@link Mode#AUDIT} mode, each distinct violation is logged once and nothing is refused.
  */
@@ -102,6 +104,15 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
 
   /** Default length of the network prefix IPv6 clients are grouped by. */
   public static final int DEFAULT_IPV6_PREFIX_LENGTH = 64;
+
+  /** Default number of new connections per second a host may open in the long run. */
+  public static final int DEFAULT_CONNECTION_RATE = 20;
+
+  /** Default number of new connections a host may open at once. */
+  public static final int DEFAULT_CONNECTION_BURST = 64;
+
+  /** Number of hosts whose connection rate is tracked before the idle ones are forgotten. */
+  private static final int RATE_PRUNE_THRESHOLD = 1024;
 
   /** Maximum number of distinct violations logged in audit mode. */
   private static final int MAX_AUDITED = 1000;
@@ -216,6 +227,8 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
   private final Set<String> audited;
   private final LinkedHashSet<AdmissionImpl> admissions;    // oldest first
   private final Map<String, Integer> admissionsPerHost;
+  private final Map<String, RateBucket> rateBuckets;        // guarded by admissions
+  private long lastRatePrune;                               // guarded by admissions
 
   private volatile int maxMessageSize;
   private volatile int maxElements;
@@ -227,6 +240,8 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
   private volatile long firstMessageTimeout;
   private volatile long idleTimeout;
   private volatile int ipv6PrefixLength;
+  private volatile int connectionRate;
+  private volatile int connectionBurst;
 
 
   /**
@@ -240,6 +255,7 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
     audited = ConcurrentHashMap.newKeySet();
     admissions = new LinkedHashSet<>();
     admissionsPerHost = new HashMap<>();
+    rateBuckets = new HashMap<>();
     maxMessageSize = DEFAULT_MAX_MESSAGE_SIZE;
     maxElements = DEFAULT_MAX_ELEMENTS;
     maxDepth = DEFAULT_MAX_DEPTH;
@@ -250,6 +266,8 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
     firstMessageTimeout = DEFAULT_FIRST_MESSAGE_TIMEOUT;
     idleTimeout = DEFAULT_IDLE_TIMEOUT;
     ipv6PrefixLength = DEFAULT_IPV6_PREFIX_LENGTH;
+    connectionRate = DEFAULT_CONNECTION_RATE;
+    connectionBurst = DEFAULT_CONNECTION_BURST;
     allowBuiltins();
     allowAnnotated();
   }
@@ -435,6 +453,52 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
   }
 
   /**
+   * Gets the number of new connections per second a host may open in the long run.
+   *
+   * @return the rate, 0 if unlimited
+   */
+  public int getConnectionRate() {
+    return connectionRate;
+  }
+
+  /**
+   * Sets the number of new connections per second a host may open in the long run.<br>
+   * A connection above the rate is refused before anything is read from it, not even the TLS handshake.
+   * Without the limit, a host could open connections as fast as the network allows, and each new
+   * connection would evict an older one: the server would spend its CPU on TLS handshakes, and the
+   * connections of the other clients sharing the host's address could not complete their handshake
+   * in time. Counts all new connections, including the ones of clients that are already
+   * authenticated, since that is not known before the handshake.
+   * <p>
+   * The rate is enforced as a token bucket, which holds at most {@link #setConnectionBurst(int) connectionBurst}
+   * tokens. Each connection takes one token, and the bucket refills at the given rate.
+   *
+   * @param connectionRate the rate, 0 if unlimited
+   */
+  public void setConnectionRate(int connectionRate) {
+    this.connectionRate = connectionRate;
+  }
+
+  /**
+   * Gets the number of new connections a host may open at once.
+   *
+   * @return the burst, 0 if unlimited
+   */
+  public int getConnectionBurst() {
+    return connectionBurst;
+  }
+
+  /**
+   * Sets the number of new connections a host may open at once.<br>
+   * See {@link #setConnectionRate(int)}.
+   *
+   * @param connectionBurst the burst, 0 if unlimited
+   */
+  public void setConnectionBurst(int connectionBurst) {
+    this.connectionBurst = connectionBurst;
+  }
+
+  /**
    * Gets the number of currently admitted unauthenticated connections.
    *
    * @return the number of connections
@@ -507,6 +571,14 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
     AdmissionImpl admission = new AdmissionImpl(host, Objects.requireNonNull(closer), Objects.requireNonNull(authenticated));
     List<AdmissionImpl> evicted = new ArrayList<>();
     synchronized (admissions) {
+      if (!takeConnectionToken(admission.hostKey)) {
+        if (mode == Mode.ENFORCE) {
+          admission.released = true;
+          return null;
+        }
+        violation("more than " + connectionRate + " connections per second");
+      }
+
       // connections whose client logged in on another connection don't count anymore
       List<AdmissionImpl> authenticatedAdmissions = new ArrayList<>();
       for (AdmissionImpl other : admissions) {
@@ -543,6 +615,17 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
       admission.startDeadline(timeout, "no message received within " + timeout + " ms");
     }
     return admission;
+  }
+
+
+  /**
+   * Gets the current time for the connection rate.<br>
+   * Overridden by tests.
+   *
+   * @return the time in nanoseconds, see {@link System#nanoTime()}
+   */
+  protected long nanoTime() {
+    return System.nanoTime();
   }
 
 
@@ -670,6 +753,65 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
   }
 
   /**
+   * Takes a token from the host's bucket for a new connection.<br>
+   * Must be invoked while holding the monitor of {@link #admissions}.
+   *
+   * @param hostKey the host key
+   * @return true if the host stays within its rate, false if the connection must be refused
+   */
+  private boolean takeConnectionToken(String hostKey) {
+    int rate = connectionRate;
+    int burst = connectionBurst;
+    if (rate <= 0 || burst <= 0) {
+      return true;
+    }
+    long now = nanoTime();
+    if (rateBuckets.size() >= RATE_PRUNE_THRESHOLD && now - lastRatePrune >= 1_000_000_000L) {
+      // forget the hosts whose buckets refilled: they would start with a full bucket anyway
+      lastRatePrune = now;
+      rateBuckets.values().removeIf(bucket -> bucket.tokens(now, rate, burst) >= burst);
+    }
+    RateBucket bucket = rateBuckets.get(hostKey);
+    if (bucket == null) {
+      bucket = new RateBucket(burst, now);
+      rateBuckets.put(hostKey, bucket);
+    }
+    return bucket.take(now, rate, burst);
+  }
+
+  /**
+   * The token bucket limiting the connection rate of a host.<br>
+   * Accessed only while holding the monitor of {@link #admissions}.
+   */
+  private static final class RateBucket {
+
+    private double tokens;
+    private long updated;
+
+    private RateBucket(double tokens, long now) {
+      this.tokens = tokens;
+      this.updated = now;
+    }
+
+    private double tokens(long now, int rate, int burst) {
+      long elapsed = now - updated;
+      if (elapsed > 0) {
+        tokens = Math.min(burst, tokens + elapsed * (rate / 1e9));
+        updated = now;
+      }
+      return tokens;
+    }
+
+    private boolean take(long now, int rate, int burst) {
+      if (tokens(now, rate, burst) >= 1.0) {
+        tokens -= 1.0;
+        return true;
+      }
+      return false;
+    }
+  }
+
+  /**
    * Finds the host holding the most admitted connections.<br>
    * Must be invoked while holding the monitor of {@link #admissions}.
    *
@@ -728,7 +870,9 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
    */
   private void close(AdmissionImpl admission, String reason) {
     if (mode == Mode.ENFORCE) {
-      LOGGER.warning("closing {0}: {1}", admission, reason);
+      if (RejectionLog.isLoggable()) {
+        LOGGER.warning("closing {0}: {1}", admission, reason);
+      }
       try {
         admission.closer.run();
       }

@@ -578,6 +578,13 @@ of TRIP, which also applies to a connection with an invalid magic and to the loo
 service name (see [Unauthenticated peers](../../../../tentackle-core/src/main/docs/trip.md#unauthenticated-peers)).
 All rejections share one interval, so the response time doesn't tell which one occurred.
 
+The delay hides the result of a login, not its cost: each attempt still runs `verifySessionInfo`, often a
+database query plus whatever the application's password check costs, in a thread of the call pool the
+logged-in users share.
+Anybody who knows the service name can make the server do that work, bounded only by the connection limits and
+the connection rate of the pre-authentication policy. Keep the service names secret (see
+[Denial of service](../../../../tentackle-core/src/main/docs/trip.md#denial-of-service)).
+
 The **client's version is checked only after its credentials were verified**: `RemoteDbSessionImpl` invokes
 `RemoteDbConnectionImpl.checkClientVersion` right after `verifySessionInfo`, before the session is registered
 and the client is marked as authenticated. A client with wrong credentials therefore always gets the plain

@@ -171,7 +171,14 @@ never comes cannot park it for good.
      and port, the original connection ID and the time it was issued, keyed by a secret generated at
      startup — unforgeable, entirely stateless, valid for 10 seconds
      (`QuicheServer.RETRY_TOKEN_LIFETIME_SECONDS`), and worthless after a restart;
-   - **accept**, which finally creates the connection.
+   - **accept**, which finally creates the connection. The
+     [pre-authentication policy](../../../../tentackle-core/src/main/docs/trip.md#unauthenticated-peers)
+     admits it first, through a `MultiplexedConnectionGuard`, as an unauthenticated connection of the client's
+     host. A connection the policy refuses, because the host exceeds its connection rate, is dropped without an
+     answer before its handshake: the client repeats its initial packet, and gets in once its host is within its
+     rate again. An admitted connection must open a stream within the policy's `firstMessageTimeout`, and a new
+     one within its `idleTimeout` after the last one was closed, or it is closed (see
+     [Denial of service](../../../../tentackle-core/src/main/docs/trip.md#denial-of-service)).
 
    Any other packet for an unknown connection — a stray short header packet of a connection that is gone,
    say — is dropped. The server sends no stateless resets.
