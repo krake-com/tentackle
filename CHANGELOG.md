@@ -60,8 +60,14 @@ requires Java 11.
 - TRIP: the log messages about unauthenticated peers are throttled by `RejectionLog` (default 100 per minute).
 - TRIP: a section on [denial of service](tentackle-core/src/main/docs/trip.md#denial-of-service) describes what
   bounds the resources a peer that can't log in may bind, and what remains up to the deployment.
+- `tentackle-quic`: source port migration for stalled `tripq`/`tripcq` connections, based on the client migration
+  of KWIK 0.12.3. The URI parameter `migrate` (default 2) sets the probe timeouts before a client migrates. A
+  `tripq` server lets clients migrate unless `migrate=0`. See
+  [Connection migration](tentackle-quic/src/main/docs/quic.md#connection-migration).
 
 ### Changed
+
+- KWIK was upgraded from 0.12.2 to 0.12.3, which adds client connection migration.
 
 - Applications that subclass `SessionInfo` or `Credentials` must annotate the subclass with `@TripPreAuth("login")`,
   or the login is refused (or set `preauth=off`).

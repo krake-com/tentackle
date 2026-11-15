@@ -19,17 +19,18 @@ module's `QuicheKwikInteropTest` verifies on every build.
 
 ### Which of the two to use
 
-|                 | `tentackle-quic` (KWIK)    | `tentackle-quiche` (Cloudflare quiche)                                           |
-|-----------------|----------------------------|----------------------------------------------------------------------------------|
-| Implementation  | pure Java                  | Rust, called through FFM                                                         |
-| Platforms       | anywhere a JVM runs        | Linux and macOS on x86-64 and aarch64, Windows on x86-64                         |
-| Extra JVM flags | none                       | `--enable-native-access`                                                         |
-| Schemes         | `tripq`, `tripcq`          | `tripj`, `tripcj`                                                                |
-| Stalled paths   | waits for the idle timeout | migrates to a new source port, see [Connection migration](#connection-migration) |
+|                 | `tentackle-quic` (KWIK)                                                                                                          | `tentackle-quiche` (Cloudflare quiche)                                           |
+|-----------------|----------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
+| Implementation  | pure Java                                                                                                                        | Rust, called through FFM                                                         |
+| Platforms       | anywhere a JVM runs                                                                                                              | Linux and macOS on x86-64 and aarch64, Windows on x86-64                         |
+| Extra JVM flags | none                                                                                                                             | `--enable-native-access`                                                         |
+| Schemes         | `tripq`, `tripcq`                                                                                                                | `tripj`, `tripcj`                                                                |
+| Stalled paths   | migrates to a new source port, see [Connection migration](../../../../tentackle-quic/src/main/docs/quic.md#connection-migration) | migrates to a new source port, see [Connection migration](#connection-migration) |
 
-Start with `tentackle-quiche`: it migrates a stalled connection to a fresh source port instead of
-waiting for the idle timeout (see [Connection migration](#connection-migration)), and it brings the
-reference implementation's congestion control and packet processing. Reach for
+Both migrate a stalled connection to a fresh source port (see [Connection migration](#connection-migration)).
+Start with `tentackle-quiche`: it brings the reference implementation's congestion control and packet
+processing, and its server follows a migrating client without further ado, whereas KWIK still flags that
+part as experimental. Reach for
 [`tentackle-quic`](../../../../tentackle-quic/src/main/docs/quic.md) when you need a pure-Java stack —
 for example, when the platform is not among those quiche ships binaries for, or the operating system is
 too old to run them and cannot be upgraded. Nothing stops you from deploying both: they register

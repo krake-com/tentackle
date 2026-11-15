@@ -20,8 +20,9 @@ to assemble from several layers:
 - **Faster connection establishment** — the TLS handshake is folded into the
   transport handshake, saving round-trips compared to TCP+TLS.
 - **Connection migration** — the protocol allows a connection to survive the
-  client changing its IP address or port (e.g., switching networks). This module
-  never initiates a migration (yet); though `tentackle-quiche` does, see below.
+  client changing its IP address or port (e.g., switching networks). A client
+  moves a stalled connection to a new source port, see
+  [Connection migration](#connection-migration).
 
 The module is a thin adapter: it wires the [KWIK](https://github.com/ptrd/kwik)
 QUIC library (`tech.kwik.core`) into TRIP's pluggable transport SPI. No
@@ -41,19 +42,21 @@ is this module's sibling: the same transport, but built on
 the JDK's FFM API instead of on KWIK. Both speak RFC-9000 and **interoperate**: a KWIK client can call
 a quiche server and vice versa, which `QuicheKwikInteropTest` verifies on every build.
 
-|                 | `tentackle-quic` (KWIK)    | `tentackle-quiche` (Cloudflare quiche)                                                                                               |
-|-----------------|----------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
-| Implementation  | pure Java                  | Rust, called through FFM                                                                                                             |
-| Platforms       | anywhere a JVM runs        | Linux and macOS on x86-64 and aarch64, Windows on x86-64                                                                             |
-| Extra JVM flags | none                       | `--enable-native-access`                                                                                                             |
-| Schemes         | `tripq`, `tripcq`          | `tripj`, `tripcj`                                                                                                                    |
-| Stalled paths   | waits for the idle timeout | migrates to a new source port, see [Connection migration](../../../../tentackle-quiche/src/main/docs/quiche.md#connection-migration) |
+|                 | `tentackle-quic` (KWIK)                                                          | `tentackle-quiche` (Cloudflare quiche)                                                                                               |
+|-----------------|----------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+| Implementation  | pure Java                                                                        | Rust, called through FFM                                                                                                             |
+| Platforms       | anywhere a JVM runs                                                              | Linux and macOS on x86-64 and aarch64, Windows on x86-64                                                                             |
+| Extra JVM flags | none                                                                             | `--enable-native-access`                                                                                                             |
+| Schemes         | `tripq`, `tripcq`                                                                | `tripj`, `tripcj`                                                                                                                    |
+| Stalled paths   | migrates to a new source port, see [Connection migration](#connection-migration) | migrates to a new source port, see [Connection migration](../../../../tentackle-quiche/src/main/docs/quiche.md#connection-migration) |
 
-Prefer [`tentackle-quiche`](../../../../tentackle-quiche/src/main/docs/quiche.md): it migrates a stalled
-connection to a fresh source port, whereas this module waits for the idle timeout. Use this module when
-you need a pure-Java stack — for example, when the platform is not among those quiche ships binaries for,
-or the operating system is too old to run them and cannot be upgraded. The two register different
-schemes, so nothing stops an application from deploying both and letting each client pick.
+Both migrate a stalled connection to a fresh source port. Prefer
+[`tentackle-quiche`](../../../../tentackle-quiche/src/main/docs/quiche.md) where it runs: it brings the
+reference implementation's congestion control and packet processing, and KWIK still flags its server-side
+support for migration as experimental. Use this module when you need a pure-Java stack — for example, when
+the platform is not among those quiche ships binaries for, or the operating system is too old to run them
+and cannot be upgraded. The two register different schemes, so nothing stops an application from deploying
+both and letting each client pick.
 
 ---
 
@@ -208,6 +211,8 @@ establishes its QUIC connection right away:
    does not return at all.
 4. Each pool slot (`createSlot`) opens a new **bidirectional** QUIC stream
    (`connection.createStream(true)`) and wraps it in a `QuicTripConnection`.
+5. A connection whose path stalls moves to a new source port, see
+   [Connection migration](#connection-migration).
 
 The key-exchange groups the client offers can be restricted with `namedgroups`,
 see [Post-quantum key exchange](#post-quantum-key-exchange).
@@ -365,6 +370,7 @@ also honors a `tentackle.ssl.<name>` system property and, as a fallback, the sta
 | `streamtimeout`  | client          | `10`                                                                          | Seconds to wait for the peer to grant the credits to open another stream. Must be > 0. See below.                                                                                           |
 | `quicidle`       | both            | `30`                                                                          | QUIC max idle timeout in **seconds**. See below.                                                                                                                                            |
 | `keepalive`      | client          | unlimited                                                                     | How many seconds to keep the QUIC connection alive. `0` disables the keep-alive. See below.                                                                                                 |
+| `migrate`        | both            | `2`                                                                           | Client: probe timeouts without any acknowledgment before migrating, >= 0. Server: any value but `0` lets clients migrate. `0` disables. See [Connection migration](#connection-migration).  |
 | `namedgroups`    | both            | `tentackle.ssl.namedGroups` / KWIK default                                    | Comma-separated key-exchange groups, e.g. `X25519MLKEM768`: the client offers them, the server accepts nothing else. See [Post-quantum key exchange](#post-quantum-key-exchange).           |
 | `mincompress`    | both (`tripcq`) | `1024`                                                                        | Minimum block size in bytes before deflate compression is applied.                                                                                                                          |
 
@@ -375,6 +381,7 @@ also honors a `tentackle.ssl.<name>` system property and, as a fallback, the sta
 > `TripRuntimeException` as well. On the client, a port that is
 > not > 0, or a `connecttimeout` or `streamtimeout` that is not > 0, or an unknown group in
 > `namedgroups`, fails the creation of the connection pool with an `IllegalArgumentException`.
+> A negative `migrate` fails with a `TripRuntimeException` on either end.
 
 ### Post-quantum key exchange
 
@@ -434,6 +441,58 @@ would otherwise keep the JVM from terminating.
 
 The corresponding pool parameters (`initial`, `increment`, `minimum`, `maximum`, `idle`, `usage`)
 are described in [trip.md](../../../../tentackle-core/src/main/docs/trip.md).
+
+### Connection migration
+
+Routers and firewalls commonly spread traffic over parallel paths by hashing each flow's addresses and
+ports. A flow that lands on a path that is congested, lossy or throttled stays there, while a new source
+port puts it onto another one. QUIC can move a connection to a new address without disturbing its streams
+([RFC-9000, 9](https://www.rfc-editor.org/rfc/rfc9000.html#name-connection-migration)), because packets
+are routed by connection ID rather than by address. The background is explained in more detail in
+[quiche's connection migration](../../../../tentackle-quiche/src/main/docs/quiche.md#connection-migration);
+this section covers how this module does it on KWIK.
+
+**Stall detection.** KWIK reports every probe timeout (PTO) of an established client connection to the
+connection's listener, as a `ConnectionStalledEvent` carrying the number of consecutive PTOs without an
+acknowledgment in between. Nothing is polled. Once that number reaches `migrate` (default 2),
+`QuicMigrator` starts the migration. The PTO follows the measured round trip time and backs off
+exponentially, so the default amounts to roughly three times the first probe timeout, on a slow path as
+well as on a fast one. An idle connection sends its keep-alives, so a path that dies while nothing is
+going on is detected as well.
+
+**Migration.** `QuicClientConnection.migrate(timeout)` opens a new UDP socket on a port chosen by the
+system and probes the path from it (PATH_CHALLENGE). Only once the server has answered does the connection
+switch over: it retires the connection ID of the old path, closes the old socket, and sends a PING so that
+the packets lost on the old path are detected and retransmitted right away. The path is given
+`connecttimeout` to validate. The migration runs on a virtual thread of its own, since KWIK delivers all
+listener events of a connection on a single callback thread, and the connection keeps using the old path
+meanwhile. Only one migration runs at a time. If it fails, the connection stays where it is and tries
+again once another `migrate` probe timeouts have passed without an acknowledgment. `QuicTripConnectionPool`
+counts the migrations (`getMigrationCount()`), and each one is logged at `INFO`.
+
+**Limits.** The server issues a new connection ID for every one the client retires, so there is no limit
+on the number of migrations per connection. However, KWIK's client holds only a *single* spare connection
+ID of the server (its `active_connection_id_limit` of 2 is not configurable through KWIK's public API), and
+the replacement for the one a migration used arrives only after the old path's ID was retired — about
+100 ms plus a round trip later. A new path that stalls within that window cannot be left anymore: the
+attempts fail until the idle timeout ends the connection, and the pool re-establishes it from a fresh
+source port on the next request. A migration moves the client's source port only: it cannot help if the
+server's address, or the client's address as a whole, is what the network is penalizing.
+
+**Server.** KWIK's server lets clients migrate only if the system property
+`tech.kwik.server.connection-migration.enabled` is `true`; otherwise it advertises
+`disable_active_migration`, and a client must not migrate. `accept()` sets the property to `true`, or to
+`false` for `migrate=0`, so a `tripq` server follows migrating clients by default. Note that:
+
+- the property is JVM-global. KWIK reads it when a server connector is created and again for every
+  incoming connection, so with several `tripq` servers in one JVM the last one started decides.
+- a value given explicitly on the command line (`-Dtech.kwik.server.connection-migration.enabled=…`)
+  always wins over `migrate`.
+- with migration enabled, KWIK prints a `SECURITY WARNING` to standard output when the connector is created,
+  since it still considers the feature to be in development.
+
+A `tripq` client migrates against a `tripj` server just as well, which needs no configuration: quiche
+validates the new path itself.
 
 ### Stream limit
 
@@ -557,8 +616,8 @@ The `tripj` and `tripcj` schemes of
 [`tentackle-quiche`](../../../../tentackle-quiche/src/main/docs/quiche.md) are the same two choices on
 the quiche stack, and they talk to `tripq`/`tripcq` peers — the scheme selects the local implementation,
 not the wire protocol. The compression of `tripcq`/`tripcj`, on the other hand, must match on both ends.
-For clients that change networks or sit behind NATs that rebind, prefer `tripj`/`tripcj`: only quiche
-migrates a connection whose path has stalled.
+Both stacks migrate a client connection whose path has stalled, see
+[Connection migration](#connection-migration).
 
 ---
 
