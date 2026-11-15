@@ -72,6 +72,9 @@ public final class MultiplexedConnectionGuard {
     PreAuthenticationPolicy policy = transport.getPreAuthenticationPolicy();
     if (policy != null) {
       Runnable close = () -> {
+        // don't rely on the notification of the closed connection: it may have been closed already.
+        // Release first, so that whoever sees the connection closed also sees its admission released.
+        guard.release();
         if (guard.closed.compareAndSet(false, true)) {
           try {
             closer.run();
@@ -80,8 +83,6 @@ public final class MultiplexedConnectionGuard {
             LOGGER.warning("closing " + name + " failed", ex);
           }
         }
-        // don't rely on the notification of the closed connection: it may have been closed already
-        guard.release();
       };
       guard.admission = policy.admit(TransportClientInfo.getHost(name), close, guard::isAuthenticated);
       if (guard.admission == null) {
