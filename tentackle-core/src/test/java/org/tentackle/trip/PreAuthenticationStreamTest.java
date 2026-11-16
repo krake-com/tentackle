@@ -396,7 +396,7 @@ public class PreAuthenticationStreamTest {
 
   @Test(timeOut = 10000)
   void testHashChainIsRefused() {
-    Set<Object> chain = createHashChain(30);    // below the maximum depth: minutes to deserialize without the policy
+    Set<Object> chain = createHashChain(14);    // below the maximum depth: refused by the back-reference check, not the depth limit
     TripPolicyViolationException ex = expectThrows(TripPolicyViolationException.class,
                                                    () -> echo(chain, createPolicy(PreAuthenticationPolicy.Mode.ENFORCE)));
     assertTrue(ex.getMessage().contains("back-reference"), ex.getMessage());

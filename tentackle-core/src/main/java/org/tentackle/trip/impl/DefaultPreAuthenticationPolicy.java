@@ -79,10 +79,10 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
   public static final int DEFAULT_MAX_ELEMENTS = 4096;
 
   /** Default maximum nesting depth of objects, arrays, collections and maps. */
-  public static final int DEFAULT_MAX_DEPTH = 32;
+  public static final int DEFAULT_MAX_DEPTH = 16;
 
   /** Default maximum number of messages per connection before authentication. */
-  public static final int DEFAULT_MAX_MESSAGES = 32;
+  public static final int DEFAULT_MAX_MESSAGES = 16;
 
   /** Maximum length of a violation message: it may contain names chosen by the client. */
   private static final int MAX_VIOLATION_LENGTH = 200;
