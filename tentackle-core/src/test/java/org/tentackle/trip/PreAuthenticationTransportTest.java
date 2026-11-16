@@ -132,11 +132,15 @@ public class PreAuthenticationTransportTest {
   }
 
   private void startServer(PreAuthenticationPolicy policy) throws Exception {
+    startServer(policy, "trip");
+  }
+
+  private void startServer(PreAuthenticationPolicy policy, String scheme) throws Exception {
     int port;
     try (ServerSocket socket = new ServerSocket(0, 50, InetAddress.getLoopbackAddress())) {
       port = socket.getLocalPort();
     }
-    uri = new URI("trip://127.0.0.1:" + port);
+    uri = new URI(scheme + "://127.0.0.1:" + port);
     server = TripFactory.getInstance().createTransport(uri);
     server.setPreAuthenticationPolicy(policy);
     server.accept();
@@ -296,6 +300,48 @@ public class PreAuthenticationTransportTest {
       socket.getOutputStream().write(new byte[] { 0, 0 });
       // the server waits for the whole preamble: closing now would tell the length of the magic
       expectThrows(SocketTimeoutException.class, () -> socket.getInputStream().read());
+    }
+  }
+
+  @Test
+  void testCompressedTransport() throws Exception {
+    startServer(new DefaultPreAuthenticationPolicy(), "tripc");
+    assertEquals(connect().echo("hello"), "hello");
+    // compressed messages after the uncompressed connection request
+    String large = "x".repeat(10_000);
+    assertEquals(connect().echo(large), large);
+  }
+
+  @Test
+  void testCompressedInvalidRequestNotDecidedEarly() throws Exception {
+    startServer(new DefaultPreAuthenticationPolicy(), "tripc");
+
+    try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), uri.getPort())) {
+      socket.setSoTimeout(500);
+      // a compressed packet of garbage: the inflater would fail at the third byte
+      socket.getOutputStream().write(new byte[] { (byte) 0xff, (byte) 0xff, (byte) 0xff });
+      // the server waits for the packet header and the whole request: closing now would tell the wire format
+      expectThrows(SocketTimeoutException.class, () -> socket.getInputStream().read());
+    }
+  }
+
+  @Test
+  void testCompressedInvalidRequestIsDelayed() throws Exception {
+    startServer(new DefaultPreAuthenticationPolicy(), "tripc");
+    RejectionDelay.setInterval(300, 400);
+
+    for (byte[] header : new byte[][] { { (byte) 0xff, (byte) 0xff },     // compressed
+                                        { 0, 0 } }) {                     // empty packet
+      try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), uri.getPort())) {
+        socket.setSoTimeout(5000);
+        long start = System.nanoTime();
+        OutputStream out = socket.getOutputStream();
+        out.write(header);
+        out.write(new byte[18]);    // magic + UUID
+        assertClosed(socket.getInputStream());
+        long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+        assertTrue(elapsed >= 300, "invalid request rejected after " + elapsed + "ms");
+      }
     }
   }
 

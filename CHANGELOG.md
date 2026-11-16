@@ -86,6 +86,8 @@ requires Java 11.
 
 ### Fixed
 
+- TRIP: incomplete connection requests for the compressing transports (`tripc`, `tripcs`, `tripcq`, `tripcj`)
+  are now rejected after the rejection delay like any other rejections.
 - `tripq`/`tripcq`: the pre-authentication policy grouped the connection limits by stream number instead of by
   the client's address, since KWIK names a stream by its number only.
 

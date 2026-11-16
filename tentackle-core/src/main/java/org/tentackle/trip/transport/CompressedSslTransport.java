@@ -73,7 +73,7 @@ public class CompressedSslTransport extends SslTransport {
   public Runnable createConnectionHandler(String connectionName, InputStream inputStream, OutputStream outputStream,
                                           Supplier<List<X509Certificate>> peerCertificates) {
     return super.createConnectionHandler(connectionName,
-                                         createCompressedInputStream(inputStream),
+                                         createCompressedInputStream(new CompressedRequestInputStream(inputStream)),
                                          createCompressedOutputStream(outputStream),
                                          peerCertificates);
   }
@@ -87,7 +87,8 @@ public class CompressedSslTransport extends SslTransport {
    */
   protected OutputStream createCompressedOutputStream(OutputStream outputStream) {
     return new FastCompressedOutputStream(outputStream,
-                                          getUriPars().getOrDefault("mincompress", 1024));
+                                          CompressedRequestInputStream.minCompressSize(
+                                              getUriPars().getOrDefault("mincompress", 1024)));
   }
 
   /**

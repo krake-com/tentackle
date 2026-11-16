@@ -109,20 +109,20 @@ URI, e.g. `trips://myserver:18000/MyApp?idle=10&backlog=100`. The QUIC transport
 see [QUIC](../../../../tentackle-quic/src/main/docs/quic.md) and
 [quiche](../../../../tentackle-quiche/src/main/docs/quiche.md).
 
-| Parameter        | Side   | Default | Meaning                                                                                                                           |
-|------------------|--------|---------|-----------------------------------------------------------------------------------------------------------------------------------|
-| `initial`        | client | `1`     | The initial number of pooled connections to the server.                                                                           |
-| `increment`      | client | `1`     | The number of connections opened at once when all pooled connections are in use.                                                  |
-| `minimum`        | client | `1`     | The number of connections kept open even when idle.                                                                               |
-| `maximum`        | client | `0`     | The maximum number of connections, `0` = unlimited.                                                                               |
-| `idle`           | client | `10`    | Minutes after which an unused pooled connection is closed, `0` = never.                                                           |
-| `usage`          | client | `0`     | Minutes after which a connection is replaced, no matter how busy, `0` = never.                                                    |
-| `connecttimeout` | client | `10`    | Seconds to wait for a connection to the server to be established, including the TLS handshake of the SSL transports. Must be > 0. |
-| `idle`           | server | `5`     | Minutes after which an unused thread of the call-handling thread pool terminates.                                                 |
-| `backlog`        | server | `50`    | The listen backlog of the server socket.                                                                                          |
-| `nodelay`        | both   | `1`     | `0` keeps Nagle's algorithm enabled. By default, `TCP_NODELAY` is set on the client's and on the accepted sockets.                |
-| `mincompress`    | both   | `1024`  | Compressing transports only: packets smaller than this many bytes are sent uncompressed.                                          |
-| `legacy`         | server | `1`     | PSK transports only: `0` refuses clients of the previous version (AES/ECB), see [PSK encryption](#psk-encryption).                |
+| Parameter        | Side   | Default | Meaning                                                                                                                                                    |
+|------------------|--------|---------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `initial`        | client | `1`     | The initial number of pooled connections to the server.                                                                                                    |
+| `increment`      | client | `1`     | The number of connections opened at once when all pooled connections are in use.                                                                           |
+| `minimum`        | client | `1`     | The number of connections kept open even when idle.                                                                                                        |
+| `maximum`        | client | `0`     | The maximum number of connections, `0` = unlimited.                                                                                                        |
+| `idle`           | client | `10`    | Minutes after which an unused pooled connection is closed, `0` = never.                                                                                    |
+| `usage`          | client | `0`     | Minutes after which a connection is replaced, no matter how busy, `0` = never.                                                                             |
+| `connecttimeout` | client | `10`    | Seconds to wait for a connection to the server to be established, including the TLS handshake of the SSL transports. Must be > 0.                          |
+| `idle`           | server | `5`     | Minutes after which an unused thread of the call-handling thread pool terminates.                                                                          |
+| `backlog`        | server | `50`    | The listen backlog of the server socket.                                                                                                                   |
+| `nodelay`        | both   | `1`     | `0` keeps Nagle's algorithm enabled. By default, `TCP_NODELAY` is set on the client's and on the accepted sockets.                                         |
+| `mincompress`    | both   | `1024`  | Compressing transports only: packets smaller than this many bytes are sent uncompressed. At least 20, so that the connection request travels uncompressed. |
+| `legacy`         | server | `1`     | PSK transports only: `0` refuses clients of the previous version (AES/ECB), see [PSK encryption](#psk-encryption).                                         |
 
 Connections are created with the pool locked, by the thread requesting one and by the timeout thread
 that all pools share to restore the `minimum`. `connecttimeout` therefore bounds how long a server that
@@ -1211,7 +1211,10 @@ Some requests of an unauthenticated peer are rejected after a random time instea
 
 - a connection whose connection request (magic and UUID, 18 bytes) does not start with the TRIP magic is closed.
   The server reads the whole request before it decides, so that the decision doesn't reveal the length of the
-  magic. What it sent is not logged.
+  magic. What it sent is not logged. The compressing transports (`tripc`, `tripcs`, `tripcq`, `tripcj`) read the
+  request together with the two-byte header of its packet, 20 bytes, and reject a first packet that is compressed,
+  empty or too short for the request in the same way. Otherwise, the header alone would decide: the inflater fails
+  at the first byte of a compressed packet of garbage, and empty packets are skipped.
 - a connection whose handshake fails otherwise is closed: a stale dictionary, a hello of the
   [PSK transports](#psk-encryption) that is not authentic, a broken stream.
 - the lookup of a name that is not registered is not answered, and the connection is closed. The name is not
@@ -1276,7 +1279,8 @@ default of a `TripServer`), the server behaves like this towards that attacker:
 - **It closes at a time that tells nothing.** Every rejection closes after the same random
   [delay](#delayed-rejection): no TRIP at all, a wrong magic, a stale dictionary, a wrong key of the PSK
   transports, a wrong service name, a forbidden class, garbage, a wrong password.
-- **It decides only after the whole connection request**: 18 bytes for the TCP and SSL transports, the 67 bytes
+- **It decides only after the whole connection request**: 18 bytes for the TCP and SSL transports, 20 bytes
+  (the packet header and the request) for the compressing transports, the 67 bytes
   of the hello for the PSK transports. Anything shorter waits for `firstMessageTimeout`.
 
 What remains is up to the deployment:

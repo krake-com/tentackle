@@ -25,20 +25,27 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import tech.kwik.core.QuicClientConnection;
+import tech.kwik.core.QuicStream;
 
 import org.tentackle.trip.RejectionDelay;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.impl.DefaultPreAuthenticationPolicy;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.expectThrows;
 
 /**
  * Tests the pre-authentication policy on the QUIC connections of a {@code tripq} server.<br>
@@ -135,19 +142,59 @@ public class QuicPreAuthenticationTest {
   }
 
 
+  @Test(timeOut = 60000)
+  public void compressedRequestNotDecidedEarly() throws Exception {
+    Reporter.log("compressedRequestNotDecidedEarly", true);
+    startServer(new DefaultPreAuthenticationPolicy(), CompressedQuicTripTransport.PROTOCOL);
+
+    QuicClientConnection connection = connectWithoutStream(CompressedQuicTripTransport.PROTOCOL);
+    try {
+      QuicStream stream = connection.createStream(true);
+      OutputStream out = stream.getOutputStream();
+      // a compressed packet of garbage: the inflater would fail at the third byte
+      out.write(new byte[] { (byte) 0xff, (byte) 0xff, (byte) 0xff });
+      out.flush();
+      CompletableFuture<Integer> closed = CompletableFuture.supplyAsync(() -> {
+        try {
+          return stream.getInputStream().read();
+        }
+        catch (IOException e) {
+          return -2;    // reset
+        }
+      });
+      // the server waits for the packet header and the whole request: closing now would tell the wire format
+      expectThrows(TimeoutException.class, () -> closed.get(1, TimeUnit.SECONDS));
+      out.write(new byte[17]);
+      out.flush();
+      assertTrue(closed.get(10, TimeUnit.SECONDS) < 0, "the invalid request was answered");
+    }
+    finally {
+      connection.close();
+    }
+  }
+
+
   private void startServer(DefaultPreAuthenticationPolicy policy) throws Exception {
+    startServer(policy, QuicTripTransport.PROTOCOL);
+  }
+
+  private void startServer(DefaultPreAuthenticationPolicy policy, String protocol) throws Exception {
     port = QuicTestSupport.freeUdpPort();
     server = TripFactory.getInstance().createTransport(URI.create(
-      QuicTripTransport.PROTOCOL + "://localhost:" + port + "?" + QuicTestSupport.keyStoreParameters(keyStore)));
+      protocol + "://localhost:" + port + "?" + QuicTestSupport.keyStoreParameters(keyStore)));
     server.setPreAuthenticationPolicy(policy);    // before accept()
     server.accept();
     Thread.sleep(1000);   // wait for the server to start accepting connections
   }
 
   private QuicClientConnection connectWithoutStream() throws Exception {
+    return connectWithoutStream(QuicTripTransport.PROTOCOL);
+  }
+
+  private QuicClientConnection connectWithoutStream(String protocol) throws Exception {
     QuicClientConnection connection = QuicClientConnection.newBuilder()
                                                           .uri(URI.create("https://localhost:" + port))
-                                                          .applicationProtocol(QuicTripTransport.PROTOCOL)
+                                                          .applicationProtocol(protocol)
                                                           .noServerCertificateCheck()
                                                           .maxIdleTimeout(Duration.ofSeconds(30))
                                                           .connectTimeout(Duration.ofSeconds(30))

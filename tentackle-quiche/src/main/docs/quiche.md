@@ -275,7 +275,7 @@ tripj://host:port/service?parameter=value&...
 | `keepalive`      | client | -1                                             | keep-alive interval in seconds; negative derives it from `quicidle`, 0 disables                                                                                  |
 | `migrate`        | client | 2                                              | probe timeouts without any acknowledgment before migrating, >= 0; 0 disables                                                                                     |
 | `namedgroups`    | both   | `tentackle.ssl.namedGroups` / BoringSSL's      | key-exchange groups in preference order, e.g. `X25519MLKEM768`; see below                                                                                        |
-| `mincompress`    | both   | 1024                                           | smallest block to compress (`tripcj` only)                                                                                                                       |
+| `mincompress`    | both   | 1024                                           | smallest block to compress (`tripcj` only), at least 20                                                                                                          |
 
 The keystore and truststore parameters and `namedgroups` are resolved by the shared
 [`SslParameters`](../../../../tentackle-core/src/main/docs/trip.md#ssltls-configuration), exactly as for

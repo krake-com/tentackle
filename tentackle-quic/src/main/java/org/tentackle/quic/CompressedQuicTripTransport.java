@@ -25,6 +25,7 @@ import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.TransportService;
 import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripStream;
+import org.tentackle.trip.transport.CompressedRequestInputStream;
 import org.tentackle.trip.transport.FastCompressedOutputStream;
 
 import java.io.InputStream;
@@ -60,7 +61,7 @@ public class CompressedQuicTripTransport extends QuicTripTransport {
   public Runnable createConnectionHandler(String connectionName, InputStream inputStream, OutputStream outputStream,
                                           Supplier<List<X509Certificate>> peerCertificates) {
     return super.createConnectionHandler(connectionName,
-                                         createCompressedInputStream(inputStream),
+                                         createCompressedInputStream(new CompressedRequestInputStream(inputStream)),
                                          createCompressedOutputStream(outputStream),
                                          peerCertificates);
   }
@@ -82,7 +83,8 @@ public class CompressedQuicTripTransport extends QuicTripTransport {
    */
   protected OutputStream createCompressedOutputStream(OutputStream outputStream) {
     return new FastCompressedOutputStream(outputStream,
-                                          getUriPars().getOrDefault("mincompress", 1024));
+                                          CompressedRequestInputStream.minCompressSize(
+                                              getUriPars().getOrDefault("mincompress", 1024)));
   }
 
   /**
