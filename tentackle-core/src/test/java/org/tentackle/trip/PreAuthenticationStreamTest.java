@@ -23,6 +23,7 @@ import org.testng.annotations.Test;
 import org.tentackle.log.Logger;
 import org.tentackle.trip.impl.DefaultOpCode;
 import org.tentackle.trip.impl.DefaultPreAuthenticationPolicy;
+import org.tentackle.trip.impl.DefaultTripStream;
 import org.tentackle.trip.impl.EchoTransceiver;
 import org.tentackle.trip.impl.TestClass;
 
@@ -400,8 +401,16 @@ public class PreAuthenticationStreamTest {
     TripPolicyViolationException ex = expectThrows(TripPolicyViolationException.class,
                                                    () -> echo(chain, createPolicy(PreAuthenticationPolicy.Mode.ENFORCE)));
     assertTrue(ex.getMessage().contains("back-reference"), ex.getMessage());
-    // no restrictions once authenticated
-    assertEquals(echo(createHashChain(4), null).size(), 2);
+    // still refused once authenticated: by the hash guard (see HashGuardTest)
+    ex = expectThrows(TripPolicyViolationException.class, () -> echo(createHashChain(4), null));
+    assertTrue(ex.getMessage().contains("within a hashed value"), ex.getMessage());
+    DefaultTripStream.setHashGuardEnabled(false);
+    try {
+      assertEquals(echo(createHashChain(4), null).size(), 2);
+    }
+    finally {
+      DefaultTripStream.setHashGuardEnabled(true);
+    }
   }
 
   @Test

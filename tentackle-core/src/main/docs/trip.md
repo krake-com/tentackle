@@ -1149,7 +1149,7 @@ Before the client is authenticated, the [`DefaultPreAuthenticationPolicy`](../ja
 | **Class allowlist**     | Every class name in a received dictionary entry is checked *as a string, before it is loaded*, so not even the static initializer of a foreign class runs. The component types of an entry must be allowed as well, or be the types the allowed class declares. Dynamic proxies are refused. An entry the server created itself, for a class it sent to the client, is checked when the client refers to it. Since `@TripViaJOS` classes and lambdas are not on the list, neither can be reached before the login.                                                                                                                                              |
 | **Message size**        | A message may not exceed `maxMessageSize` bytes (default 256 KiB), counted after decompression.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | **Element count**       | Arrays, collections and maps may not exceed `maxElements` (default 4096), checked *before* anything is allocated for them.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| **Object graph**        | Objects, arrays, collections and maps may not nest deeper than `maxDepth` (default 16). An object may be referenced a second time only if it is an immutable value, such as a `String`, a number, an enum or a `UUID`: otherwise a few hundred bytes of hash sets sharing each other make computing a hash code take forever. The received graph is therefore a tree bounded by the message size.                                                                                                                                                                                                                                                               |
+| **Object graph**        | Objects, arrays, collections and maps may not nest deeper than `maxDepth` (default 16). An object may be referenced a second time only if it is an immutable value, such as a `String`, a number, an enum or a `UUID`: otherwise a few hundred bytes of hash sets sharing each other make computing a hash code take forever. The received graph is therefore a tree bounded by the message size. After the login, the [hash guard](#hashed-values) still applies.                                                                                                                                                                                              |
 | **Components**          | A dictionary entry may name only components the allowed class declares. Otherwise, the server would keep thousands of made-up names per connection, and the component of an array entry, which names the element class, could load any class.                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | **Messages**            | A connection may send at most `maxMessages` (default 16) messages before the client is authenticated. A client that probes a remote object it was not given, or sends an error, is disconnected.                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | **No waiting**          | An ordinal of a dictionary entry the client never sent fails after `dictionaryWaitTime` (default 5 s) instead of parking the thread for 5 minutes.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -1334,12 +1334,67 @@ What remains is up to the deployment:
 - **The network.** SYN floods, UDP floods and saturated links are beyond any server process. Use SYN cookies,
   limit the connections per source address in the firewall (`connlimit`, `hashlimit`), and filter upstream.
 
+### Hashed values
+
+Before the login, the [policy](#unauthenticated-peers) refuses back-references to anything but immutable
+values, so the received graph is a tree. After the login, back-references are needed: a graph of PDOs shares
+its domain context, and components refer to their root entity. But hashing and back-references don't go
+together, whether the peer is an attacker or a buggy client. When TRIP reads a hash set, it adds each element as
+soon as it is read, and the `add` computes the element's hash code. That hash code recurses through the whole
+graph below the element: lists, the values of maps, records, and any `hashCode` built with `Objects.hash`.
+A shared object is visited once per path leading to it, so the time it takes grows with the number of paths, not
+the number of objects:
+
+```java
+List<Object> list = List.of("x");
+for (int level = 0; level < 3; level++) {
+  list = Collections.nCopies(1000, list);    // 1000 references to the same list
+}
+Set<Object> set = new HashSet<>();
+set.add(list);    // visits 10^9 lists, and 10^12 with a fourth level
+```
+
+Serialized, it is about 10 KB. Its nesting depth is 4, and only one hash set is involved. A limit on the
+nesting depth, of all containers or of hash sets and maps only, would therefore not stop it. Sharing is what
+makes it expensive, so sharing is what TRIP limits: the **hash guard** refuses a back-reference within a value
+the receiving container will hash, unless the hash code of the referenced object doesn't depend on other objects.
+The value is then a tree, and hashing it takes time linear in the size of the message.
+
+- **Hashed values** are the elements of a set and the keys of a map, unless the set or map is sorted
+  (`TreeSet`, `TreeMap`), enum-based (`EnumSet`, `EnumMap`) or an `IdentityHashMap`. This includes `HashSet`,
+  `LinkedHashSet`, `HashMap`, `ConcurrentHashMap`, `Set.of`, `Map.of`, the unmodifiable and synchronized
+  wrappers, and their subclasses. The values of a map are not hashed by `put`, so they may be shared freely,
+  unless the map itself is a hashed value.
+- **Back-references allowed within a hashed value** are the values shareable before the login (`String`,
+  numbers, `Boolean`, `Character`, enums, `UUID`, `Locale`, `TimeZone`, `Class`, dates and times), arrays, and
+  objects inheriting both `hashCode` and `equals` from `Object`. Dynamic proxies are not, since their handler
+  decides. A set that contains itself, directly or via other containers, is refused as well: its hash code
+  would overflow the stack.
+
+A violation throws a `TripPolicyViolationException`. The server logs it and answers with a deserialization error,
+and the client gets the exception with the reason. The guard applies to every TRIP stream, so to responses
+received by the client as well. It costs nothing unless a back-reference is read within a hashed value.
+
+Tentackle keeps PDOs out of hash sets and maps for good reasons (see
+[object identity](../../../../tentackle-pdo/src/main/docs/pdo.md#object-identity--equals-hashcode-and-why-relations-are-lists)),
+so a legitimate graph rarely triggers the guard. If one does, it shares a mutable object within a hash key, which
+breaks the set or map as soon as that object changes. Prefer immutable keys. As a last resort, and only if all
+peers are trusted, the guard can be disabled with `DefaultTripStream.setHashGuardEnabled(false)` or the system
+property `tentackle.trip.disableHashGuard=true`.
+
+The guard covers the hashing TRIP does while it reads. It does not cover hashing done by the application after
+the call, or by application code during deserialization, such as a canonical constructor, a builder or a
+`TripComponentProvider` that copies a list into a `HashSet`. Nor does it cover the comparisons of a `TreeSet`, or
+classes routed through `@TripViaJOS`. The nesting depth itself is limited only before the login.
+
 ### Practical guidance
 
 - Application-to-application TRIP traffic from **authenticated** clients needs no allowlist —
   both ends are the same trusted code base. Before the login, the server must not trust the client:
   install a [`PreAuthenticationPolicy`](#unauthenticated-peers), or use a `TripServer`, which does
   that by default.
+- Don't share mutable objects within the elements of hash sets or the keys of hash maps sent via TRIP: the
+  [hash guard](#hashed-values) refuses them, even from authenticated clients.
 - Serialized objects that **leave the live session** (BLOB columns, files, message queues) should
   be treated as untrusted on the way back in: prefer records for the payload classes, and install
   an allowlisting builder in the tier that reads them.

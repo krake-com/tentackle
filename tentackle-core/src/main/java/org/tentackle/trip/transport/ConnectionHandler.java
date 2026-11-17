@@ -457,8 +457,12 @@ public class ConnectionHandler implements Runnable {
         TripPolicyViolationException pv = ExceptionHelper.extractException(TripPolicyViolationException.class, true, t);
         if (pv != null) {
           // no stacktrace: the client could flood the log otherwise.
-          // No answer either: the error would tell the client that it talks to a TRIP server.
-          if (RejectionLog.isLoggable()) {
+          // No answer either before the login: the error would tell the client that it talks to a TRIP server.
+          if (admission == null) {
+            // authenticated client: refused by the hash guard (see TripStream#enterHashed)
+            LOGGER.warning("connection {0} violates the TRIP policy: {1}", clientInfo, pv.getMessage());
+          }
+          else if (RejectionLog.isLoggable()) {
             LOGGER.warning("unauthenticated connection {0} violates the pre-authentication policy: {1}",
                            clientInfo, pv.getMessage());
           }

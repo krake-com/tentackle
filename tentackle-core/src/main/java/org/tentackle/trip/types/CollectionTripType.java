@@ -33,6 +33,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.EnumSet;
+import java.util.Set;
+import java.util.SortedSet;
 import java.util.function.Consumer;
 
 
@@ -55,6 +58,8 @@ interface CollectionTypeHolder {
  * exist before, its components precede the elements in the stream in this case, the other way round
  * otherwise. Either way the collection is created before its elements are read, so the elements may
  * back-reference the collection itself.
+ * <p>
+ * The elements of a set that may hash them are read as hashed values (see {@link TripStream#enterHashed()}).
  *
  * @param <T> the collection type
  */
@@ -64,6 +69,7 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
 
   private static final OpCode OP_CODE = DefaultOpCode.COLLECTION;
 
+  private final boolean hashing;
   private Constructor<T> sizedConstructor;
   private Constructor<T> noArgsConstructor;
 
@@ -74,6 +80,9 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
    */
   public CollectionTripType(Class<T> clazz) {
     super(clazz);
+    // conservative: any unordered set may hash its elements, including the wrapped and immutable ones
+    hashing = Set.class.isAssignableFrom(clazz) &&
+              !SortedSet.class.isAssignableFrom(clazz) && !EnumSet.class.isAssignableFrom(clazz);
     if (isInstantiable() && !isDelayedConstruction()) {
       try {
         sizedConstructor = clazz.getDeclaredConstructor(Integer.TYPE);
@@ -109,6 +118,17 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
    */
   public Constructor<T> getNoArgsConstructor() {
     return noArgsConstructor;
+  }
+
+  /**
+   * Returns whether the collection may compute the hash codes of its elements.<br>
+   * If so, the elements are read as hashed values.
+   *
+   * @return true if the elements are hashed
+   * @see TripStream#enterHashed()
+   */
+  public boolean isHashing() {
+    return hashing;
   }
 
   @Override
@@ -255,6 +275,9 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
   protected void readElements(TripStream stream, T value, int size) {
     if (size > 0) {
       stream.enterNested();
+      if (hashing) {
+        stream.enterHashed();
+      }
       try {
         OpCode opCode = stream.receiveOpCode();
         int elementCount = 0;
@@ -276,6 +299,9 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
         }
       }
       finally {
+        if (hashing) {
+          stream.leaveHashed();
+        }
         stream.leaveNested();
       }
     }

@@ -34,11 +34,13 @@ import org.tentackle.trip.TripComponent;
 import org.tentackle.trip.TripConstants;
 import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripFilter;
+import org.tentackle.trip.TripPolicyViolationException;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
 import org.tentackle.trip.TripStreamClosedException;
 import org.tentackle.trip.TripType;
 
+import java.lang.reflect.Proxy;
 import java.time.temporal.TemporalAccessor;
 import java.util.Arrays;
 import java.util.Date;
@@ -56,10 +58,64 @@ import java.util.function.Function;
  * <p>
  * As it doesn't make sense that multiple threads read from or write to the same stream concurrently,
  * streams are not thread-safe and attaching streams to threads must be synchronized externally.
+ * <p>
+ * The hash guard (see {@link #enterHashed()}) applies to every stream, whether the peer is authenticated
+ * or not. It can be disabled via {@link #setHashGuardEnabled(boolean)} or the system property
+ * {@value #DISABLE_HASH_GUARD_PROPERTY}.
  */
 public class DefaultTripStream implements TripStream {
 
   private static final Logger LOGGER = Logger.get(DefaultTripStream.class);
+
+  /**
+   * System property to disable the hash guard.
+   */
+  public static final String DISABLE_HASH_GUARD_PROPERTY = "tentackle.trip.disableHashGuard";
+
+  private static volatile boolean hashGuardEnabled = !Boolean.getBoolean(DISABLE_HASH_GUARD_PROPERTY);
+
+  /**
+   * Tells whether instances of a class are hashed and compared by identity.
+   */
+  private static final ClassValue<Boolean> IDENTITY_HASHED = new ClassValue<>() {
+    @Override
+    protected Boolean computeValue(Class<?> clazz) {
+      if (Proxy.isProxyClass(clazz)) {
+        return false;
+      }
+      try {
+        return clazz.getMethod("hashCode").getDeclaringClass() == Object.class &&
+               clazz.getMethod("equals", Object.class).getDeclaringClass() == Object.class;
+      }
+      catch (NoSuchMethodException | RuntimeException e) {
+        return false;
+      }
+    }
+  };
+
+  /**
+   * Returns whether back-references within hashed values are restricted (see {@link #isHashShareable(Object)}).
+   *
+   * @return true if enabled (default)
+   * @see #enterHashed()
+   */
+  public static boolean isHashGuardEnabled() {
+    return hashGuardEnabled;
+  }
+
+  /**
+   * Enables or disables the hash guard for all streams.
+   * <p>
+   * Disable it only if the application really shares mutable objects within the elements of
+   * hash sets or the keys of hash maps, and only if all peers are trusted.
+   *
+   * @param enabled true to enable (default), false to disable
+   * @see #enterHashed()
+   */
+  public static void setHashGuardEnabled(boolean enabled) {
+    hashGuardEnabled = enabled;
+  }
+
 
   private static final int INITIAL_REF_ARRAY_SIZE = 256;
   private static final int INITIAL_DICTIONARY_ARRAY_SIZE = 64;
@@ -112,6 +168,7 @@ public class DefaultTripStream implements TripStream {
   private TripFilter filter;
   private PreAuthenticationPolicy readPolicy;
   private int depth;    // the current nesting depth while reading
+  private int hashed;   // > 0 while reading a value the receiving container will hash
 
 
   /**
@@ -279,6 +336,15 @@ public class DefaultTripStream implements TripStream {
     if (reference == null) {
       throw new TripRuntimeException("no such reference id " + referenceId + " for " + clazz);
     }
+    if (hashed > 0 && hashGuardEnabled && !isHashShareable(reference.getObject())) {
+      // Hashing a graph with shared containers visits each container once per path to it, which
+      // takes exponential time, whatever its depth. Without back-references to objects whose hash code
+      // depends on other objects, the hashed value is a tree bounded by the size of the message.
+      Object object = reference.getObject();
+      throw new TripPolicyViolationException("back-reference to " +
+                                             (object == null ? "an incomplete object" : object.getClass().getName()) +
+                                             " within a hashed value");
+    }
     if (readPolicy != null && !isShareable(reference.getObject())) {
       // A shared container turns a few bytes into an object graph whose hash code takes
       // exponential time to compute. Without back-references, the graph is a tree bounded
@@ -318,6 +384,7 @@ public class DefaultTripStream implements TripStream {
   public void clear() {
     applyReadLimit();
     depth = 0;
+    hashed = 0;
     if (references != null && references.length == INITIAL_REF_ARRAY_SIZE) {
       // A small message: the array never grew, so neither map holds more than its length.
       // Recycling them is cheaper than allocating anew, which would happen several times per remote call.
@@ -392,6 +459,16 @@ public class DefaultTripStream implements TripStream {
   @Override
   public void leaveNested() {
     depth--;
+  }
+
+  @Override
+  public void enterHashed() {
+    hashed++;
+  }
+
+  @Override
+  public void leaveHashed() {
+    hashed--;
   }
 
   @Override
@@ -678,6 +755,21 @@ public class DefaultTripStream implements TripStream {
            object instanceof Character || object instanceof Enum<?> || object instanceof UUID ||
            object instanceof Locale || object instanceof TimeZone || object instanceof Class<?> ||
            object instanceof TemporalAccessor || object instanceof Date;
+  }
+
+  /**
+   * Returns whether an object received before may be referenced again within a hashed value.<br>
+   * Besides the {@link #isShareable(Object) shareable} values, these are the objects whose hash code
+   * does not depend on other objects: arrays and objects inheriting {@code hashCode} and {@code equals}
+   * from {@link Object}. Dynamic proxies are not, since their handler decides.
+   *
+   * @param object the referenced object, null if not completely read yet
+   * @return true if allowed
+   * @see #enterHashed()
+   */
+  protected boolean isHashShareable(Object object) {
+    return isShareable(object) ||
+           object != null && (object.getClass().isArray() || IDENTITY_HASHED.get(object.getClass()));
   }
 
   /**

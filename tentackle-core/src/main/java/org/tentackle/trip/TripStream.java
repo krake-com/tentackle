@@ -195,6 +195,26 @@ public interface TripStream {
   void leaveNested();
 
   /**
+   * Enters a value the receiving container will hash while reading, such as an element of a hash set
+   * or the key of a hash map.<br>
+   * Must be paired with {@link #leaveHashed()} in a {@code finally} block. May be nested.
+   * <p>
+   * Within a hashed value, back-references are refused unless they refer to an object whose hash code
+   * does not depend on other objects, such as a {@code String}, a number, an enum, a {@code UUID}, an
+   * array or an object inheriting {@code hashCode} and {@code equals} from {@link Object}. Otherwise, a
+   * few kilobytes of containers sharing each other make computing the hash code take forever, whatever
+   * the nesting depth. This applies to authenticated clients as well.
+   */
+  void enterHashed();
+
+  /**
+   * Leaves a value the receiving container will hash while reading.
+   *
+   * @see #enterHashed()
+   */
+  void leaveHashed();
+
+  /**
    * Writes a component ordinal to the stream.
    *
    * @param ordinal the ordinal to write

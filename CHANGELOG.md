@@ -49,6 +49,11 @@ requires Java 11.
   regular thread of the call pool: a remote method answered late invokes `RejectionDelay.defer`.
   DefaultPreAuthenticationPolicy.idleTimeout` (default 30 s) closes an unauthenticated connection that sends
   no further message after a call.
+- TRIP: the [hash guard](tentackle-core/src/main/docs/trip.md#hashed-values) refuses back-references within the
+  elements of hash sets and the keys of hash maps, unless the referenced object's hash code doesn't depend on
+  other objects. It applies after the login as well, since a few kilobytes of shared containers make computing a
+  hash code take forever, whatever their nesting depth. It can be disabled with
+  `DefaultTripStream.setHashGuardEnabled(false)` or `-Dtentackle.trip.disableHashGuard=true`.
 - `Cryptor.deriveKey` derives independent AES keys from the cryptor's key via HKDF-SHA256.
 - TRIP: a section on [fingerprinting](tentackle-core/src/main/docs/trip.md#fingerprinting) describes what a peer
   that can't log in may still learn about a TRIP server, and how a deployment avoids it.
