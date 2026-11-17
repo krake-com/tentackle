@@ -236,6 +236,13 @@ the class-level request is accepted **and** no instance of that class is denied,
 instance with rules is evaluated as described above. A rule denying `WRITE` for a single
 PDO therefore also denies bulk updates and deletes of its class.
 
+A request without a domain context (`context == null`) asks for the permission in **all
+contexts**. The grantee then comes from the current thread's session
+(`Session.getCurrentSession()`), and the request is denied if there is none. The rules
+are evaluated conservatively: a deny rule fires whatever context it is restricted to, but an
+allow rule fires only if it applies in any context (`domainContextId < 0`). The request is
+therefore accepted only if it would be accepted in every context.
+
 ```java
 SecurityResult r = SecurityFactory.getInstance().getSecurityManager()
         .evaluate(context, SecurityFactory.getInstance().getReadPermission(),

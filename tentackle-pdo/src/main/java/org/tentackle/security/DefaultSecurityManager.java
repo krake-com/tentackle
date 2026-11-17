@@ -469,14 +469,15 @@ public class DefaultSecurityManager implements SecurityManager {
   public SecurityResult evaluateAllObjects(DomainContext context, Permission permission, int objectClassId) {
     SecurityResult result = evaluate(context, permission, objectClassId, 0);
     if (result.isAccepted() && isEnabled()) {
-      GranteeDescriptor sessionGrantee = determineGrantee(context);
+      DomainContext sessionContext = determineSessionContext(context);
+      GranteeDescriptor sessionGrantee = determineGrantee(sessionContext);
       if (sessionGrantee != null) {
-        ensureInitialized(context);
+        ensureInitialized(sessionContext);
         TreeMap<PdoKey, Rule> localPdoMap = pdoMap;   // determine source map only once
         if (!localPdoMap.isEmpty()) {
           // collect the IDs of all instances of the class with object rules for any of the grantees
           SortedSet<Long> objectIds = new TreeSet<>();
-          for (GranteeDescriptor grantee : getGranteesToCheck(context, sessionGrantee)) {
+          for (GranteeDescriptor grantee : getGranteesToCheck(sessionContext, sessionGrantee)) {
             for (PdoKey key : localPdoMap.subMap(
                 new PdoKey(grantee, objectClassId, Long.MIN_VALUE, Integer.MIN_VALUE, Long.MIN_VALUE), true,
                 new PdoKey(grantee, objectClassId, Long.MAX_VALUE, Integer.MAX_VALUE, Long.MAX_VALUE), true).keySet()) {
@@ -521,6 +522,31 @@ public class DefaultSecurityManager implements SecurityManager {
     }
   }
 
+
+  /**
+   * Determines the domain context that provides the session and the grantee.
+   * <p>
+   * If a context is given, it is returned as is.
+   * Otherwise, the permission is requested for all contexts and the root context
+   * of the current thread's session is returned.
+   * Notice that this context is only used to determine the grantee and to load the rules.
+   * The rules themselves are evaluated with no context, see
+   * {@link SecurityDomain#evaluate(DomainContext, Permission)}.
+   *
+   * @param context the domain context, null if all contexts
+   * @return the context, never null
+   * @throws SecurityException if no context is given and the current thread has no session
+   */
+  protected DomainContext determineSessionContext(DomainContext context) {
+    if (context != null) {
+      return context;
+    }
+    Session session = Session.getCurrentSession();
+    if (session == null) {
+      throw new SecurityException("no domain context and no thread-local session");
+    }
+    return Pdo.createDomainContext(session);
+  }
 
   /**
    * Determines the session grantee.
@@ -602,10 +628,6 @@ public class DefaultSecurityManager implements SecurityManager {
 
     if (isEnabled()) {
 
-      if (context == null) {
-        throw new SecurityException("invalid domain context: null");
-      }
-
       if (permission == null) {
         throw new SecurityException("invalid permission: null");
       }
@@ -618,12 +640,13 @@ public class DefaultSecurityManager implements SecurityManager {
         throw new SecurityException("no class or classId given");
       }
 
-      GranteeDescriptor sessionGrantee = determineGrantee(context);
+      DomainContext sessionContext = determineSessionContext(context);
+      GranteeDescriptor sessionGrantee = determineGrantee(sessionContext);
       if (sessionGrantee == null) {
         return noGranteeResult;
       }
 
-      ensureInitialized(context);
+      ensureInitialized(sessionContext);
 
       // determine source map only once (must not change during loop below)
       TreeMap<PdoKey, Rule> localPdoMap;
@@ -656,7 +679,7 @@ public class DefaultSecurityManager implements SecurityManager {
 
       boolean fineLoggable = LOGGER.isFineLoggable();   // a little speedup
 
-      for (GranteeDescriptor grantee : getGranteesToCheck(context, sessionGrantee)) {
+      for (GranteeDescriptor grantee : getGranteesToCheck(sessionContext, sessionGrantee)) {
 
         if (fineLoggable) {
           LOGGER.fine("Checking grantee={0}[{1}], context={2}, permission={3}, object={4}[{5}], class={6}",

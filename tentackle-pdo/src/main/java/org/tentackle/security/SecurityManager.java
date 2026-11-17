@@ -26,6 +26,10 @@ import org.tentackle.session.Session;
  * or classes and grants or denies permissions.
  * <p>
  * A disabled security manager grants everything.
+ * <p>
+ * If no domain context is given, the permission is requested for all contexts.
+ * The grantee is then determined from the current thread's session, and the permission
+ * is accepted only if it is accepted in every context.
  *
  * @author harald
  */
@@ -34,7 +38,7 @@ public interface SecurityManager {
   /**
    * Checks a permission for a PDO or a PDO class.
    *
-   * @param context the domain context
+   * @param context the domain context, null = all contexts of the current thread's session
    * @param permission the requested permission
    * @param objectClassId the object class id
    * @param objectId the identifiable id, 0 for all PDOs of that class
@@ -46,7 +50,7 @@ public interface SecurityManager {
   /**
    * Checks a permission for a non-PDO class.
    *
-   * @param context the domain context
+   * @param context the domain context, null = all contexts of the current thread's session
    * @param permission the requested permission
    * @param clazz the class
    * @return the SecurityResult
@@ -60,10 +64,8 @@ public interface SecurityManager {
    * Used by operations that affect an unknown set of objects, such as bulk updates or deletes
    * by a where clause. The permission is accepted only if it is accepted for the class
    * and not denied for any instance by an object rule.
-   * <p>
-   * The default implementation checks the class rules only.
    *
-   * @param context the domain context
+   * @param context the domain context, null = all contexts of the current thread's session
    * @param permission the requested permission
    * @param objectClassId the class id of the PDO
    * @return the SecurityResult

@@ -39,6 +39,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
 /**
@@ -185,6 +186,77 @@ public class DefaultSecurityManagerDbTest extends AbstractPdoTest {
       assertFalse(result.isDefault());
     }
     finally {
+      Pdo.getCache(Security.class).invalidate();
+    }
+  }
+
+  /**
+   * Creates and saves a rule for the user and a non-PDO class, restricted to a domain context.
+   *
+   * @param clazz the secured class
+   * @param contextId the context id, negative for any context
+   * @param permission the permission name
+   * @param allowed true if allowed, false if denied
+   */
+  private void createContextRule(Class<?> clazz, long contextId, String permission, boolean allowed) {
+    Security rule = on(Security.class);
+    rule.setObjectClassName(clazz.getName());
+    rule.setGranteeClassId(USER_CLASS_ID);
+    rule.setGranteeId(USER_ID);
+    if (contextId > 0) {
+      rule.setDomainContextClassId(USER_CLASS_ID);    // any class id will do
+    }
+    rule.setDomainContextId(contextId);
+    rule.setPermissions(permission);
+    rule.setAllowed(allowed);
+    rule.save();
+  }
+
+  @Test(groups = "local")
+  public void nullContextMeansAllContexts() {
+    Session oldSession = Session.getCurrentSession();
+    try {
+      createContextRule(String.class, 7, WritePermission.NAME, false);
+      createContextRule(Integer.class, 7, ExecutePermission.NAME, true);
+      createContextRule(Long.class, -1, ExecutePermission.NAME, true);
+      createContextRule(Double.class, 0, ExecutePermission.NAME, true);
+
+      // the session belongs to the system user: check the rules of the user instead
+      DefaultSecurityManager manager = new DefaultSecurityManager() {
+        @Override
+        protected GranteeDescriptor determineGrantee(DomainContext context) {
+          return new GranteeDescriptor(USER_CLASS_ID, USER_ID);
+        }
+      };
+      manager.setEnabled(true);
+      reload(manager);
+      DomainContext context = new UserContext(getSession());
+      Permission write = SecurityFactory.getInstance().getWritePermission();
+      Permission exec = SecurityFactory.getInstance().getExecutePermission();
+
+      // without a thread-local session, the grantee is unknown
+      Session.setCurrentSession(null);
+      assertThrows(SecurityException.class, () -> manager.evaluate(null, write, String.class));
+      getSession().makeCurrent();
+
+      // accept by default: a deny-rule of some context denies in all contexts
+      manager.setAcceptByDefault(true);
+      assertTrue(manager.evaluate(context, write, String.class).isAccepted(), "rule of context 7 fired");
+      SecurityResult result = manager.evaluate(null, write, String.class);
+      assertFalse(result.isAccepted(), "deny-rule of context 7 ignored");
+      assertFalse(result.isDefault());
+
+      // deny by default: only allow-rules that apply to any context accept in all contexts
+      manager.setAcceptByDefault(false);
+      assertFalse(manager.evaluate(null, exec, Integer.class).isAccepted(), "allow-rule of context 7 fired");
+      result = manager.evaluate(null, exec, Long.class);
+      assertTrue(result.isAccepted(), "allow-rule of any context ignored");
+      assertFalse(result.isDefault());
+      assertTrue(manager.evaluate(context, exec, Double.class).isAccepted(), "allow-rule of the default context ignored");
+      assertFalse(manager.evaluate(null, exec, Double.class).isAccepted(), "allow-rule of the default context fired");
+    }
+    finally {
+      Session.setCurrentSession(oldSession);
       Pdo.getCache(Security.class).invalidate();
     }
   }

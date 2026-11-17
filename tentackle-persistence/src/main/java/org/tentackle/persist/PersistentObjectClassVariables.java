@@ -645,6 +645,8 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
   /**
    * Checks the read security for this class in all contexts.
+   * The grantee is determined from the current thread's session, see {@link org.tentackle.session.Session#getCurrentSession()}.
+   * Denied if there is no such session.
    *
    * @return false if operation (select) is denied.
    */
@@ -669,6 +671,8 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
   /**
    * Checks the write security for this class in all contexts.
+   * The grantee is determined from the current thread's session, see {@link org.tentackle.session.Session#getCurrentSession()}.
+   * Denied if there is no such session.
    *
    * @return false if operation (delete, update, or insert) is denied.
    */

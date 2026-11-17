@@ -38,6 +38,10 @@ public interface SecurityDomain extends DomainObject<Security> {
    * The method is only invoked for rules that apply to the object and/or class in question.
    * Notice further, that the given {@link DomainContext} may point to a different
    * {@link org.tentackle.session.Session} than this security rule belongs to.
+   * <p>
+   * If the context is null, the permission is requested for all contexts.
+   * The rule must then fire if it could deny the permission in any context,
+   * but only if it allows the permission in every context.
    *
    * @param context the domain context the object or class is used in, null = all
    * @param permission the requested permission
