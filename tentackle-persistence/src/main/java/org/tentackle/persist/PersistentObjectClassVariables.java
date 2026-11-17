@@ -851,7 +851,10 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
   /**
    * Checks the security for this class.<br>
-   * If the evaluation fails (e.g., no domain context set), the permission is denied.
+   * The permission is denied if the class rules deny or any object rule of this class denies.
+   * If the evaluation fails (e.g., no domain context set), the permission is denied as well.
+   *
+   * @see org.tentackle.security.SecurityManager#evaluateAllObjects(DomainContext, Permission, int)
    *
    * @param context the domain context, null = all
    * @param permission the permission
@@ -860,7 +863,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   protected boolean checkClassPermission(DomainContext context, Permission permission) {
     try {
       return !isSecurityEnabled() ||
-             SecurityFactory.getInstance().getSecurityManager().evaluate(context, permission, classId, 0).isAccepted();
+             SecurityFactory.getInstance().getSecurityManager().evaluateAllObjects(context, permission, classId).isAccepted();
     }
     catch (RuntimeException ex) {
       // either context not set or security manager or whatever...

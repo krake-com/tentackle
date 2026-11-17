@@ -18,7 +18,6 @@
 
 package org.tentackle.security;
 
-
 /**
  * Represents a result from the {@link SecurityManager} for a privilege request.
  *

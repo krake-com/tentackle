@@ -55,6 +55,23 @@ public interface SecurityManager {
   SecurityResult evaluate(DomainContext context, Permission permission, Class<?> clazz);
 
   /**
+   * Checks a permission for all instances of a PDO class.
+   * <p>
+   * Used by operations that affect an unknown set of objects, such as bulk updates or deletes
+   * by a where clause. The permission is accepted only if it is accepted for the class
+   * and not denied for any instance by an object rule.
+   * <p>
+   * The default implementation checks the class rules only.
+   *
+   * @param context the domain context
+   * @param permission the requested permission
+   * @param objectClassId the class id of the PDO
+   * @return the SecurityResult
+   * @throws SecurityException if the arguments are invalid or the grantee cannot be determined
+   */
+  SecurityResult evaluateAllObjects(DomainContext context, Permission permission, int objectClassId);
+
+  /**
    * Invalidate the manager.<br>
    * The next request will re-initialize it.
    */

@@ -229,6 +229,13 @@ a grantee, in priority order — first match wins**:
    manager retries at the **class** level (`objectId = 0`). If still nothing fires,
    the **default** applies.
 
+Operations on an unknown set of instances, such as the generated `deleteBy…` and
+`updateBy…` methods that work through a where clause, can't check each object. They call
+`SecurityManager.evaluateAllObjects(context, permission, classId)` instead. It accepts only if
+the class-level request is accepted **and** no instance of that class is denied, where each
+instance with rules is evaluated as described above. A rule denying `WRITE` for a single
+PDO therefore also denies bulk updates and deletes of its class.
+
 ```java
 SecurityResult r = SecurityFactory.getInstance().getSecurityManager()
         .evaluate(context, SecurityFactory.getInstance().getReadPermission(),

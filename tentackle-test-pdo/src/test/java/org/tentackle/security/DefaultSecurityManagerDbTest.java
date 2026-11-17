@@ -27,6 +27,8 @@ import org.tentackle.pdo.testng.AbstractPdoTest;
 import org.tentackle.security.pdo.Security;
 import org.tentackle.security.permissions.ExecutePermission;
 import org.tentackle.security.permissions.ReadPermission;
+import org.tentackle.security.permissions.ViewPermission;
+import org.tentackle.security.permissions.WritePermission;
 import org.tentackle.session.DefaultSessionInfo;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
@@ -91,6 +93,100 @@ public class DefaultSecurityManagerDbTest extends AbstractPdoTest {
     rule.setPermissions(permission);
     rule.setAllowed(allowed);
     rule.save();
+  }
+
+  /**
+   * Creates and saves a rule for the user and a PDO class or instance.
+   *
+   * @param objectClassId the PDO class id
+   * @param objectId the object id, 0 for all instances
+   * @param priority the priority
+   * @param permission the permission name
+   * @param allowed true if allowed, false if denied
+   */
+  private void createRule(int objectClassId, long objectId, int priority, String permission, boolean allowed) {
+    Security rule = on(Security.class);
+    rule.setObjectClassId(objectClassId);
+    rule.setObjectId(objectId);
+    rule.setGranteeClassId(USER_CLASS_ID);
+    rule.setGranteeId(USER_ID);
+    rule.setPriority(priority);
+    rule.setPermissions(permission);
+    rule.setAllowed(allowed);
+    rule.save();
+  }
+
+  /**
+   * Forces the manager to reload the rules modified so far.
+   *
+   * @param manager the security manager
+   */
+  private void reload(SecurityManager manager) {
+    Pdo.getCache(Security.class).invalidate();
+    manager.invalidate();
+  }
+
+  @Test(groups = "local")
+  public void objectRulesDenyAllObjects() {
+    try {
+      int classId = on(Security.class).getClassId();    // any PDO class will do
+      Permission write = SecurityFactory.getInstance().getWritePermission();
+      Permission view = SecurityFactory.getInstance().getViewPermission();
+
+      DefaultSecurityManager manager = new DefaultSecurityManager();
+      manager.setEnabled(true);
+      manager.setAcceptByDefault(true);
+      DomainContext context = new UserContext(getSession());
+
+      // object 1: denied to write
+      createRule(classId, 1, 0, WritePermission.NAME, false);
+      // object 2: denied to write, but allowed by a rule with higher precedence
+      createRule(classId, 2, 0, WritePermission.NAME, true);
+      createRule(classId, 2, 1, WritePermission.NAME, false);
+      // object 3: denied to view only (unrelated to writing)
+      createRule(classId, 3, 0, ViewPermission.NAME, false);
+      reload(manager);
+
+      // the class itself has no rules
+      assertTrue(manager.evaluate(context, write, classId, 0).isAccepted());
+      assertFalse(manager.evaluate(context, write, classId, 1).isAccepted());
+      assertTrue(manager.evaluate(context, write, classId, 2).isAccepted());
+
+      // writing all objects of the class must be denied due to object 1
+      SecurityResult result = manager.evaluateAllObjects(context, write, classId);
+      assertFalse(result.isAccepted(), "object rule ignored");
+      assertFalse(result.isDefault());
+
+      // viewing all objects of the class must be denied due to object 3
+      assertFalse(manager.evaluateAllObjects(context, view, classId).isAccepted(), "object rule ignored");
+
+      // a class without object rules is unaffected
+      assertTrue(manager.evaluateAllObjects(context, write, classId + 1).isAccepted());
+
+      // a disabled manager grants all
+      manager.setEnabled(false);
+      assertTrue(manager.evaluateAllObjects(context, write, classId).isAccepted());
+      manager.setEnabled(true);
+
+      // remove the denial of object 1 -> allowed, since object 2 is allowed and 3 is about viewing only
+      on(Security.class).selectAll().stream()
+                        .filter(r -> r.getObjectId() == 1)
+                        .forEach(Security::delete);
+      reload(manager);
+      result = manager.evaluateAllObjects(context, write, classId);
+      assertTrue(result.isAccepted(), "object rules wrongly deny");
+      assertTrue(result.isDefault());
+
+      // a denying class rule wins
+      createRule(classId, 0, 0, WritePermission.NAME, false);
+      reload(manager);
+      result = manager.evaluateAllObjects(context, write, classId);
+      assertFalse(result.isAccepted(), "class rule ignored");
+      assertFalse(result.isDefault());
+    }
+    finally {
+      Pdo.getCache(Security.class).invalidate();
+    }
   }
 
   @Test(groups = "local")
