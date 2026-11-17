@@ -1039,6 +1039,12 @@ These defenses address the *broken invariants* risk for classes you control. The
 the *gadget class* risk, because an attacker chooses the class — which is where the allowlist
 comes in.
 
+TRIP itself uses Java Object Serialization in a single place, apart from `@TripViaJOS`: an empty `EnumMap`
+doesn't reveal its key type via public API, so it travels in its JOS form. The receiver reads it through an
+`ObjectInputFilter` admitting nothing but the `EnumMap` and its enum key type, within a few kilobytes, and
+refuses a map that is not empty. A peer, authenticated or not, therefore cannot pass an arbitrary object
+graph to `ObjectInputStream` this way.
+
 ### Final fields (JEP-500)
 
 TRIP never writes a final field. A final field can only be written reflectively, and
@@ -1149,6 +1155,7 @@ Before the client is authenticated, the [`DefaultPreAuthenticationPolicy`](../ja
 | **Class allowlist**     | Every class name in a received dictionary entry is checked *as a string, before it is loaded*, so not even the static initializer of a foreign class runs. The component types of an entry must be allowed as well, or be the types the allowed class declares. Dynamic proxies are refused. An entry the server created itself, for a class it sent to the client, is checked when the client refers to it. Since `@TripViaJOS` classes and lambdas are not on the list, neither can be reached before the login.                                                                                                                                              |
 | **Message size**        | A message may not exceed `maxMessageSize` bytes (default 256 KiB), counted after decompression.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | **Element count**       | Arrays, collections and maps may not exceed `maxElements` (default 4096), checked *before* anything is allocated for them.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **Allocation**          | The arrays of a message may not allocate more than `maxAllocation` bytes in total (default 4 MiB), checked before each array is allocated. Otherwise, a single message of sparse arrays, each within `maxElements`, would allocate hundreds of megabytes. After the login, the [allocation budget](#allocation-budget) still applies.                                                                                                                                                                                                                                                                                                                           |
 | **Object graph**        | Objects, arrays, collections and maps may not nest deeper than `maxDepth` (default 16). An object may be referenced a second time only if it is an immutable value, such as a `String`, a number, an enum or a `UUID`: otherwise a few hundred bytes of hash sets sharing each other make computing a hash code take forever. The received graph is therefore a tree bounded by the message size. After the login, the [hash guard](#hashed-values) still applies.                                                                                                                                                                                              |
 | **Components**          | A dictionary entry may name only components the allowed class declares. Otherwise, the server would keep thousands of made-up names per connection, and the component of an array entry, which names the element class, could load any class.                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | **Messages**            | A connection may send at most `maxMessages` (default 16) messages before the client is authenticated. A client that probes a remote object it was not given, or sends an error, is disconnected.                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
@@ -1309,7 +1316,7 @@ out. This is what bounds the resources such a peer can bind:
 | Connections and sockets | `maxConnections` and `maxConnectionsPerHost` of the [policy](#unauthenticated-peers). A QUIC connection counts by itself, before and after its streams.                                                                                                                                                                                    |
 | CPU for handshakes      | `connectionRate` per host, checked before the TLS handshake, except for `tripq`/`tripcq`, where KWIK reports a connection only after it. The PSK transports reject a forged hello with a single HKDF and AES-GCM operation, no asymmetric cryptography. The QUIC transports validate the peer's address with a Retry before the handshake. |
 | Threads                 | Connections are read by virtual threads. A call runs in a platform thread, but a connection runs one call at a time, so the platform threads serving unauthenticated clients are bounded by the connection limits.                                                                                                                         |
-| Memory                  | `maxMessageSize`, `maxElements` and `maxDepth` per message, times the connection limits. A dictionary is created per client transport UUID, but held only as long as one of its connections is open.                                                                                                                                       |
+| Memory                  | `maxMessageSize`, `maxElements`, `maxAllocation` and `maxDepth` per message, times the connection limits. A dictionary is created per client transport UUID, but held only as long as one of its connections is open.                                                                                                                      |
 | Time                    | `firstMessageTimeout`, `idleTimeout` and `maxMessages`.                                                                                                                                                                                                                                                                                    |
 | Log volume              | The [`RejectionLog`](../java/org/tentackle/trip/RejectionLog.java).                                                                                                                                                                                                                                                                        |
 
@@ -1387,6 +1394,40 @@ the call, or by application code during deserialization, such as a canonical con
 `TripComponentProvider` that copies a list into a `HashSet`. Nor does it cover the comparisons of a `TreeSet`, or
 classes routed through `@TripViaJOS`. The nesting depth itself is limited only before the login.
 
+### Allocation budget
+
+TRIP skips the default values of arrays: a primitive array sends runs of zeros as a skip count, and an object
+array sends only the indexes and values of its non-null elements. A sparse 1000 x 1000 `double` matrix with a
+few thousand values set is therefore sent in a few kilobytes. But the receiver must allocate each array with the
+length the sender announced, before it reads a single element. A `long[Integer.MAX_VALUE]` with one skip costs
+about a dozen bytes on the wire and allocates 16 GiB. A limit per array doesn't help: an array of a thousand
+such arrays, each within the limit, multiplies the allocation by a thousand.
+
+The **allocation budget** therefore limits the memory all arrays of a message allocate in total. Each array counts
+its length times the size of an element (1 byte for `boolean` and `byte`, 2 for `char` and `short`, 4 for `int`
+and `float`, 8 for `long`, `double` and references), plus 16 bytes for its header, checked *before* it is
+allocated. Each dimension of a multidimensional array is an array of its own. A back-reference to an array
+allocates nothing and counts nothing. The sparse 1000 x 1000 `double` matrix counts about 8 MB.
+
+| Peer                    | Limit                                                                                                                       |
+|-------------------------|-----------------------------------------------------------------------------------------------------------------------------|
+| Before the login        | `maxAllocation` of the [`PreAuthenticationPolicy`](#unauthenticated-peers), 4 MiB by default.                               |
+| After the login         | 256 MiB per remote call by default, enough for a dense `double` matrix of about 5800 x 5800.                                |
+| Responses to the client | Unlimited: the client trusts its server.                                                                                    |
+
+An application that legitimately sends more within a single call raises the limit with
+`DefaultTripStream.setDefaultAllocationLimit(long)` or the system property `tentackle.trip.maxAllocation` (in bytes,
+0 for unlimited), set on the server before the connections are opened. A violation throws a
+`TripPolicyViolationException`: the server logs it and answers with a deserialization error, so the client gets
+the exception with the reason, and closes the connection.
+
+Everything else TRIP reads is backed by the data on the wire, so the budget doesn't count it: collections and maps
+grow as their elements arrive, strings are read in chunks, and so are binaries (`Binary`, `TBinary`), objects
+routed through `@TripViaJOS`, the digits of a `BigDecimal` beyond a `long` and the serialized form of an empty
+`EnumMap`. A binary's buffer starts at 64 KiB and doubles while the data arrives, so a
+legitimate binary may be as large as needed, while a forged length ends up as a closed stream instead of an
+allocation of up to 2 GiB held while the client trickles the data.
+
 ### Practical guidance
 
 - Application-to-application TRIP traffic from **authenticated** clients needs no allowlist —
@@ -1395,6 +1436,8 @@ classes routed through `@TripViaJOS`. The nesting depth itself is limited only b
   that by default.
 - Don't share mutable objects within the elements of hash sets or the keys of hash maps sent via TRIP: the
   [hash guard](#hashed-values) refuses them, even from authenticated clients.
+- Remote calls sending more than 256 MiB of arrays need a higher
+  [allocation budget](#allocation-budget) on the server.
 - Serialized objects that **leave the live session** (BLOB columns, files, message queues) should
   be treated as untrusted on the way back in: prefer records for the payload classes, and install
   an allowlisting builder in the tier that reads them.

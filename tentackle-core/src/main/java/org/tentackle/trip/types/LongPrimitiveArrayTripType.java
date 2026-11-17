@@ -85,7 +85,7 @@ public final class LongPrimitiveArrayTripType extends AbstractPredefinedArrayTri
     Deserializer deserializer = stream.getDeserializer();
     Reference<long[]> reference = receiveReference(stream, stream.receiveOpCode());
     if (reference.isObjectFollowing()) {
-      int length = checkSize(stream, readArrayLength(deserializer, opCode));
+      int length = readArrayLength(stream, opCode);
       long[] result = new long[length];
       int count = 0;
       while (count < length) {

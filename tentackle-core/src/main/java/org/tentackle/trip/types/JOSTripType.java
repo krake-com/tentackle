@@ -26,7 +26,6 @@ import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
 import org.tentackle.trip.impl.DefaultOpCode;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -106,10 +105,11 @@ public final class JOSTripType extends AbstractTripType<Object> {
     }
     else {
       int size = checkSize(stream, deserializer.deserializeInt());
-      byte[] data = new byte[size];
-      deserializer.deserialize(data, 0, size);
-      try (ObjectInputStream is = new ObjectInputStream(new ByteArrayInputStream(data))) {
+      // read while the data arrives: the size is not trusted
+      DeserializerInputStream data = new DeserializerInputStream(deserializer, size);
+      try (ObjectInputStream is = new ObjectInputStream(data)) {
         value = is.readObject();
+        data.drain();   // nothing left, unless the object was written with trailing data
         stream.addReference(reference, value, false);
         reference.markReceived();
       }

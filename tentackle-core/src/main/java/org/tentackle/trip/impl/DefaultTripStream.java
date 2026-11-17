@@ -62,6 +62,10 @@ import java.util.function.Function;
  * The hash guard (see {@link #enterHashed()}) applies to every stream, whether the peer is authenticated
  * or not. It can be disabled via {@link #setHashGuardEnabled(boolean)} or the system property
  * {@value #DISABLE_HASH_GUARD_PROPERTY}.
+ * <p>
+ * The allocation budget (see {@link #checkAllocation(long)}) is unlimited for a new stream. Servers apply
+ * the {@link #getDefaultAllocationLimit() default limit}, which can be changed via
+ * {@link #setDefaultAllocationLimit(long)} or the system property {@value #ALLOCATION_LIMIT_PROPERTY}.
  */
 public class DefaultTripStream implements TripStream {
 
@@ -73,6 +77,18 @@ public class DefaultTripStream implements TripStream {
   public static final String DISABLE_HASH_GUARD_PROPERTY = "tentackle.trip.disableHashGuard";
 
   private static volatile boolean hashGuardEnabled = !Boolean.getBoolean(DISABLE_HASH_GUARD_PROPERTY);
+
+  /**
+   * System property to change the default allocation limit in bytes, 0 if unlimited.
+   */
+  public static final String ALLOCATION_LIMIT_PROPERTY = "tentackle.trip.maxAllocation";
+
+  /**
+   * Default maximum number of bytes allocated ahead of their data per message (256 MiB).
+   */
+  public static final long DEFAULT_ALLOCATION_LIMIT = 256L * 1024 * 1024;
+
+  private static volatile long defaultAllocationLimit = Long.getLong(ALLOCATION_LIMIT_PROPERTY, DEFAULT_ALLOCATION_LIMIT);
 
   /**
    * Tells whether instances of a class are hashed and compared by identity.
@@ -114,6 +130,30 @@ public class DefaultTripStream implements TripStream {
    */
   public static void setHashGuardEnabled(boolean enabled) {
     hashGuardEnabled = enabled;
+  }
+
+  /**
+   * Gets the allocation limit servers apply to the messages they receive.
+   *
+   * @return the maximum number of bytes allocated ahead of their data per message, 0 if unlimited
+   * @see #setAllocationLimit(long)
+   */
+  public static long getDefaultAllocationLimit() {
+    return defaultAllocationLimit;
+  }
+
+  /**
+   * Sets the allocation limit servers apply to the messages they receive.<br>
+   * Applies to connections opened afterward.
+   * <p>
+   * The limit must allow for the largest arrays a single remote call of the application legitimately
+   * sends. A sparse 1000 x 1000 {@code double} matrix, for example, takes about 8 MiB.
+   *
+   * @param bytes the maximum number of bytes allocated ahead of their data per message, 0 if unlimited
+   * @see #setAllocationLimit(long)
+   */
+  public static void setDefaultAllocationLimit(long bytes) {
+    defaultAllocationLimit = Math.max(bytes, 0);
   }
 
 
@@ -167,8 +207,10 @@ public class DefaultTripStream implements TripStream {
 
   private TripFilter filter;
   private PreAuthenticationPolicy readPolicy;
-  private int depth;    // the current nesting depth while reading
-  private int hashed;   // > 0 while reading a value the receiving container will hash
+  private int depth;              // the current nesting depth while reading
+  private int hashed;             // > 0 while reading a value the receiving container will hash
+  private long allocated;         // bytes allocated ahead of their data in the current message
+  private long allocationLimit;   // maximum of allocated, 0 if unlimited
 
 
   /**
@@ -385,6 +427,7 @@ public class DefaultTripStream implements TripStream {
     applyReadLimit();
     depth = 0;
     hashed = 0;
+    allocated = 0;
     if (references != null && references.length == INITIAL_REF_ARRAY_SIZE) {
       // A small message: the array never grew, so neither map holds more than its length.
       // Recycling them is cheaper than allocating anew, which would happen several times per remote call.
@@ -443,6 +486,35 @@ public class DefaultTripStream implements TripStream {
         readPolicy.violation("number of elements " + size + " exceeds the maximum of " + maxElements);
       }
     }
+  }
+
+  @Override
+  public void checkAllocation(long bytes) {
+    allocated += bytes;
+    if (readPolicy != null) {
+      long maxAllocation = readPolicy.getMaxAllocation();
+      if (maxAllocation > 0) {
+        if (allocated > maxAllocation && allocated - bytes <= maxAllocation) {
+          // reported once per message: in audit mode, reading continues
+          readPolicy.violation("allocation exceeds the maximum of " + maxAllocation + " bytes per message");
+        }
+        return;
+      }
+    }
+    if (allocationLimit > 0 && allocated > allocationLimit) {
+      throw new TripPolicyViolationException("allocation of " + allocated + " bytes exceeds the maximum of " +
+                                             allocationLimit + " bytes per message");
+    }
+  }
+
+  @Override
+  public void setAllocationLimit(long bytes) {
+    allocationLimit = Math.max(bytes, 0);
+  }
+
+  @Override
+  public long getAllocationLimit() {
+    return allocationLimit;
   }
 
   @Override

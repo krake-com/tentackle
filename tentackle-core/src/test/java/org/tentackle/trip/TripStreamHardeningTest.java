@@ -20,14 +20,22 @@ package org.tentackle.trip;
 
 import org.testng.annotations.Test;
 
+import org.tentackle.common.AbstractBinary;
+import org.tentackle.common.TBinary;
 import org.tentackle.trip.impl.DefaultOpCode;
 import org.tentackle.trip.impl.EchoTransceiver;
+import org.tentackle.trip.impl.TestJOSClass;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
@@ -151,6 +159,76 @@ public class TripStreamHardeningTest {
     OpCode opCode = inStream.getDeserializer().deserializeOpCode();
     TripRuntimeException tx = expectThrows(TripRuntimeException.class, () -> Reference.read(inStream, opCode));
     assertTrue(tx.getMessage().contains("negative reference id"), tx.getMessage());
+  }
+
+  /**
+   * The length of a binary is read ahead of its data. It must not be allocated before the data arrives:
+   * the stream ends long before 2 GiB, and nothing is held while waiting for the rest.
+   */
+  @Test(timeOut = 30000)
+  @SuppressWarnings("rawtypes")
+  void doesNotAllocateTheAnnouncedLengthOfABinary() {
+    EchoTransceiver transceiver = new EchoTransceiver();
+    TripStream stream = transceiver.getStream();
+    stream.getSerializer().serializeOpCode(DefaultOpCode.BINARY);
+    stream.getSerializer().serializeByte((byte) 'T');
+    stream.getSerializer().serializeInt(Integer.MAX_VALUE);
+    stream.getSerializer().serializeBoolean(false);
+    stream.getSerializer().serialize(new byte[100], 0, 100);
+    transceiver.echo();
+
+    TripStream inStream = transceiver.getStream();
+    TripType<AbstractBinary> type = inStream.getType(TBinary.class);
+    OpCode opCode = inStream.getDeserializer().deserializeOpCode();
+    expectThrows(TripStreamClosedException.class, () -> type.read(inStream, opCode));
+  }
+
+  /**
+   * Same for an object serialized via Java Object Serialization.
+   */
+  @Test(timeOut = 30000)
+  void doesNotAllocateTheAnnouncedSizeOfAJosObject() {
+    EchoTransceiver transceiver = new EchoTransceiver();
+    TripStream stream = transceiver.getStream();
+    stream.getSerializer().serializeOpCode(DefaultOpCode.JOS);
+    stream.getReference(new Object(), false).send(stream);
+    stream.getSerializer().serializeInt(Integer.MAX_VALUE);
+    stream.getSerializer().serialize(new byte[100], 0, 100);
+    transceiver.echo();
+
+    TripStream inStream = transceiver.getStream();
+    TripType<TestJOSClass> type = inStream.getType(TestJOSClass.class);
+    OpCode opCode = inStream.getDeserializer().deserializeOpCode();
+    TripRuntimeException tx = expectThrows(TripRuntimeException.class, () -> type.read(inStream, opCode));
+    assertFalse(tx instanceof TripPolicyViolationException);
+  }
+
+  /**
+   * Binaries larger than the initial buffer grow while their data arrives, and what follows them is read in sync.
+   */
+  @Test
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  void readsLargeBinariesInChunks() throws IOException {
+    byte[] data = new byte[300_000];
+    new Random(4711).nextBytes(data);
+    for (int length : new int[] { 0, 1, 65535, 65536, 65537, 300_000 }) {
+      byte[] bytes = Arrays.copyOf(data, length);
+      TBinary<?> binary = TBinary.create(new ByteArrayInputStream(bytes), 0, true);
+      EchoTransceiver transceiver = new EchoTransceiver();
+      TripStream stream = transceiver.getStream();
+      List<Object> message = new ArrayList<>(List.of(binary, new TestJOSClass(), "trailer"));
+      TripType<List<Object>> type = (TripType) stream.getType(ArrayList.class);
+      type.write(message, stream);
+      transceiver.echo();
+      TripStream inStream = transceiver.getStream();
+      List<Object> result = type.read(inStream, inStream.getDeserializer().deserializeOpCode());
+      TBinary<?> resultBinary = (TBinary<?>) result.get(0);
+      assertEquals(resultBinary.getLength(), length);
+      assertEquals(Arrays.copyOf(resultBinary.getData(), length), bytes, "length " + length);
+      assertTrue(resultBinary.isFrozen());
+      assertEquals(result.get(1), message.get(1));
+      assertEquals(result.get(2), "trailer");
+    }
   }
 
 }

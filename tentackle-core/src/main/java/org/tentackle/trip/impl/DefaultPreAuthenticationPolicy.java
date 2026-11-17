@@ -78,6 +78,12 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
   /** Default maximum number of elements of an array, collection or map. */
   public static final int DEFAULT_MAX_ELEMENTS = 4096;
 
+  /**
+   * Default maximum number of bytes allocated ahead of their data per message.<br>
+   * 16 times the default message size, enough for 128 sparse {@code double} arrays of the default maximum length.
+   */
+  public static final long DEFAULT_MAX_ALLOCATION = 4L * 1024 * 1024;
+
   /** Default maximum nesting depth of objects, arrays, collections and maps. */
   public static final int DEFAULT_MAX_DEPTH = 16;
 
@@ -232,6 +238,7 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
 
   private volatile int maxMessageSize;
   private volatile int maxElements;
+  private volatile long maxAllocation;
   private volatile int maxDepth;
   private volatile int maxMessages;
   private volatile long dictionaryWaitTime;
@@ -258,6 +265,7 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
     rateBuckets = new HashMap<>();
     maxMessageSize = DEFAULT_MAX_MESSAGE_SIZE;
     maxElements = DEFAULT_MAX_ELEMENTS;
+    maxAllocation = DEFAULT_MAX_ALLOCATION;
     maxDepth = DEFAULT_MAX_DEPTH;
     maxMessages = DEFAULT_MAX_MESSAGES;
     dictionaryWaitTime = DEFAULT_DICTIONARY_WAIT_TIME;
@@ -327,6 +335,16 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
    */
   public void setMaxElements(int maxElements) {
     this.maxElements = maxElements;
+  }
+
+  /**
+   * Sets the maximum number of bytes allocated ahead of their data per message, such as for arrays.
+   *
+   * @param maxAllocation the maximum number of bytes, 0 if unlimited
+   * @see org.tentackle.trip.TripStream#checkAllocation(long)
+   */
+  public void setMaxAllocation(long maxAllocation) {
+    this.maxAllocation = maxAllocation;
   }
 
   /**
@@ -549,6 +567,11 @@ public class DefaultPreAuthenticationPolicy implements PreAuthenticationPolicy {
   @Override
   public int getMaxElements() {
     return maxElements;
+  }
+
+  @Override
+  public long getMaxAllocation() {
+    return maxAllocation;
   }
 
   @Override

@@ -10,6 +10,7 @@ topic-grouped listing of every document, see the
 - **Address validation (QUIC retry tokens)** — [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md#server-side), [Client Certificate Login](./client-certificate-login.md)
 - **Aggregates** — [PDO](../../../tentackle-pdo/src/main/docs/pdo.md), [rootId / rootClassId Columns](../../../tentackle-pdo/src/main/docs/root-columns.md)
 - **AI agents / coding agents (MCP, batch modes, skills)** — [AI Agent Tooling Support](./ai-agents.md), [MCP Maven Plugin](../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md), [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md)
+- **Allocation budget (sparse arrays, memory allocated per remote call)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#allocation-budget)
 - **Application bootstrap / lifecycle** — [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md), [Multi-Tier Cascade](./tiers.md)
 - **Annotation analysis (`@Analyze`, META-INF generation)** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md), [Build Support](../../../tentackle-build-support/src/main/docs/build-support.md), [Tentackle Maven Plugin](../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md)
 - **Annotation processors (compile-time validation)** — [Annotation Processors](../../../tentackle-core/src/main/docs/annotation-processors.md)

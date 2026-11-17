@@ -141,6 +141,15 @@ public interface PreAuthenticationPolicy {
   int getMaxElements();
 
   /**
+   * Gets the maximum number of bytes allocated ahead of their data per message, such as for arrays.<br>
+   * Unlike {@link #getMaxElements()}, this limits the total of all arrays of a message.
+   *
+   * @return the maximum number of bytes, 0 if unlimited
+   * @see TripStream#checkAllocation(long)
+   */
+  long getMaxAllocation();
+
+  /**
    * Gets the maximum nesting depth of objects, arrays, collections and maps.
    *
    * @return the maximum depth, 0 if unlimited

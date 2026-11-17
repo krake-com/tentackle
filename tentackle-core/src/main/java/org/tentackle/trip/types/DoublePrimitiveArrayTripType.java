@@ -85,7 +85,7 @@ public final class DoublePrimitiveArrayTripType extends AbstractPredefinedArrayT
     Deserializer deserializer = stream.getDeserializer();
     Reference<double[]> reference = receiveReference(stream, stream.receiveOpCode());
     if (reference.isObjectFollowing()) {
-      int length = checkSize(stream, readArrayLength(deserializer, opCode));
+      int length = readArrayLength(stream, opCode);
       double[] result = new double[length];
       int count = 0;
       while (count < length) {

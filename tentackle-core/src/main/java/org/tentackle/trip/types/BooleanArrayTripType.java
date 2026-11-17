@@ -122,7 +122,7 @@ public final class BooleanArrayTripType extends AbstractPredefinedArrayTripType<
     Reference<Boolean[]> reference = receiveReference(stream, stream.receiveOpCode());
     if (reference.isObjectFollowing()) {
       TripType<Boolean> booleanTripType = BooleanTypeHolder.INSTANCE;
-      int length = checkSize(stream, readArrayLength(deserializer, opCode));
+      int length = readArrayLength(stream, opCode);
       Boolean[] result = new Boolean[length];
       int count = 0;
       while (count < length) {

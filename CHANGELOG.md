@@ -54,6 +54,11 @@ requires Java 11.
   other objects. It applies after the login as well, since a few kilobytes of shared containers make computing a
   hash code take forever, whatever their nesting depth. It can be disabled with
   `DefaultTripStream.setHashGuardEnabled(false)` or `-Dtentackle.trip.disableHashGuard=true`.
+- TRIP: the [allocation budget](tentackle-core/src/main/docs/trip.md#allocation-budget) limits the memory the
+  arrays of a single message allocate in total, since a sparse array is allocated with its full length before
+  its elements arrive. The default is 256 MiB per remote call after the login
+  (`DefaultTripStream.setDefaultAllocationLimit` or `-Dtentackle.trip.maxAllocation`), and
+  `DefaultPreAuthenticationPolicy.maxAllocation` (default 4 MiB) before.
 - `Cryptor.deriveKey` derives independent AES keys from the cryptor's key via HKDF-SHA256.
 - TRIP: a section on [fingerprinting](tentackle-core/src/main/docs/trip.md#fingerprinting) describes what a peer
   that can't log in may still learn about a TRIP server, and how a deployment avoids it.
@@ -91,6 +96,12 @@ requires Java 11.
 
 ### Fixed
 
+- TRIP: `Binary`, `TBinary`, `@TripViaJOS` objects, large `BigDecimal`s and empty `EnumMap`s are read while
+  their data arrives instead of being allocated with the length announced ahead of it. A forged length no longer
+  allocates up to 2 GiB per value, and receiving a binary no longer copies it through an intermediate array.
+- TRIP: the Java-serialized form of an empty `EnumMap` is read through an `ObjectInputFilter` that admits only
+  the `EnumMap` and its enum key type. Before, an authenticated peer could pass an arbitrary object graph to
+  `ObjectInputStream` this way.
 - TRIP: incomplete connection requests for the compressing transports (`tripc`, `tripcs`, `tripcq`, `tripcj`)
   are now rejected after the rejection delay like any other rejections.
 - `tripq`/`tripcq`: the pre-authentication policy grouped the connection limits by stream number instead of by

@@ -179,6 +179,37 @@ public interface TripStream {
   void checkSize(int size);
 
   /**
+   * Accounts for memory allocated ahead of the data it is filled with, such as an array.<br>
+   * Must be invoked before the memory is allocated. The amounts are summed up per message
+   * and reset by {@link #clear()}.
+   * <p>
+   * Arrays are allocated with the length announced by the sender, but filled with what follows.
+   * Since default values are skipped, a few bytes on the wire may allocate gigabytes.
+   * The budget limits the total per message, whatever the number of arrays.
+   *
+   * @param bytes the estimated number of bytes allocated
+   * @throws TripPolicyViolationException if the read policy or the {@link #setAllocationLimit(long) allocation limit}
+   *                                      refuses the total of the current message
+   */
+  void checkAllocation(long bytes);
+
+  /**
+   * Sets the maximum number of bytes allocated ahead of their data per message.<br>
+   * Not reset by {@link #clear()}. The read policy, if any, takes precedence.
+   *
+   * @param bytes the maximum number of bytes, 0 if unlimited (default)
+   * @see #checkAllocation(long)
+   */
+  void setAllocationLimit(long bytes);
+
+  /**
+   * Gets the maximum number of bytes allocated ahead of their data per message.
+   *
+   * @return the maximum number of bytes, 0 if unlimited
+   */
+  long getAllocationLimit();
+
+  /**
    * Enters the contents of an object, array, collection or map while reading.<br>
    * Must be paired with {@link #leaveNested()} in a {@code finally} block.
    * Checked against the maximum depth of the read policy, if any.

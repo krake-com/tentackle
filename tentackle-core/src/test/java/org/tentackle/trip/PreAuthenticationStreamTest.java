@@ -348,6 +348,19 @@ public class PreAuthenticationStreamTest {
   }
 
   @Test
+  void testAllocationTooLarge() {
+    // each array is within maxElements and the message within maxMessageSize, but 6.5 MB in total
+    double[][] arrays = new double[200][DefaultPreAuthenticationPolicy.DEFAULT_MAX_ELEMENTS];
+    TripPolicyViolationException ex = expectThrows(TripPolicyViolationException.class,
+                                                   () -> echo(arrays, createPolicy(PreAuthenticationPolicy.Mode.ENFORCE)));
+    assertTrue(ex.getMessage().contains("allocation exceeds"), ex.getMessage());
+    assertEquals(echo(arrays, createPolicy(PreAuthenticationPolicy.Mode.AUDIT)).length, 200);
+    DefaultPreAuthenticationPolicy policy = createPolicy(PreAuthenticationPolicy.Mode.ENFORCE);
+    policy.setMaxAllocation(0);
+    assertEquals(echo(arrays, policy).length, 200);
+  }
+
+  @Test
   void testMessageTooLarge() {
     DefaultPreAuthenticationPolicy policy = createPolicy(PreAuthenticationPolicy.Mode.ENFORCE);
     policy.setMaxMessageSize(1000);

@@ -36,6 +36,7 @@ import org.tentackle.trip.TripStream;
 import org.tentackle.trip.TripStreamClosedException;
 import org.tentackle.trip.TripType;
 import org.tentackle.trip.impl.DefaultOpCode;
+import org.tentackle.trip.impl.DefaultTripStream;
 import org.tentackle.trip.impl.TripError;
 import org.tentackle.trip.remote.RemoteCall;
 
@@ -326,6 +327,8 @@ public class ConnectionHandler implements Runnable {
     }
     clientInfo = new TransportClientInfo(transport, stream.getDictionary(), connectionName, id, certificates);
     int messageCount = 0;   // number of messages received before authentication
+    // limits the arrays of a remote call, before and after the login (the read policy overrides it before)
+    stream.setAllocationLimit(DefaultTripStream.getDefaultAllocationLimit());
     boolean closedByClient = false;
     LOGGER.info("connection " + clientInfo + " opened");
 
@@ -459,7 +462,7 @@ public class ConnectionHandler implements Runnable {
           // no stacktrace: the client could flood the log otherwise.
           // No answer either before the login: the error would tell the client that it talks to a TRIP server.
           if (admission == null) {
-            // authenticated client: refused by the hash guard (see TripStream#enterHashed)
+            // authenticated client: refused by the hash guard or the allocation limit (see TripStream)
             LOGGER.warning("connection {0} violates the TRIP policy: {1}", clientInfo, pv.getMessage());
           }
           else if (RejectionLog.isLoggable()) {

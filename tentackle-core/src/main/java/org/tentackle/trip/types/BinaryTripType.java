@@ -29,7 +29,6 @@ import org.tentackle.trip.TripStream;
 import org.tentackle.trip.TripTypeService;
 import org.tentackle.trip.impl.DefaultOpCode;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 /**
@@ -40,6 +39,12 @@ public final class BinaryTripType extends AbstractTripType<AbstractBinary<?>> {
 
   private static final byte JOS_BINARY = 'J';
   private static final byte TRIP_BINARY = 'T';
+
+  /**
+   * Initial buffer size of a received binary.<br>
+   * Larger binaries double their buffer while the data arrives.
+   */
+  private static final int INITIAL_BUFFER_SIZE = 64 * 1024;
 
   /**
    * Creates the type.
@@ -79,12 +84,14 @@ public final class BinaryTripType extends AbstractTripType<AbstractBinary<?>> {
       byte subType = deserializer.deserializeByte();
       int length = checkSize(stream, deserializer.deserializeInt());
       boolean frozen = deserializer.deserializeBoolean();
-      byte[] data = new byte[length];
-      deserializer.deserialize(data, 0, length);
+      // the binary's buffer grows while the data arrives: the length is not trusted
+      DeserializerInputStream data = new DeserializerInputStream(deserializer, length);
+      int bufSize = length < INITIAL_BUFFER_SIZE ? length + 1 : INITIAL_BUFFER_SIZE;   // +1: no doubling at the end
       try {
         value = subType == JOS_BINARY ?
-                  Binary.create(new ByteArrayInputStream(data), length, frozen) :
-                  TBinary.create(new ByteArrayInputStream(data), length, frozen);
+                  Binary.create(data, bufSize, frozen) :
+                  TBinary.create(data, bufSize, frozen);
+        data.drain();   // nothing left, unless the binary stopped early
       }
       catch (IOException e) {
         throw new TripRuntimeException("cannot deserialize binary", e);
