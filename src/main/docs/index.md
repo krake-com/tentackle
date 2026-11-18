@@ -70,6 +70,7 @@ topic-grouped listing of every document, see the
 - **Date/time parsing (smart syntax, shortcuts)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md)
 - **Date/time input (reference date `@`, sliding year window)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#date-and-time-input)
 - **Denial of service (connection rate, QUIC connections, log throttling)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#denial-of-service), [QUIC](../../../tentackle-quic/src/main/docs/quic.md#denial-of-service)
+- **Deserialization filter (`Binary`, `ObjectInputFilter`, `tentackle.serialFilter`)** — [Tentackle Common](../../../tentackle-common/src/main/docs/common.md#deserialization-filter)
 - **Deserialization hardening (allowlisting, untrusted data, unauthenticated clients)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#hardening-deserialization)
 - **DB2 (backend peculiarities)** — [The DB2 Backend](../../../tentackle-sql/src/main/docs/db2.md)
 - **DDL generation** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)

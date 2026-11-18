@@ -977,6 +977,11 @@ The class must implement `Serializable`.
 public class ThirdPartyValue implements Serializable { ... }
 ```
 
+The Java-serialized form is opaque to TRIP and thus not covered by the [allowlist](#allowlisting-disallowedtriptype).
+It is read through the deserialization filter of `tentackle-common` instead (see
+[Deserialization filter](../../../../tentackle-common/src/main/docs/common.md#deserialization-filter)), which an
+application restricts via `Settings.setDeserializationFilter` or `-Dtentackle.serialFilter`.
+
 **This is a last resort.** Before reaching for `@TripViaJOS`, consider the following alternatives in decreasing order of preference:
 
 1. **add a @CanonicalConstructor or no-arg constructor**: adding one is usually trivial and makes TRIP work without any annotation.
@@ -1111,6 +1116,13 @@ Note the scope of the hook: predefined types — the built-in `TripType`s for JD
 types registered via `@TripTypeService` or `@TripTypeBuilderService` — take precedence over the
 fallback builder and are unaffected. The allowlist governs exactly the dangerous path: arbitrary
 object classes the application never intended to receive.
+
+The payload of a [`Binary`](../../../../tentackle-common/src/main/java/org/tentackle/common/Binary.java) is
+outside the allowlist's reach: TRIP transfers its Java-serialized bytes as an opaque byte array, and they are
+deserialized only when the application invokes `getObject()`. That deserialization goes through the
+`ObjectInputFilter` of `tentackle-common` instead, which an application restricts via
+`Settings.setDeserializationFilter` or `-Dtentackle.serialFilter`. See
+[Deserialization filter](../../../../tentackle-common/src/main/docs/common.md#deserialization-filter).
 
 ### Unauthenticated peers
 
@@ -1442,7 +1454,8 @@ allocation of up to 2 GiB held while the client trickles the data.
   be treated as untrusted on the way back in: prefer records for the payload classes, and install
   an allowlisting builder in the tier that reads them.
 - `@TripViaJOS` routes a class through Java Object Serialization and thereby out of TRIP's
-  control; avoid it entirely for data that may be stored or received from outside.
+  control, leaving only the [deserialization filter](../../../../tentackle-common/src/main/docs/common.md#deserialization-filter)
+  of `tentackle-common`; avoid it entirely for data that may be stored or received from outside.
 
 ---
 

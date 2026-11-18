@@ -26,6 +26,7 @@ import org.tentackle.common.DMoney;
 import org.tentackle.common.Date;
 import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.I18NText;
+import org.tentackle.common.Settings;
 import org.tentackle.common.TBinary;
 import org.tentackle.common.Time;
 import org.tentackle.common.Timestamp;
@@ -39,6 +40,7 @@ import org.tentackle.reflect.CanonicalConstructor;
 import org.tentackle.reflect.CanonicalField;
 import org.tentackle.trip.impl.CanonicalDto;
 import org.tentackle.trip.impl.CanonicalList;
+import org.tentackle.trip.impl.EchoTransceiver;
 import org.tentackle.trip.impl.ControlledDeduplicatableRecord;
 import org.tentackle.trip.impl.DefaultOpCode;
 import org.tentackle.trip.impl.DtoWithCanonicalBuilder;
@@ -69,6 +71,8 @@ import org.tentackle.trip.types.CollectionTripType;
 import org.tentackle.trip.types.ImmutableCollectionTripType;
 
 import java.io.IOException;
+import java.io.InvalidClassException;
+import java.io.ObjectInputFilter;
 import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.Proxy;
@@ -105,6 +109,7 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
+import static org.testng.Assert.expectThrows;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
@@ -1552,6 +1557,54 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
     obj.someObject = ugly;
     TestClass tunnelled = tunnel(obj, tripType);
     assertSame(tunnelled.someObject, tunnel(obj, tripType).someObject);
+  }
+
+  /**
+   * A class standing in for a deserialization gadget within a {@code @TripViaJOS} object.
+   */
+  private static class JOSGadget implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+  }
+
+  @Test
+  void testJOSDeserializationFilter() {
+    TestJOSClass obj = new TestJOSClass();
+    obj.someObject = new JOSGadget();
+    TripType<TestJOSClass> type = TripFactory.getInstance().getType(TestJOSClass.class);
+
+    // reject the gadget only, so that concurrent tests are not affected
+    Settings.setDeserializationFilter(info -> info.serialClass() == JOSGadget.class ?
+                                              ObjectInputFilter.Status.REJECTED : ObjectInputFilter.Status.UNDECIDED);
+    try {
+      // a transceiver of its own: a rejected message leaves the stream unusable, as a real connection would be closed
+      RuntimeException ex = expectThrows(RuntimeException.class, () -> echo(new EchoTransceiver(), obj, type));
+      Throwable cause = ex;
+      while (cause != null && !(cause instanceof InvalidClassException)) {
+        cause = cause.getCause();
+      }
+      assertNotNull(cause, "rejected class not reported as InvalidClassException");
+    }
+    finally {
+      Settings.setDeserializationFilter(null);
+    }
+
+    assertTrue(echo(new EchoTransceiver(), obj, type).someObject instanceof JOSGadget);
+  }
+
+  /**
+   * Sends a value through a transceiver and reads it back.
+   *
+   * @param echo the transceiver
+   * @param value the value
+   * @param type the type
+   * @return the value read back
+   * @param <T> the type
+   */
+  private static <T> T echo(EchoTransceiver echo, T value, TripType<T> type) {
+    type.write(value, echo.getStream());
+    echo.echo();
+    return type.read(echo.getStream(), echo.getStream().getDeserializer().deserializeOpCode());
   }
 
   @Test

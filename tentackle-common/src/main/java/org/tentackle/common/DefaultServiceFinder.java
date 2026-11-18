@@ -302,10 +302,7 @@ public class DefaultServiceFinder implements ServiceFinder {
       List<Class<T>> providers = new ArrayList<>();
       for (Map.Entry<String,URL> entry: findServiceConfigurations(serviceName).entrySet()) {
         String serviceImplName = entry.getKey();
-        Class<T> provider = (Class<T>) Class.forName(serviceImplName, true, getClassLoader(serviceName));
-        // check that provides really implements service
-        checkProvider(provider, service, entry.getValue());
-        providers.add(provider);
+        providers.add((Class<T>) loadProvider(serviceImplName, service, entry.getValue(), getClassLoader(serviceName)));
       }
       serviceImplClasses = List.copyOf(providers);
       Collection<Class<?>> cachedClasses = classMap.putIfAbsent(serviceName, (Collection) serviceImplClasses);
@@ -329,9 +326,7 @@ public class DefaultServiceFinder implements ServiceFinder {
     if (resolved == null || resolved.loader() != cl) {
       // classes are loaded without holding a lock, a concurrent duplicate load is harmless
       Map.Entry<String,URL> entry = findFirstServiceConfiguration(serviceName);
-      Class<?> provider = Class.forName(entry.getKey(), true, cl);
-      checkProvider(provider, service, entry.getValue());
-      resolved = new ResolvedProvider(cl, provider);
+      resolved = new ResolvedProvider(cl, loadProvider(entry.getKey(), service, entry.getValue(), cl));
       firstMap.put(service, resolved);
     }
     return (Class<T>) resolved.provider();
@@ -350,9 +345,7 @@ public class DefaultServiceFinder implements ServiceFinder {
     if (resolved == null || resolved.loader() != cl) {
       // classes are loaded without holding a lock, a concurrent duplicate load is harmless
       Map.Entry<String,URL> entry = findUniqueServiceConfiguration(serviceName);
-      Class<?> provider = Class.forName(entry.getKey(), true, cl);
-      checkProvider(provider, service, entry.getValue());
-      resolved = new ResolvedProvider(cl, provider);
+      resolved = new ResolvedProvider(cl, loadProvider(entry.getKey(), service, entry.getValue(), cl));
       uniqueMap.put(service, resolved);
     }
     return (Class<T>) resolved.provider();
@@ -411,7 +404,7 @@ public class DefaultServiceFinder implements ServiceFinder {
       }
 
       String key = parts.get(1);
-      Set<String> serviceList = nameMap.computeIfAbsent(key, k -> new HashSet<>());
+      Set<String> serviceList = nameMap.computeIfAbsent(key, _ -> new HashSet<>());
       serviceList.add(parts.get(0));
     }
 
@@ -520,6 +513,25 @@ public class DefaultServiceFinder implements ServiceFinder {
     return line.isEmpty() ? null : line;
   }
 
+
+  /**
+   * Loads and initializes a provider class.<br>
+   * The class is checked to implement the service <em>before</em> it is initialized, so that a misconfigured
+   * class never gets its static initializers executed.
+   *
+   * @param providerName the name of the provider class
+   * @param service the service class
+   * @param url the URL of the service configuration (for error messages)
+   * @param cl the classloader
+   * @return the initialized provider class
+   * @throws ClassNotFoundException if the provider class could not be found
+   * @throws TentackleRuntimeException if the provider does not implement the service
+   */
+  private Class<?> loadProvider(String providerName, Class<?> service, URL url, ClassLoader cl) throws ClassNotFoundException {
+    Class<?> provider = Class.forName(providerName, false, cl);
+    checkProvider(provider, service, url);
+    return Class.forName(providerName, true, cl);    // same class, now initialized
+  }
 
   /**
    * Checks that the provider really implements the given service.

@@ -39,22 +39,62 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Objects;
 import java.util.StringTokenizer;
+import java.util.function.BooleanSupplier;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
-interface CryptorHolder {
+final class CryptorHolder {
 
-  private static Cryptor loadCryptor() {
-    try {
-      return ServiceFactory.createService(Cryptor.class);
-    }
-    catch (TentackleRuntimeException rx) {
-      // No application-specific cryptor configured! That's ok, although not recommended.
-      // Notice: this also applies if the cryptor is configured, but its constructor failed.
-      return null;
+  /**
+   * The result of loading the application-specific cryptor.
+   *
+   * @param cryptor the cryptor, null if none configured or loading failed
+   * @param failure the failure, null if loaded or none configured
+   */
+  record Loaded(Cryptor cryptor, TentackleRuntimeException failure) {
+
+    Cryptor get() {
+      if (failure != null) {
+        // fail closed: never fall back to storing secrets unencrypted
+        throw new TentackleRuntimeException("application-specific Cryptor is configured but could not be created", failure);
+      }
+      return cryptor;
     }
   }
 
-  Cryptor INSTANCE = loadCryptor();
+  static final Loaded INSTANCE = load(
+      () -> !ServiceFactory.getServiceFinder().findServiceConfigurations(Cryptor.class.getName()).isEmpty(),
+      () -> ServiceFactory.createService(Cryptor.class));
+
+
+  /**
+   * Loads the cryptor.
+   *
+   * @param configured tells whether a cryptor is configured
+   * @param factory creates the cryptor
+   * @return the result
+   */
+  static Loaded load(BooleanSupplier configured, Supplier<Cryptor> factory) {
+    if (!configured.getAsBoolean()) {
+      // No application-specific cryptor configured! That's ok, although not recommended.
+      return new Loaded(null, null);
+    }
+    try {
+      Cryptor cryptor = factory.get();
+      if (cryptor == null) {
+        throw new TentackleRuntimeException("cryptor factory returned null");
+      }
+      return new Loaded(cryptor, null);
+    }
+    catch (TentackleRuntimeException rx) {
+      return new Loaded(null, rx);
+    }
+    catch (RuntimeException rx) {
+      return new Loaded(null, new TentackleRuntimeException(rx));
+    }
+  }
+
+  private CryptorHolder() {}
 }
 
 
@@ -74,8 +114,9 @@ interface CryptorHolder {
  *      }
  *    }
  * </pre>
- * Notice that if the constructor of the application's cryptor throws a {@link TentackleRuntimeException},
- * {@link #getInstance()} silently returns null, as if no cryptor were configured.
+ * Notice that if the application's cryptor is configured, but cannot be created (for example, because its
+ * constructor throws an exception), {@link #getInstance()} and {@link #getInstanceSafely()} throw a
+ * {@link TentackleRuntimeException}. A broken cryptor never silently disables the encryption of secrets.
  * <p>
  * Texts, salts, and passphrases are converted to bytes via {@link Settings#getEncodingCharset()}.
  * <p>
@@ -97,16 +138,17 @@ public class Cryptor implements Function<String, String> {
    * Gets the optional application-specific cryptor singleton.
    *
    * @return the cryptor, null if no {@code @Service(Cryptor.class)} configured
+   * @throws TentackleRuntimeException if a cryptor is configured, but could not be created
    */
   public static Cryptor getInstance() {
-    return CryptorHolder.INSTANCE;
+    return CryptorHolder.INSTANCE.get();
   }
 
   /**
    * Gets the application-specific cryptor singleton.
    *
    * @return the cryptor, never null
-   * @throws TentackleRuntimeException if no cryptor defined
+   * @throws TentackleRuntimeException if no cryptor defined, or it could not be created
    */
   public static Cryptor getInstanceSafely() {
     Cryptor cryptor = getInstance();

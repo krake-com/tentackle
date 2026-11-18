@@ -63,9 +63,11 @@ Two lookups exist, and the difference matters:
 | `Cryptor.getInstance()`       | The singleton, or **`null`** if the application configured none. Callers must handle null — this is the "encryption is optional" path.            |
 | `Cryptor.getInstanceSafely()` | The singleton, throwing `TentackleRuntimeException` if absent. Used where a value is already known to be encrypted and there is no sane fallback. |
 
-> **Watch the constructor.** If the application's cryptor is configured but its constructor throws a
-> `TentackleRuntimeException` (a typo in the salt, say), `getInstance()` silently returns `null`, as
-> if no cryptor were configured at all — and secrets are stored unencrypted from then on.
+> **A broken cryptor fails closed.** If the application's cryptor is configured but cannot be created —
+> its constructor throws (a typo in the salt, say) — both `getInstance()` and `getInstanceSafely()`
+> throw a `TentackleRuntimeException` with the original cause, every time they are invoked. Only a
+> cryptor that is not configured at all yields `null`. A misconfiguration therefore never silently
+> stores secrets unencrypted.
 
 ### What it does
 

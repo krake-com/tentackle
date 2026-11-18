@@ -22,11 +22,14 @@ import org.testng.annotations.Test;
 
 import java.net.URL;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertThrows;
 
 /**
  * Tests the caching of resolved service providers and the explicit classloaders.
@@ -157,6 +160,30 @@ public class ServiceProviderCacheTest {
     assertNull(factory.getExplicitClassLoaderImpl(path, name));
     factory.removeExplicitClassLoaderImpl(path, name, cl2);    // no such key anymore
     assertNull(factory.getExplicitClassLoaderImpl(path, name));
+  }
+
+
+  /**
+   * Set by the static initializer of {@link Misconfigured}.
+   */
+  private static final AtomicBoolean MISCONFIGURED_INITIALIZED = new AtomicBoolean();
+
+  /**
+   * A provider configured for {@link StringNormalizer} which does not implement it.
+   */
+  static class Misconfigured {
+    static {
+      MISCONFIGURED_INITIALIZED.set(true);
+    }
+  }
+
+  @Test
+  public void testMisconfiguredProviderIsNotInitialized() {
+    DefaultServiceFinder finder = new DefaultServiceFinder(getClass().getClassLoader(), "META-INF/test-misconfigured");
+    assertThrows(TentackleRuntimeException.class, () -> finder.findFirstServiceProvider(StringNormalizer.class));
+    assertThrows(TentackleRuntimeException.class, () -> finder.findUniqueServiceProvider(StringNormalizer.class));
+    assertThrows(TentackleRuntimeException.class, () -> finder.findServiceProviders(StringNormalizer.class));
+    assertFalse(MISCONFIGURED_INITIALIZED.get(), "static initializer of a misconfigured provider executed");
   }
 
 }

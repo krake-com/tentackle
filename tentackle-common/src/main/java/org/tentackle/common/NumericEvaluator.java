@@ -63,12 +63,19 @@ import java.util.function.Function;
  */
 public class NumericEvaluator<T extends Number> implements Function<String, String> {
 
+  /**
+   * The maximum nesting depth of parentheses and unary operators.<br>
+   * Protects against a {@link StackOverflowError} for malicious expressions.
+   */
+  public static final int MAX_DEPTH = 256;
+
   private final Class<T> type;                    // the result datatype
   private final String expression;                // the source expression
   private final boolean integral;                 // true if evaluated with integer semantics
   private final Map<String, Number> variables;    // variable name -> value
 
   private int pos;                                // current parser position within expression
+  private int depth;                              // current nesting depth of factors
 
   /**
    * Creates an evaluator for the given datatype.<br>
@@ -158,6 +165,7 @@ public class NumericEvaluator<T extends Number> implements Function<String, Stri
 
   private Number parse() {
     pos = 0;
+    depth = 0;
     Number value = parseExpression();
     skipWhitespace();
     if (pos < expression.length()) {
@@ -197,6 +205,18 @@ public class NumericEvaluator<T extends Number> implements Function<String, Stri
   }
 
   private Number parseFactor() {
+    if (++depth > MAX_DEPTH) {
+      throw error("expression nested deeper than " + MAX_DEPTH + " at position " + pos);
+    }
+    try {
+      return parseNestedFactor();
+    }
+    finally {
+      depth--;
+    }
+  }
+
+  private Number parseNestedFactor() {
     skipWhitespace();
     char c = peek();
     if (c == '+') {

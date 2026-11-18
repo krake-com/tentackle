@@ -136,4 +136,15 @@ public class NumericEvaluatorTest {
     assertEquals(new NumericEvaluator<>().apply("1 + 1"), "2");
   }
 
+  @Test
+  public void testDeeplyNestedExpressionThrows() {
+    String parens = "(".repeat(10_000) + "1" + ")".repeat(10_000);
+    assertThrows(TentackleRuntimeException.class, () -> new NumericEvaluator<Integer>(parens).evaluate());
+    String unary = "-".repeat(10_000) + "1";
+    assertThrows(TentackleRuntimeException.class, () -> new NumericEvaluator<Integer>(unary).evaluate());
+    // within the limit
+    int depth = NumericEvaluator.MAX_DEPTH - 1;
+    assertEquals(new NumericEvaluator<Integer>("(".repeat(depth) + "7" + ")".repeat(depth)).evaluate(), 7);
+  }
+
 }

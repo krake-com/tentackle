@@ -74,6 +74,13 @@ requires Java 11.
   of KWIK 0.12.3. The URI parameter `migrate` (default 2) sets the probe timeouts before a client migrates. A
   `tripq` server lets clients migrate unless `migrate=0`. See
   [Connection migration](tentackle-quic/src/main/docs/quic.md#connection-migration).
+- `Binary.getObject()`, `DefaultObjectSerializer.deserialize()` and TRIP's `@TripViaJOS` objects (`JOSTripType`)
+  read through an `ObjectInputFilter`: depth
+  and reference limits, the binary's size as the byte and array limit, an application filter
+  (`Settings.setDeserializationFilter` or `-Dtentackle.serialFilter=<pattern>`), and the JVM-wide
+  `jdk.serialFilter`. These bytes bypass TRIP's allowlist, so applications reading them from untrusted sources
+  should configure an allowlist. See
+  [Deserialization filter](tentackle-common/src/main/docs/common.md#deserialization-filter).
 
 ### Changed
 
@@ -93,6 +100,9 @@ requires Java 11.
   `retry=0` turns it off).
 - `ConnectionHandler.isAuthenticated` is public.
 - many improvements hardening TRIP service endpoints
+- `Cryptor.getInstance()` and `getInstanceSafely()` throw a `TentackleRuntimeException` if an application cryptor
+  is configured but cannot be created. Before, `getInstance()` returned `null`, as if no cryptor were configured,
+  and secrets were silently stored unencrypted.
 
 ### Fixed
 
@@ -106,6 +116,12 @@ requires Java 11.
   are now rejected after the rejection delay like any other rejections.
 - `tripq`/`tripcq`: the pre-authentication policy grouped the connection limits by stream number instead of by
   the client's address, since KWIK names a stream by its number only.
+- `Binary`/`TBinary` read via Java Object Serialization reject a length exceeding their data. Reading a binary
+  larger than 2 GiB from a stream fails with an `IOException` instead of a `NegativeArraySizeException`.
+- `DefaultServiceFinder` checks that a provider implements its service before the provider class is initialized,
+  so the static initializers of a misconfigured class are not executed.
+- `NumericEvaluator` limits the nesting depth of an expression (`MAX_DEPTH`) and throws a
+  `TentackleRuntimeException` instead of a `StackOverflowError`.
 
 
 ## Java 25 line (25.x)

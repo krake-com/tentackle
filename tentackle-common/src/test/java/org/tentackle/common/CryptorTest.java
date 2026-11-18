@@ -133,4 +133,33 @@ public class CryptorTest {
     Assert.assertEquals(cryptor.encrypt64(MSG), encrypted);
     Assert.assertEquals(cryptor.decrypt64(encrypted), MSG);
   }
+
+  @Test
+  public void testLoadNotConfigured() {
+    CryptorHolder.Loaded loaded = CryptorHolder.load(() -> false, () -> {
+      throw new AssertionError("must not be created");
+    });
+    Assert.assertNull(loaded.get());
+  }
+
+  @Test
+  public void testLoadConfigured() {
+    Cryptor cryptor = new TestCryptor();
+    Assert.assertSame(CryptorHolder.load(() -> true, () -> cryptor).get(), cryptor);
+  }
+
+  @Test
+  public void testLoadConfiguredButBrokenFailsClosed() {
+    CryptorHolder.Loaded loaded = CryptorHolder.load(() -> true, () -> {
+      throw new IllegalStateException("typo in salt");
+    });
+    TentackleRuntimeException ex = Assert.expectThrows(TentackleRuntimeException.class, loaded::get);
+    Assert.assertTrue(ex.getCause().getCause() instanceof IllegalStateException);
+    // repeatedly, not just once
+    Assert.assertThrows(TentackleRuntimeException.class, loaded::get);
+
+    CryptorHolder.Loaded nullLoaded = CryptorHolder.load(() -> true, () -> null);
+    Assert.assertThrows(TentackleRuntimeException.class, nullLoaded::get);
+  }
+
 }

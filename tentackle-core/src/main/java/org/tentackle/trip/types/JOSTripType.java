@@ -18,6 +18,7 @@
 
 package org.tentackle.trip.types;
 
+import org.tentackle.common.Settings;
 import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.Reference;
@@ -39,6 +40,9 @@ import java.io.ObjectOutputStream;
  * a {@link org.tentackle.trip.TripInstanceCreator}
  * or an application-specific {@link org.tentackle.trip.TripType},
  * for whatever reason.
+ * <p>
+ * TRIP's allowlist does not reach into the Java-serialized form. Hence, it is deserialized through the
+ * filter created by {@link org.tentackle.common.Settings#createDeserializationFilter(long)}.
  */
 // created by ObjectTypeBuilder, not mapped by @TripTypeService
 public final class JOSTripType extends AbstractTripType<Object> {
@@ -108,6 +112,8 @@ public final class JOSTripType extends AbstractTripType<Object> {
       // read while the data arrives: the size is not trusted
       DeserializerInputStream data = new DeserializerInputStream(deserializer, size);
       try (ObjectInputStream is = new ObjectInputStream(data)) {
+        // TRIP's allowlist does not reach into the JOS stream: apply the common deserialization filter
+        is.setObjectInputFilter(Settings.createDeserializationFilter(size));
         value = is.readObject();
         data.drain();   // nothing left, unless the object was written with trailing data
         stream.addReference(reference, value, false);
