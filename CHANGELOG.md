@@ -103,6 +103,11 @@ requires Java 11.
 - `Cryptor.getInstance()` and `getInstanceSafely()` throw a `TentackleRuntimeException` if an application cryptor
   is configured but cannot be created. Before, `getInstance()` returned `null`, as if no cryptor were configured,
   and secrets were silently stored unencrypted.
+- TRIP announces the class of a `@TripViaJOS` object ahead of its Java-serialized form (wire format change). The
+  receiver accepts only a class it serializes via JOS itself, and refuses a Java-serialized root object of any other
+  class before it is instantiated.
+- TRIP refuses Java-serialized objects and lambdas before the login.
+- `tripe`/`tripce` servers refuse legacy (AES/ECB) clients unless started with the URI parameter `legacy=1`.
 
 ### Fixed
 

@@ -979,14 +979,21 @@ The class must implement `Serializable`.
 public class ThirdPartyValue implements Serializable { ... }
 ```
 
-The Java-serialized form is opaque to TRIP and thus not covered by the [allowlist](#allowlisting-disallowedtriptype).
-It is read through the deserialization filter of `tentackle-common` instead (see
+The class of the object travels via TRIP ahead of its Java-serialized form. The receiver accepts it only if it
+serializes that class via JOS itself, i.e. if its `TripFactory` maps the class to JOS (by the annotation, or by an
+overridden `ObjectTypeBuilder.isSerializableViaJOS`). The root object of the Java-serialized form must be of that
+class: anything else is refused before it is instantiated.
+
+The objects nested within the root object, however, are opaque to TRIP and thus not covered by the
+[allowlist](#allowlisting-disallowedtriptype). They are read through the deserialization filter of
+`tentackle-common` instead (see
 [Deserialization filter](../../../../tentackle-common/src/main/docs/common.md#deserialization-filter)), which an
 application restricts via `Settings.setDeserializationFilter` or `-Dtentackle.serialFilter`.
 Before the client is authenticated, a Java-serialized object is refused altogether (see
 [Unauthenticated peers](#unauthenticated-peers)). After the login, the filter is all that stands between an
-authenticated client and `ObjectInputStream`: by default it limits only the size and depth, so an application
-using `@TripViaJOS` should restrict the classes as well.
+authenticated client and the objects nested in a `@TripViaJOS` class: by default it limits only the size and
+depth, so an application whose `@TripViaJOS` classes hold fields of non-final types (`Object`, `Serializable`,
+interfaces) should restrict the classes as well.
 
 **This is a last resort.** Before reaching for `@TripViaJOS`, consider the following alternatives in decreasing order of preference:
 
@@ -1459,8 +1466,9 @@ allocation of up to 2 GiB held while the client trickles the data.
 - Serialized objects that **leave the live session** (BLOB columns, files, message queues) should
   be treated as untrusted on the way back in: prefer records for the payload classes, and install
   an allowlisting builder in the tier that reads them.
-- `@TripViaJOS` routes a class through Java Object Serialization and thereby out of TRIP's
-  control, leaving only the [deserialization filter](../../../../tentackle-common/src/main/docs/common.md#deserialization-filter)
+- `@TripViaJOS` routes a class through Java Object Serialization. TRIP checks the class of the root
+  object, but what it holds is out of TRIP's control, leaving only the
+  [deserialization filter](../../../../tentackle-common/src/main/docs/common.md#deserialization-filter)
   of `tentackle-common`; avoid it entirely for data that may be stored or received from outside.
 
 ---
