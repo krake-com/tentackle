@@ -39,64 +39,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Objects;
 import java.util.StringTokenizer;
-import java.util.function.BooleanSupplier;
 import java.util.function.Function;
-import java.util.function.Supplier;
-
-final class CryptorHolder {
-
-  /**
-   * The result of loading the application-specific cryptor.
-   *
-   * @param cryptor the cryptor, null if none configured or loading failed
-   * @param failure the failure, null if loaded or none configured
-   */
-  record Loaded(Cryptor cryptor, TentackleRuntimeException failure) {
-
-    Cryptor get() {
-      if (failure != null) {
-        // fail closed: never fall back to storing secrets unencrypted
-        throw new TentackleRuntimeException("application-specific Cryptor is configured but could not be created", failure);
-      }
-      return cryptor;
-    }
-  }
-
-  static final Loaded INSTANCE = load(
-      () -> !ServiceFactory.getServiceFinder().findServiceConfigurations(Cryptor.class.getName()).isEmpty(),
-      () -> ServiceFactory.createService(Cryptor.class));
-
-
-  /**
-   * Loads the cryptor.
-   *
-   * @param configured tells whether a cryptor is configured
-   * @param factory creates the cryptor
-   * @return the result
-   */
-  static Loaded load(BooleanSupplier configured, Supplier<Cryptor> factory) {
-    if (!configured.getAsBoolean()) {
-      // No application-specific cryptor configured! That's ok, although not recommended.
-      return new Loaded(null, null);
-    }
-    try {
-      Cryptor cryptor = factory.get();
-      if (cryptor == null) {
-        throw new TentackleRuntimeException("cryptor factory returned null");
-      }
-      return new Loaded(cryptor, null);
-    }
-    catch (TentackleRuntimeException rx) {
-      return new Loaded(null, rx);
-    }
-    catch (RuntimeException rx) {
-      return new Loaded(null, new TentackleRuntimeException(rx));
-    }
-  }
-
-  private CryptorHolder() {}
-}
-
 
 /**
  * A simple en- and decryptor.<br>
@@ -234,7 +177,6 @@ public class Cryptor implements Function<String, String> {
   public Cryptor(String salt, String passphrase) {
     this(salt.getBytes(Settings.getEncodingCharset()), passphrase.toCharArray());
   }
-
 
 
   /**
@@ -440,7 +382,6 @@ public class Cryptor implements Function<String, String> {
     return new String(decrypt64ToBytes(encryptedText), Settings.getEncodingCharset());
   }
 
-
   /**
    * Encrypts a string.<br>
    * Provided for the tentackle-maven-plugin.
@@ -452,7 +393,6 @@ public class Cryptor implements Function<String, String> {
   public String apply(String s) {
     return encrypt64(s);
   }
-
 
   /**
    * Derives the unencrypted URL.<br>
@@ -545,7 +485,6 @@ public class Cryptor implements Function<String, String> {
       throw new TentackleRuntimeException("creating cipher failed", e);
     }
   }
-
 
   private char[] toChars(byte[] data) {
     ByteBuffer byteBuffer = ByteBuffer.wrap(data);
