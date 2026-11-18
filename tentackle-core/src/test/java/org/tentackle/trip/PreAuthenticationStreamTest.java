@@ -27,12 +27,17 @@ import org.tentackle.trip.impl.DefaultTripStream;
 import org.tentackle.trip.impl.EchoTransceiver;
 import org.tentackle.trip.impl.TestClass;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -99,6 +104,38 @@ public class PreAuthenticationStreamTest {
       auditedGadgetInitialized = true;
     }
     public String value;
+  }
+
+  /** Counts the invocations of {@link JosGadget#readObject}. */
+  static final AtomicInteger josGadgetRead = new AtomicInteger();
+
+  /**
+   * A class travelling via Java Object Serialization, whose deserialization has a side effect.<br>
+   * Stands for a gadget chain reached through {@code ObjectInputStream}.
+   */
+  @TripViaJOS
+  public static class JosGadget implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    public String value = "gadget";
+
+    @Serial
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+      in.defaultReadObject();
+      josGadgetRead.incrementAndGet();
+    }
+  }
+
+  /**
+   * The capturing class of a serializable lambda.
+   */
+  @TripSerializeLambda
+  public static class LambdaCapturer {
+    @SuppressWarnings("unchecked")
+    static Supplier<String> create() {
+      return (Supplier<String> & Serializable) () -> "lambda";
+    }
   }
 
   /**
@@ -676,6 +713,32 @@ public class PreAuthenticationStreamTest {
     assertEquals(closedActive.get(), 0);
     assertEquals(closedAuthenticated.get(), 0);
     assertEquals(closedReleased.get(), 0);
+  }
+
+
+  @Test
+  void testJavaObjectSerializationIsRefused() {
+    // The JOS opcode is a fixed type: it never passes through the dictionary and its allowlist.
+    // The gadget is wrapped in an allowed list, just like the arguments of a remote call.
+    List<Object> list = new ArrayList<>(List.of("a", new JosGadget()));
+    josGadgetRead.set(0);
+    expectThrows(TripPolicyViolationException.class, () -> echo(list, createPolicy(PreAuthenticationPolicy.Mode.ENFORCE)));
+    assertEquals(josGadgetRead.get(), 0, "ObjectInputStream reached before the login");
+
+    // only logged when auditing...
+    assertEquals(((JosGadget) echo(list, createPolicy(PreAuthenticationPolicy.Mode.AUDIT)).get(1)).value, "gadget");
+    assertEquals(josGadgetRead.get(), 1);
+    // ...and no restrictions once authenticated
+    assertEquals(((JosGadget) echo(list, null).get(1)).value, "gadget");
+    assertEquals(josGadgetRead.get(), 2);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void testLambdaIsRefused() {
+    List<Object> list = new ArrayList<>(List.of("a", LambdaCapturer.create()));
+    expectThrows(TripPolicyViolationException.class, () -> echo(list, createPolicy(PreAuthenticationPolicy.Mode.ENFORCE)));
+    assertEquals(((Supplier<String>) echo(list, null).get(1)).get(), "lambda");
   }
 
 }

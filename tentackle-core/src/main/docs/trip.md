@@ -122,7 +122,7 @@ see [QUIC](../../../../tentackle-quic/src/main/docs/quic.md) and
 | `backlog`        | server | `50`    | The listen backlog of the server socket.                                                                                                                   |
 | `nodelay`        | both   | `1`     | `0` keeps Nagle's algorithm enabled. By default, `TCP_NODELAY` is set on the client's and on the accepted sockets.                                         |
 | `mincompress`    | both   | `1024`  | Compressing transports only: packets smaller than this many bytes are sent uncompressed. At least 20, so that the connection request travels uncompressed. |
-| `legacy`         | server | `1`     | PSK transports only: `0` refuses clients of the previous version (AES/ECB), see [PSK encryption](#psk-encryption).                                         |
+| `legacy`         | server | `0`     | PSK transports only: `1` accepts clients of the previous version (AES/ECB), see [PSK encryption](#psk-encryption).                                         |
 
 Connections are created with the pool locked, by the thread requesting one and by the timeout thread
 that all pools share to restore the `minimum`. `connecttimeout` therefore bounds how long a server that
@@ -258,7 +258,8 @@ that key directly. Each connection derives keys of its own via HKDF-SHA256 (`Cry
 
 1. The client sends a random 32-byte salt, followed by the TRIP connection request (magic, UUID and
    dictionary flag) encrypted with AES-GCM under a key derived from that salt. This hello has a fixed size
-   of 67 bytes. With it, the client proves that it knows the key before the server sends a single byte.
+   of 67 bytes. With it, the client proves that it knows the key before the server sends a single byte. A recorded
+   hello is answered as well, but without the key the replaying peer can't derive the keys of the connection.
 2. If the hello is not authentic, the server sends nothing and closes the connection after the
    [rejection delay](#delayed-rejection). Otherwise, it answers with a random 32-byte salt of its own.
 3. Both sides derive one key per direction from both salts. Every packet is a two-byte length,
@@ -270,11 +271,12 @@ to decrypt, and since the server contributes a salt, a recorded connection can't
 A packet that fails to decrypt closes the connection; before the login, after the rejection delay.
 
 Up to Tentackle 25.20, these transports encrypted each packet with the plain cipher of the `Cryptor`
-(AES/ECB, no IV, no authentication). For the transition, a server also accepts such a client, so that an
-auto-updating client of the previous version can still reach the update endpoint. It is recognized by
-its first packet, logged as a warning, and served in the old format. Once all clients are updated,
-`legacy=0` refuses them. The fallback will be removed in the next version. A new client can't connect
-to an old server.
+(AES/ECB, no IV, no authentication). For the transition, a server started with `legacy=1` also accepts
+such a client, so that an auto-updating client of the previous version can still reach the update endpoint.
+It is recognized by its first packet, logged as a warning, and served in the old format. By default, such
+clients are refused: a legacy session gets no salt from the server, so a recorded one can be replayed as a
+whole, login included, and its ECB blocks can be spliced. Enable it only for as long as old clients must be
+updated. The fallback will be removed in the next version. A new client can't connect to an old server.
 
 The keys still are as private as the client distribution: whoever has the client has the key (see
 [Unauthenticated peers](#unauthenticated-peers)). The packet lengths travel in the clear.
@@ -981,6 +983,10 @@ The Java-serialized form is opaque to TRIP and thus not covered by the [allowlis
 It is read through the deserialization filter of `tentackle-common` instead (see
 [Deserialization filter](../../../../tentackle-common/src/main/docs/common.md#deserialization-filter)), which an
 application restricts via `Settings.setDeserializationFilter` or `-Dtentackle.serialFilter`.
+Before the client is authenticated, a Java-serialized object is refused altogether (see
+[Unauthenticated peers](#unauthenticated-peers)). After the login, the filter is all that stands between an
+authenticated client and `ObjectInputStream`: by default it limits only the size and depth, so an application
+using `@TripViaJOS` should restrict the classes as well.
 
 **This is a last resort.** Before reaching for `@TripViaJOS`, consider the following alternatives in decreasing order of preference:
 
@@ -1164,7 +1170,7 @@ Before the client is authenticated, the [`DefaultPreAuthenticationPolicy`](../ja
 
 | Restriction             | What it prevents                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 |-------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Class allowlist**     | Every class name in a received dictionary entry is checked *as a string, before it is loaded*, so not even the static initializer of a foreign class runs. The component types of an entry must be allowed as well, or be the types the allowed class declares. Dynamic proxies are refused. An entry the server created itself, for a class it sent to the client, is checked when the client refers to it. Since `@TripViaJOS` classes and lambdas are not on the list, neither can be reached before the login.                                                                                                                                              |
+| **Class allowlist**     | Every class name in a received dictionary entry is checked *as a string, before it is loaded*, so not even the static initializer of a foreign class runs. The component types of an entry must be allowed as well, or be the types the allowed class declares. Dynamic proxies are refused. An entry the server created itself, for a class it sent to the client, is checked when the client refers to it. Java-serialized objects (`@TripViaJOS`) and lambdas travel as opcodes of their own, outside the dictionary, and are refused outright before the login.                                                                                             |
 | **Message size**        | A message may not exceed `maxMessageSize` bytes (default 256 KiB), counted after decompression.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | **Element count**       | Arrays, collections and maps may not exceed `maxElements` (default 4096), checked *before* anything is allocated for them.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | **Allocation**          | The arrays of a message may not allocate more than `maxAllocation` bytes in total (default 4 MiB), checked before each array is allocated. Otherwise, a single message of sparse arrays, each within `maxElements`, would allocate hundreds of megabytes. After the login, the [allocation budget](#allocation-budget) still applies.                                                                                                                                                                                                                                                                                                                           |

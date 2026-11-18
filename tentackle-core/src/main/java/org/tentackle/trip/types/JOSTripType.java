@@ -21,6 +21,7 @@ package org.tentackle.trip.types;
 import org.tentackle.common.Settings;
 import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.OpCode;
+import org.tentackle.trip.PreAuthenticationPolicy;
 import org.tentackle.trip.Reference;
 import org.tentackle.trip.Serializer;
 import org.tentackle.trip.TripRuntimeException;
@@ -43,6 +44,8 @@ import java.io.ObjectOutputStream;
  * <p>
  * TRIP's allowlist does not reach into the Java-serialized form. Hence, it is deserialized through the
  * filter created by {@link org.tentackle.common.Settings#createDeserializationFilter(long)}.
+ * Before the client is authenticated, i.e. if the stream has a {@link PreAuthenticationPolicy},
+ * a Java-serialized object is refused altogether.
  */
 // created by ObjectTypeBuilder, not mapped by @TripTypeService
 public final class JOSTripType extends AbstractTripType<Object> {
@@ -90,6 +93,13 @@ public final class JOSTripType extends AbstractTripType<Object> {
 
   @Override
   public Object read(TripStream stream, OpCode opCode) {
+    PreAuthenticationPolicy policy = stream.getReadPolicy();
+    if (policy != null) {
+      // The JOS opcode is a fixed type that never passes through the dictionary and its allowlist.
+      // Before the login, it would hand arbitrary bytes to ObjectInputStream: refuse it before reading anything.
+      policy.violation("Java Object Serialization");    // throws if enforcing
+    }
+
     Deserializer deserializer = stream.getDeserializer();
 
     if (opCode == DefaultOpCode.JOS) {

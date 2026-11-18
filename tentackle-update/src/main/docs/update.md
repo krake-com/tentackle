@@ -329,8 +329,8 @@ deserializes a single byte from it. Of the two, `tripe` is the default for the u
 version may come with a new certificate that the outdated client does not trust yet.
 With `tripe`, the client proves that it knows the key with its first 67 bytes 
 (see [PSK encryption](../../../../tentackle-core/src/main/docs/trip.md#psk-encryption)). 
-Set `legacy=0` on the server once no client of the previous version is left: until then, it accepts their unauthenticated
-AES/ECB packets as well.
+Clients of the previous version, which encrypted with unauthenticated AES/ECB, are refused unless the server is
+started with `legacy=1`. Set it only while such clients still have to be updated, and remove it afterwards.
 
 The secret ships with the client, however. The pre-shared key is the passphrase of the application's
 [`Cryptor`](../../../../tentackle-common/src/main/docs/cryptor.md#threat-model-and-limits), compiled into the image,

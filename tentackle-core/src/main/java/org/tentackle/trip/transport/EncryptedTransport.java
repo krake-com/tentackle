@@ -43,8 +43,8 @@ import java.util.function.Supplier;
  * However, it does not need a certificate and is sometimes just "good enough",
  * for example, pragmatically used by the auto update service (see {@code org.tentackle.update}).
  * <p>
- * The server also accepts clients of the previous version (AES/ECB), unless the URI query parameter
- * {@code legacy} is {@code 0}.
+ * Clients of the previous version (AES/ECB) are refused, unless the server's URI query parameter
+ * {@code legacy} is {@code 1}.
  */
 @TransportService(EncryptedTransport.PROTOCOL)
 public class EncryptedTransport extends TcpTransport {
@@ -90,8 +90,8 @@ public class EncryptedTransport extends TcpTransport {
 
   /**
    * Creates the encrypted channel of a connection.<br>
-   * The server accepts clients of the previous version (AES/ECB) unless the URI query parameter
-   * {@code legacy} is {@code 0}.
+   * The server accepts clients of the previous version (AES/ECB) only if the URI query parameter
+   * {@code legacy} is {@code 1}: their sessions are neither authenticated nor protected against replay.
    *
    * @param inputStream the input stream from the socket
    * @param outputStream the output stream from the socket
@@ -100,7 +100,7 @@ public class EncryptedTransport extends TcpTransport {
    */
   protected EncryptedChannel createChannel(InputStream inputStream, OutputStream outputStream, boolean server) {
     return new EncryptedChannel(getCryptor(), inputStream, outputStream, server,
-                                getUriPars().getOrDefault("legacy", 1) != 0);
+                                getUriPars().getOrDefault("legacy", 0) != 0);
   }
 
   /**

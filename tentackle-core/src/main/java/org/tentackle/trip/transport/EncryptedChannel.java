@@ -45,7 +45,8 @@ import java.util.Objects;
  *   <li>The client sends its random 32-byte salt, followed by the TRIP connection request (magic, UUID and
  *   dictionary flag) encrypted with a key derived from that salt. The hello has a fixed size of
  *   {@link #HELLO_SIZE} bytes, and the client proves with it that it knows the pre-shared key before the
- *   server sends a single byte.</li>
+ *   server sends a single byte. A recorded hello is authentic as well and is answered with the server's salt,
+ *   but without the pre-shared key the replaying peer can't derive the keys of the connection.</li>
  *   <li>The server verifies the hello. If it is not authentic, the server sends nothing, and the connection
  *   handler closes the connection after the {@link org.tentackle.trip.RejectionDelay}.
  *   Otherwise, the server answers with its own random 32-byte salt.</li>
@@ -57,8 +58,8 @@ import java.util.Objects;
  * yield different ciphertexts, and a modified packet is detected.
  * <p>
  * For a transition period, the server also accepts clients of the previous version, which encrypted with the
- * plain cipher of the {@link Cryptor} (AES/ECB without authentication), unless the transport's URI
- * query parameter {@code legacy} is {@code 0}.
+ * plain cipher of the {@link Cryptor} (AES/ECB without authentication), if the transport's URI
+ * query parameter {@code legacy} is {@code 1}. Such a session has no server salt: a recorded one can be replayed.
  */
 public class EncryptedChannel {
 

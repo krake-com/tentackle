@@ -20,6 +20,7 @@ package org.tentackle.trip.types;
 
 import org.tentackle.log.Logger;
 import org.tentackle.trip.OpCode;
+import org.tentackle.trip.PreAuthenticationPolicy;
 import org.tentackle.trip.Serializer;
 import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripRuntimeException;
@@ -157,6 +158,11 @@ public final class LambdaTripType extends AbstractDictionaryBasedTripType<Object
   @Override
   public Object read(TripStream stream, OpCode opCode) {
     if (opCode == DefaultOpCode.LAMBDA) {
+      PreAuthenticationPolicy policy = stream.getReadPolicy();
+      if (policy != null) {
+        // the LAMBDA opcode is a fixed type: refuse it before the login, whatever the capturing class
+        policy.violation("lambda");    // throws if enforcing
+      }
       Class<?> capturingClass = LambdaTypeHolder.CLASS.read(stream, stream.receiveOpCode());
       String functionalInterfaceClassName = LambdaTypeHolder.STRING.read(stream, stream.receiveOpCode());
       String functionalInterfaceMethodName = LambdaTypeHolder.STRING.read(stream, stream.receiveOpCode());

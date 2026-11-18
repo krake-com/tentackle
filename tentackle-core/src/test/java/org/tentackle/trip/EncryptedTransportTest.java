@@ -386,7 +386,7 @@ public class EncryptedTransportTest {
 
   @Test
   void testLegacyClient() throws Exception {
-    startServer(false, null);
+    startServer(false, "legacy=1");
     URI uri = new URI("trip://127.0.0.1:" + port);
     Transport legacy = new LegacyTransport(uri);
     transports.add(legacy);
@@ -399,7 +399,7 @@ public class EncryptedTransportTest {
 
   @Test
   void testLegacyClientRefused() throws Exception {
-    startServer(false, "legacy=0");
+    startServer(false, null);    // refused by default
     URI uri = new URI("trip://127.0.0.1:" + port);
     Transport legacy = new LegacyTransport(uri);
     transports.add(legacy);
