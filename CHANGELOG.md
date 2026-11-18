@@ -108,8 +108,34 @@ requires Java 11.
   class before it is instantiated.
 - TRIP refuses Java-serialized objects and lambdas before the login.
 - `tripe`/`tripce` servers refuse legacy (AES/ECB) clients unless started with the URI parameter `legacy=1`.
+- **Breaking:** remote clients can no longer get the delegates of the framework's internal tables
+  (`ModificationLog`, `DbModification`, `DbPreferencesNode`, `DbPreferencesKey`), unless the server marks the
+  session privileged with `RemoteDbSessionImpl.setPrivilegedSession(true)`. Tools processing the modification log
+  remotely must be given a privileged session. `ModificationLog` is no longer preloaded.
+  See [After the login](tentackle-database/src/main/docs/database.md#after-the-login).
+- **Breaking:** a remote client may read only the system preferences and its own user's preferences, and write only
+  its own user's, unless the session is privileged. Override `RemoteDbSessionImpl.isPreferencesAccessAllowed` to
+  change the rules, for example, for clients running in `systemOnly` mode.
+- `DbRemoteDelegate.groupWith` joins only a session of the same user and client JVM
+  (`RemoteDbSessionImpl.isGroupingAllowed`).
+- A `MultiUserDbPool` serves a login from a user's sub-pool only if its password matches the one the sub-pool's
+  sessions were opened with (`MultiUserDbPool.isMatchingCredentials`). Otherwise, the login gets a session of its
+  own, authenticated with the presented credentials.
 
 ### Fixed
+
+- SQL injection: the name of a table counter (a "tracked name") was concatenated into the SQL statement creating its
+  row in the modification table. Any logged-in client could request an arbitrary name via the modification tracker
+  and thus execute SQL with the server's database user. The name is now bound as a parameter, and
+  `DbModificationTrackerRemoteDelegateImpl.validateTrackedName` refuses names that are empty, too long or contain
+  control characters.
+- The preferences of other users could be read and overwritten by any logged-in client, including the system
+  preferences, also by forging the IDs of persisted nodes and keys.
+- A logged-in client could tamper with the modification log through the generic `AbstractDbObject` delegate.
+- A logged-in client could join the session of another user into its session group, which got the other user's
+  session closed along with the client's own hanging transaction.
+- With a `MultiUserDbPool` (cascaded servers), the server's backend properties were copied into the client's
+  session info, which `RemoteDbSession.getClientSessionInfo` returns to the client.
 
 - TRIP: `Binary`, `TBinary`, `@TripViaJOS` objects, large `BigDecimal`s and empty `EnumMap`s are read while
   their data arrives instead of being allocated with the length announced ahead of it. A forged length no longer

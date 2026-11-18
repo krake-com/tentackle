@@ -172,6 +172,40 @@ public class MultiUserDbPoolTest {
   }
 
 
+  /**
+   * A sub-pool must only serve the credentials its sessions were opened with.<br>
+   * The sub-pools are mapped by username only.
+   */
+  @Test
+  public void testCredentialsMustMatchSubPool() {
+    ConnectionManager conMgr = new DefaultConnectionManager("multi-pool-credentials-mgr", 2, 16, 1, 720, 2160);
+    MultiUserDbPool pool = new MultiUserDbPool("multi-pool-credentials", conMgr, 0, 4, 16, 0, 0);
+    try {
+      assertTrue(pool.isMatchingCredentials(createSessionInfo(0, "right")), "no sub-pool yet");
+      Session session = pool.get(createSessionInfo(0, "right"));
+      try {
+        assertTrue(pool.isMatchingCredentials(createSessionInfo(0, "right")));
+        assertFalse(pool.isMatchingCredentials(createSessionInfo(0, "wrong")));
+        assertFalse(pool.isMatchingCredentials(createSessionInfo(0, "righ")));
+        assertFalse(pool.isMatchingCredentials(createSessionInfo(0, null)));
+        assertTrue(pool.isMatchingCredentials(createSessionInfo(1, "wrong")), "other user has no sub-pool yet");
+      }
+      finally {
+        pool.put(session);
+      }
+    }
+    finally {
+      pool.shutdown();
+      conMgr.shutdown();
+    }
+  }
+
+  private SessionInfo createSessionInfo(int index, String password) {
+    SessionInfo sessionInfo = createSessionInfo(index);
+    sessionInfo.setPassword(password == null ? null : password.toCharArray());
+    return sessionInfo;
+  }
+
   private SessionInfo createSessionInfo(int index) {
     SessionInfo sessionInfo = new DefaultSessionInfo();
     sessionInfo.setUserName("pooltestuser" + index);    // the user name selects the sub-pool

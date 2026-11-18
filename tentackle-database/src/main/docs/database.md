@@ -492,7 +492,8 @@ local registry/file:
 - [`DbPreferencesFactory`](../java/org/tentackle/dbms/prefs/DbPreferencesFactory.java)
   (`@Service(PersistedPreferencesFactory.class)`) — a drop-in replacement for the JRE preferences factory,
   normally reached via `PersistedPreferencesFactory.getInstance()`.
-- `prefs/trip` — the remote delegate so preferences work over a remote connection.
+- `prefs/trip` — the remote delegate so preferences work over a remote connection. A remote client may write only
+  its own user's preferences, see [After the login](#after-the-login).
 
 ---
 
@@ -595,6 +596,37 @@ client is triggered as before, once the user entered valid credentials.
 For the same reason, the client gets the server's version from the session (`RemoteDbSession.getServerVersion`,
 overridden in the application's `RemoteDbSessionImpl`) and checks it with `SessionInfo.checkServerVersion` after the
 login.
+
+### After the login
+
+A logged-in client is authenticated, but that doesn't make it trustworthy. `RemoteDbSessionImpl` and the
+delegates therefore restrict what a client may do beyond the PDO layer's security rules:
+
+- **Internal tables.** The generic delegate of an `AbstractDbObject` provides plain inserts, updates and deletes.
+  For the framework's own tables (`ModificationLog`, `DbModification`, `DbPreferencesNode`, `DbPreferencesKey`)
+  that would allow tampering with the modification log or other users' preferences. `getRemoteDelegate` therefore
+  refuses these classes unless the server marked the session **privileged** with
+  `RemoteDbSessionImpl.setPrivilegedSession(true)`, usually in an overridden `verifySessionInfo` according to the
+  authenticated user. A tool processing the modification log remotely needs a privileged session. Regular clients
+  don't: the preferences go through the `DbPreferencesOperation`, and the modification logs are written by the
+  server. Override `isRemoteAccessAllowed(Class)` to restrict the remote access further.
+- **Preferences.** The client may read the system preferences and read and write its own user's preferences, the
+  user being the one of the remote session. A privileged session may access all preferences. Override
+  `RemoteDbSessionImpl.isPreferencesAccessAllowed(String, boolean)` to change the rules, for example, to let
+  administrators write the system preferences. Since the client sends the persisted nodes and keys along with their
+  IDs, a flush is checked against the database: every persisted node and key must belong to the tree of the user
+  flushed.
+- **Session groups.** `DbRemoteDelegate.groupWith` joins only a session of the same user opened by the same client
+  JVM (the one sharing the TRIP dictionary, see `RemoteDbSessionImpl.isGroupingAllowed`). Otherwise, a client
+  could join the session of another user and have it closed along with its own hanging transaction.
+- **Tracked names.** The modification tracker creates a row in the modification table for each new name a client
+  requests. The name is bound as a statement parameter, and `DbModificationTrackerRemoteDelegateImpl.validateTrackedName`
+  refuses names that are empty, longer than the column, or contain control characters.
+- **Multi-user pools.** A [`MultiUserDbPool`](../java/org/tentackle/dbms/MultiUserDbPool.java) maps its
+  sub-pools by username, and their sessions were opened with the credentials of the first login. A login whose
+  password differs from the sub-pool's (`MultiUserDbPool.isMatchingCredentials`) gets a session of its own,
+  opened with the presented credentials, instead of a pooled one. The server's backend properties are never copied
+  into the client's session info, which is sent back to the client.
 
 ### Preloading remote delegates
 

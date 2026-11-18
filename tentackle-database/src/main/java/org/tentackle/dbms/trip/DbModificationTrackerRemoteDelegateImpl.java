@@ -25,6 +25,7 @@ import org.tentackle.session.MasterSerial;
 import org.tentackle.session.MasterSerialEvent;
 import org.tentackle.session.MasterSerialListEvent;
 import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.PersistenceException;
 
 import java.util.List;
 
@@ -56,7 +57,38 @@ public class DbModificationTrackerRemoteDelegateImpl<T extends DbModificationTra
 
   @Override
   public IdSerialTuple selectIdSerialForName(String tableName) {
+    validateTrackedName(tableName);
     return ((DbModificationTracker) ModificationTracker.getInstance()).getIdSerialForName(tableName);
+  }
+
+  /**
+   * Maximum length of a tracked name requested by a remote client.<br>
+   * Corresponds to the length of the tracked name column of the modification table.
+   */
+  public static final int MAX_TRACKED_NAME_LENGTH = 64;
+
+  /**
+   * Validates a tracked name requested by the remote client.
+   * <p>
+   * An unknown name creates a new row in the modification table, which is polled from then on.
+   * The default implementation rejects missing or overlong names and names containing control characters.
+   * Applications may override this method to restrict the names further.
+   *
+   * @param name the tracked name
+   * @throws PersistenceException if the name is not acceptable
+   */
+  protected void validateTrackedName(String name) {
+    if (name == null || name.isEmpty()) {
+      throw new PersistenceException(getSession(), "missing tracked name");
+    }
+    if (name.length() > MAX_TRACKED_NAME_LENGTH) {
+      throw new PersistenceException(getSession(), "tracked name exceeds " + MAX_TRACKED_NAME_LENGTH + " characters");
+    }
+    for (int i = 0; i < name.length(); i++) {
+      if (Character.isISOControl(name.charAt(i))) {
+        throw new PersistenceException(getSession(), "illegal character in tracked name");
+      }
+    }
   }
 
   @Override

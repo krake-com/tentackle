@@ -19,7 +19,12 @@
 package org.tentackle.dbms.trip;
 
 import org.tentackle.dbms.Db;
+import org.tentackle.dbms.DbModification;
 import org.tentackle.dbms.DbUtilities;
+import org.tentackle.dbms.ModificationLog;
+import org.tentackle.dbms.MultiUserDbPool;
+import org.tentackle.dbms.prefs.DbPreferencesKey;
+import org.tentackle.dbms.prefs.DbPreferencesNode;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
 import org.tentackle.log.LoggerFactory;
@@ -60,6 +65,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
@@ -361,6 +367,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   private Authentication authentication;                      // the proven identity, null if not authenticated yet
   private AuthenticationContext authenticationContext;        // the context of the authentication, null if not authenticated yet
   private final AtomicBoolean modificationTrackerSession;     // true if this the remote ModificationTracker's session
+  private volatile boolean privilegedSession;                 // true if access to internal tables is allowed
   private final Queue<MasterSerialEvent> masterSerialEvents;  // master serial event queue
   private final AtomicReference<Thread> invokingThread;       // the thread invoking a delegate method, null if none
   private int invocationDepth;                                // nested invocations (accessed by the invoking thread only)
@@ -844,6 +851,137 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   }
 
   /**
+   * Returns whether this is a privileged session.
+   *
+   * @return true if privileged
+   * @see #setPrivilegedSession(boolean)
+   */
+  public boolean isPrivilegedSession() {
+    return privilegedSession;
+  }
+
+  /**
+   * Sets whether this is a privileged session.
+   * <p>
+   * Only privileged sessions may access the framework's internal tables directly, such as the
+   * modification log or the persisted preferences (see {@link #isRemoteAccessAllowed(Class)}).
+   * This is necessary, for example, for replication tools processing the modification log remotely.
+   * <p>
+   * Sessions are not privileged by default. The flag is set by the server, usually in
+   * {@link #verifySessionInfo(SessionInfo)} according to the authenticated user.
+   * It cannot be set by the client.
+   *
+   * @param privilegedSession true if privileged
+   */
+  public void setPrivilegedSession(boolean privilegedSession) {
+    this.privilegedSession = privilegedSession;
+  }
+
+  /**
+   * Determines whether the client may access the given class remotely.
+   * <p>
+   * Invoked whenever the client requests a remote delegate.
+   * The default implementation denies access to the framework's internal tables, unless the session
+   * is privileged (see {@link #setPrivilegedSession(boolean)}): the generic remote delegates of those
+   * classes provide plain inserts, updates, and deletes, which would allow tampering with the modification
+   * log and other users' preferences. Regular clients don't need them: the preferences are accessed via
+   * the {@link org.tentackle.dbms.prefs.DbPreferencesOperation}, and modification logs are written by the server.
+   * <p>
+   * Applications may override this method to restrict the remote access further.
+   *
+   * @param clazz the class the client requested the remote delegate for
+   * @return true if allowed
+   */
+  protected boolean isRemoteAccessAllowed(Class<?> clazz) {
+    return isPrivilegedSession() || !isInternalClass(clazz);
+  }
+
+  /**
+   * Determines whether the client may access the persisted preferences of a user.
+   * <p>
+   * Invoked by the remote delegate of the {@link org.tentackle.dbms.prefs.DbPreferencesOperation}.
+   * The default implementation allows:
+   * <ul>
+   *   <li>reading the system preferences,</li>
+   *   <li>reading and writing the preferences of the session's user,</li>
+   *   <li>everything, if the session is privileged (see {@link #setPrivilegedSession(boolean)}).</li>
+   * </ul>
+   * Applications may override this method, for example, to let administrators write the system preferences
+   * or clients running in system-only mode (see {@link org.tentackle.prefs.PersistedPreferencesFactory#isSystemOnly()}).
+   *
+   * @param user the username, null or empty for the system preferences
+   * @param write true for write access, false for read access
+   * @return true if allowed
+   */
+  public boolean isPreferencesAccessAllowed(String user, boolean write) {
+    if (isPrivilegedSession()) {
+      return true;
+    }
+    if (user == null || user.isEmpty()) {
+      return !write;
+    }
+    return user.equals(clientInfo.getUserName());
+  }
+
+  /**
+   * Gets the remote session a local session is used by.
+   *
+   * @param session the local session
+   * @return the remote session, null if the session is not used by an open remote session
+   */
+  public static RemoteDbSessionImpl getRemoteSession(Db session) {
+    if (session != null) {
+      for (RemoteDbSessionImpl remoteSession : getOpenSessions()) {
+        if (remoteSession.getSession() == session) {
+          return remoteSession;
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Determines whether the client may group this session with another remote session.
+   * <p>
+   * When a session of a group dies within a transaction, all sessions of the group are closed.
+   * Hence, a client must not be able to join the sessions of other clients.
+   * The default implementation allows grouping only with sessions of the same user, opened by the same
+   * client JVM. The latter is determined by the TRIP dictionary shared by all connections of a client,
+   * or, if there is no dictionary, by the client's host.
+   *
+   * @param other the other remote session
+   * @return true if allowed
+   */
+  protected boolean isGroupingAllowed(RemoteDbSessionImpl other) {
+    if (other == this) {
+      return true;
+    }
+    SessionInfo otherInfo = other.getClientSessionInfo();
+    if (clientInfo.getUserId() != otherInfo.getUserId() ||
+        clientInfo.getUserClassId() != otherInfo.getUserClassId() ||
+        !Objects.equals(clientInfo.getUserName(), otherInfo.getUserName())) {
+      return false;
+    }
+    if (dictionary != null || other.dictionary != null) {
+      return dictionary == other.dictionary;
+    }
+    return Objects.equals(clientHost, other.clientHost);
+  }
+
+  /**
+   * Returns whether the given class is one of the framework's internal persistent classes.
+   *
+   * @param clazz the class
+   * @return true if internal
+   */
+  protected boolean isInternalClass(Class<?> clazz) {
+    return ModificationLog.class.isAssignableFrom(clazz) ||
+           DbModification.class.isAssignableFrom(clazz) ||
+           DbPreferencesNode.class.isAssignableFrom(clazz) ||
+           DbPreferencesKey.class.isAssignableFrom(clazz);
+  }
+
+  /**
    * Counts the invocation of a delegate method.
    *
    * @param method the method invoked
@@ -1008,6 +1146,13 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
         if (delegateClasses == null) {
           throw new TripRuntimeException("no delegate class found for " + clazz, nfe);
         }
+      }
+
+      // checked for each request, since the mapping is shared by all sessions
+      if (!isRemoteAccessAllowed(delegateClasses.clazz) ||
+          delegateClasses.effectiveClass != null && !isRemoteAccessAllowed(delegateClasses.effectiveClass)) {
+        LOGGER.warning("remote access to {0} denied for {1}", classname, this);
+        throw new PersistenceException(getSession(), "remote access to " + classname + " denied");
       }
 
       T delegate = (T) createRemoteDelegate(delegateClasses.delegateClass, delegateClasses.delegateImplClass,
@@ -1175,9 +1320,23 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
         else {
           MultiUserSessionPool remoteSessionPool = sessionPoolProvider.getRemoteSessionPool();
           if (remoteSessionPool != null) {
-            SessionInfo sessionInfo = getClientSessionInfo();
-            sessionInfo.setProperties(serverInfo.getProperties());
-            pooledDb = (Db) remoteSessionPool.get(sessionInfo);
+            // The client's credentials with the server's backend properties.
+            // A copy, since the client info is sent back to the client (see getClientSessionInfo),
+            // which must never learn the server's properties.
+            SessionInfo poolInfo = clientInfo.clone();
+            poolInfo.setSessionName(clientInfo.getSessionName());   // sessionName was cleared in clone()
+            if (!clientInfo.isCloned()) {
+              poolInfo.clearCloned();
+            }
+            poolInfo.setProperties(serverInfo.getProperties());
+            if (remoteSessionPool instanceof MultiUserDbPool multiUserDbPool &&
+                !multiUserDbPool.isMatchingCredentials(poolInfo)) {
+              // the pooled sessions of this user were opened with other credentials:
+              // open a session of its own, which is authenticated with the presented credentials
+              LOGGER.info("credentials differ from the pooled sessions of {0} -> not pooled", poolInfo.getUserName());
+              return (Db) SessionFactory.getInstance().create(poolInfo);
+            }
+            pooledDb = (Db) remoteSessionPool.get(poolInfo);
           }
         }
       }

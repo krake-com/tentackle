@@ -356,59 +356,34 @@ public class DbModification extends AbstractDbObject<DbModification> {
    * @param tableSerialTableName the table to scan for max tableserial if PDO manages a tableserial
    */
   private void insertIntoModificationTable(boolean tableExists, String tableSerialTableName) {
-    try (StatementWrapper st = getSession().createStatement()) {
-      int count;
+    // The tracked name is bound as a parameter, never concatenated into the SQL code:
+    // remote clients may request arbitrary names via the modification tracker.
+    // The remaining parts stem from the model or are constants.
+    // One-shot statement, since this happens only once per tracked name.
+    try (PreparedStatementWrapper st = getSession().createPreparedStatement(backend -> {
+      String initialSerial;
       if (tableExists) {
-        count = st.executeUpdate (
-            getBackend().isExpressionReferringToTableBeingUpdatedSupported() ?
-            // ordinary dbms
-            (
-                "INSERT INTO " + getTableName() + " (" + CN_TRACKEDNAME + "," +
-                CN_ID + "," + CN_SERIAL +
-                ") VALUES ('" +
-                trackedName +
-                "',(SELECT MAX(" + CN_ID + ")+1 FROM " + getTableName() + ")," +
-                (tableSerialTableName != null ? ("(SELECT " + getBackend().getCoalesceKeyword() +
-                                                 "(MAX(" + CN_TABLESERIAL + "),0) FROM " + tableSerialTableName + ")") : "1") +
-                ")"
-            ) :
-
-            // Some databases, such as MySQL, do not allow updates with expressions referring to the table being updated.
-            // This does the trick, though ;-)
-            (
-                "INSERT INTO " + getTableName() + " SET " + CN_TRACKEDNAME + "='" + trackedName + "', " +
-                CN_ID + "=(SELECT * FROM (SELECT MAX(" + CN_ID + ")+1 FROM " +
-                getTableName() + ") AS x), " + CN_SERIAL + "=" +
-                (tableSerialTableName != null ? ("(SELECT " + getBackend().getCoalesceKeyword() +
-                                                 "(MAX(" + CN_TABLESERIAL + "),0) FROM " + tableSerialTableName + ")") : "1")
-            )
-
-        );
+        initialSerial = tableSerialTableName != null ?
+                        ("(SELECT " + backend.getCoalesceKeyword() + "(MAX(" + CN_TABLESERIAL + "),0) FROM " +
+                         tableSerialTableName + ")") :
+                        "1";
       }
-      else  {
+      else {
         // just a name, not related to any PDO or database table
-        count = st.executeUpdate (
-            getBackend().isExpressionReferringToTableBeingUpdatedSupported() ?
-            // ordinary dbms
-            (
-                "INSERT INTO " + getTableName() + " (" + CN_TRACKEDNAME + "," +
-                CN_ID + "," + CN_SERIAL +
-                ") VALUES ('" +
-                trackedName +
-                "',(SELECT MAX(" + CN_ID + ")+1 FROM " + getTableName() + "),0)"
-            ) :
-
-            // Some databases, such as MySQL, do not allow updates with expressions referring to the table being updated.
-            // This does the trick, though ;-)
-            (
-                "INSERT INTO " + getTableName() + " SET " + CN_TRACKEDNAME + "='" + trackedName + "', " +
-                CN_ID + "=(SELECT * FROM (SELECT MAX(" + CN_ID + ")+1 FROM " +
-                getTableName() + ") AS x), " + CN_SERIAL + "=0"
-            )
-        );
+        initialSerial = "0";
       }
-
-      if (count != 1) {
+      return backend.isExpressionReferringToTableBeingUpdatedSupported() ?
+             // ordinary dbms
+             "INSERT INTO " + getTableName() + " (" + CN_TRACKEDNAME + "," + CN_ID + "," + CN_SERIAL +
+             ") VALUES (?,(SELECT MAX(" + CN_ID + ")+1 FROM " + getTableName() + ")," + initialSerial + ")" :
+             // Some databases, such as MySQL, do not allow updates with expressions referring to the table being updated.
+             // This does the trick, though ;-)
+             "INSERT INTO " + getTableName() + " SET " + CN_TRACKEDNAME + "=?, " +
+             CN_ID + "=(SELECT * FROM (SELECT MAX(" + CN_ID + ")+1 FROM " + getTableName() + ") AS x), " +
+             CN_SERIAL + "=" + initialSerial;
+    })) {
+      st.setString(1, trackedName);
+      if (st.executeUpdate() != 1) {
         throw new PersistenceException(this, "adding modification entry failed");
       }
     }

@@ -25,6 +25,8 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
+import org.tentackle.session.auth.Credentials;
+import org.tentackle.session.auth.PasswordCredentials;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -123,6 +125,66 @@ public class MultiUserDbPool implements MultiUserSessionPool {
     if (pool != null) {
       shutdownSubPool(pool);
     }
+  }
+
+  /**
+   * Returns whether the credentials of a session info match the ones of the sub-pool serving its user.
+   * <p>
+   * The sub-pools are mapped by the username alone (see {@code SessionInfo#equals(Object)}), and their
+   * sessions are opened with the credentials of the session info that created the sub-pool.
+   * Handing out such a session for other credentials would skip the authentication by the backend,
+   * for example, by the next server of a cascade. Hence, a session info whose credentials don't match
+   * must not be served by {@link #get(SessionInfo)}, but by a session of its own.
+   *
+   * @param sessionInfo the session info
+   * @return true if no sub-pool serves the user yet or the credentials match
+   */
+  public boolean isMatchingCredentials(SessionInfo sessionInfo) {
+    MultiPoolImpl pool = poolMap.get(sessionInfo);
+    return pool == null || pool.isShutdown() ||
+           matchCredentials(pool.getSessionInfo().getCredentials(), sessionInfo.getCredentials());
+  }
+
+  /**
+   * Compares the credentials of a sub-pool with the credentials presented by a session info.
+   * <p>
+   * Passwords are compared in constant time. Other schemes, such as tokens, cannot be compared
+   * by value since they change from login to login. They are accepted if of the same type, since
+   * they must be verified by the authentication provider chain anyway.
+   *
+   * @param pooled the credentials of the sub-pool
+   * @param presented the presented credentials
+   * @return true if the presented credentials may share the sub-pool's sessions
+   */
+  protected boolean matchCredentials(Credentials pooled, Credentials presented) {
+    if (pooled == null || presented == null || pooled.getClass() != presented.getClass()) {
+      return false;
+    }
+    if (pooled instanceof PasswordCredentials pooledPassword) {
+      PasswordCredentials presentedPassword = (PasswordCredentials) presented;
+      // compare the passwords even if the usernames differ: no timing difference
+      boolean passwordMatches = isEqualInConstantTime(pooledPassword.getPassword(), presentedPassword.getPassword());
+      return Objects.equals(pooledPassword.getUserName(), presentedPassword.getUserName()) && passwordMatches;
+    }
+    return true;
+  }
+
+  /**
+   * Compares two passwords in constant time with respect to their contents.
+   *
+   * @param a the first password, null if none
+   * @param b the second password, null if none
+   * @return true if equal
+   */
+  private static boolean isEqualInConstantTime(char[] a, char[] b) {
+    if (a == null || b == null) {
+      return a == b;
+    }
+    int diff = a.length ^ b.length;
+    for (int i = 0; i < a.length; i++) {
+      diff |= a[i] ^ (i < b.length ? b[i] : 0);
+    }
+    return diff == 0;
   }
 
   @Override
