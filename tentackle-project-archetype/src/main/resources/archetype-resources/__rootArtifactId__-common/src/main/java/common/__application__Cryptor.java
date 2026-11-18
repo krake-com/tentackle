@@ -27,7 +27,7 @@ public class ${application}Cryptor extends Cryptor {
   }
 
   // security can be improved significantly, if the passphrase is derived from some external source,
-  // such as manual input, mounted USB-stick, OS-keystore (if desktop client), whatever...
+  // such as manual input, mounted USB-stick, OS-keyring (if desktop client), whatever...
   private static char[] getPassphrase() {
     char[] passphrase = new char[10];
     passphrase[1] = 'i';
