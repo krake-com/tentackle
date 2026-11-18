@@ -53,6 +53,12 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class AbstractUpdateServiceImpl implements UpdateService {
 
+  /**
+   * Maximum size of a checksum file.<br>
+   * The file holds a hash and a file name only.
+   */
+  private static final long MAX_CHECKSUM_FILE_SIZE = 64 * 1024;
+
   private final Map<String, Long> downloadSizes = new ConcurrentHashMap<>();      // size in bytes of the download ZIPs
   private final Map<String, String> checksumHashes = new ConcurrentHashMap<>();   // checksum hashes of the download ZIPs
 
@@ -222,7 +228,7 @@ public abstract class AbstractUpdateServiceImpl implements UpdateService {
     String checksumUrlStr = checksumURL.toString();
     String shaHash = checksumHashes.get(checksumUrlStr);
     if (shaHash == null) {
-      StringTokenizer stok = new StringTokenizer(new String(FileHelper.download(checksumURL)));
+      StringTokenizer stok = new StringTokenizer(new String(FileHelper.download(checksumURL, 4096, MAX_CHECKSUM_FILE_SIZE)));
       if (!stok.hasMoreTokens()) {
         throw new IOException("empty checksum file " + checksumUrlStr);
       }

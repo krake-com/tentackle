@@ -122,6 +122,12 @@ requires Java 11.
   so the static initializers of a misconfigured class are not executed.
 - `NumericEvaluator` limits the nesting depth of an expression (`MAX_DEPTH`) and throws a
   `TentackleRuntimeException` instead of a `StackOverflowError`.
+- `FileHelper.unzip` limits the number of entries and the total uncompressed size ("zip bomb" protection),
+  by default to 100,000 entries and 100 times the size of the zip file, but at least 64 MiB. A new overload
+  takes explicit limits.
+- `FileHelper.download` limits the size of the data read into memory, by default to 256 MiB. A content length
+  exceeding the limit fails before reading, and the bytes actually read are counted as well. A new overload takes
+  an explicit limit. The update service reads a checksum file of at most 64 KiB.
 
 
 ## Java 25 line (25.x)

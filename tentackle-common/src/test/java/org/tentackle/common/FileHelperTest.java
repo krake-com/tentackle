@@ -137,6 +137,139 @@ public class FileHelperTest {
     }
   }
 
+  @Test
+  public void unzipRejectsTooManyEntries() throws Exception {
+    Path tmp = Files.createTempDirectory("filehelper-entries");
+    try {
+      Path zip = tmp.resolve("many.zip");
+      try (java.util.zip.ZipOutputStream out = new java.util.zip.ZipOutputStream(Files.newOutputStream(zip))) {
+        for (int i = 0; i < 5; i++) {
+          out.putNextEntry(new ZipEntry("file" + i + ".txt"));
+          out.write('x');
+          out.closeEntry();
+        }
+      }
+      Path dest = tmp.resolve("dest");
+      java.util.List<java.io.File> consumed = new java.util.ArrayList<>();
+      assertThrows(IOException.class, () -> FileHelper.unzip(zip.toFile(), dest.toFile(), consumed::add, 1024, 3, 0));
+      assertEquals(consumed.size(), 3);
+      assertFalse(Files.exists(dest.resolve("file3.txt")));
+    }
+    finally {
+      deleteRecursively(tmp);
+    }
+  }
+
+  @Test
+  public void unzipRejectsTooLargeContent() throws Exception {
+    Path tmp = Files.createTempDirectory("filehelper-bomb");
+    try {
+      Path zip = createZeroZip(tmp, 1024 * 1024);
+      Path dest = tmp.resolve("dest");
+      assertThrows(IOException.class, () -> FileHelper.unzip(zip.toFile(), dest.toFile(), null, 4096, 0, 100_000));
+      assertTrue(Files.size(dest.resolve("zeros.bin")) <= 100_000);
+    }
+    finally {
+      deleteRecursively(tmp);
+    }
+  }
+
+  @Test
+  public void unzipLimitsDisabled() throws Exception {
+    Path tmp = Files.createTempDirectory("filehelper-nolimits");
+    try {
+      Path zip = createZeroZip(tmp, 1024 * 1024);
+      Path dest = tmp.resolve("dest");
+      FileHelper.unzip(zip.toFile(), dest.toFile(), null, 4096, 0, 0);
+      assertEquals(Files.size(dest.resolve("zeros.bin")), 1024 * 1024);
+    }
+    finally {
+      deleteRecursively(tmp);
+    }
+  }
+
+  @Test
+  public void defaultMaxZipSize() {
+    assertEquals(FileHelper.defaultMaxZipSize(0), FileHelper.MIN_MAX_ZIP_SIZE);
+    assertEquals(FileHelper.defaultMaxZipSize(1000), FileHelper.MIN_MAX_ZIP_SIZE);
+    long large = 10L * 1024 * 1024 * 1024;
+    assertEquals(FileHelper.defaultMaxZipSize(large), large * FileHelper.DEFAULT_MAX_ZIP_RATIO);
+    assertEquals(FileHelper.defaultMaxZipSize(Long.MAX_VALUE / 2), Long.MAX_VALUE);
+  }
+
+  @Test
+  public void downloadWithinLimit() throws Exception {
+    Path file = Files.createTempFile("filehelper-download", ".bin");
+    try {
+      Files.write(file, new byte[1000]);
+      URL url = file.toUri().toURL();
+      assertEquals(FileHelper.download(url).length, 1000);
+      assertEquals(FileHelper.download(url, 100, 1000).length, 1000);
+      assertEquals(FileHelper.download(url, 100, 0).length, 1000);
+    }
+    finally {
+      Files.deleteIfExists(file);
+    }
+  }
+
+  @Test
+  public void downloadRejectsAnnouncedContentLength() throws Exception {
+    Path file = Files.createTempFile("filehelper-download", ".bin");
+    try {
+      Files.write(file, new byte[1000]);
+      URL url = file.toUri().toURL();
+      assertThrows(IOException.class, () -> FileHelper.download(url, 100, 999));
+    }
+    finally {
+      Files.deleteIfExists(file);
+    }
+  }
+
+  @Test
+  public void downloadRejectsUnannouncedExcess() throws Exception {
+    // a connection without content length: only counting the bytes read catches the excess
+    java.util.concurrent.atomic.AtomicInteger bytesServed = new java.util.concurrent.atomic.AtomicInteger();
+    java.net.URLStreamHandler handler = new java.net.URLStreamHandler() {
+      @Override
+      protected java.net.URLConnection openConnection(URL u) {
+        return new java.net.URLConnection(u) {
+          @Override
+          public void connect() {
+          }
+
+          @Override
+          public long getContentLengthLong() {
+            return -1;
+          }
+
+          @Override
+          public InputStream getInputStream() {
+            return new InputStream() {    // endless stream of zeros
+              @Override
+              public int read() {
+                bytesServed.incrementAndGet();
+                return 0;
+              }
+            };
+          }
+        };
+      }
+    };
+    URL url = URL.of(URI.create("test:/endless"), handler);
+    assertThrows(IOException.class, () -> FileHelper.download(url, 100, 10_000));
+    assertTrue(bytesServed.get() < 20_000);
+  }
+
+  private static Path createZeroZip(Path dir, int size) throws IOException {
+    Path zip = dir.resolve("zeros.zip");
+    try (java.util.zip.ZipOutputStream out = new java.util.zip.ZipOutputStream(Files.newOutputStream(zip))) {
+      out.putNextEntry(new ZipEntry("zeros.bin"));
+      out.write(new byte[size]);
+      out.closeEntry();
+    }
+    return zip;
+  }
+
   private static void deleteRecursively(Path dir) throws IOException {
     try (var stream = Files.walk(dir)) {
       for (Path p : stream.sorted(java.util.Comparator.reverseOrder()).toList()) {

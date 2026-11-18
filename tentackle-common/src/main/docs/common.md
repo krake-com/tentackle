@@ -214,8 +214,11 @@ A set of static-method helper classes (not instantiable) and small utilities use
   configurable window around the current date.
 - [`FileHelper`](../java/org/tentackle/common/FileHelper.java) — file and resource helpers: loading properties
   (`loadProperties(name)` tries the filesystem first, then the classpath, and returns `EncryptedProperties`),
-  copying files and directories, `unzip` with zip-slip protection, `download`, and `openStreamUncached`, which
-  avoids the JVM-wide jar URL cache (a closed classloader of a concurrent build would otherwise break the stream).
+  copying files and directories, `unzip` with zip-slip and zip-bomb protection (limits on the number of entries and
+  the uncompressed size, by default 100,000 entries and 100 times the size of the ZIP, but at least 64 MiB),
+  `download` into memory (limited to 256 MiB by default, checked against the announced content length and the
+  bytes actually read), and `openStreamUncached`, which avoids the JVM-wide jar URL cache (a closed classloader of
+  a concurrent build would otherwise break the stream).
 - [`ExceptionHelper`](../java/org/tentackle/common/ExceptionHelper.java) — exception chain helpers: extracting an
   exception of given types, handling it via `Handler`s, finding a *temporary* `TentackleRuntimeException`,
   concatenating messages, and filtering noisy JDK and proxy frames from stack traces.
