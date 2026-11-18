@@ -146,16 +146,16 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   /**
    * Gets the attribute 'domainContextClassId'.
    *
-   * @return the class id of the DomainContext's context entity, 0 if all contexts
+   * @return the class id of the DomainContext's context entity, 0 if default context
    */
-  @Persistent(ordinal=3, comment="the class id of the DomainContext's context entity, 0 if all contexts")
+  @Persistent(ordinal=3, comment="the class id of the DomainContext's context entity, 0 if default context")
   @Bindable(ordinal=3)
   int getDomainContextClassId();
 
   /**
    * Sets the attribute 'domainContextClassId'.
    *
-   * @param domainContextClassId the class id of the DomainContext's context entity, 0 if all contexts
+   * @param domainContextClassId the class id of the DomainContext's context entity, 0 if default context
    */
   @Bindable(ordinal=3)
   void setDomainContextClassId(int domainContextClassId);
@@ -163,16 +163,16 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   /**
    * Gets the attribute 'domainContextId'.
    *
-   * @return the id of DomainContext's context object, 0 if all instances
+   * @return the id of DomainContext's context object, 0 if default context, negative if any context
    */
-  @Persistent(ordinal=4, comment="the id of DomainContext's context object, 0 if all instances")
+  @Persistent(ordinal=4, comment="the id of DomainContext's context object, 0 if default context, negative if any context")
   @Bindable(ordinal=4)
   long getDomainContextId();
 
   /**
    * Sets the attribute 'domainContextId'.
    *
-   * @param domainContextId the id of DomainContext's context object, 0 if all instances
+   * @param domainContextId the id of DomainContext's context object, 0 if default context, negative if any context
    */
   @Bindable(ordinal=4)
   void setDomainContextId(long domainContextId);

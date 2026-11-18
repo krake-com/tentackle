@@ -61,10 +61,10 @@ public class SecurityPersistenceMock extends MockPersistentObject<Security, Secu
   /** the id of the protected object, 0 if all instances or not an entity. */
   private long objectId;
 
-  /** the class id of the DomainContext's context entity, 0 if all contexts. */
+  /** the class id of the DomainContext's context entity, 0 if default context. */
   private int domainContextClassId;
 
-  /** the id of DomainContext's context object, 0 if all instances. */
+  /** the id of DomainContext's context object, 0 if default context, negative if any context. */
   private long domainContextId;
 
   /** the class id of the entity the permissions are granted to, 0 if all classes. */
@@ -291,6 +291,15 @@ public class SecurityPersistenceMock extends MockPersistentObject<Security, Secu
   @Override
   public void setDomainContextObject(PersistentDomainObject<?> domainContextObject) {
     this.domainContextObject = domainContextObject;
+    // like the real implementation: clearing restricts the rule to the default context
+    if (domainContextObject == null) {
+      domainContextId = 0;
+      domainContextClassId = 0;
+    }
+    else {
+      domainContextId = domainContextObject.getPersistenceDelegate().getId();
+      // the class id is not set, since mocked context objects don't provide one
+    }
   }
 
   @Override

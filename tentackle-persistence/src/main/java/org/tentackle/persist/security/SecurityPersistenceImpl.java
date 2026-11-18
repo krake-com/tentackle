@@ -136,10 +136,10 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   /** the id of the protected object, 0 if all instances or not an entity. */
   private long objectId;
 
-  /** the class id of the DomainContext's context entity, 0 if all contexts. */
+  /** the class id of the DomainContext's context entity, 0 if default context. */
   private int domainContextClassId;
 
-  /** the id of DomainContext's context object, 0 if all instances. */
+  /** the id of DomainContext's context object, 0 if default context, negative if any context. */
   private long domainContextId;
 
   /** the class id of the entity the permissions are granted to, 0 if all classes. */
@@ -283,11 +283,11 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
    * Gets the domain context object this rule is restricted to.<br>
    * The object is loaded from the cache in the domain context of this rule.
    *
-   * @return the context object, null if no context (all)
+   * @return the context object, null if default context or any context
    */
   @Override
   public PersistentDomainObject<?> getDomainContextObject()  {
-    return domainContextId == 0 ? null :
+    return domainContextId <= 0 ? null :
            Pdo.create(SessionUtilities.getInstance().getClassName(
                    domainContextClassId), getDomainContext()).selectCached(domainContextId);
   }
@@ -295,7 +295,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   /**
    * Sets the domain context object this rule is restricted to.
    *
-   * @param contextObject the context object, null to clear (all)
+   * @param contextObject the context object, null to clear (default context)
    */
   @Override
   public void setDomainContextObject(PersistentDomainObject<?> contextObject)  {

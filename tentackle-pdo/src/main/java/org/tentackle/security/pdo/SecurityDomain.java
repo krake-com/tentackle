@@ -33,6 +33,13 @@ import org.tentackle.security.Permission;
 public interface SecurityDomain extends DomainObject<Security> {
 
   /**
+   * The string representation of a rule that applies to any context.
+   *
+   * @see #contextToString()
+   */
+  String ANY_CONTEXT = "*";
+
+  /**
    * Evaluates a rule.
    * <p>
    * The method is only invoked for rules that apply to the object and/or class in question.
@@ -68,7 +75,8 @@ public interface SecurityDomain extends DomainObject<Security> {
   /**
    * Gets the domain context as a string.
    *
-   * @return the context string
+   * @return the context string, {@link #ANY_CONTEXT} if the rule applies to any context,
+   * null if it applies to the default context only
    */
   @Bindable
   String contextToString();

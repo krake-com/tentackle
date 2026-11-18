@@ -28,6 +28,7 @@ import org.tentackle.security.Permission;
 import org.tentackle.security.SecurityException;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.pdo.Security;
+import org.tentackle.security.pdo.SecurityDomain;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -54,6 +55,8 @@ public class SecurityDomainImplTest {
   public void setUp() {
     rule = Pdo.create(Security.class);
     persistence = (SecurityPersistenceMock) rule.getPersistenceDelegate();
+    // any context, so that evaluate(null, ...) is about the permissions only
+    rule.setDomainContextId(-1);
   }
 
   /**
@@ -193,6 +196,44 @@ public class SecurityDomainImplTest {
   }
 
   @Test
+  public void testNullContextIgnoresAllowRuleOfDefaultContext() {
+    rule.setAllowed(true);
+    rule.setPermissions("READ");
+    rule.setDomainContextId(0);
+    assertFalse(rule.evaluate(null, SecurityFactory.getInstance().getReadPermission()),
+                "allow-rule of the default context must not accept in all contexts");
+  }
+
+  @Test
+  public void testNullContextIgnoresAllowRuleOfSpecificContext() {
+    rule.setAllowed(true);
+    rule.setPermissions("READ");
+    rule.setDomainContextId(42);
+    rule.setDomainContextClassId(7);
+    assertFalse(rule.evaluate(null, SecurityFactory.getInstance().getReadPermission()),
+                "allow-rule of context 42 must not accept in all contexts");
+  }
+
+  @Test
+  public void testNullContextAppliesDenyRuleOfDefaultContext() {
+    rule.setAllowed(false);
+    rule.setPermissions("READ");
+    rule.setDomainContextId(0);
+    assertTrue(rule.evaluate(null, SecurityFactory.getInstance().getReadPermission()),
+               "deny-rule of the default context must deny in all contexts");
+  }
+
+  @Test
+  public void testNullContextAppliesDenyRuleOfSpecificContext() {
+    rule.setAllowed(false);
+    rule.setPermissions("READ");
+    rule.setDomainContextId(42);
+    rule.setDomainContextClassId(7);
+    assertTrue(rule.evaluate(null, SecurityFactory.getInstance().getReadPermission()),
+               "deny-rule of context 42 must deny in all contexts");
+  }
+
+  @Test
   public void testPermissionsAreParsedOnlyOnce() {
     rule.setAllowed(true);
     rule.setPermissions("READ");
@@ -227,7 +268,15 @@ public class SecurityDomainImplTest {
 
   @Test
   public void testContextToStringWithoutContextObject() {
+    rule.setDomainContextObject(null);
+    assertEquals(rule.getDomainContextId(), 0L, "cleared to the default context");
     assertNull(rule.contextToString());
+  }
+
+  @Test
+  public void testContextToStringOfAnyContext() {
+    rule.setDomainContextId(-1);
+    assertEquals(rule.contextToString(), SecurityDomain.ANY_CONTEXT);
   }
 
   @Test

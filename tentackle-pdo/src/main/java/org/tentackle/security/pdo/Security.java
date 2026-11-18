@@ -43,8 +43,8 @@ import org.tentackle.session.TableName;
  * String(128)    objectClassName         objectclass       the protected classname, null if an entity
  * int            objectClassId           objectclassid     the protected object's class id, 0 if not an entity
  * long           objectId                objectid          the id of the protected object, 0 if all instances or not an entity
- * int            domainContextClassId    contextclassid    the class id of the DomainContext's context entity, 0 if all contexts
- * long           domainContextId         contextid         the id of DomainContext's context object, 0 if all instances
+ * int            domainContextClassId    contextclassid    the class id of the DomainContext's context entity, 0 if default context
+ * long           domainContextId         contextid         the id of DomainContext's context object, 0 if default context, negative if any context
  * int            granteeClassId          granteeclassid    the class id of the entity the permissions are granted to, 0 if all classes
  * long           granteeId               granteeid         the id of the entity the permissions are granted to, 0 if all grantees
  * int            priority                secprio           the priority or evaluation order, 0 is highest or first

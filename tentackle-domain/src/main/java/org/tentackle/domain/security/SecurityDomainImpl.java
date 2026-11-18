@@ -162,8 +162,17 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
     return buf.toString();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Returns {@value SecurityDomain#ANY_CONTEXT} if the rule applies to any context,
+   * null if it is restricted to the default context.
+   */
   @Override
   public String contextToString() {
+    if (po().getDomainContextId() < 0) {
+      return ANY_CONTEXT;
+    }
     PersistentDomainObject<?> contextPdo = po().getDomainContextObject();
     return contextPdo == null ? null : contextPdo.toString();
   }
