@@ -43,7 +43,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -101,8 +100,6 @@ public class SecurityEditor extends PdoEditor<Security> {
   private FxGridPane permissionPane;
   @FXML
   private FxTextArea secMessageField;
-  @FXML
-  private ResourceBundle resources;
 
 
   private Class<?> clazz;     // the securable class
@@ -168,7 +165,6 @@ public class SecurityEditor extends PdoEditor<Security> {
     secDomainContextObjectField.setChangeable(false);
     contextButton.setOnAction(e -> selectContext());
     anyContextBox.setBindable(false);
-    anyContextBox.setTooltip(new Tooltip(resources.getString("anyContextTooltip")));
     anyContextBox.addViewToModelListener(this::anyContextToModel);
     updateContextControls();
   }

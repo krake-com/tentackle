@@ -8,6 +8,7 @@
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
@@ -80,7 +81,11 @@
             <Label text="%context" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
             <TextField fx:id="secDomainContextObjectField" prefColumnCount="30" GridPane.columnIndex="1" GridPane.rowIndex="1" />
             <Button fx:id="contextButton" mnemonicParsing="false" text="%select" GridPane.columnIndex="2" GridPane.rowIndex="1" />
-            <CheckBox fx:id="anyContextBox" mnemonicParsing="false" text="%anyContext" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+            <CheckBox fx:id="anyContextBox" mnemonicParsing="false" text="%anyContext" GridPane.columnIndex="3" GridPane.rowIndex="1">
+               <tooltip>
+                  <Tooltip text="%anyContextTooltip" />
+               </tooltip>
+            </CheckBox>
          </children>
          <padding>
             <Insets bottom="5.0" />

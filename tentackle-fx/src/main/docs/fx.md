@@ -165,6 +165,8 @@ loader, hands out per-class `Configurator`s, creates `ValueTranslator`s for a
 given model/view type pair, creates configured `Stage`s and `Scene`s, graphics,
 notifications and table configurations, and creates controllers
 (`createController(...)`). The default implementation is `DefaultFxFactory`.
+The builders of that `BuilderFactory` accept the same property elements as plain JavaFX, such as
+`<tooltip>` for controls and tabs, or `<content>` for scroll panes.
 
 ### Fx — the convenience facade
 
