@@ -261,7 +261,8 @@ public class ModelWurblet extends AbstractJavaWurblet {
         if (ndx >= 0) {
           int ndx1 = pdoClassName.indexOf('<');
           int ndx2 = pdoClassName.indexOf(',');
-          if (ndx1 > ndx && ndx2 > ndx1) {
+          // the comma must separate the type arguments of the superclass, not the implemented interfaces
+          if (ndx1 > ndx && ndx2 > ndx1 && ndx2 < findClosingBracket(pdoClassName, ndx1)) {
             pdoClassName = pdoClassName.substring(ndx1 + 1, ndx2).trim();
             isPdo = true;
             return pdoClassName;
@@ -289,6 +290,27 @@ public class ModelWurblet extends AbstractJavaWurblet {
     }
 
     return pdoClassName;
+  }
+
+  /**
+   * Finds the angle bracket closing the one at a given index.
+   *
+   * @param str the string
+   * @param openNdx the index of the opening bracket
+   * @return the index of the closing bracket, the length of the string if missing
+   */
+  private static int findClosingBracket(String str, int openNdx) {
+    int depth = 0;
+    for (int i = openNdx; i < str.length(); i++) {
+      char c = str.charAt(i);
+      if (c == '<') {
+        depth++;
+      }
+      else if (c == '>' && --depth == 0) {
+        return i;
+      }
+    }
+    return str.length();
   }
 
 
