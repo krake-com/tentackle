@@ -878,25 +878,6 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   }
 
   /**
-   * Determines whether the client may access the given class remotely.
-   * <p>
-   * Invoked whenever the client requests a remote delegate.
-   * The default implementation denies access to the framework's internal tables, unless the session
-   * is privileged (see {@link #setPrivilegedSession(boolean)}): the generic remote delegates of those
-   * classes provide plain inserts, updates, and deletes, which would allow tampering with the modification
-   * log and other users' preferences. Regular clients don't need them: the preferences are accessed via
-   * the {@link org.tentackle.dbms.prefs.DbPreferencesOperation}, and modification logs are written by the server.
-   * <p>
-   * Applications may override this method to restrict the remote access further.
-   *
-   * @param clazz the class the client requested the remote delegate for
-   * @return true if allowed
-   */
-  protected boolean isRemoteAccessAllowed(Class<?> clazz) {
-    return isPrivilegedSession() || !isInternalClass(clazz);
-  }
-
-  /**
    * Determines whether the client may access the persisted preferences of a user.
    * <p>
    * Invoked by the remote delegate of the {@link org.tentackle.dbms.prefs.DbPreferencesOperation}.
@@ -938,47 +919,6 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
       }
     }
     return null;
-  }
-
-  /**
-   * Determines whether the client may group this session with another remote session.
-   * <p>
-   * When a session of a group dies within a transaction, all sessions of the group are closed.
-   * Hence, a client must not be able to join the sessions of other clients.
-   * The default implementation allows grouping only with sessions of the same user, opened by the same
-   * client JVM. The latter is determined by the TRIP dictionary shared by all connections of a client,
-   * or, if there is no dictionary, by the client's host.
-   *
-   * @param other the other remote session
-   * @return true if allowed
-   */
-  protected boolean isGroupingAllowed(RemoteDbSessionImpl other) {
-    if (other == this) {
-      return true;
-    }
-    SessionInfo otherInfo = other.getClientSessionInfo();
-    if (clientInfo.getUserId() != otherInfo.getUserId() ||
-        clientInfo.getUserClassId() != otherInfo.getUserClassId() ||
-        !Objects.equals(clientInfo.getUserName(), otherInfo.getUserName())) {
-      return false;
-    }
-    if (dictionary != null || other.dictionary != null) {
-      return dictionary == other.dictionary;
-    }
-    return Objects.equals(clientHost, other.clientHost);
-  }
-
-  /**
-   * Returns whether the given class is one of the framework's internal persistent classes.
-   *
-   * @param clazz the class
-   * @return true if internal
-   */
-  protected boolean isInternalClass(Class<?> clazz) {
-    return ModificationLog.class.isAssignableFrom(clazz) ||
-           DbModification.class.isAssignableFrom(clazz) ||
-           DbPreferencesNode.class.isAssignableFrom(clazz) ||
-           DbPreferencesKey.class.isAssignableFrom(clazz);
   }
 
   /**
@@ -1057,7 +997,6 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   public boolean isOpen() {
     return resources.db != null;
   }
-
 
   /**
    * {@inheritDoc}
@@ -1288,6 +1227,66 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
                     createRemoteDelegateInstance(delegateClass, delegateImplClass, clazz, effectiveClass, configArgs)));
   }
 
+
+  /**
+   * Determines whether the client may access the given class remotely.
+   * <p>
+   * Invoked whenever the client requests a remote delegate.
+   * The default implementation denies access to the framework's internal tables, unless the session
+   * is privileged (see {@link #setPrivilegedSession(boolean)}): the generic remote delegates of those
+   * classes provide plain inserts, updates, and deletes, which would allow tampering with the modification
+   * log and other users' preferences. Regular clients don't need them: the preferences are accessed via
+   * the {@link org.tentackle.dbms.prefs.DbPreferencesOperation}, and modification logs are written by the server.
+   * <p>
+   * Applications may override this method to restrict the remote access further.
+   *
+   * @param clazz the class the client requested the remote delegate for
+   * @return true if allowed
+   */
+  protected boolean isRemoteAccessAllowed(Class<?> clazz) {
+    return isPrivilegedSession() || !isInternalClass(clazz);
+  }
+
+  /**
+   * Determines whether the client may group this session with another remote session.
+   * <p>
+   * When a session of a group dies within a transaction, all sessions of the group are closed.
+   * Hence, a client must not be able to join the sessions of other clients.
+   * The default implementation allows grouping only with sessions of the same user, opened by the same
+   * client JVM. The latter is determined by the TRIP dictionary shared by all connections of a client,
+   * or, if there is no dictionary, by the client's host.
+   *
+   * @param other the other remote session
+   * @return true if allowed
+   */
+  protected boolean isGroupingAllowed(RemoteDbSessionImpl other) {
+    if (other == this) {
+      return true;
+    }
+    SessionInfo otherInfo = other.getClientSessionInfo();
+    if (clientInfo.getUserId() != otherInfo.getUserId() ||
+        clientInfo.getUserClassId() != otherInfo.getUserClassId() ||
+        !Objects.equals(clientInfo.getUserName(), otherInfo.getUserName())) {
+      return false;
+    }
+    if (dictionary != null || other.dictionary != null) {
+      return dictionary == other.dictionary;
+    }
+    return Objects.equals(clientHost, other.clientHost);
+  }
+
+  /**
+   * Returns whether the given class is one of the framework's internal persistent classes.
+   *
+   * @param clazz the class
+   * @return true if internal
+   */
+  protected boolean isInternalClass(Class<?> clazz) {
+    return ModificationLog.class.isAssignableFrom(clazz) ||
+           DbModification.class.isAssignableFrom(clazz) ||
+           DbPreferencesNode.class.isAssignableFrom(clazz) ||
+           DbPreferencesKey.class.isAssignableFrom(clazz);
+  }
 
   /**
    * Determines the session timeout count.<br>

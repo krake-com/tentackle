@@ -73,8 +73,6 @@ public interface AbstractDbObjectRemoteDelegate<P extends AbstractDbObject<P>> e
 
   Collection<IdSerialTuple> getExpiredTableSerials(long oldSerial, long maxSerial);
 
-  List<P> selectObjectsWithExpiredTableSerials(long oldSerial);
-
   DbObjectResult insertObject(P obj);
 
   DbObjectResult updateObject(P obj);
@@ -84,8 +82,6 @@ public interface AbstractDbObjectRemoteDelegate<P extends AbstractDbObject<P>> e
   P persistObject(P obj);
 
   DbObjectResult deleteObject(P obj);
-
-  long countModification();
 
   boolean isReferenced(long id);
 }

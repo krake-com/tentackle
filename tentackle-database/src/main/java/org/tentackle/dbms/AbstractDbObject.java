@@ -1365,29 +1365,20 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Selects all objects with a tableSerial starting at a given serial.<br>
    * Useful to update expired objects in a batch.
+   * <p>
+   * This method is only allowed for local sessions, not remote sessions!
    *
    * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
    * @return the list of objects, never null
    */
   public List<P> selectObjectsWithExpiredTableSerials(long oldSerial) {
-    Db db = getSession();
-    if (db.isRemote()) {
-      List<P> list = getRemoteDelegate().selectObjectsWithExpiredTableSerials(oldSerial);
-      for (P obj : list) {
-        obj.setSession(db);
+    List<P> list = new ArrayList<>();
+    try (ResultSetWrapper rs = resultObjectsWithExpiredTableSerials(oldSerial)) {
+      P obj;
+      while ((obj = newInstance().selectNextObject(rs)) != null) {
+        list.add(obj);
       }
       return list;
-    }
-    else  {
-      // local
-      List<P> list = new ArrayList<>();
-      try (ResultSetWrapper rs = resultObjectsWithExpiredTableSerials(oldSerial)) {
-        P obj;
-        while ((obj = newInstance().selectNextObject(rs)) != null)  {
-          list.add(obj);
-        }
-        return list;
-      }
     }
   }
 
@@ -2057,19 +2048,16 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Counts a modification for the class of this object.
+   * <p>
+   * Invocation is only allowed for local sessions, not remote sessions!
    *
-   * @return the table serial,
-   *          -1 if isCountModificationAllowed() == false
+   * @return the table serial, -1 if isCountModificationAllowed() == false
    */
-  public long countModification ()  {
+  public long countModification() {
     Db db = getSession();
-    if (db.isRemote()) {
-      return getRemoteDelegate().countModification();
-    }
-    else {
-      return db.isCountModificationAllowed() ?
-               ModificationTracker.getInstance().countModification(db, getTableName()) : -1;
-    }
+    db.assertNotRemote();
+    return db.isCountModificationAllowed() ?
+             ModificationTracker.getInstance().countModification(db, getTableName()) : -1;
   }
 
   /**

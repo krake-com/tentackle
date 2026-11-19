@@ -18,18 +18,22 @@
 
 package org.tentackle.persist.trip;
 
+import org.tentackle.common.DateHelper;
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.AbstractDbObject;
+import org.tentackle.dbms.Db;
 import org.tentackle.dbms.trip.AbstractDbObjectRemoteDelegateImpl;
 import org.tentackle.dbms.trip.DbObjectResult;
 import org.tentackle.dbms.trip.RemoteDbSessionImpl;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.misc.ScrollableResource;
 import org.tentackle.pdo.DomainContext;
+import org.tentackle.pdo.LockException;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.TokenLockInfo;
 import org.tentackle.persist.AbstractPersistentObject;
+import org.tentackle.security.SecurityException;
 import org.tentackle.session.NotFoundException;
 import org.tentackle.session.PersistenceException;
 
@@ -377,6 +381,12 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
 
   @Override
   public TokenLockInfo updateTokenLock(DomainContext context, long id, Timestamp tokenExpiry, long userId, Timestamp curTime) {
+    if (!getServerSession().isPrivilegedSession()) {
+      if (userId != getClientUserId()) {
+        throw new SecurityException("token lock for user " + userId + " denied for " + getServerSession());
+      }
+      curTime = DateHelper.now();
+    }
     if (getSession().isRemote()) {
       // optimize, if running in remote middle tier
       return dbObject.getRemoteDelegate().updateTokenLock(context, id, tokenExpiry, userId, curTime);
@@ -389,11 +399,41 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
 
   @Override
   public T transferTokenLock(T pdo, long userId) {
-    return pdo.transferTokenLock(userId);
+    if (getSession().isRemote() || getServerSession().isPrivilegedSession()) {
+      // checked by the next tier, or unrestricted
+      return pdo.transferTokenLock(userId);
+    }
+
+    Db db = getSession();
+    long txVoucher = db.begin(AbstractPersistentObject.TX_TRANSFER_TOKENLOCK);
+    try {
+      // lock the row to prevent another user from getting the token before it is transferred
+      P current = getPersistenceDelegate(newInstance(pdo.getDomainContext()));
+      T currentPdo = current.select(pdo.getId(), true, false);
+      if (currentPdo == null) {
+        throw new NotFoundException(getSession(), "no such " + pdoClass.getSimpleName() + " with ID " + pdo.getId() +
+                                                  " in database");
+      }
+      current = getPersistenceDelegate(currentPdo);
+      if (current.isTokenLocked() && current.getEditedBy() != getClientUserId()) {
+        throw new LockException(getSession(),
+                                new TokenLockInfo(current.getEditedBy(), current.getEditedSince(), current.getEditedExpiry()));
+      }
+      T transferredPdo = pdo.transferTokenLock(userId);
+      db.commit(txVoucher);
+      return transferredPdo;
+    }
+    catch (RuntimeException ex) {
+      db.rollback(txVoucher);
+      throw ex;
+    }
   }
 
   @Override
   public void updateTokenLockOnly(DomainContext context, long id, long editedBy, Timestamp editedSince, Timestamp editedExpiry) {
+    if (!getServerSession().isPrivilegedSession()) {
+      throw new PersistenceException(getSession(), "updateTokenLockOnly denied for " + getServerSession());
+    }
     if (getSession().isRemote()) {
       // optimize, if running in remote middle tier
       dbObject.getRemoteDelegate().updateTokenLockOnly(context, id, editedBy, editedSince, editedExpiry);
@@ -407,7 +447,6 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
       po.updateTokenLockOnly();
     }
   }
-
 
   /**
    * Creates and exports a remote cursor delegate for a local cursor.
@@ -425,6 +464,16 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
            InvocationTargetException ex) {
       throw new PersistenceException(ex);
     }
+  }
+
+
+  /**
+   * Gets the ID of the client's user.
+   *
+   * @return the user ID
+   */
+  protected long getClientUserId() {
+    return getServerSession().getClientSessionInfo().getUserId();
   }
 
 }

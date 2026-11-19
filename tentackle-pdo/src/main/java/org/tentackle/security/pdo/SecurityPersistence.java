@@ -387,7 +387,9 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   List<Security> selectByDomainContext(int domainContextClassId, long domainContextId);
 
   /**
-   * Delete all rules for given grantee.<br>
+   * Delete all rules for given grantee.
+   * <p>
+   * Invocation is only allowed for local sessions, not remote sessions!
    *
    * @param granteeClassId the grantee's class ID
    * @param granteeId the grantee's object ID
@@ -397,6 +399,8 @@ public interface SecurityPersistence extends PersistentObject<Security> {
 
   /**
    * Deletes all pdo-rules for given objectId and objectClassId.
+   * <p>
+   * Invocation is only allowed for local sessions, not remote sessions!
    *
    * @param objectClassId the object's class id
    * @param objectId the object's ID
@@ -405,7 +409,9 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   int deleteByObject(int objectClassId, long objectId);
 
   /**
-   * Delete all non-PDO rules for given objectClassName.<br>
+   * Delete all non-PDO rules for given objectClassName.
+   * <p>
+   * Invocation is only allowed for local sessions, not remote sessions!
    *
    * @param objectClassName the object class name
    * @return the number of deleted rules
@@ -413,7 +419,9 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   int deleteByObjectClass(String objectClassName);
 
   /**
-   * Delete all rules for given DomainContext.<br>
+   * Delete all rules for given DomainContext.
+   * <p>
+   * Invocation is only allowed for local sessions, not remote sessions!
    *
    * @param domainContextClassId the domain context class id
    * @param domainContextId the domain context object id

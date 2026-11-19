@@ -49,10 +49,6 @@ public interface SecurityRemoteDelegate
   TrackedList<Security> selectByObject(DomainContext context, int objectClassId, long objectId);
   TrackedList<Security> selectByObjectClass(DomainContext context, String objectClassName);
   TrackedList<Security> selectByDomainContext(DomainContext context, int domainContextClassId, long domainContextId);
-  int deleteByGrantee(DomainContext context, int granteeClassId, long granteeId);
-  int deleteByObject(DomainContext context, int objectClassId, long objectId);
-  int deleteByObjectClass(DomainContext context, String objectClassName);
-  int deleteByDomainContext(DomainContext context, int domainContextClassId, long domainContextId);
 
   //</editor-fold>//GEN-END:inclrmi
 

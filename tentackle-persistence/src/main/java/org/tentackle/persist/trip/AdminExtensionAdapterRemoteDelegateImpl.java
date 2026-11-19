@@ -26,6 +26,7 @@ import org.tentackle.dbms.Db;
 import org.tentackle.dbms.trip.RemoteDbDelegateImpl;
 import org.tentackle.dbms.trip.RemoteDbSessionImpl;
 import org.tentackle.log.Logger;
+import org.tentackle.pdo.AdminExtension;
 import org.tentackle.pdo.AdminExtension.SessionData;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.persist.AdminExtensionAdapter;
@@ -146,12 +147,36 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDbDelegateImp
    * @param context the invoking user's domain context
    */
   private void checkPermission(DomainContext context) {
+    if (!isAdministrationAllowed(context)) {
+      throw new SecurityException("no explicit execute permission for " + AdminExtension.class.getName());
+    }
+  }
+
+  /**
+   * Determines whether the client is allowed to administrate the sessions.
+   * <p>
+   * The administration fails closed: the default implementation requires a security rule that explicitly grants the
+   * execute permission for the {@link AdminExtension}, or a privileged session (see
+   * {@link RemoteDbSessionImpl#setPrivilegedSession(boolean)}). An execute permission accepted by default,
+   * because no rule fired, is not sufficient.
+   *
+   * @param context the domain context
+   * @return true if allowed
+   */
+  protected boolean isAdministrationAllowed(DomainContext context) {
+    if (getServerSession().isPrivilegedSession()) {
+      return true;
+    }
     SecurityFactory sf = SecurityFactory.getInstance();
     org.tentackle.security.SecurityManager sm = sf.getSecurityManager();
-    SecurityResult sr = sm.evaluate(context, sf.getExecutePermission(), getServicedClass());
-    if (!sr.isAccepted()) {
-      throw new SecurityException(sr.explain("no execute permission for " + getServicedClass().getName()));
+    // the interface, as checked by the client and edited in the SessionsView of the RDC
+    SecurityResult sr = sm.evaluate(context, sf.getExecutePermission(), AdminExtension.class);
+    if (!sr.isAccepted() || sr.isDefault()) {
+      LOGGER.warning("session administration denied for {0}: {1}", getServerSession(),
+                     sr.explain("no explicit execute permission"));
+      return false;
     }
+    return true;
   }
 
 
