@@ -20,6 +20,7 @@ package org.tentackle.misc;
 
 import org.testng.annotations.Test;
 
+import java.lang.ref.Reference;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -46,13 +47,19 @@ public class PoolTimeoutThreadTest {
     AtomicBoolean shutdown = new AtomicBoolean();
     CountDownLatch failed = new CountDownLatch(1);
     CountDownLatch monitored = new CountDownLatch(1);
+    /*
+     * The timeout thread references the pools only weakly: they must be kept strongly reachable
+     * until monitored, or a garbage collection unregisters them before the thread's next round.
+     */
+    Pool<?> failingPool = pool("failing", shutdown, () -> {
+      failed.countDown();
+      throw new IllegalStateException("server unreachable");
+    });
+    Pool<?> healthyPool = pool("healthy", shutdown, monitored::countDown);
     try {
       // the order matters: the pools are monitored in the order of their registration
-      PoolTimeoutThread.register(pool("failing", shutdown, () -> {
-        failed.countDown();
-        throw new IllegalStateException("server unreachable");
-      }));
-      PoolTimeoutThread.register(pool("healthy", shutdown, monitored::countDown));
+      PoolTimeoutThread.register(failingPool);
+      PoolTimeoutThread.register(healthyPool);
 
       assertTrue(failed.await(AWAIT_TIMEOUT, TimeUnit.MILLISECONDS), "failing pool was not monitored at all");
       assertTrue(monitored.await(AWAIT_TIMEOUT, TimeUnit.MILLISECONDS),
@@ -60,6 +67,9 @@ public class PoolTimeoutThreadTest {
     }
     finally {
       shutdown.set(true);   // unregisters both pools in the next round
+      // a local variable alone may be considered unreachable after its last use
+      Reference.reachabilityFence(failingPool);
+      Reference.reachabilityFence(healthyPool);
     }
   }
 
