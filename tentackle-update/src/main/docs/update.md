@@ -193,22 +193,35 @@ Given a `ClientInfo`, the base implementation builds the download artifact name 
 with a sibling `.sha256` file. (`-pkg` is appended for `JPACKAGE` installations.) A missing trailing slash of the
 base URL is added automatically. It then:
 
-1. **resolves the checksum** by downloading the `.sha256` file (`FileHelper.download`) and taking its first
-   whitespace-delimited token, so the output of `sha256sum` can be published as is;
-2. **resolves the size** by issuing an HTTP `HEAD` request (via `java.net.http.HttpClient`, following redirects)
-   and reading `content-length`. Any status other than 2xx fails the request, so that the length of an error page
-   is never taken for the size of the ZIP;
-3. **chooses the executor** — `update.cmd` if the platform contains `win`, `update.sh` elsewhere;
-4. returns the assembled `UpdateInfo` (always reporting `getVersion()` as the new version).
+1. **validates the client info** (`validateClientInfo`). The `ClientInfo` comes from a client that has not logged
+   in, and its platform and architecture become part of URLs the server fetches. Both must consist of 1 to 32
+   letters, digits or underscores; anything else, such as `../`, `?` or `#`, would let the client steer the server
+   to arbitrary resources on the update host — or, via a redirect, beyond. The application name and version are
+   not used and therefore not checked: a subclass that uses them must validate them as well;
+2. **resolves the checksum** by downloading the `.sha256` file (HTTP `GET`, at most 64 KB, status 2xx) and taking
+   its first whitespace-delimited token, so the output of `sha256sum` can be published as is. The token must be a
+   SHA-256 hash in hex (`isValidChecksum`), so that an error page a CDN delivers with status 200 is not cached and
+   handed to every client;
+3. **resolves the size** by issuing an HTTP `HEAD` request and reading `content-length`. Any status other than 2xx
+   fails the request, so that the length of an error page is never taken for the size of the ZIP;
+4. **chooses the executor** — `update.cmd` if the platform contains `win`, `update.sh` elsewhere;
+5. returns the assembled `UpdateInfo` (always reporting `getVersion()` as the new version).
+
+Both requests go through `java.net.http.HttpClient`, follow redirects (but not from HTTPS to HTTP), and are
+bounded by `getTimeout()` (30 seconds by default) as a whole, body included, so that a hanging update host cannot
+block the threads of the service.
 
 If the checksum or the size cannot be determined — typically because the artifact is not published — the call
-fails with a `TentackleRuntimeException`, which TRIP passes on to the client.
+fails with a `TentackleRuntimeException("cannot create update info")`, which TRIP passes on to the client. The
+reason is logged on the server, but not passed on: the client has not logged in, and the reason would reveal
+URLs and host names.
 
 The checksum hashes and the download sizes are cached in `ConcurrentHashMap`s keyed by URL, so repeated client
 requests for the same artifact do not re-fetch the metadata. Only a known size is cached, though: a response
-without `content-length` yields `-1` and is queried again on the next request. Every URL-building,
-executor-naming, and `UpdateInfo`-construction step is a `protected` method, so subclasses can customize the
-layout (different file extensions, per-customer artifacts, signed executors, …) without rewriting the flow.
+without `content-length` yields `-1` and is queried again on the next request. As a safety net, each cache holds
+at most 256 entries. Every validation, URL-building, executor-naming, and `UpdateInfo`-construction step is a
+`protected` method, so subclasses can customize the layout (different file extensions, per-customer artifacts,
+signed executors, …) without rewriting the flow.
 
 ---
 
@@ -239,12 +252,19 @@ gathering everything the client needs:
   configured, the service URL may be given in encrypted form, disguised as an `http:`, `https:` or `rmi:` URL;
   `Cryptor.deriveURL(...)` decrypts it before the transport is requested. This keeps the real address out of
   plain-text configuration files.
-- **Downloading and verifying.** `downloadZip(updateInfo, updateDir, progressConsumer)` creates the update
-  directory (removing and recreating it if it already exists, so it is always empty), streams the ZIP into it
-  through a [`CallbackReadableByteChannel`](../java/org/tentackle/update/CallbackReadableByteChannel.java) (so
-  progress can be reported), then recomputes the **SHA-256** digest and compares it case-insensitively against
-  `updateInfo.checksum()` (`sha256sum` writes lowercase, `certutil` uppercase). A missing checksum or a mismatch
-  fails with a `TentackleRuntimeException`; only a verified file is returned.
+- **Downloading and verifying.** `downloadZip(updateInfo, updateDir, progressConsumer)` first validates the
+  update info (`validateUpdateInfo`): the download URL must be `http` or `https`, a checksum must be provided, and
+  the update executor must be a plain file name, since it is resolved against the `bin` directory of the unzipped
+  update and executed. It then creates the update directory (removing and recreating it if it already exists, so
+  it is always empty) and streams the ZIP into it through a
+  [`CallbackReadableByteChannel`](../java/org/tentackle/update/CallbackReadableByteChannel.java) (so progress can
+  be reported), computing the **SHA-256** digest on the fly, which it compares case-insensitively against
+  `updateInfo.checksum()` (`sha256sum` writes lowercase, `certutil` uppercase). The ZIP is stored under the last
+  segment of the URL's path, or as `update.zip` if that is not a plain file name. The download must not exceed the
+  announced `updateInfo.size()`, or `getMaxDownloadSize()` (2 GB) if the size is unknown, and connecting and each
+  read are bounded by `getTimeout()` (30 seconds). Any failure — an invalid update info, an oversized download, a
+  mismatching checksum — throws a `TentackleRuntimeException` and removes the partial file; only a verified file
+  is returned.
 
 ### CallbackReadableByteChannel
 
@@ -252,7 +272,9 @@ gathering everything the client needs:
 `ReadableByteChannel` wrapper that, after every read returning data, feeds a `Consumer<Double>` the fraction
 `bytesRead / expectedSize` (0.0–1.0). This is what drives the download progress bar. With a negative (unknown)
 expected size, the reported value is negative as well, which a JavaFX progress bar displays as indeterminate.
-The byte count is a `long`, so images larger than 2 GB are fine.
+The byte count is a `long`, so images larger than 2 GB are fine. Without an announced size, however,
+`ClientUpdateUtilities` limits the download to `getMaxDownloadSize()` (2 GB by default), so the update host
+must send a `content-length` for larger images, or the application must override that method.
 
 ---
 
@@ -338,7 +360,8 @@ and the client certificate sits in the keystore next to it. As TRIP's chapter on
 [unauthenticated peers](../../../../tentackle-core/src/main/docs/trip.md#unauthenticated-peers) puts it, a client
 that can be downloaded gives its key away. What such a client can send before the login is limited by the
 pre-authentication policy (see *ServerUpdateUtilities* above), which
-remains the last line of defense.
+remains the last line of defense. For the same reason, the service treats the `ClientInfo` as untrusted input and
+validates it before deriving any URL from it (see *AbstractUpdateServiceImpl* above).
 
 Further hardening:
 
@@ -380,8 +403,8 @@ Further hardening:
   [`tentackle-common`](../../../../tentackle-common/src/main/docs/common.md)) for TRIP remoting, the `Cryptor`,
   `FileHelper`/`StringHelper` and the `@Service`/`ServiceFactory` SPI. The dependency is declared `optional` in the
   POM to avoid leaking it transitively onto downstream artifacts.
-- It **requires** `java.net.http` for the server's HTTP `HEAD` request. The checksum file and the ZIP are
-  downloaded via plain `java.net.URL` connections.
+- It **requires** `java.net.http` for the server's HTTP requests (the checksum file and the `HEAD` request for the
+  size). The client downloads the ZIP via a plain `java.net.URL` connection.
 - It **opens** `org.tentackle.update` to `org.tentackle.core` so TRIP can serialize `ClientInfo`/`UpdateInfo`.
 - It **provides** a `ModuleHook` service (`org.tentackle.update.service.Hook`), which loads resource bundles within
   the context of this module.

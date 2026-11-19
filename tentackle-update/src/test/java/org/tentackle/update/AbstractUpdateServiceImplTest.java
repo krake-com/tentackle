@@ -26,9 +26,11 @@ import org.tentackle.common.TentackleRuntimeException;
 
 import java.io.IOException;
 import java.net.URL;
+import java.net.http.HttpTimeoutException;
+import java.time.Duration;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
 
@@ -293,14 +295,104 @@ public class AbstractUpdateServiceImplTest {
   }
 
   /**
-   * A missing artifact must not leave the client guessing.
+   * A missing artifact must not leave the client guessing, but the reason is for the server's log only:
+   * the client has not logged in, and the cause reveals URLs and host names.
    */
   @Test
   public void failsWhenTheArtifactIsNotPublished() {
     AbstractUpdateServiceImpl service = new TestUpdateServiceImpl(server.getBaseUrl() + "/nowhere/");
     RuntimeException ex = expectThrows(RuntimeException.class, () -> service.getUpdateInfo(LINUX_JLINK));
     assertEquals(ex.getMessage(), "cannot create update info");
-    assertNotNull(ex.getCause());
+    assertNull(ex.getCause());
+  }
+
+
+  /**
+   * The client info is sent before the login and becomes part of the URLs the server fetches.
+   * Anything that could change the structure of the URL - path traversal, a query or a fragment
+   * swallowing the extension - must be refused before the update host is contacted at all.
+   */
+  @Test
+  public void refusesAClientInfoThatWouldChangeTheUrl() {
+    AbstractUpdateServiceImpl service = new TestUpdateServiceImpl(server.getBaseUrl() + BASE_PATH);
+    String[] malicious = {
+      null, "", "..", "../../secret", "linux/../../internal", "x?", "x#", "x%2f", "lin ux", "a".repeat(33)
+    };
+    for (String name : malicious) {
+      for (ClientInfo clientInfo : new ClientInfo[] {
+             new ClientInfo("myapp", "1.0.0", name, "amd64", InstallationType.JLINK),
+             new ClientInfo("myapp", "1.0.0", "linux", name, InstallationType.JLINK) }) {
+        TentackleRuntimeException ex = expectThrows(TentackleRuntimeException.class, () -> service.getUpdateInfo(clientInfo));
+        assertEquals(ex.getMessage(), "invalid client info", String.valueOf(name));
+      }
+    }
+    expectThrows(TentackleRuntimeException.class, () -> service.getUpdateInfo(null));
+    assertEquals(server.getTotalRequestCount(), 0);
+  }
+
+  /**
+   * Everything the JVMs actually report as platform and architecture must still be accepted.
+   */
+  @Test
+  public void acceptsRealPlatformsAndArchitectures() {
+    AbstractUpdateServiceImpl service = new TestUpdateServiceImpl("http://host/downloads");
+    for (String platform : new String[] { "linux", "windows", "macosx", "freebsd", "aix" }) {
+      for (String arch : new String[] { "amd64", "x86_64", "aarch64", "x86", "ppc64le", "s390x", "riscv64" }) {
+        service.validateClientInfo(new ClientInfo("myapp", "1.0.0", platform, arch, InstallationType.JPACKAGE));
+      }
+    }
+    service.validateClientInfo(new ClientInfo("myapp", "1.0.0", InstallationType.JLINK));   // the running JVM
+  }
+
+  /**
+   * A CDN may deliver an error page with status 200. Its first word must not be cached and
+   * handed to every client as the checksum, which would then refuse every download as tampered.
+   */
+  @Test
+  public void refusesAndDoesNotCacheAMalformedChecksum() throws Exception {
+    server.serve(CHECKSUM_PATH, "<!DOCTYPE html><html>not found</html>");
+    AbstractUpdateServiceImpl service = new TestUpdateServiceImpl(server.getBaseUrl() + BASE_PATH);
+    URL checksumURL = server.url(CHECKSUM_PATH);
+    IOException ex = expectThrows(IOException.class, () -> service.determineChecksumHash(checksumURL));
+    assertTrue(ex.getMessage().startsWith("malformed checksum"), ex.getMessage());
+
+    server.serve(CHECKSUM_PATH, checksum + "  x.zip\n");   // published properly now
+    assertEquals(service.determineChecksumHash(checksumURL), checksum);
+  }
+
+  @Test
+  public void refusesAnOversizedChecksumFile() throws Exception {
+    server.serve(CHECKSUM_PATH, checksum + " ".repeat(64 * 1024));
+    AbstractUpdateServiceImpl service = new TestUpdateServiceImpl(server.getBaseUrl() + BASE_PATH);
+    expectThrows(IOException.class, () -> service.determineChecksumHash(server.url(CHECKSUM_PATH)));
+  }
+
+  @Test
+  public void refusesAChecksumFileWithAnErrorStatus() throws Exception {
+    server.serveError(CHECKSUM_PATH, "503 Service Unavailable", checksum);
+    AbstractUpdateServiceImpl service = new TestUpdateServiceImpl(server.getBaseUrl() + BASE_PATH);
+    IOException ex = expectThrows(IOException.class, () -> service.determineChecksumHash(server.url(CHECKSUM_PATH)));
+    assertTrue(ex.getMessage().contains("503"), ex.getMessage());
+  }
+
+  /**
+   * A hanging update host must not block a thread of the update service for good,
+   * not even if it sends the headers and then stalls in the body.
+   */
+  @Test
+  public void timesOutOnAStalledUpdateHost() throws Exception {
+    server.serveStalled(CHECKSUM_PATH).serveStalled(ZIP_PATH);
+    AbstractUpdateServiceImpl service = new TestUpdateServiceImpl(server.getBaseUrl() + BASE_PATH) {
+      @Override
+      protected Duration getTimeout() {
+        return Duration.ofMillis(300);
+      }
+    };
+    long start = System.nanoTime();
+    expectThrows(HttpTimeoutException.class, () -> service.determineChecksumHash(server.url(CHECKSUM_PATH)));
+    TentackleRuntimeException ex = expectThrows(TentackleRuntimeException.class, () -> service.getUpdateInfo(LINUX_JLINK));
+    assertEquals(ex.getMessage(), "cannot create update info");
+    assertTrue(System.nanoTime() - start < 10_000_000_000L, "timeout not applied");
   }
 
   /**

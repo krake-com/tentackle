@@ -202,6 +202,91 @@ public class ClientUpdateUtilitiesTest {
       TentackleRuntimeException.class, () -> utilities.downloadZip(updateInfo(wrongChecksum), updateDir, null));
     assertTrue(ex.getMessage().startsWith("checksum failed!"), ex.getMessage());
     assertTrue(ex.getMessage().contains(wrongChecksum));
+    assertEquals(updateDir.list().length, 0, "unverified download not removed");
+  }
+
+  /**
+   * The server announced the size, so a host sending more is up to no good (or serving the wrong file):
+   * the download is aborted instead of filling the disk.
+   */
+  @Test
+  public void abortsADownloadExceedingTheAnnouncedSize() {
+    File updateDir = tempDir.resolve("update").toFile();
+    UpdateInfo info = new UpdateInfo("2.1.0", server.getBaseUrl() + ZIP_PATH, checksum,
+                                     zipContent.length - 1, "update.sh");
+    TentackleRuntimeException ex = expectThrows(
+      TentackleRuntimeException.class, () -> utilities.downloadZip(info, updateDir, null));
+    assertTrue(ex.getMessage().contains("exceeds"), ex.getMessage());
+    assertEquals(updateDir.list().length, 0, "oversized download not removed");
+  }
+
+  /**
+   * Without an announced size, the download is limited by {@link ClientUpdateUtilities#getMaxDownloadSize()}.
+   */
+  @Test
+  public void abortsADownloadOfUnknownSizeExceedingTheMaximum() throws Exception {
+    File updateDir = tempDir.resolve("update").toFile();
+    UpdateInfo info = new UpdateInfo("2.1.0", server.getBaseUrl() + ZIP_PATH, checksum, -1, "update.sh");
+    ClientUpdateUtilities limited = new ClientUpdateUtilities() {
+      @Override
+      public long getMaxDownloadSize() {
+        return 1000;
+      }
+    };
+    TentackleRuntimeException ex = expectThrows(
+      TentackleRuntimeException.class, () -> limited.downloadZip(info, updateDir, null));
+    assertTrue(ex.getMessage().contains("exceeds"), ex.getMessage());
+
+    // but the default is large enough for any real image
+    assertEquals(Files.readAllBytes(utilities.downloadZip(info, updateDir, null).toPath()), zipContent);
+  }
+
+  /**
+   * Only HTTP(S) downloads make sense. Anything else, such as a {@code file:} URL, is refused before
+   * the update directory is touched.
+   */
+  @Test
+  public void refusesANonHttpDownload() throws Exception {
+    File updateDir = tempDir.resolve("update").toFile();
+    Path local = Files.write(tempDir.resolve("local.zip"), zipContent);
+    UpdateInfo info = new UpdateInfo("2.1.0", local.toUri().toString(), checksum, zipContent.length, "update.sh");
+    TentackleRuntimeException ex = expectThrows(
+      TentackleRuntimeException.class, () -> utilities.downloadZip(info, updateDir, null));
+    assertTrue(ex.getMessage().startsWith("unsupported download protocol"), ex.getMessage());
+    assertFalse(updateDir.exists());
+  }
+
+  /**
+   * The executor is resolved against the {@code bin} directory of the unzipped update and executed,
+   * so it must not point anywhere else.
+   */
+  @Test
+  public void refusesAnUpdateExecutorThatIsNotAPlainFileName() {
+    File updateDir = tempDir.resolve("update").toFile();
+    for (String executor : new String[] { "", ".", "..", "../update.sh", "../../../usr/bin/evil", "/bin/sh",
+                                          "sub/update.sh", "..\\update.cmd", "C:update.cmd", "update.cmd:ads",
+                                          "-rf", ".hidden" }) {
+      UpdateInfo info = new UpdateInfo("2.1.0", server.getBaseUrl() + ZIP_PATH, checksum, zipContent.length, executor);
+      TentackleRuntimeException ex = expectThrows(
+        TentackleRuntimeException.class, () -> utilities.downloadZip(info, updateDir, null));
+      assertTrue(ex.getMessage().startsWith("invalid update executor"), executor + ": " + ex.getMessage());
+    }
+    assertEquals(server.getTotalRequestCount(), 0);
+  }
+
+  /**
+   * The local file name is taken from the URL, but only if it is a plain file name.
+   */
+  @Test
+  public void fallsBackToADefaultZipNameForAnUnsafeUrlPath() throws Exception {
+    String path = "/downloads/app.zip:stream";    // an NTFS alternate data stream
+    server.serve(path, zipContent);
+    File updateDir = tempDir.resolve("update").toFile();
+    UpdateInfo info = new UpdateInfo("2.1.0", server.getBaseUrl() + path, checksum, zipContent.length, "update.sh");
+    File zipFile = utilities.downloadZip(info, updateDir, null);
+    assertEquals(zipFile.getName(), "update.zip");
+    assertEquals(zipFile.getParentFile(), updateDir);
+    assertEquals(Files.readAllBytes(zipFile.toPath()), zipContent);
   }
 
   /**

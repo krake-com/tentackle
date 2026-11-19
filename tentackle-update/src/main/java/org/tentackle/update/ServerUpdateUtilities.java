@@ -101,7 +101,7 @@ public class ServerUpdateUtilities {
       transport.getRegistry().register(updateService, uri.getPath());
     }
     catch (TripRuntimeException tx) {
-      throw new TripRuntimeException("cannot start update service " + uri, tx);
+      throw new TripRuntimeException("cannot start update service " + UriHelper.uriToSafeString(uri), tx);
     }
   }
 
