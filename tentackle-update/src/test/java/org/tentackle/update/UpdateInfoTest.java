@@ -26,6 +26,7 @@ import java.net.URI;
 import java.net.URL;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
@@ -59,6 +60,23 @@ public class UpdateInfoTest {
     assertEquals(info.urlStr(), URL_STR);
     assertEquals(info.getUrl(), url);
     assertEquals(info, new UpdateInfo("2.1.0", URL_STR, "cafebabe", 4711L, "update.sh"));
+  }
+
+  /**
+   * A signed or short-lived download URL carries its access token in the query, and maybe
+   * credentials in the user info. Neither must end up in a log file.
+   */
+  @Test
+  public void hidesTheAccessTokenOfTheUrlFromLogs() {
+    UpdateInfo info = new UpdateInfo("2.1.0", "https://joe:secret@cdn.example.org:8443/myapp/app.zip?sig=TOKEN#frag",
+                                     "cafebabe", 4711L, "update.sh");
+    assertEquals(info.getSafeUrlString(), "https://cdn.example.org:8443/myapp/app.zip");
+    String str = info.toString();
+    assertTrue(str.contains("https://cdn.example.org:8443/myapp/app.zip"), str);
+    assertTrue(str.contains("2.1.0"), str);
+    assertFalse(str.contains("TOKEN"), str);
+    assertFalse(str.contains("secret"), str);
+    assertEquals(new UpdateInfo("2.1.0", "not a url", "cafebabe", 1L, "update.sh").getSafeUrlString(), "<malformed URL>");
   }
 
   @Test

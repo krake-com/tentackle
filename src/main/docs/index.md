@@ -20,6 +20,7 @@ topic-grouped listing of every document, see the
 - **AuthenticationContext (client host, TLS client certificate)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#client-certificates)
 - **AuthenticationProvider / AuthenticationManager** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-provider-chain)
 - **Auto-completion (text field suggestions)** — [Auto-Completion](../../../tentackle-fx/src/main/docs/auto-completion.md), [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md)
+- **Auto-login after a restart (`RestartCredentials`)** — [FX RDC](../../../tentackle-fx-rdc/src/main/docs/rdc.md#restart-credentials), [FX RDC Update](../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)
 - **Auto-update** — [Tentackle Update](../../../tentackle-update/src/main/docs/update.md), [FX RDC Update](../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)
 - **Autologin (desktop clients)** — [Backend Properties](../../../tentackle-session/src/main/docs/backend-properties.md#desktop-client-keys)
 

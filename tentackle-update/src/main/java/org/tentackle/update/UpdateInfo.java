@@ -79,6 +79,47 @@ public record UpdateInfo(String version, String urlStr, String checksum, long si
     }
   }
 
+  /**
+   * Gets the download URL in a form that is safe to log or show.<br>
+   * The user info, query and fragment are removed, since a signed or short-lived download URL
+   * carries its access token there.
+   *
+   * @return the URL as scheme, host, port and path
+   */
+  public String getSafeUrlString() {
+    try {
+      URI uri = new URI(urlStr);
+      StringBuilder buf = new StringBuilder();
+      if (uri.getScheme() != null) {
+        buf.append(uri.getScheme()).append(':');
+      }
+      if (uri.getHost() != null) {
+        buf.append("//").append(uri.getHost());
+        if (uri.getPort() >= 0) {
+          buf.append(':').append(uri.getPort());
+        }
+      }
+      if (uri.getRawPath() != null) {
+        buf.append(uri.getRawPath());
+      }
+      return buf.toString();
+    }
+    catch (URISyntaxException | RuntimeException ex) {
+      return "<malformed URL>";
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The URL is shown without user info, query and fragment (see {@link #getSafeUrlString()}).
+   */
+  @Override
+  public String toString() {
+    return "UpdateInfo[version=" + version + ", url=" + getSafeUrlString() + ", checksum=" + checksum +
+           ", size=" + size + ", updateExecutor=" + updateExecutor + "]";
+  }
+
   @Override
   public boolean isCloseAllTransportsRequested() {
     // Close the transport gracefully after having received the update info.

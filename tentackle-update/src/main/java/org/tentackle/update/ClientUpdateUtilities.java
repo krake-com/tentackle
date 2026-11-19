@@ -27,6 +27,8 @@ import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TransportManager;
+import org.tentackle.trip.transport.CompressedTransport;
+import org.tentackle.trip.transport.TcpTransport;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -122,13 +124,16 @@ public class ClientUpdateUtilities {
   /**
    * Checks whether the application is running in an updatable jlink directory.<br>
    * Jlink applications are started from the image's root directory, so the current
-   * working directory is checked.
+   * working directory is checked. It must also be the running JVM's {@code java.home},
+   * so that an application started from within another jlink image does not update that one.
    *
-   * @return true if the current working directory contains an updatable jlink image
+   * @return true if the current working directory contains the running, updatable jlink image
    * @see #isUpdatableJlinkDirectory(File)
+   * @see #isJavaHome(File)
    */
   public boolean isUpdateableJlinkApplication() {
-    return isUpdatableJlinkDirectory(new File("."));
+    File dir = new File(".");
+    return isJavaHome(dir) && isUpdatableJlinkDirectory(dir);
   }
 
   /**
@@ -156,7 +161,24 @@ public class ClientUpdateUtilities {
         runtimeDir = new File(rootDir, "lib/runtime");
       }
     }
-    return runtimeDir != null && isUpdatableJlinkDirectory(runtimeDir);
+    return runtimeDir != null && isJavaHome(runtimeDir) && isUpdatableJlinkDirectory(runtimeDir);
+  }
+
+  /**
+   * Checks whether the given directory is the {@code java.home} of the running JVM.<br>
+   * Used to verify that a detected jlink image or jpackage runtime is the one this application runs from.
+   *
+   * @param dir the directory
+   * @return true if the same directory as {@code java.home}
+   */
+  public boolean isJavaHome(File dir) {
+    String javaHome = System.getProperty("java.home");
+    try {
+      return javaHome != null && dir.isDirectory() && Files.isSameFile(Paths.get(javaHome), dir.toPath());
+    }
+    catch (IOException | RuntimeException ex) {
+      return false;
+    }
   }
 
   /**
@@ -223,9 +245,14 @@ public class ClientUpdateUtilities {
    * Gets the remote update service object.<br>
    * If a {@link Cryptor} is configured, the service name may be given as an encrypted URL
    * disguised as an {@code http:}, {@code https:} or {@code rmi:} URL (see {@link Cryptor#deriveURL}).
+   * <p>
+   * The client downloads and runs whatever the update service tells it to, so the transport must
+   * authenticate the server. Transports that neither encrypt nor authenticate are refused before
+   * a connection is made (see {@link #isTransportAllowed(URI)}).
    *
-   * @param serviceName the service URL, for ex. {@code "trip://localhost:33001/Update"}
+   * @param serviceName the service URL, for ex. {@code "tripe://localhost:33001/Update"}
    * @return the update service
+   * @throws TentackleRuntimeException if the transport is not allowed
    */
   public UpdateService getUpdateService(String serviceName) {
     Cryptor cryptor = Cryptor.getInstance();
@@ -233,9 +260,32 @@ public class ClientUpdateUtilities {
       serviceName = cryptor.deriveURL(serviceName, "http:", "https:", "rmi:");
     }
     URI uri = URI.create(serviceName);
+    if (!isTransportAllowed(uri)) {
+      throw new TentackleRuntimeException("transport '" + uri.getScheme() +
+                                          "' neither encrypts nor authenticates the update service");
+    }
     Transport transport = TransportManager.getInstance().requestTransport(uri);
     LOGGER.info("connecting to {0}", transport);
     return transport.lookup(UpdateService.class, uri.getPath());
+  }
+
+  /**
+   * Checks whether the transport of the update service is allowed.<br>
+   * The plain TCP transports {@code trip} and {@code tripc} are refused, since anybody on the
+   * network path could answer in place of the server and make the client download and run arbitrary code.
+   * All other transports authenticate the server: TLS via its certificate, {@code tripe} and
+   * {@code tripce} via the pre-shared key.
+   * <p>
+   * Applications that need a plain transport, for example in a closed test network, may override this method.
+   *
+   * @param uri the URI of the update service
+   * @return true if allowed
+   */
+  protected boolean isTransportAllowed(URI uri) {
+    String scheme = uri.getScheme();
+    return scheme != null &&
+           !TcpTransport.PROTOCOL.equalsIgnoreCase(scheme) &&
+           !CompressedTransport.PROTOCOL.equalsIgnoreCase(scheme);
   }
 
   /**
@@ -283,7 +333,7 @@ public class ClientUpdateUtilities {
     }
     String checksum = updateInfo.checksum();
     if (checksum == null || checksum.isBlank()) {
-      throw new TentackleRuntimeException("no checksum provided to verify the download of " + updateInfo.urlStr());
+      throw new TentackleRuntimeException("no checksum provided to verify the download of " + updateInfo.getSafeUrlString());
     }
     String updateExecutor = updateInfo.updateExecutor();
     if (updateExecutor != null && !isPlainFileName(updateExecutor)) {
@@ -339,7 +389,7 @@ public class ClientUpdateUtilities {
           size = fileChannel.transferFrom(readableByteChannel, 0, maxSize == Long.MAX_VALUE ? maxSize : maxSize + 1);
         }
         if (size > maxSize) {
-          throw new TentackleRuntimeException("download of " + updateInfo.urlStr() + " exceeds " + maxSize + " bytes");
+          throw new TentackleRuntimeException("download of " + updateInfo.getSafeUrlString() + " exceeds " + maxSize + " bytes");
         }
 
         // check the hash, padded to the digest's own hex length, not to the length of whatever the server sent

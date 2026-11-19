@@ -19,11 +19,9 @@
 
 package org.tentackle.fx.rdc.update;
 
-import org.tentackle.common.Constants;
 import org.tentackle.common.Cryptor;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.FileHelper;
-import org.tentackle.common.StringHelper;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFactory;
@@ -34,6 +32,7 @@ import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.rdc.app.DesktopApplication;
 import org.tentackle.fx.rdc.app.FxApplication;
 import org.tentackle.fx.rdc.app.LoginFailedHandler;
+import org.tentackle.fx.rdc.app.RestartCredentials;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.BlockingHolder;
 import org.tentackle.misc.Holder;
@@ -55,8 +54,8 @@ import javafx.util.Duration;
 import javax.net.ssl.SSLHandshakeException;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.text.MessageFormat;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -115,6 +114,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
           try {
             ClientInfo clientInfo = new ClientInfo(getApplication().getName(), getApplication().getVersion(), installationType);
             UpdateInfo updateInfo = service.getUpdateInfo(clientInfo);
+            // the update info hides the access token of a signed download URL
             LOGGER.info("application update {0} -> {1}", clientInfo, updateInfo);
             if (!updateInfo.version().equals(clientInfo.version())) {
               return createUpdateRunnable(clientInfo, updateInfo, installationType);
@@ -345,7 +345,18 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
         builder = new ProcessBuilder(updateScript.getPath(), Long.toString(pid));
       }
       passSessionInfoViaEnvironment(builder.environment());
-      Process process = builder.start();
+      Process process;
+      try {
+        process = builder.start();
+      }
+      catch (IOException | RuntimeException ex) {
+        // the update won't restart the application: don't leave the credentials behind
+        String credentialsPath = builder.environment().get(RestartCredentials.getEnvironmentName(getApplication().getName()));
+        if (credentialsPath != null) {
+          RestartCredentials.delete(Path.of(credentialsPath));
+        }
+        throw ex;
+      }
       LOGGER.info("executing {0} {1} (pid = {2})", updateScript, pid, process.pid());
     }
     catch (RuntimeException | IOException iox) {
@@ -365,11 +376,15 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
   }
 
   /**
-   * Passes the current username and password encrypted to the process environment of the updated application.<br>
+   * Passes the current username and password to the updated application.<br>
    * Requires a {@link Cryptor}. The username is passed if known, the password in addition if the credentials
-   * are password-based. The variables are named {@code <APP>_USER} and {@code <APP>_PASSWORD}, where
-   * {@code <APP>} is the application name reduced to ASCII letters and digits, all in uppercase.
-   * See {@code LoginApplication#updateSessionInfoFromEnvironment(SessionInfo)}.
+   * are password-based. They are written encrypted to a temporary file only the current user can access, and the
+   * path of that file is passed in the environment variable {@code <APP>_CREDENTIALS}, where {@code <APP>} is the
+   * application name reduced to ASCII letters and digits, all in uppercase.
+   * The restarted application reads and deletes the file (see {@link RestartCredentials} and
+   * {@code LoginApplication#updateSessionInfoFromEnvironment(SessionInfo)}).
+   * <p>
+   * If the file cannot be written, nothing is passed, and the user logs in again.
    *
    * @param environment the process environment
    */
@@ -379,11 +394,13 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
       SessionInfo sessionInfo = getSessionInfo();
       String userName = sessionInfo.getUserName();
       if (userName != null) {
-        String envPrefix = StringHelper.toAsciiLetterOrDigit(getApplication().getName());
-        environment.put((envPrefix + "_" + Constants.BACKEND_USER).toUpperCase(Locale.ROOT), cryptor.encrypt64(userName));
-        char[] password = sessionInfo.getPassword();
-        if (password != null) {
-          environment.put((envPrefix + "_" + Constants.BACKEND_PASSWORD).toUpperCase(Locale.ROOT), cryptor.encrypt64(password));
+        try {
+          String applicationName = getApplication().getName();
+          Path file = RestartCredentials.write(applicationName, cryptor, userName, sessionInfo.getPassword());
+          environment.put(RestartCredentials.getEnvironmentName(applicationName), file.toString());
+        }
+        catch (IOException | RuntimeException ex) {
+          LOGGER.warning("cannot pass the credentials to the updated application", ex);
         }
       }
     }

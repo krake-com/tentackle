@@ -23,6 +23,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import org.tentackle.common.FileHelper;
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.trip.RejectionDelay;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TransportManager;
@@ -55,6 +56,16 @@ public class UpdateServiceRemoteTest {
   private static final String ZIP_PATH = BASE_PATH + TestUpdateServiceImpl.ARTIFACT_NAME
                                          + '-' + TestUpdateServiceImpl.VERSION + "-linux-amd64.zip";
   private static final String CHECKSUM_PATH = ZIP_PATH.substring(0, ZIP_PATH.length() - 4) + ".sha256";
+
+  /**
+   * The tests talk plain {@code trip}, which the client refuses by default.
+   */
+  private static final ClientUpdateUtilities PLAIN_TRANSPORT_CLIENT = new ClientUpdateUtilities() {
+    @Override
+    protected boolean isTransportAllowed(URI uri) {
+      return true;
+    }
+  };
 
   private static final ClientInfo CLIENT =
     new ClientInfo("myapp", "1.0.0", "linux", "amd64", InstallationType.JLINK);
@@ -99,7 +110,7 @@ public class UpdateServiceRemoteTest {
    */
   @Test
   public void answersAnUpdateRequestOverTrip() {
-    UpdateService service = ClientUpdateUtilities.getInstance().getUpdateService(clientServiceUrl);
+    UpdateService service = PLAIN_TRANSPORT_CLIENT.getUpdateService(clientServiceUrl);
     UpdateInfo info = service.getUpdateInfo(CLIENT);
 
     assertEquals(info.version(), TestUpdateServiceImpl.VERSION);
@@ -118,7 +129,7 @@ public class UpdateServiceRemoteTest {
    */
   @Test
   public void downloadsTheOfferedZipFromTheAdvertisedUrl() throws Exception {
-    UpdateService service = ClientUpdateUtilities.getInstance().getUpdateService(clientServiceUrl);
+    UpdateService service = PLAIN_TRANSPORT_CLIENT.getUpdateService(clientServiceUrl);
     UpdateInfo info = service.getUpdateInfo(CLIENT);
 
     File updateDir = tempDir.resolve("update").toFile();
@@ -138,7 +149,7 @@ public class UpdateServiceRemoteTest {
                   .serve(BASE_PATH + TestUpdateServiceImpl.ARTIFACT_NAME + '-' + TestUpdateServiceImpl.VERSION
                          + "-mac-aarch64-pkg.sha256", checksum + "  update.zip\n");
 
-    UpdateService service = ClientUpdateUtilities.getInstance().getUpdateService(clientServiceUrl);
+    UpdateService service = PLAIN_TRANSPORT_CLIENT.getUpdateService(clientServiceUrl);
     UpdateInfo info = service.getUpdateInfo(
       new ClientInfo("myapp", "1.0.0", "mac", "aarch64", InstallationType.JPACKAGE));
 
@@ -159,10 +170,23 @@ public class UpdateServiceRemoteTest {
     ServerUpdateUtilities.getInstance().startUpdateService(
       enforcingServiceUrl, downloadServer.getBaseUrl() + BASE_PATH, TestUpdateServiceImpl.class);
 
-    UpdateService service = ClientUpdateUtilities.getInstance().getUpdateService("trip://127.0.0.1:" + port + "/Update");
+    UpdateService service = PLAIN_TRANSPORT_CLIENT.getUpdateService("trip://127.0.0.1:" + port + "/Update");
     UpdateInfo info = service.getUpdateInfo(CLIENT);
     assertEquals(info.version(), TestUpdateServiceImpl.VERSION);
     assertEquals(info.checksum(), checksum);
+  }
+
+  /**
+   * By default, the client refuses a transport that neither encrypts nor authenticates the server,
+   * before it even connects: anybody on the network path could answer in place of the server.
+   */
+  @Test
+  public void refusesAnUnauthenticatedTransport() {
+    TentackleRuntimeException ex = expectThrows(TentackleRuntimeException.class,
+        () -> ClientUpdateUtilities.getInstance().getUpdateService(clientServiceUrl));
+    assertTrue(ex.getMessage().contains("'trip'"), ex.getMessage());
+    expectThrows(TentackleRuntimeException.class,
+        () -> ClientUpdateUtilities.getInstance().getUpdateService(clientServiceUrl.replace("trip:", "tripc:")));
   }
 
   /**
@@ -183,7 +207,7 @@ public class UpdateServiceRemoteTest {
     RejectionDelay.setInterval(0, 0);
     try {
       expectThrows(TripStreamClosedException.class,
-                   () -> ClientUpdateUtilities.getInstance().getUpdateService(
+                   () -> PLAIN_TRANSPORT_CLIENT.getUpdateService(
                      clientServiceUrl.replace("/Update", "/NoSuchService")));
     }
     finally {

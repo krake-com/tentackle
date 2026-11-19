@@ -119,6 +119,10 @@ exactly the checksum, and runs exactly the executor the server named. `UpdateInf
 and returns `true` from `isCloseAllTransportsRequested()` so the transport is torn down cleanly once the answer has
 been received.
 
+A signed or short-lived download URL carries its access token in the query, and maybe credentials in the user
+info. `toString()` therefore shows the URL without them, as does `getSafeUrlString()`, which the client uses in
+its log and error messages.
+
 ### InstallationType
 
 [`InstallationType`](../java/org/tentackle/update/InstallationType.java) distinguishes the two supported per-user
@@ -239,7 +243,9 @@ gathering everything the client needs:
   standard subdirectories (`bin`, `conf`, `include`, `legal`, `lib`) exist and are writable; for the application
   itself, it checks the current working directory, since a jlink image is started from its root. The jpackage
   check first locates the package root (`determineJPackageRoot()`, derived from the path of the running
-  executable) and then applies the jlink check to the embedded runtime:
+  executable) and then applies the jlink check to the embedded runtime. Either way, the directory must also be the
+  running JVM's `java.home` (`isJavaHome(File)`), so that an application started from within another, writable
+  jlink image does not update that one:
 
   | OS      | Package root                         | Embedded runtime                   |
   |---------|--------------------------------------|------------------------------------|
@@ -251,7 +257,11 @@ gathering everything the client needs:
   the remote `UpdateService` proxy. If a [`Cryptor`](../../../../tentackle-common/src/main/docs/common.md) is
   configured, the service URL may be given in encrypted form, disguised as an `http:`, `https:` or `rmi:` URL;
   `Cryptor.deriveURL(...)` decrypts it before the transport is requested. This keeps the real address out of
-  plain-text configuration files.
+  plain-text configuration files. Since the client downloads and runs whatever the service tells it to, the
+  transport must authenticate the server: `isTransportAllowed(URI)` refuses the plain TCP transports `trip` and
+  `tripc` before a connection is made, as anybody on the network path could answer in their place. All other
+  transports authenticate the server, by its TLS certificate or by the pre-shared key of `tripe`/`tripce`.
+  Applications that need a plain transport, in a closed test network for example, may override the method.
 - **Downloading and verifying.** `downloadZip(updateInfo, updateDir, progressConsumer)` first validates the
   update info (`validateUpdateInfo`): the download URL must be `http` or `https`, a checksum must be provided, and
   the update executor must be a plain file name, since it is resolved against the `bin` directory of the unzipped
@@ -327,8 +337,9 @@ The end-to-end flow, as wired up by [`tentackle-fx-rdc-update`](../../../../tent
 6. **Swap & restart.** The ZIP is unzipped, and the `updateExecutor` script (`update.sh`/`update.cmd`) from its
    `bin` directory is launched with the current PID (and, for jpackage, the path of the executable to restart).
    The script waits for this process to exit, overwrites the image files, and relaunches the application. The client
-   then `System.exit(0)`s. Optionally, the encrypted username/password are handed to the new process via
-   environment variables so the user does not have to log in again.
+   then `System.exit(0)`s. Optionally, the encrypted username/password are handed to the new process via a
+   temporary file only the user can access, whose path is passed in the environment, so the user does not have to
+   log in again.
 
 ---
 
@@ -371,14 +382,17 @@ Further hardening:
   is a record without a field for it, so this takes an application-specific request type, annotated with
   `@TripPreAuth`, and a service contract of its own.
 - **Keep the image private.** Whoever gets the ZIP gets the key. Protect the download URL with signed or short-lived
-  CDN URLs, by authentication, or by a mirror that is reachable only through the company VPN.
+  CDN URLs, by authentication, or by a mirror that is reachable only through the company VPN. The client keeps such
+  a URL's token out of its log (see *UpdateInfo* above).
 - **Use a transport of its own for the update service**, on a port of its own and with a key of its own, apart from
   the transport of the application server. A leaked update key then reaches only the update check, which the
   pre-authentication policy confines.
 - **Authenticate the server.** The client downloads the URL and runs the script the server names, so whoever can
   impersonate the update server can run code on the client. The SHA-256 checksum detects a tampered download, but
   not a forged `UpdateInfo`, since the checksum comes from the same reply. With `tripe`, impersonating the server
-  takes the pre-shared key, which is one more reason to keep it out of reach. With TLS, put a long-lived, private CA
+  takes the pre-shared key, which is one more reason to keep it out of reach. The client refuses the plain `trip`
+  and `tripc` transports for the update service, which authenticate nobody (see *ClientUpdateUtilities* above).
+  With TLS, put a long-lived, private CA
   into the client's truststore rather than the server certificate itself, so that renewing the server certificate
   does not lock out the outdated clients.
 - **Restrict the network.** A firewall or VPN that admits only known networks to the update port keeps most

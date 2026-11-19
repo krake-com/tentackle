@@ -482,6 +482,27 @@ launch LoginApplication
               └─ controllers use Rdc / GuiProvider to search, view and edit PDOs
 ```
 
+### Restart credentials
+
+`LoginApplication.createSessionInfo()` takes the username and password from the command line, the backend
+properties or — if neither provides a username — from the previous instance of the application, in that order.
+The latter is how a client restarted by the [auto-update](../../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)
+logs in without asking the user again.
+
+[`RestartCredentials`](../java/org/tentackle/fx/rdc/app/RestartCredentials.java) implements that hand-off. It
+requires a [`Cryptor`](../../../../tentackle-common/src/main/docs/cryptor.md):
+
+- The old instance writes the encrypted credentials to a new file in the temporary directory that only the current
+  user can access, and passes just the file's path in the environment variable `<APP>_CREDENTIALS` (`<APP>` is the
+  application name reduced to ASCII letters and digits, in upper case).
+- The new instance reads the file in `updateSessionInfoFromEnvironment(...)` and deletes it. A path outside the
+  temporary directory, a file not named like a credentials file of the application, a symbolic link, or a file
+  older than `RestartCredentials.MAX_AGE` (5 minutes) is never read.
+- Each start also deletes an unread file passed to it and any stale credentials files of the application left
+  behind by a restart that never happened.
+
+Since the `Cryptor`'s key ships with the client, its encryption does not protect them from whoever gets hold of the variable.
+
 ---
 
 ## Security and administration

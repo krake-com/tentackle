@@ -28,6 +28,7 @@ import org.tentackle.common.TentackleRuntimeException;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -159,6 +160,30 @@ public class ClientUpdateUtilitiesTest {
     assertFalse(utilities.isUpdateableJlinkApplication());
     assertFalse(utilities.isUpdatableJPackageApplication());
     assertNull(utilities.determineJPackageRoot());
+  }
+
+  /**
+   * A jlink image or jpackage runtime only counts if the application runs from it.
+   */
+  @Test
+  public void recognizesTheRunningJavaHome() throws IOException {
+    assertTrue(utilities.isJavaHome(new File(System.getProperty("java.home"))));
+    assertFalse(utilities.isJavaHome(tempDir.toFile()));
+    assertFalse(utilities.isJavaHome(tempDir.resolve("missing").toFile()));
+  }
+
+  /**
+   * The update service tells the client what to download and run, so it must be authenticated.
+   */
+  @Test
+  public void allowsOnlyTransportsThatAuthenticateTheServer() {
+    for (String scheme : List.of("tripe", "tripce", "trips", "tripcs", "tripq", "tripcq", "tripj", "tripcj")) {
+      assertTrue(utilities.isTransportAllowed(URI.create(scheme + "://localhost:1/Update")), scheme);
+    }
+    for (String scheme : List.of("trip", "tripc", "TRIP")) {
+      assertFalse(utilities.isTransportAllowed(URI.create(scheme + "://localhost:1/Update")), scheme);
+    }
+    assertFalse(utilities.isTransportAllowed(URI.create("/Update")));
   }
 
 
