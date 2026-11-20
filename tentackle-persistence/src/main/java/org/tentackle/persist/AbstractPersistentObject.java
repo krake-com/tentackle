@@ -957,7 +957,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   @Override
   public void setDomainContext(DomainContext context)  {
-    if (getDomainContext() != context) {
+    DomainContext oldContext = getDomainContext();
+    if (oldContext != context) {
       Objects.requireNonNull(context, "context");
       assertDomainContextMutable();
       if (isRootEntity()) {
@@ -965,7 +966,17 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         setSessionHolder(context.getRootContext(pdo));
       }
       else  {
-        setSessionHolder(context);
+        if (isNew() || oldContext == null || oldContext.getRootId() == 0 ||
+            oldContext.getRootId() == context.getRootId() &&
+            oldContext.getRootClassId() == context.getRootClassId()) {
+          setSessionHolder(context);
+        }
+        else {
+          throw new PersistenceException(
+            this, "component already belongs to root entity " +
+                  oldContext.getRootClassId() + ":" + oldContext.getRootId() + ", cannot be moved to " +
+                  context.getRootClassId() + ":" + context.getRootId());
+        }
       }
       determineContextId();
     }

@@ -1864,11 +1864,11 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Saves this object.<br>
-   * This is the standard method applications should use to insert or update
-   * objects.<br>
    * If the ID is 0, a new ID is obtained and this object inserted.
    * Otherwise, this object is updated.
    * The modified attribute gets cleared if save() was successful.
+   * <p>
+   * Applications must not use this method for PDOs! Use {@code save()} instead.
    */
   @SuppressWarnings("unchecked")
   public void saveObject ()  {
@@ -1918,6 +1918,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Persists this object and returns it.
+   * <p>
+   * Applications must not use this method for PDOs! Use {@code persist()} instead.
    *
    * @return the persisted object, a new instance if remote, never null
    */
@@ -1971,6 +1973,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * A removed object will also get the modified attribute set by definition,
    * because it {@link #isNew} again.<br>
    * It is also verified that the object {@link #isPersistable} and is not new.
+   * <p>
+   * Applications must not use this method for PDOs! Use {@code delete()} instead.
    *
    * @throws PersistenceException if the object is new or not persistable
    * @throws NotFoundException if the object is not in the database or its serial is outdated

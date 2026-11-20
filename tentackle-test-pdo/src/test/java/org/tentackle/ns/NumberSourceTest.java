@@ -27,6 +27,7 @@ import org.tentackle.ns.pdo.NumberRange;
 import org.tentackle.pdo.PdoMember;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.testng.AbstractPdoTest;
+import org.tentackle.session.PersistenceException;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -185,6 +186,62 @@ public class NumberSourceTest extends AbstractPdoTest {
     assertEquals(ranges.length, 1);
     assertEquals(ranges[0].begin(), 1);
     assertEquals(ranges[0].end(), 10);
+  }
+
+  /**
+   * A persisted component cannot be moved to another root entity.<br>
+   * Otherwise, persisting pool B would silently steal the range from pool A, without A's serial
+   * reflecting that its aggregate has changed.
+   */
+  @Test(groups = "local")
+  public void persistedRangeCannotBeMovedToAnotherPool() {
+    Reporter.log("NumberSourceTest.persistedRangeCannotBeMovedToAnotherPool <br>", true);
+    NumberPool poolA = createPool("poolA", true, 1, 10);
+    NumberPool poolB = createPool("poolB", true, 100, 200);
+    NumberRange rangeA = poolA.getNumberRangeList().getFirst();
+    long rangeId = rangeA.getId();
+    long rangeSerial = rangeA.getSerial();
+
+    // add the persisted component of pool A to pool B
+    poolB.getNumberRangeList().add(rangeA);
+    NumberPool pool = poolB;
+    PersistenceException px = expectThrows(PersistenceException.class, pool::persist);
+    assertTrue(px.getMessage().contains("component already belongs to root entity"), px.getMessage());
+
+    // the range is unchanged and still belongs to A
+    assertEquals(rangeA.getNumberPoolId(), poolA.getId());
+    assertEquals(rangeA.getSerial(), rangeSerial);
+
+    // nothing changed in the database
+    NumberPool reloadedA = on(NumberPool.class).select(poolA.getId());
+    NumberPool reloadedB = on(NumberPool.class).select(poolB.getId());
+    assertEquals(reloadedA.getNumberRangeList().size(), 1);
+    assertEquals(reloadedA.getNumberRangeList().getFirst().getId(), rangeId);
+    assertEquals(reloadedB.getNumberRangeList().size(), 1);
+    assertTrue(reloadedB.getNumberRangeList().stream().noneMatch(r -> r.getId() == rangeId));
+  }
+
+  /**
+   * A component that has not been persisted yet belongs to no root entity in the database,
+   * hence it may be moved to another root.
+   */
+  @Test(groups = "local")
+  public void newRangeCanBeMovedToAnotherPool() {
+    Reporter.log("NumberSourceTest.newRangeCanBeMovedToAnotherPool <br>", true);
+    NumberPool poolA = createPool("newPoolA", true, 1, 10);
+    NumberPool poolB = createPool("newPoolB", true, 100, 200);
+
+    // created in the root context of pool A, but added to pool B
+    NumberRange range = poolA.on(NumberRange.class);
+    range.setBegin(300);
+    range.setEnd(400);
+    poolB.getNumberRangeList().add(range);
+    poolB = poolB.persist();
+
+    assertFalse(range.isNew());
+    assertEquals(range.getNumberPoolId(), poolB.getId());
+    assertEquals(on(NumberPool.class).select(poolA.getId()).getNumberRangeList().size(), 1);
+    assertEquals(on(NumberPool.class).select(poolB.getId()).getNumberRangeList().size(), 2);
   }
 
 }

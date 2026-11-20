@@ -20,6 +20,8 @@ package org.tentackle.persist;
 
 import org.tentackle.pdo.PersistentObject;
 
+import java.util.List;
+
 /**
  * Persistence interface of {@link DemoEntity}.
  */
@@ -38,5 +40,16 @@ public interface DemoEntityPersistence extends PersistentObject<DemoEntity> {
    * @param name the name
    */
   void setName(String name);
+
+  /**
+   * Gets the components of this aggregate.<br>
+   * Loaded lazily from the database, if not new.
+   * <p>
+   * Components are persisted only along with their root entity, i.e., by adding them to this list
+   * and persisting the root.
+   *
+   * @return the components, never null
+   */
+  List<DemoComponent> getComponentList();
 
 }
