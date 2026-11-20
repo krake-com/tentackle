@@ -22,7 +22,6 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
-import org.tentackle.session.LoginFailedException;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -43,6 +42,8 @@ import java.util.Objects;
 public class DefaultAuthenticationManager implements AuthenticationManager {
 
   private static final Logger LOGGER = Logger.get(DefaultAuthenticationManager.class);
+
+  public static final String LOGIN_REFUSED = "login refused";
 
   private final List<AuthenticationProvider> providers;    // the provider chain, in evaluation order, immutable
 
@@ -133,13 +134,21 @@ public class DefaultAuthenticationManager implements AuthenticationManager {
 
     if (authentication == null) {
       // don't log the credentials, they may contain the secret
-      throw new AuthenticationException("no authentication provider accepted the " +
-                                        credentials.getScheme() + " credentials");
+      LOGGER.info("no authentication provider accepted the {0} credentials", credentials.getScheme());
+      throw new AuthenticationException(LOGIN_REFUSED);
     }
 
     if (authentication instanceof DefaultAuthentication defaultAuthentication &&
         defaultAuthentication.getProviderName() == null) {
       defaultAuthentication.setProviderName(authenticatingProvider.getName());
+    }
+
+    String name = authentication.getName();
+    if (name == null || name.isBlank()) {
+      // the session's username would otherwise remain the one claimed by the client
+      LOGGER.warning("{0} authenticated the {1} credentials without a principal name",
+                     authenticatingProvider.getName(), credentials.getScheme());
+      throw new AuthenticationException(LOGIN_REFUSED);
     }
 
     resolveUser(authentication);
@@ -153,6 +162,9 @@ public class DefaultAuthenticationManager implements AuthenticationManager {
    * <p>
    * Providers that know the application's user (such as a password provider that looked it up
    * anyway) set the ids themselves. For all others the application's {@link UserResolver} is applied.
+   * <p>
+   * The reason of a refusal is logged, but not told to the client: it would learn that its credentials
+   * are valid.
    *
    * @param authentication the proven identity
    */
@@ -160,13 +172,15 @@ public class DefaultAuthenticationManager implements AuthenticationManager {
     if (authentication.getUserId() == 0) {
       UserResolver userResolver = UserResolver.getInstance();
       if (userResolver == null) {
-        throw new AuthenticationException(
-            "authenticated by " + authentication.getProviderName() +
-            ", but the user is unknown and no UserResolver is configured");
+        LOGGER.warning("{0} authenticated {1}, but the user is unknown and no UserResolver is configured",
+                       authentication.getProviderName(), authentication.getName());
+        throw new AuthenticationException(LOGIN_REFUSED);
       }
       userResolver.resolveUser(authentication);
       if (authentication.getUserId() == 0) {
-        throw new LoginFailedException("no user for authenticated principal");
+        LOGGER.info("no user for principal {0} authenticated by {1}",
+                    authentication.getName(), authentication.getProviderName());
+        throw new AuthenticationException(LOGIN_REFUSED);
       }
     }
   }
