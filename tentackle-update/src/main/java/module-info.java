@@ -31,7 +31,7 @@ module org.tentackle.update {
 
   requires transitive org.tentackle.core;
 
-  requires java.net.http;
+  requires transitive java.net.http;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.update.service.Hook;
 
