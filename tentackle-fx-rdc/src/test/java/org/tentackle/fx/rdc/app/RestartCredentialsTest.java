@@ -49,7 +49,7 @@ import static org.testng.Assert.assertTrue;
 /**
  * Tests the hand-off of the credentials to a restarted client.
  */
-@SuppressWarnings("missing-explicit-ctor")
+@SuppressWarnings({ "missing-explicit-ctor", "exports" })
 public class RestartCredentialsTest {
 
   private final Cryptor cryptor = new Cryptor("restart-credentials-salt", "restart-credentials-passphrase");
