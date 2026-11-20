@@ -23,6 +23,7 @@ import org.testng.annotations.Test;
 import org.tentackle.pdo.DefaultDomainContext;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PdoListener;
 import org.tentackle.pdo.testng.AbstractPdoTest;
 import org.tentackle.security.pdo.Security;
 import org.tentackle.security.permissions.ExecutePermission;
@@ -30,10 +31,13 @@ import org.tentackle.security.permissions.ReadPermission;
 import org.tentackle.security.permissions.ViewPermission;
 import org.tentackle.security.permissions.WritePermission;
 import org.tentackle.session.DefaultSessionInfo;
+import org.tentackle.session.ModificationEvent;
+import org.tentackle.session.ModificationListener;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 
 import java.io.Serial;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -323,6 +327,53 @@ public class DefaultSecurityManagerDbTest extends AbstractPdoTest {
       assertEquals(rule.getObjectId(), 0);
       assertEquals(rule.getObjectClassId(), 0);
       assertNull(rule.getObject());
+    }
+    finally {
+      Pdo.getCache(Security.class).invalidate();
+    }
+  }
+
+  /**
+   * An invalidation while the rules are being loaded must not get lost.
+   * Otherwise, a rule modified during the load would be ignored until the next modification.
+   */
+  @Test(groups = "local")
+  public void invalidationDuringLoadIsNotLost() {
+    try {
+      AtomicInteger loads = new AtomicInteger();
+      DefaultSecurityManager manager = new DefaultSecurityManager() {
+
+        @Override
+        protected Security createSecurityInstance(DomainContext context) {
+          if (loads.incrementAndGet() == 1) {
+            invalidate();   // as if the listener fired while the rules are being loaded
+          }
+          return super.createSecurityInstance(context);
+        }
+
+        @Override
+        protected ModificationListener createModificationListener() {
+          // ignore modifications from other tests: only the invalidation above counts
+          return new PdoListener(Security.class) {
+            @Override
+            public void dataChanged(ModificationEvent ev) {
+              // nothing to do
+            }
+          };
+        }
+      };
+      manager.setEnabled(true);
+
+      DomainContext context = new UserContext(getSession());
+      Permission read = SecurityFactory.getInstance().getReadPermission();
+      int classId = on(Security.class).getClassId();
+
+      manager.evaluate(context, read, classId, 0);
+      assertEquals(loads.get(), 1);
+      manager.evaluate(context, read, classId, 0);
+      assertEquals(loads.get(), 2, "invalidation during load lost");
+      manager.evaluate(context, read, classId, 0);
+      assertEquals(loads.get(), 2, "reloaded without invalidation");
     }
     finally {
       Pdo.getCache(Security.class).invalidate();

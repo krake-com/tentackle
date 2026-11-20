@@ -40,6 +40,7 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * An ACL-based SecurityManager.
@@ -379,6 +380,7 @@ public class DefaultSecurityManager implements SecurityManager {
   private volatile TreeMap<PdoClassKey,Rule> pdoClassMap;     // pdo class-only rules (immutable map once created)
 
   private volatile boolean invalid;                           // true if cache needs initialization
+  private final AtomicLong invalidations = new AtomicLong();  // counts invalidate() calls to detect them during initialize()
   private volatile boolean enabled;                           // true if security manager is enabled
   private volatile boolean acceptByDefault;                   // true if isAccepted() by default
   private ModificationListener securityListener;              // the listener to invalidate the security manager
@@ -412,6 +414,7 @@ public class DefaultSecurityManager implements SecurityManager {
 
   @Override
   public void invalidate() {
+    invalidations.incrementAndGet();    // count first: see initialize()
     invalid = true;
   }
 
@@ -755,11 +758,17 @@ public class DefaultSecurityManager implements SecurityManager {
 
   /**
    * Initializes the security manager.
+   * <p>
+   * If the manager is invalidated while the rules are being loaded, it remains invalid,
+   * and the rules are reloaded on the next request.
    *
    * @param session the session to load the security rules
    */
   protected synchronized void initialize(Session session) {
     if (invalid) {    // double check (invalid is volatile)
+
+      // invalidations from now on may not be reflected by the loaded rules and require another reload
+      long invalidationsBefore = invalidations.get();
 
       // new instances to allow walking along the subMap during init (see evaluateImpl above)
       TreeMap<ClassKey, Rule> newClassMap = new TreeMap<>();
@@ -789,13 +798,18 @@ public class DefaultSecurityManager implements SecurityManager {
         ModificationTracker.getInstance().addModificationListener(securityListener);
       }
 
-      // switch to new maps, "invalid" flag cleared below!
+      // switch to new maps, "invalid" flag cleared below, unless invalidated meanwhile!
       classMap = newClassMap;
       pdoMap = newPdoMap;
       pdoClassMap = newPdoClassMap;
       granteeMap.clear();
 
+      // Clear the flag first, then check the counter, whereas invalidate() increments the counter first,
+      // then sets the flag. Hence, no invalidation since invalidationsBefore can get lost.
       invalid = false;
+      if (invalidations.get() != invalidationsBefore) {
+        invalid = true;     // rules modified while being loaded: reload on next request
+      }
 
       LOGGER.fine("security manager initialized");
     }
