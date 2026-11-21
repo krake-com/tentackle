@@ -821,6 +821,37 @@ delayed until the component values are known, which restricts how far a componen
 back to its own object — see
 [delayed construction and back-references](reflect.md#delayed-construction-and-back-references).
 
+#### `@TripShallowHash`
+
+Declares that the `hashCode` and `equals` of a class don't depend on the objects its instances refer to,
+for example because they compare an ID only. The [hash guard](#hashed-values) then treats such an object
+as a leaf: it may be back-referenced within a hash key or set element, and its contents are not part of
+the hashed value. Hash sets and maps within its contents are still guarded on their own.
+
+```java
+@TripShallowHash
+public class Customer {
+  private long id;
+  private Customer parent;          // may back-reference anything, even within a hash set
+  private List<Address> addresses;
+
+  @Override
+  public final int hashCode() {
+    return Long.hashCode(id);
+  }
+
+  @Override
+  public final boolean equals(Object obj) {
+    return obj instanceof Customer other && other.id == id;
+  }
+}
+```
+
+The contract is security-relevant: if `hashCode` or `equals` traverse the referenced objects nevertheless,
+the guard is bypassed. Make both methods final, as `AbstractDbObject` does. Annotated at an
+`InvocationHandler`, it applies to the dynamic proxies of that handler. The `PdoInvocationHandler` is
+annotated this way, because the hash code of a PDO depends on its class and ID only.
+
 #### `@TripSerializeLambda`
 
 By default, TRIP refuses to serialize lambdas, because serializing them would drag in the entire
@@ -1399,15 +1430,20 @@ The value is then a tree, and hashing it takes time linear in the size of the me
   unless the map itself is a hashed value.
 - **Back-references allowed within a hashed value** are the values shareable before the login (`String`,
   numbers, `Boolean`, `Character`, enums, `UUID`, `Locale`, `TimeZone`, `Class`, dates and times), arrays, and
-  objects inheriting both `hashCode` and `equals` from `Object`. Dynamic proxies are not, since their handler
-  decides. A set that contains itself, directly or via other containers, is refused as well: its hash code
-  would overflow the stack.
+  objects inheriting both `hashCode` and `equals` from `Object`, and objects annotated with
+  [`@TripShallowHash`](#tripshallowhash). Dynamic proxies are not, since their handler decides, unless the
+  handler is annotated with `@TripShallowHash`. A set that contains itself, directly or via other containers,
+  is refused as well: its hash code would overflow the stack.
+- **The contents of a `@TripShallowHash` object** are not part of the hashed value, since its hash code
+  doesn't depend on them. This applies to PDOs: their hash code depends on the class and ID only. Hence,
+  the removed components of a `TrackedList`, which are kept in a hash set, may refer to their root entity
+  and share the domain context. Hash sets and maps within the contents are guarded on their own.
 
 A violation throws a `TripPolicyViolationException`. The server logs it and answers with a deserialization error,
 and the client gets the exception with the reason. The guard applies to every TRIP stream, so to responses
 received by the client as well. It costs nothing unless a back-reference is read within a hashed value.
 
-Tentackle keeps PDOs out of hash sets and maps for good reasons (see
+Apart from the removed objects of a `TrackedList`, Tentackle keeps PDOs out of hash sets and maps for good reasons (see
 [object identity](../../../../tentackle-pdo/src/main/docs/pdo.md#object-identity--equals-hashcode-and-why-relations-are-lists)),
 so a legitimate graph rarely triggers the guard. If one does, it shares a mutable object within a hash key, which
 breaks the set or map as soon as that object changes. Prefer immutable keys. As a last resort, and only if all

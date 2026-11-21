@@ -20,6 +20,8 @@ package org.tentackle.trip;
 
 import org.testng.annotations.Test;
 
+import org.tentackle.misc.TrackedArrayList;
+import org.tentackle.misc.TrackedList;
 import org.tentackle.trip.impl.DefaultTripStream;
 import org.tentackle.trip.impl.EchoTransceiver;
 
@@ -58,6 +60,31 @@ public class HashGuardTest {
 
   /** A record whose hash code depends on its component. */
   public record Holder(Object value) {}
+
+  /** An entity hashed and compared by its ID, whatever it refers to. */
+  @TripShallowHash
+  public static class Entity {
+    public long id;
+    public Object ref;
+
+    public Entity() {
+    }
+
+    Entity(long id, Object ref) {
+      this.id = id;
+      this.ref = ref;
+    }
+
+    @Override
+    public final int hashCode() {
+      return Long.hashCode(id);
+    }
+
+    @Override
+    public final boolean equals(Object obj) {
+      return obj != null && obj.getClass() == getClass() && ((Entity) obj).id == id;
+    }
+  }
 
 
   /**
@@ -248,6 +275,70 @@ public class HashGuardTest {
     assertSame(result.get(1), result.get(0));
     assertSame(((Map<?, ?>) result.get(3)).get("b"), result.get(0));
     assertSame(((Map<?, ?>) result.get(2)).keySet().iterator().next(), result.get(0));
+  }
+
+  @Test
+  void testShallowHashedContentsMayBeShared() {
+    // the hash code of an entity does not depend on what it refers to
+    List<String> shared = new ArrayList<>(List.of("a", "b"));
+    Set<Object> set = new HashSet<>();
+    set.add(new Entity(1, shared));
+    set.add(new Entity(2, new ArrayList<>(List.of(shared, shared))));
+    List<Object> result = echo(new ArrayList<>(List.of(shared, set)));
+    for (Object element : (Set<?>) result.get(1)) {
+      Entity entity = (Entity) element;
+      Object ref = entity.id == 1 ? entity.ref : ((List<?>) entity.ref).get(1);
+      assertSame(ref, result.get(0));
+    }
+  }
+
+  @Test
+  void testShallowHashedObjectMayBeBackReferenced() {
+    Entity entity = new Entity(1, new ArrayList<>(List.of("a")));
+    Set<Object> set = new HashSet<>();
+    set.add(new Holder(entity));
+    set.add(entity);
+    List<Object> result = echo(new ArrayList<>(List.of(entity, set)));
+    assertEquals(((Set<?>) result.get(1)).size(), 2);
+    for (Object element : (Set<?>) result.get(1)) {
+      assertSame(element instanceof Holder holder ? holder.value() : element, result.get(0));
+    }
+  }
+
+  @Test(timeOut = 10000)
+  void testHashedValueWithinShallowHashedIsGuarded() {
+    // the contents of an entity are not hashed by the outer set, but a set within them is still guarded
+    List<Object> bomb = fanOut(3, 1000);
+    List<Object> element = new ArrayList<>();
+    Set<Object> inner = new HashSet<>();
+    inner.add(element);   // still empty: hashed cheaply
+    element.add(bomb);
+    Set<Object> outer = new HashSet<>();
+    outer.add(new Entity(1, new ArrayList<>(List.of(bomb, inner))));
+    assertRefused(outer);
+  }
+
+  @Test
+  void testTrackedListWithShallowHashedRemovedObjects() {
+    // the removed objects of a tracked list are a hash set
+    List<String> shared = new ArrayList<>(List.of("a"));
+    TrackedList<Entity> list = new TrackedArrayList<>();
+    list.add(new Entity(1, shared));
+    list.add(new Entity(2, shared));
+    list.remove(1);
+    List<Object> result = echo(new ArrayList<>(List.of(shared, list)));
+    TrackedList<Entity> resultList = (TrackedList<Entity>) result.get(1);
+    assertSame(resultList.getFirst().ref, result.get(0));
+    assertEquals(resultList.getRemovedObjects().size(), 1);
+    Entity removed = resultList.getRemovedObjects().iterator().next();
+    assertEquals(removed.id, 2);
+    assertSame(removed.ref, result.get(0));
+
+    // without the annotation, the removed objects are hashed including their contents
+    TrackedList<Object> holderList = new TrackedArrayList<>();
+    holderList.add(new Holder(shared));
+    holderList.remove(0);
+    assertRefused(new ArrayList<>(List.of(shared, holderList)));
   }
 
   @Test

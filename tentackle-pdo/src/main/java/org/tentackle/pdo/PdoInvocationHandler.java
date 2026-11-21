@@ -29,6 +29,7 @@ import org.tentackle.reflect.InterceptableMethodInvoker;
 import org.tentackle.reflect.Mixin;
 import org.tentackle.session.Session;
 import org.tentackle.trip.TripReferencable;
+import org.tentackle.trip.TripShallowHash;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -46,6 +47,7 @@ import java.util.List;
  * @author harald
  */
 @TripReferencable(TripReferencable.NEVER)
+@TripShallowHash    // equals and hashCode are mapped to the persistence delegate, which is an AppDbObject
 public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implements InvocationHandler, Serializable {
 
   @Serial

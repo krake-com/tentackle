@@ -36,6 +36,7 @@ import org.tentackle.session.SessionDependable;
 import org.tentackle.session.SessionHolder;
 import org.tentackle.sql.Backend;
 import org.tentackle.trip.TripSerializable;
+import org.tentackle.trip.TripShallowHash;
 
 import java.io.Serial;
 import java.lang.reflect.InvocationTargetException;
@@ -71,6 +72,7 @@ import static org.tentackle.sql.Backend.SQL_WHEREALL;
  * @param <P> the persistent class type
  */
 @TripSerializable(validate = "clearFromThisJVM")
+@TripShallowHash    // hashCode and equals are final and depend on the class and ID only
 public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
        implements Immutable, SerialNumbered, SessionDependable, Comparable<P> {
 

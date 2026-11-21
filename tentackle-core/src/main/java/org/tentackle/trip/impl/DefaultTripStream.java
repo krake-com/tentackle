@@ -37,6 +37,7 @@ import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripFilter;
 import org.tentackle.trip.TripPolicyViolationException;
 import org.tentackle.trip.TripRuntimeException;
+import org.tentackle.trip.TripShallowHash;
 import org.tentackle.trip.TripStream;
 import org.tentackle.trip.TripStreamClosedException;
 import org.tentackle.trip.TripType;
@@ -109,6 +110,35 @@ public class DefaultTripStream implements TripStream {
       }
     }
   };
+
+  /**
+   * Tells whether the hash codes of the instances of a class do not depend on the objects they refer to.
+   */
+  private static final ClassValue<Boolean> SHALLOW_HASHED = new ClassValue<>() {
+    @Override
+    protected Boolean computeValue(Class<?> clazz) {
+      return clazz.isAnnotationPresent(TripShallowHash.class);
+    }
+  };
+
+  /**
+   * Returns whether the hash code of an object does not depend on the objects it refers to.<br>
+   * This is the case if its class is annotated with {@link TripShallowHash}, or, for a dynamic proxy,
+   * the class of its invocation handler.
+   *
+   * @param object the object, null if none
+   * @return true if shallow hashed
+   */
+  public static boolean isShallowHashed(Object object) {
+    if (object == null) {
+      return false;
+    }
+    Class<?> clazz = object.getClass();
+    if (Proxy.isProxyClass(clazz)) {
+      clazz = Proxy.getInvocationHandler(object).getClass();
+    }
+    return SHALLOW_HASHED.get(clazz);
+  }
 
   /**
    * Returns whether back-references within hashed values are restricted (see {@link #isHashShareable(Object)}).
@@ -545,6 +575,18 @@ public class DefaultTripStream implements TripStream {
   }
 
   @Override
+  public int suspendHashed() {
+    int suspended = hashed;
+    hashed = 0;
+    return suspended;
+  }
+
+  @Override
+  public void resumeHashed(int hashed) {
+    this.hashed = hashed;
+  }
+
+  @Override
   public void writeComponentOrdinal(int ordinal) {
     if (ordinal >= Short.MIN_VALUE && ordinal <= Short.MAX_VALUE) {
       if (ordinal >= Byte.MIN_VALUE && ordinal <= Byte.MAX_VALUE) {
@@ -833,8 +875,9 @@ public class DefaultTripStream implements TripStream {
   /**
    * Returns whether an object received before may be referenced again within a hashed value.<br>
    * Besides the {@link #isShareable(Object) shareable} values, these are the objects whose hash code
-   * does not depend on other objects: arrays and objects inheriting {@code hashCode} and {@code equals}
-   * from {@link Object}. Dynamic proxies are not, since their handler decides.
+   * does not depend on other objects: arrays, objects inheriting {@code hashCode} and {@code equals}
+   * from {@link Object} and objects annotated with {@link TripShallowHash}. Dynamic proxies are not,
+   * unless their invocation handler is annotated with {@link TripShallowHash}, since the handler decides.
    *
    * @param object the referenced object, null if not completely read yet
    * @return true if allowed
@@ -842,7 +885,8 @@ public class DefaultTripStream implements TripStream {
    */
   protected boolean isHashShareable(Object object) {
     return isShareable(object) ||
-           object != null && (object.getClass().isArray() || IDENTITY_HASHED.get(object.getClass()));
+           object != null && (object.getClass().isArray() || IDENTITY_HASHED.get(object.getClass()) ||
+                              isShallowHashed(object));
   }
 
   /**

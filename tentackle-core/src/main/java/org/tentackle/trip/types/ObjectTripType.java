@@ -29,6 +29,7 @@ import org.tentackle.trip.TripFilter;
 import org.tentackle.trip.TripInstanceCreator;
 import org.tentackle.trip.TripInstantiationException;
 import org.tentackle.trip.TripRuntimeException;
+import org.tentackle.trip.TripShallowHash;
 import org.tentackle.trip.TripStream;
 import org.tentackle.trip.TripTypeCategory;
 import org.tentackle.trip.impl.DefaultOpCode;
@@ -131,6 +132,7 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
   private final Member[] canonicalMembers;
   private final ReflectionHelper.CanonicalBuilderInfo canonicalBuilderInfo;
   private final boolean delayedConstruction;
+  private final boolean shallowHashed;    // hash code does not depend on the components (see TripShallowHash)
 
   /**
    * The canonical constructor's arguments at their default value, cloned per read.<br>
@@ -159,6 +161,7 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
     canonicalMembers = createCanonicalMembers(canonicalConstructor);
     canonicalBuilderInfo = ReflectionHelper.getCanonicalBuilderInfo(clazz);
     delayedConstruction = canonicalConstructor != null || canonicalBuilderInfo != null;
+    shallowHashed = clazz.isAnnotationPresent(TripShallowHash.class);
     components = createComponents(createInitializedDefault());
     canonicalArgDefaults = canonicalConstructor == null ? null : createCanonicalArgDefaults();
     canonicalIndexByOrdinal = canonicalConstructor == null ? null : createCanonicalIndexByOrdinal();
@@ -488,6 +491,8 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
     }
 
     stream.enterNested();
+    // the hash code does not depend on the components: they are not part of an enclosing hashed value
+    int suspendedHashed = shallowHashed ? stream.suspendHashed() : 0;
     try {
       int lastOrdinal = -1;
       while (opCode != DefaultOpCode.END) {
@@ -560,6 +565,9 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
       }
     }
     finally {
+      if (shallowHashed) {
+        stream.resumeHashed(suspendedHashed);
+      }
       stream.leaveNested();
     }
 

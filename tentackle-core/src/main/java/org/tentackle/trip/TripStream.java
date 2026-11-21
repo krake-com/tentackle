@@ -232,7 +232,8 @@ public interface TripStream {
    * <p>
    * Within a hashed value, back-references are refused unless they refer to an object whose hash code
    * does not depend on other objects, such as a {@code String}, a number, an enum, a {@code UUID}, an
-   * array or an object inheriting {@code hashCode} and {@code equals} from {@link Object}. Otherwise, a
+   * array, an object inheriting {@code hashCode} and {@code equals} from {@link Object} or an object
+   * annotated with {@link TripShallowHash}. Otherwise, a
    * few kilobytes of containers sharing each other make computing the hash code take forever, whatever
    * the nesting depth. This applies to authenticated clients as well.
    */
@@ -244,6 +245,24 @@ public interface TripStream {
    * @see #enterHashed()
    */
   void leaveHashed();
+
+  /**
+   * Suspends the hashed values entered so far while reading.<br>
+   * Used while reading the contents of an object whose hash code does not depend on them
+   * (see {@link TripShallowHash}). Hashed values entered within are guarded on their own.<br>
+   * Must be paired with {@link #resumeHashed(int)} in a {@code finally} block.
+   *
+   * @return the state to pass to {@link #resumeHashed(int)}
+   * @see #enterHashed()
+   */
+  int suspendHashed();
+
+  /**
+   * Resumes the hashed values suspended by {@link #suspendHashed()}.
+   *
+   * @param hashed the state returned by {@link #suspendHashed()}
+   */
+  void resumeHashed(int hashed);
 
   /**
    * Writes a component ordinal to the stream.

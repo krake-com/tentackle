@@ -323,6 +323,7 @@ topic-grouped listing of every document, see the
 - **Transports (pluggable)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md), [QUIC on quiche](../../../tentackle-quiche/src/main/docs/quiche.md)
 - **Two-phase commit (XA)** — [Global Transactions — JTA and XA](../../../tentackle-jta/src/main/docs/jta.md)
 - **TripFilter (skipping components, PDOs without components)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#filtering-components-with-tripfilter)
+- **TripShallowHash (objects hashed by ID, hash guard)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#tripshallowhash)
 - **TRIP (remote invocation protocol)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md), [QUIC on quiche](../../../tentackle-quiche/src/main/docs/quiche.md), [Migrate from RMI to TRIP](./migrate_rmi_trip.md)
 - **TCP transport parameters (connection pool, backlog, compression)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#transport)
 - **Testing across JVMs (`ServerProcessWrapper`)** — [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md#client-server-tests-across-jvms-serverprocesswrapper)
