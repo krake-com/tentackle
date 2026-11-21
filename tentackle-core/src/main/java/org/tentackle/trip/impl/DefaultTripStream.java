@@ -21,6 +21,7 @@ package org.tentackle.trip.impl;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Holder;
+import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.Dictionary;
@@ -384,7 +385,7 @@ public class DefaultTripStream implements TripStream {
       // depends on other objects, the hashed value is a tree bounded by the size of the message.
       Object object = reference.getObject();
       throw new TripPolicyViolationException("back-reference to " +
-                                             (object == null ? "an incomplete object" : object.getClass().getName()) +
+                                             (object == null ? "an incomplete object" : EffectiveClassProvider.getEffectiveClass(object)) +
                                              " within a hashed value");
     }
     if (readPolicy != null && !isShareable(reference.getObject())) {

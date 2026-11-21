@@ -18,6 +18,7 @@
 
 package org.tentackle.trip.types;
 
+import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.Serializer;
@@ -132,7 +133,7 @@ public class EnumMapTripType<T extends EnumMap> extends MapTripType<T> {
       Object object = is.readObject();
       if (!(object instanceof EnumMap<?, ?> map) || !map.isEmpty()) {
         throw new TripPolicyViolationException("serialized empty enum map expected, got " +
-                                               (object == null ? "null" : object.getClass().getName()));
+                                               (object == null ? "null" : EffectiveClassProvider.getEffectiveClass(object)));
       }
       data.drain();   // nothing left, unless the map was written with trailing data
       return new MapHeader<>(size, (T) map);
