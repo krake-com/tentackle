@@ -966,8 +966,10 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         setSessionHolder(context.getRootContext(pdo));
       }
       else  {
-        if (isNew() || oldContext == null || oldContext.getRootId() == 0 ||
-            oldContext.getRootId() == context.getRootId() &&
+        if (isNew() ||                                            // not persisted so far
+            oldContext == null || oldContext.getRootId() == 0 ||  // not set at all
+            context.getRootId() == 0 ||                           // clear (e.g. stored in PdoCache)
+            oldContext.getRootId() == context.getRootId() &&      // same root
             oldContext.getRootClassId() == context.getRootClassId()) {
           setSessionHolder(context);
         }
