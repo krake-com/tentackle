@@ -368,6 +368,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   private AuthenticationContext authenticationContext;        // the context of the authentication, null if not authenticated yet
   private final AtomicBoolean modificationTrackerSession;     // true if this the remote ModificationTracker's session
   private volatile boolean privilegedSession;                 // true if access to internal tables is allowed
+  private volatile boolean serverSession;                     // true if this a a remote server session
   private final Queue<MasterSerialEvent> masterSerialEvents;  // master serial event queue
   private final AtomicReference<Thread> invokingThread;       // the thread invoking a delegate method, null if none
   private int invocationDepth;                                // nested invocations (accessed by the invoking thread only)
@@ -878,6 +879,28 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   }
 
   /**
+   * Returns whether this is a remove server session.<br>
+   * Server sessions must be able to be grouped with other remote client sessions.
+   * How a server session is identified is application specific.
+   *
+   * @return true if this is a server session
+   */
+  public boolean isServerSession() {
+    return serverSession;
+  }
+
+  /**
+   * Sets whether this is a remove server session.<br>
+   * How a server session is identified is application specific
+   * and usually determined in {@link #verifySessionInfo(SessionInfo)}.
+   *
+   * @param serverSession true if this is a server session
+   */
+  public void setServerSession(boolean serverSession) {
+    this.serverSession = serverSession;
+  }
+
+  /**
    * Determines whether the client may access the persisted preferences of a user.
    * <p>
    * Invoked by the remote delegate of the {@link org.tentackle.dbms.prefs.DbPreferencesOperation}.
@@ -1260,7 +1283,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    * @return true if allowed
    */
   protected boolean isGroupingAllowed(RemoteDbSessionImpl other) {
-    if (other == this) {
+    if (other == this || other.isServerSession()) {
       return true;
     }
     SessionInfo otherInfo = other.getClientSessionInfo();
