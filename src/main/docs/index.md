@@ -127,7 +127,7 @@ topic-grouped listing of every document, see the
 
 - **H2 (backend peculiarities, test database)** — [The H2 Backend](../../../tentackle-sql/src/main/docs/h2.md), [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md)
 - **Hash guard (hash bombs, back-references within hash keys and set elements)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#hashed-values)
-- **History (origins, milestones, the move to GitHub)** — [The History of Tentackle](./history.md)
+- **History (origins, milestones, the move to GitHub)** — [The History of Tentackle](../../../HISTORY.md)
 - **Hotfix releases (partial publishing, `tentackle.plugin.version`)** — [Tentackle BOM](../../../tentackle-bom/src/main/docs/bom.md#hotfix-releases)
 - **Host name verification (`hostcheck`, TLS)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#ssltls-configuration), [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md#client-side), [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md#client-side)
 
@@ -340,7 +340,7 @@ topic-grouped listing of every document, see the
 
 - **Validation** — [Validation](../../../tentackle-core/src/main/docs/validation.md), [CompoundValue](../../../tentackle-core/src/main/docs/compound-value.md), [Check Maven Plugin](../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md), [InteractiveError](../../../tentackle-fx/src/main/docs/interactive-error.md) (showing results in the UI)
 - **Version negotiation (QUIC)** — [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md#server-side)
-- **Version numbering (Java LTS prefix, release lines)** — [The History of Tentackle](./history.md#the-version-scheme)
+- **Version numbering (Java LTS prefix, release lines)** — [The History of Tentackle](../../../HISTORY.md#the-version-scheme)
 - **View-modified tracking (dirty forms, `Ctrl-Z`)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#view-modified-tracking)
 
 ## W

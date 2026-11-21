@@ -171,7 +171,7 @@ the [Index](./index.md).
 
 ## About
 
-- [The History of Tentackle](./history.md) — where Tentackle comes from, why it looks the way it does, and the milestones from 2001 to the move to GitHub.
+- [The History of Tentackle](../../../HISTORY.md) — where Tentackle comes from, why it looks the way it does, and the milestones from 2001 to the move to GitHub.
 
 
 ---

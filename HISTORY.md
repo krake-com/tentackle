@@ -19,13 +19,13 @@ Those applications share a common profile:
   public internet. Their users are employees, not anonymous visitors.
 - **Mostly desktop, not web.** An in-house application can rely on a rich desktop client talking
   to its own server tier, instead of being squeezed through a browser. This is why Tentackle cares
-  about the desktop ([JavaFX](../../../tentackle-fx-rdc/src/main/docs/rdc.md)) while most of the Java
+  about the desktop ([JavaFX](tentackle-fx-rdc/src/main/docs/rdc.md)) while most of the Java
   world moved to the web.
 - **Technical, scientific, and business.** Many of them are technical and scientific applications
   with complex domain logic (see
-  [Why Tentackle Fits Technical and Scientific Applications](./technical-scientific.md)). But there are
+  [Why Tentackle Fits Technical and Scientific Applications](src/main/docs/technical-scientific.md)). But there are
   also business applications serving many hundreds of concurrent users — which is where the
-  [multi-tier cascade](./tiers.md) and the always-on [locking](../../../tentackle-persistence/src/main/docs/locking.md)
+  [multi-tier cascade](src/main/docs/tiers.md) and the always-on [locking](tentackle-persistence/src/main/docs/locking.md)
   pay off.
 
 ## Objects, not data
@@ -36,7 +36,7 @@ became plain data holders (the
 service layer, and the network carries data — JSON, DTOs, rows. That works well for applications that
 mostly send and receive data. Applications with complex domain logic, however, benefit from a rich
 domain model, where objects carry state *and* behavior, inheritance and polymorphism just work, and
-any method can be invoked at any time (see [PDOs vs. Traditional ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)).
+any method can be invoked at any time (see [PDOs vs. Traditional ORMs](tentackle-pdo/src/main/docs/pdo-vs-orm.md)).
 
 Two influences shaped this mindset:
 
@@ -44,14 +44,14 @@ Two influences shaped this mindset:
   usable. Java is not Smalltalk, of course, and Tentackle persists to relational databases rather than
   to an image. But with Java interfaces, the persistence implementation can be hidden from the domain
   logic almost entirely: in Tentackle, entities *are* just interfaces, and their domain and persistence
-  implementations are injected at runtime (see [PDO](../../../tentackle-pdo/src/main/docs/pdo.md)).
+  implementations are injected at runtime (see [PDO](tentackle-pdo/src/main/docs/pdo.md)).
 - **[Domain-Driven Design](https://en.wikipedia.org/wiki/Domain-driven_design)** — aggregates, root
   entities, and components are first-class citizens. Components are persisted only via their root,
   and components accessed outside their root's domain context are made immutable to uncover
-  programming errors as early as possible (see [Correctness First](./correctness-first.md)).
+  programming errors as early as possible (see [Correctness First](src/main/docs/correctness-first.md)).
 
 The object orientation reaches all the way down to the wire. Because Tentackle sends real objects
-between JVMs and not just data, its remoting protocol [TRIP](../../../tentackle-core/src/main/docs/trip.md#design-principles)
+between JVMs and not just data, its remoting protocol [TRIP](tentackle-core/src/main/docs/trip.md#design-principles)
 is optimized for **directed cyclic graphs**: shared references and cycles survive the trip, so the
 receiver gets the same object graph the sender had — not a flattened copy that has to be stitched
 together again.
@@ -67,9 +67,9 @@ The public git history starts in January 2016 with release **2.0.0**. At that po
 already contained the building blocks that still define it today:
 
 - the PDO programming model with separate domain and persistence layers,
-- the model DSL and the [wurblets](../../../tentackle-wurblets/src/main/docs/wurblets.md) generating
+- the model DSL and the [wurblets](tentackle-wurblets/src/main/docs/wurblets.md) generating
   code via the [Wurbelizer](https://wurbelizer.org/),
-- the SQL backend abstraction and the [SQL maven plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md),
+- the SQL backend abstraction and the [SQL maven plugin](tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md),
 - remoting hidden from the domain layer,
 - a rich desktop client framework in two flavors: Swing (`tentackle-swing-rdc`, with several
   look-and-feel modules) and JavaFX (`tentackle-fx-rdc`),
@@ -86,11 +86,11 @@ generate, migrate, check, package, and update an application.
 - **2016-01** — 2.0.0 is released. Development switches to git-flow, and the artifacts are published
   to [Maven Central](https://central.sonatype.com/namespace/org.tentackle) via Sonatype OSSRH.
 - **2016-04** — database-backed resource bundles move into the new
-  [`tentackle-i18n`](../../../tentackle-i18n/src/main/docs/i18n.md) module, together with the
-  [i18n maven plugin](../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md).
-- **2016-09** — the [`tentackle-bom`](../../../tentackle-bom/src/main/docs/bom.md) is added.
+  [`tentackle-i18n`](tentackle-i18n/src/main/docs/i18n.md) module, together with the
+  [i18n maven plugin](tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md).
+- **2016-09** — the [`tentackle-bom`](tentackle-bom/src/main/docs/bom.md) is added.
 - **2017-03** — transaction savepoints.
-- **2017-04** — the [OSGi](../../../tentackle-osgi/src/main/docs/osgi.md) subproject wraps the
+- **2017-04** — the [OSGi](tentackle-osgi/src/main/docs/osgi.md) subproject wraps the
   runtime modules into bundles.
 - **2017-07** — components loaded outside the domain context of their root entity become immutable.
 - **2017-11** — the monolithic `tentackle-all` test module is split into `tentackle-test-pdo` and
@@ -101,7 +101,7 @@ generate, migrate, check, package, and update an application.
 - **2017-12** — the migration to Java 9 begins.
 - **2018-01/02** — the Swing modules move to a legacy subproject and are then removed from the main
   line. They live on in the `java8` branch; from now on, the desktop client is JavaFX only.
-- **2018-02** — every module gets a `module-info.java` (see [Tentackle Modules](./modules.md));
+- **2018-02** — every module gets a `module-info.java` (see [Tentackle Modules](src/main/docs/modules.md));
   `finalize()` is replaced by the `Cleaner` API, logging uses the `StackWalker`, and a Log4j 2
   provider is added.
 - **2018-11** — Nashorn is removed, so there is no default scripting language anymore.
@@ -112,14 +112,14 @@ generate, migrate, check, package, and update an application.
 The framework grows a set of maven plugins that take care of the repetitive parts of a project:
 
 - **2018-08** — the first working PDO and operation wizards
-  ([`tentackle-wizard-maven-plugin`](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md)).
-- **2019-01** — the [jlink plugin](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md)
+  ([`tentackle-wizard-maven-plugin`](tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md)).
+- **2019-01** — the [jlink plugin](tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md)
   creates self-contained runtime images.
-- **2019-06** — the [auto-update](../../../tentackle-update/src/main/docs/update.md) feature for
+- **2019-06** — the [auto-update](tentackle-update/src/main/docs/update.md) feature for
   desktop clients.
-- **2019-07** — the [project archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md)
+- **2019-07** — the [project archetype](tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md)
   scaffolds a complete multi-tier application.
-- **2019-08** — [JSR-223 scripting](../../../tentackle-script-jsr/src/main/docs/jsr.md) in its own
+- **2019-08** — [JSR-223 scripting](tentackle-script-jsr/src/main/docs/jsr.md) in its own
   module, including GraalVM languages.
 - **2020-07/08** — migration hints for renaming and dropping tables and columns in the SQL plugin.
 - **2020-08** — `jpackage` support produces native installers.
@@ -159,24 +159,24 @@ their own branches (`java8`, `java11`, `java17`, `java21`).
 The move to Java 25 started the most extensive overhaul in the project's history:
 
 - **2026-01** — **TRIP**, the Tentackle Remote Invocation Protocol, replaces Java RMI and Java object
-  serialization, including a QUIC transport based on KWIK (see [TRIP](../../../tentackle-core/src/main/docs/trip.md),
-  [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md), and
-  [Migrate from RMI to TRIP](./migrate_rmi_trip.md)). 25.17.0.0 is released.
-- **2026-02/03** — [AtlantaFX](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md) themes give
+  serialization, including a QUIC transport based on KWIK (see [TRIP](tentackle-core/src/main/docs/trip.md),
+  [TRIP over QUIC](tentackle-quic/src/main/docs/quic.md), and
+  [Migrate from RMI to TRIP](src/main/docs/migrate_rmi_trip.md)). 25.17.0.0 is released.
+- **2026-02/03** — [AtlantaFX](tentackle-fx-atlanta/src/main/docs/atlanta.md) themes give
   the desktop client, the wizards, and the archetype a modern look.
 - **2026-04 to 07** — batch modes for the wizard goals make them usable from the command line and by
-  coding agents; the [`tentackle-pdo-mock`](../../../tentackle-pdo-mock/src/main/docs/pdo-mock.md)
+  coding agents; the [`tentackle-pdo-mock`](tentackle-pdo-mock/src/main/docs/pdo-mock.md)
   module enables database-less unit tests of the domain logic.
 - **2026-06** — the documentation set and the website (see [below](#2026-documentation-with-the-help-of-ai)).
-- **2026-08** — the [MCP server](../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md)
-  serves the model to coding agents (see [AI Agent Tooling Support](./ai-agents.md)). The tests
+- **2026-08** — the [MCP server](tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md)
+  serves the model to coding agents (see [AI Agent Tooling Support](src/main/docs/ai-agents.md)). The tests
   switch from PostgreSQL to H2, so the whole reactor builds without a database.
-  [`tentackle-quiche`](../../../tentackle-quiche/src/main/docs/quiche.md) adds a second QUIC
+  [`tentackle-quiche`](tentackle-quiche/src/main/docs/quiche.md) adds a second QUIC
   transport, binding Cloudflare quiche via the JDK's FFM API.
-- **2026-09** — [isolated module layers](../../../tentackle-common/src/main/docs/layers.md),
-  [JTA/XA](../../../tentackle-jta/src/main/docs/jta.md) support for global transactions, and a
-  [keyring API](../../../tentackle-core/src/main/docs/keyring.md) with
-  [platform-specific keyrings](../../../tentackle-keyring/src/main/docs/platform-keyring.md).
+- **2026-09** — [isolated module layers](tentackle-common/src/main/docs/layers.md),
+  [JTA/XA](tentackle-jta/src/main/docs/jta.md) support for global transactions, and a
+  [keyring API](tentackle-core/src/main/docs/keyring.md) with
+  [platform-specific keyrings](tentackle-keyring/src/main/docs/platform-keyring.md).
 
 ## A low profile
 
@@ -186,7 +186,7 @@ documentation beyond the Javadoc and a thin wiki.
 
 For a mainstream framework, that would be a nuisance. For Tentackle, it was a showstopper. Tentackle
 is radically different from the Java mainstream — it is *Java outside the box* (see
-[What a Seasoned Java Developer Would Not Expect](./unexpected.md)). Its concepts cannot be guessed
+[What a Seasoned Java Developer Would Not Expect](src/main/docs/unexpected.md)). Its concepts cannot be guessed
 from the experience with other frameworks, and nobody can be expected to reverse-engineer them from
 the code. Writing that documentation, however, would have taken years alongside the actual project
 work. So Tentackle stayed what it had always been: a tool for those who already knew it.
@@ -201,14 +201,14 @@ such a short timeframe.
 The numbers speak for themselves: the reactor now holds about 120 markdown documents with roughly
 300,000 words, all of them added between March and October 2026 — more than half of them in June
 alone. Along the way, the old wiki was imported, the README became the public
-overview ("Why Tentackle?"), the [Quickstart](./quickstart.md), the [Table of Contents](./toc.md) and
-the [Index](./index.md) were added, and the website at [tentackle.org](https://tentackle.org/) is now
+overview ("Why Tentackle?"), the [Quickstart](src/main/docs/quickstart.md), the [Table of Contents](src/main/docs/toc.md) and
+the [Index](src/main/docs/index.md) were added, and the website at [tentackle.org](https://tentackle.org/) is now
 built from the same markdown files with MkDocs. In October 2026, the Java comments and markdown docs
 were reviewed and streamlined module by module.
 
 The collaboration went both ways: the same period gave Tentackle tooling made for AI agents — the
 MCP model server and the headless batch modes of the wizard goals (see
-[AI Agent Tooling Support](./ai-agents.md)).
+[AI Agent Tooling Support](src/main/docs/ai-agents.md)).
 
 ## Moving to GitHub (October 2026)
 
@@ -228,9 +228,9 @@ Technologies came and went — Swing, RMI, Nashorn, Java 8. The ideas behind Ten
 
 ## See also
 
-- [Correctness First](./correctness-first.md) — the design philosophy.
-- [What a Seasoned Java Developer Would Not Expect](./unexpected.md) — where Tentackle deviates from
+- [Correctness First](src/main/docs/correctness-first.md) — the design philosophy.
+- [What a Seasoned Java Developer Would Not Expect](src/main/docs/unexpected.md) — where Tentackle deviates from
   the mainstream.
-- [Location Transparency vs. REST, RMI and Spring Remoting](./remoting-comparison.md) — why TRIP
+- [Location Transparency vs. REST, RMI and Spring Remoting](src/main/docs/remoting-comparison.md) — why TRIP
   replaced RMI.
-- [Tentackle Modules](./modules.md) — how the full stack is layered today.
+- [Tentackle Modules](src/main/docs/modules.md) — how the full stack is layered today.

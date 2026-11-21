@@ -5,7 +5,7 @@ All notable changes to Tentackle are documented in this file. It covers every ta
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The entries are
 curated highlights, not a complete list of commits — refer to the git history for every detail.
-For the story behind the releases, see [The History of Tentackle](src/main/docs/history.md).
+For the story behind the releases, see [The History of Tentackle](HISTORY.md).
 
 ## Versioning
 
@@ -1506,7 +1506,7 @@ Java 8 maintenance release with backports from 2.2.
 ### [2.0.0] – 2016-01-09
 
 The first release in the public git history.
-For what it already contained, see [The History of Tentackle](src/main/docs/history.md#origins-20012015).
+For what it already contained, see [The History of Tentackle](HISTORY.md#origins-20012015).
 
 [Unreleased]: https://github.com/krake-com/tentackle/compare/25.20.1.1...develop
 [25.20.1.1]: https://github.com/krake-com/tentackle/releases/tag/25.20.1.1
