@@ -1271,6 +1271,19 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   }
 
   /**
+   * Returns whether this is the main remote middle tier server session
+   * and the incoming client session belongs to that remote server.<br>
+   * The default implementation only checks {@link #isServerSession()}.
+   * Should be overridden by subclasses to restrict remote access further.
+   *
+   * @param clientSession the incoming new client session
+   * @return true if belongs to this remote server
+   */
+  protected boolean isServerSessionFor(RemoteDbSessionImpl clientSession) {
+    return isServerSession();
+  }
+
+  /**
    * Determines whether the client may group this session with another remote session.
    * <p>
    * When a session of a group dies within a transaction, all sessions of the group are closed.
@@ -1283,7 +1296,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    * @return true if allowed
    */
   protected boolean isGroupingAllowed(RemoteDbSessionImpl other) {
-    if (other == this || other.isServerSession()) {
+    if (other == this || other.isServerSessionFor(this)) {
       return true;
     }
     SessionInfo otherInfo = other.getClientSessionInfo();
