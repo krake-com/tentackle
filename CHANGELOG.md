@@ -32,6 +32,11 @@ requires Java 11.
 
 ## [Unreleased]
 
+
+## Java 25 line (25.x)
+
+### [25.21.0.0] – 2026-11-24
+
 ### Added
 
 - TRIP: a new `PreAuthenticationPolicy` restricts what a server accepts from a client that has not logged in yet.
@@ -85,7 +90,6 @@ requires Java 11.
 ### Changed
 
 - KWIK was upgraded from 0.12.2 to 0.12.3, which adds client connection migration.
-
 - Applications that subclass `SessionInfo` or `Credentials` must annotate the subclass with `@TripPreAuth("login")`,
   or the login is refused (or set `preauth=off`).
 - A TRIP server refuses dictionary entries with permanent ordinals from its clients, which only ever send temporary
@@ -136,7 +140,6 @@ requires Java 11.
   session closed along with the client's own hanging transaction.
 - With a `MultiUserDbPool` (cascaded servers), the server's backend properties were copied into the client's
   session info, which `RemoteDbSession.getClientSessionInfo` returns to the client.
-
 - TRIP: `Binary`, `TBinary`, `@TripViaJOS` objects, large `BigDecimal`s and empty `EnumMap`s are read while
   their data arrives instead of being allocated with the length announced ahead of it. A forged length no longer
   allocates up to 2 GiB per value, and receiving a binary no longer copies it through an intermediate array.
@@ -160,15 +163,13 @@ requires Java 11.
   exceeding the limit fails before reading, and the bytes actually read are counted as well. A new overload takes
   an explicit limit. The update service reads a checksum file of at most 64 KiB.
 
-
-## Java 25 line (25.x)
-
 ### [25.20.1.1] – 2026-11-12
 
 Hotfix for `tentackle-fx`:
 - Auto-completion popup fails to show when application-specific CSS is applied.
 
 See [Tentackle BOM](https://tentackle.org/bom/) for how to use hotfix releases.
+
 
 ### [25.20.1.0] – 2026-11-11
 
@@ -1508,7 +1509,8 @@ Java 8 maintenance release with backports from 2.2.
 The first release in the public git history.
 For what it already contained, see [The History of Tentackle](HISTORY.md#origins-20012015).
 
-[Unreleased]: https://github.com/krake-com/tentackle/compare/25.20.1.1...develop
+[Unreleased]: https://github.com/krake-com/tentackle/compare/25.21.0.0...develop
+[25.21.0.0]: https://github.com/krake-com/tentackle/releases/tag/25.21.0.0
 [25.20.1.1]: https://github.com/krake-com/tentackle/releases/tag/25.20.1.1
 [25.20.1.0]: https://github.com/krake-com/tentackle/releases/tag/25.20.1.0
 [25.20.0.0]: https://github.com/krake-com/tentackle/releases/tag/25.20.0.0

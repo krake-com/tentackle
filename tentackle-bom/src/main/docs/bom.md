@@ -40,8 +40,8 @@ the BOM and `tentackle.plugin.version` for the plugins (see [below](#versioning-
 
 ```xml
 <properties>
-  <tentackle.version>25.20.1.0</tentackle.version>
-  <tentackle.plugin.version>25.20.1.0</tentackle.plugin.version>
+  <tentackle.version>25.21.0.0</tentackle.version>
+  <tentackle.plugin.version>25.21.0.0</tentackle.plugin.version>
 </properties>
 
 <dependencyManagement>
