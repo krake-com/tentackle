@@ -80,7 +80,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    */
   private static final String TRACKER_NAME = "preferences";
 
-  private static final long WRITE_LOCK_POLL_MS = 100;   // interval to check whether the write lock's transaction has ended
+  private static final long WRITE_LOCK_POLL_MS = 100;         // interval to check whether the write lock's transaction has ended
   private static final long WRITE_LOCK_MAX_WAIT_MS = 60000;   // max. time to wait for the write lock
 
   private static final String TEMP_SESSION_NAME = "PRFTMP";   // temporary session name for fallback
@@ -128,7 +128,6 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
       return Objects.equals(this.path, other.path);
     }
   }
-
 
 
   /**
@@ -181,11 +180,6 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   private long writeOwnerTxNumber;          // the owner's transaction holding the write lock until it ends, 0 if none (guarded by writeLock)
   private int writeHoldCount;               // number of nested acquisitions in progress by the owner (guarded by writeLock)
 
-  private final Object scheduleLock = new Object();   // guards the scheduled update
-  private boolean updateScheduled;          // true if the update thread is running
-  private long scheduledNodeMaxSerial;      // node serial to update the repository to, 0 if none
-  private long scheduledKeyMaxSerial;       // key serial to update the repository to, 0 if none
-
 
   /**
    * Creates the factory.
@@ -196,45 +190,47 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     prefListeners = new HashMap<>();
     autoSync = true;
 
-    Db db = requestDb(false, false);
+    // The updates triggered by the listener always runs within the tracker's thread.
+    // This is tolerable because they are usually small and fast.
+    Db db = requestDb(false);
     try {
       if (db.isRemote()) {
         nodeTableSerial = ModificationTracker.getInstance().getIdSerialForName(TRACKER_NAME).getSerial();
         keyTableSerial = 0;
         ModificationTracker.getInstance().addModificationListener(
-                new ModificationListenerAdapter(TRACKER_NAME) {
+          new ModificationListenerAdapter(TRACKER_NAME) {
 
-          @Override
-          public void dataChanged(ModificationEvent ev) {
-            if (isAutoSync()) {
-              scheduleUpdate(ev.getSerial(), 0);
+            @Override
+            public void dataChanged(ModificationEvent ev) {
+              if (isAutoSync()) {
+                updateRepository((Db) ev.getSession(), ev.getSerial(), 0);
+              }
             }
-          }
-        });
+          });
       }
       else {
         nodeTableSerial = new DbPreferencesNode(db).getModificationCount();
         keyTableSerial = new DbPreferencesKey(db).getModificationCount();
         ModificationTracker.getInstance().addModificationListener(
-                new ModificationListenerAdapter(DbPreferencesNode.CLASSVARIABLES.tableName, DbPreferencesKey.CLASSVARIABLES.tableName) {
+          new ModificationListenerAdapter(DbPreferencesNode.CLASSVARIABLES.tableName, DbPreferencesKey.CLASSVARIABLES.tableName) {
 
-          @Override
-          public void dataChanged(ModificationEvent ev) {
-            long nodeMaxSerial = 0;
-            long keyMaxSerial = 0;
-            for (ModificationEventDetail detail : ev.getDetails()) {
-              if (DbPreferencesNode.CLASSVARIABLES.tableName.equals(detail.getName())) {
-                nodeMaxSerial = detail.getSerial();
+            @Override
+            public void dataChanged(ModificationEvent ev) {
+              long nodeMaxSerial = 0;
+              long keyMaxSerial = 0;
+              for (ModificationEventDetail detail : ev.getDetails()) {
+                if (DbPreferencesNode.CLASSVARIABLES.tableName.equals(detail.getName())) {
+                  nodeMaxSerial = detail.getSerial();
+                }
+                else if (DbPreferencesKey.CLASSVARIABLES.tableName.equals(detail.getName())) {
+                  keyMaxSerial = detail.getSerial();
+                }
               }
-              else if (DbPreferencesKey.CLASSVARIABLES.tableName.equals(detail.getName())) {
-                keyMaxSerial = detail.getSerial();
+              if (isAutoSync()) {
+                updateRepository((Db) ev.getSession(), nodeMaxSerial, keyMaxSerial);
               }
             }
-            if (isAutoSync()) {
-              scheduleUpdate(nodeMaxSerial, keyMaxSerial);
-            }
-          }
-        });
+          });
       }
     }
     finally {
@@ -307,7 +303,6 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     return getRootTree(null, getUserName());
   }
 
-
   /**
    * Gets the current serial version of given user- or system root.
    *
@@ -332,7 +327,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    */
   public synchronized void addPreferenceChangeListener(DbPreferences node, PreferenceChangeListener pcl) {
     ListenerKey lk = new ListenerKey(node);
-    Set<PreferenceChangeListener> listeners = prefListeners.computeIfAbsent(lk, k -> new HashSet<>());
+    Set<PreferenceChangeListener> listeners = prefListeners.computeIfAbsent(lk, _ -> new HashSet<>());
     listeners.add(pcl);
   }
 
@@ -365,7 +360,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    */
   public synchronized void addNodeChangeListener(DbPreferences node, NodeChangeListener ncl) {
     ListenerKey lk = new ListenerKey(node);
-    Set<NodeChangeListener> listeners = nodeListeners.computeIfAbsent(lk, k -> new HashSet<>());
+    Set<NodeChangeListener> listeners = nodeListeners.computeIfAbsent(lk, _ -> new HashSet<>());
     listeners.add(ncl);
   }
 
@@ -431,6 +426,211 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   }
 
   /**
+   * Flushes a node and all of its sub-nodes to the backing store.
+   * <p>
+   * The change listeners are invoked once the flush completed, without holding the monitor of this factory.
+   * If the flush fails, they are not invoked at all.
+   * <p>
+   * If the session is running a transaction, the flush joins it and the modified rows stay locked in the database
+   * until the transaction ends. So does the write lock of this factory, see {@link #acquireWriteLock(Db)}.
+   *
+   * @param node the preferences node
+   * @param sync true if load modifications from storage before flush
+   * @throws BackingStoreException if failed
+   */
+  public void flush(DbPreferences node, boolean sync) throws BackingStoreException {
+    Db db = requestDb(true);
+    try {
+      boolean locked;
+      try {
+        locked = acquireWriteLock(db);
+      }
+      catch (RuntimeException rex) {
+        throw new BackingStoreException(rex);
+      }
+      try {
+        flushSynchronized(db, node, sync);
+      }
+      finally {
+        if (locked) {
+          releaseWriteLock(db);
+        }
+      }
+    }
+    finally {
+      releaseDb(db);
+      firePendingEvents();
+    }
+  }
+
+  /**
+   * Gets the root node for given user and all of its sub-nodes and keys at once.
+   *
+   * @param db the optional db, null if request a db temporarily
+   * @param user the username, null or empty if system user
+   * @return the root node, never null
+   */
+  public synchronized DbPreferences getRootTree(Db db, String user) {
+    String key = user == null ? "" : user;
+    Root root = roots.get(key);
+    if (root == null) {
+      boolean needRelease = false;
+      if (db == null) {
+        db = requestDb(false);
+        needRelease = true;
+      }
+      try {
+        root = new Root(new DbPreferencesOperation(db).loadRootTree(user, !db.isRemote()));
+        roots.put(key, root);
+      }
+      finally {
+        if (needRelease) {
+          releaseDb(db);
+        }
+      }
+    }
+    return root.node;
+  }
+
+  /**
+   * Checks all preferences and tries to fix if possible.<br>
+   * The method is provided since {@link DbPreferencesNode} and {@link DbPreferencesKey} provide no referential integrity
+   * via database-enforced foreign keys, but only at application level.<br>
+   * Invoke this method, whenever the database has been modified manually via SQL.
+   *
+   * @param db the session (must be local)
+   */
+  public void checkAllPreferences(Db db) {
+    db.assertNotRemote();   // must be a direct JDBC link
+    db.transaction(() -> {
+      Map<Long, DbPreferencesNode> nodeMap = new HashMap<>();   // map ID:Node
+      Set<DbPreferencesNode> processedNodes = new HashSet<>();  // already processed nodes
+      Collection<DbPreferencesNode> allNodes = new DbPreferencesNode(db).selectAllObjects();
+      Collection<DbPreferencesKey> allKeys = new DbPreferencesKey(db).selectAllObjects();
+      LOGGER.info("processing {0} nodes and {1} keys", allNodes.size(), allKeys.size());
+      for (DbPreferencesNode node : allNodes) {
+        nodeMap.put(node.getId(), node);
+      }
+      processPreferences(processedNodes, nodeMap, allKeys);
+      allNodes.removeAll(processedNodes);
+      for (DbPreferencesNode node: allNodes) {
+        LOGGER.severe("orphan node found: {0}", node);
+      }
+      for (DbPreferencesKey key: allKeys) {
+        LOGGER.severe("orphan key found: {0}", key);
+      }
+      return null;
+    });
+  }
+
+
+  /**
+   * Returns the absolute path name of the node corresponding to the package of the specified object.
+   *
+   * @param clazz the class
+   * @return the path name
+   * @throws IllegalArgumentException if the package has no preferences node associated with it
+   */
+  protected String nodeName(Class<?> clazz) {
+    if (clazz.isArray()) {
+      throw new IllegalArgumentException("Arrays have no associated preferences node");
+    }
+    return ReflectionHelper.getPackagePathName(clazz);
+  }
+
+  /**
+   * Removes a root node of given node from the repository.
+   *
+   * @param node the root node or one of its sub-nodes
+   */
+  protected synchronized void removeRoot(DbPreferences node) {
+    String user = node.getUser();
+    if (user == null) {
+      user = "";
+    }
+    roots.remove(user);
+  }
+
+  /**
+   * Updates the repository.<br>
+   * Invoked whenever the data in prefnode or prefkey has changed.
+   * <p>
+   * The change listeners are invoked once the repository is updated, without holding the monitor of this factory.
+   *
+   * @param db the session
+   * @param nodeMaxSerial the new table serial for prefnodes
+   * @param keyMaxSerial the new table serial for prefkeys
+   */
+  protected void updateRepository(Db db, long nodeMaxSerial, long keyMaxSerial) {
+    try {
+      boolean locked = acquireWriteLock(db);    // the update counts a modification in the backing store
+      try {
+        synchronized (this) {
+          int eventMark = pendingEvents.size();
+          boolean updated = false;
+          try {
+            updateRepositoryImpl(db, nodeMaxSerial, keyMaxSerial);
+            updated = true;
+          }
+          finally {
+            if (!updated) {
+              discardPendingEvents(eventMark);
+            }
+          }
+        }
+      }
+      finally {
+        if (locked) {
+          releaseWriteLock(db);
+        }
+      }
+    }
+    finally {
+      firePendingEvents();
+    }
+  }
+
+  /**
+   * Requests for a session to work with.<br>
+   * By default, the thread-local session is used.
+   * If there is no thread-local session, a session cloned from the modification tracker's session is used,
+   * see {@link #getFallbackDb()}.
+   * <p>
+   * In preparation for replication layers, a requested session must be released after use.
+   *
+   * @param forWrite true if the session is used for writing (flush), else read
+   * @return the session
+   */
+  protected Db requestDb(boolean forWrite) {
+    Db db = (Db) Session.getCurrentSession();
+    if (db == null) {
+      db = getFallbackDb();
+    }
+    return db;
+  }
+
+  /**
+   * Releases the session after use.
+   *
+   * @param db the session
+   */
+  protected void releaseDb(Db db) {
+    if (db != null && TEMP_SESSION_NAME.equals(db.getSessionInfo().getSessionName())) {
+      closeFallbackDb();
+    }
+  }
+
+  /**
+   * Gets the current username.
+   *
+   * @return the username
+   */
+  protected String getUserName() {
+    return requestDb(false).getSessionInfo().getUserName();
+  }
+
+
+  /**
    * Fires the listener invocations queued by {@link #nodeChanged} and {@link #keyChanged}.<br>
    * The listeners are invoked without holding the monitor of this factory, since they are application code.
    * A listener waiting for another thread that accesses the preferences would deadlock otherwise.
@@ -469,44 +669,6 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   private void discardPendingEvents(int mark) {
     if (pendingEvents.size() > mark) {
       pendingEvents.subList(mark, pendingEvents.size()).clear();
-    }
-  }
-
-  /**
-   * Flushes a node and all of its sub-nodes to the backing store.
-   * <p>
-   * The change listeners are invoked once the flush completed, without holding the monitor of this factory.
-   * If the flush fails, they are not invoked at all.
-   * <p>
-   * If the session is running a transaction, the flush joins it and the modified rows stay locked in the database
-   * until the transaction ends. So does the write lock of this factory, see {@link #acquireWriteLock(Db)}.
-   *
-   * @param node the preferences node
-   * @param sync true if load modifications from storage before flush
-   * @throws BackingStoreException if failed
-   */
-  public void flush(DbPreferences node, boolean sync) throws BackingStoreException {
-    Db db = requestDb(node.isUserNode(), true);
-    try {
-      boolean locked;
-      try {
-        locked = acquireWriteLock(db);
-      }
-      catch (RuntimeException rex) {
-        throw new BackingStoreException(rex);
-      }
-      try {
-        flushSynchronized(db, node, sync);
-      }
-      finally {
-        if (locked) {
-          releaseWriteLock(db);
-        }
-      }
-    }
-    finally {
-      releaseDb(db);
-      firePendingEvents();
     }
   }
 
@@ -628,197 +790,41 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   }
 
   /**
-   * Gets the root node for given user and all of its sub-nodes and keys at once.
+   * Gets a temporary session used if there is no thread-local session
+   * if there is no thread-local session.<br>
+   * We don't keep the session open, since it is only rarely used.
    *
-   * @param db the optional db, null if request a db temporarily
-   * @param user the username, null or empty if system user
-   * @return the root node, never null
+   * @return the session, never null
    */
-  public synchronized DbPreferences getRootTree(Db db, String user) {
-    String key = user == null ? "" : user;
-    Root root = roots.get(key);
-    if (root == null) {
-      boolean needRelease = false;
-      if (db == null) {
-        db = requestDb(true, false);
-        needRelease = true;
+  private synchronized Db getFallbackDb() {
+    if (fallbackDb == null) {
+      ModificationTracker tracker = ModificationTracker.getInstance();
+      Db trackerDb = (Db) tracker.getSession();
+      if (trackerDb == null) {
+        throw new PersistenceException("no session for " + tracker);
       }
-      try {
-        root = new Root(new DbPreferencesOperation(db).loadRootTree(user, !db.isRemote()));
-        roots.put(key, root);
-      }
-      finally {
-        if (needRelease) {
-          releaseDb(db);
-        }
-      }
+      fallbackDb = trackerDb.clone(TEMP_SESSION_NAME);
     }
-    return root.node;
+    return fallbackDb;
   }
 
   /**
-   * Checks all preferences and tries to fix if possible.<br>
-   * The method is provided since {@link DbPreferencesNode} and {@link DbPreferencesKey} provide no referential integrity
-   * via database-enforced foreign keys, but only at application level.<br>
-   * Invoke this method, whenever the database has been modified manually via SQL.
-   *
-   * @param db the session (must be local)
+   * Closes the fallback session, if open.
    */
-  public void checkAllPreferences(Db db) {
-    db.assertNotRemote();   // must be a direct JDBC link
-    db.transaction(() -> {
-      Map<Long, DbPreferencesNode> nodeMap = new HashMap<>();   // map ID:Node
-      Set<DbPreferencesNode> processedNodes = new HashSet<>();  // already processed nodes
-      Collection<DbPreferencesNode> allNodes = new DbPreferencesNode(db).selectAllObjects();
-      Collection<DbPreferencesKey> allKeys = new DbPreferencesKey(db).selectAllObjects();
-      LOGGER.info("processing {0} nodes and {1} keys", allNodes.size(), allKeys.size());
-      for (DbPreferencesNode node : allNodes) {
-        nodeMap.put(node.getId(), node);
-      }
-      processPreferences(processedNodes, nodeMap, allKeys);
-      allNodes.removeAll(processedNodes);
-      for (DbPreferencesNode node: allNodes) {
-        LOGGER.severe("orphan node found: {0}", node);
-      }
-      for (DbPreferencesKey key: allKeys) {
-        LOGGER.severe("orphan key found: {0}", key);
-      }
-      return null;
-    });
-  }
-
-
-  /**
-   * Returns the absolute path name of the node corresponding to the package of the specified object.
-   *
-   * @param clazz the class
-   * @return the path name
-   * @throws IllegalArgumentException if the package has no preferences node associated with it
-   */
-  protected String nodeName(Class<?> clazz) {
-    if (clazz.isArray()) {
-      throw new IllegalArgumentException("Arrays have no associated preferences node");
+  private synchronized void closeFallbackDb() {
+    if (fallbackDb != null) {
+      fallbackDb.close();
+      fallbackDb = null;
     }
-    return ReflectionHelper.getPackagePathName(clazz);
   }
 
   /**
-   * Removes a root node of given node from the repository.
-   *
-   * @param node the root node or one of its sub-nodes
-   */
-  protected synchronized void removeRoot(DbPreferences node) {
-    String user = node.getUser();
-    if (user == null) {
-      user = "";
-    }
-    roots.remove(user);
-  }
-
-  /**
-   * Updates the repository.<br>
-   * Invoked whenever the data in prefnode or prefkey has changed.
-   * <p>
-   * The change listeners are invoked once the repository is updated, without holding the monitor of this factory.
+   * Updates the repository.
    *
    * @param db the session
-   * @param nodeMaxSerial the new table serial for prefnodes
-   * @param keyMaxSerial the new table serial for prefkeys
+   * @param nodeMaxSerial the maximum serial of the nodes
+   * @param keyMaxSerial the maximum serial of the keys
    */
-  protected void updateRepository(Db db, long nodeMaxSerial, long keyMaxSerial) {
-    try {
-      boolean locked = acquireWriteLock(db);    // the update counts a modification in the backing store
-      try {
-        synchronized (this) {
-          int eventMark = pendingEvents.size();
-          boolean updated = false;
-          try {
-            updateRepositoryImpl(db, nodeMaxSerial, keyMaxSerial);
-            updated = true;
-          }
-          finally {
-            if (!updated) {
-              discardPendingEvents(eventMark);
-            }
-          }
-        }
-      }
-      finally {
-        if (locked) {
-          releaseWriteLock(db);
-        }
-      }
-    }
-    finally {
-      firePendingEvents();
-    }
-  }
-
-  /**
-   * Schedules the update of the repository on behalf of the modification tracker.
-   * <p>
-   * The repository is not updated by the tracker thread, since it must not wait for the monitor of this factory.
-   * The thread holding the monitor may wait for the tracker thread, for example to configure the modification
-   * counter in a flush, and both would wait for each other until the tracker's wait interval elapsed.
-   * Instead, the update is performed by a separate thread, using the session of {@link #requestDb(boolean, boolean)}.
-   * Updates scheduled while the thread is still running are merged.
-   *
-   * @param nodeMaxSerial the new table serial for prefnodes, 0 if unchanged
-   * @param keyMaxSerial the new table serial for prefkeys, 0 if unchanged
-   */
-  protected void scheduleUpdate(long nodeMaxSerial, long keyMaxSerial) {
-    synchronized (scheduleLock) {
-      scheduledNodeMaxSerial = Math.max(scheduledNodeMaxSerial, nodeMaxSerial);
-      scheduledKeyMaxSerial = Math.max(scheduledKeyMaxSerial, keyMaxSerial);
-      if (updateScheduled) {
-        return;   // picked up by the running thread
-      }
-      updateScheduled = true;
-    }
-    try {
-      // a platform thread: it uses the JDBC driver while holding the monitor
-      Thread.ofPlatform().daemon().name("preferences update").start(this::runScheduledUpdates);
-    }
-    catch (RuntimeException | Error ex) {
-      synchronized (scheduleLock) {
-        updateScheduled = false;
-      }
-      throw ex;
-    }
-  }
-
-  /**
-   * Performs the scheduled updates until there are no more.
-   */
-  private void runScheduledUpdates() {
-    for (;;) {
-      long nodeMaxSerial;
-      long keyMaxSerial;
-      synchronized (scheduleLock) {
-        nodeMaxSerial = scheduledNodeMaxSerial;
-        keyMaxSerial = scheduledKeyMaxSerial;
-        if (nodeMaxSerial == 0 && keyMaxSerial == 0) {
-          updateScheduled = false;
-          return;
-        }
-        scheduledNodeMaxSerial = 0;
-        scheduledKeyMaxSerial = 0;
-      }
-      try {
-        Db db = requestDb(false, false);
-        try {
-          updateRepository(db, nodeMaxSerial, keyMaxSerial);
-        }
-        finally {
-          releaseDb(db);
-        }
-      }
-      catch (RuntimeException ex) {
-        LOGGER.severe("updating the preferences repository failed", ex);
-      }
-    }
-  }
-
   private void updateRepositoryImpl(Db db, long nodeMaxSerial, long keyMaxSerial) {
     if (nodeMaxSerial != nodeTableSerial || keyMaxSerial != keyTableSerial) {
       if (db.isRemote()) {
@@ -856,7 +862,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           if (nodeExpireSet != null) {
             // figure out roots to update
             List<DbPreferencesNode> prefNodes =
-                new DbPreferencesNode(db).selectObjectsWithExpiredTableSerials(nodeTableSerial);
+              new DbPreferencesNode(db).selectObjectsWithExpiredTableSerials(nodeTableSerial);
             if (prefNodes.size() == nodeExpireSet.size()) {
               for (DbPreferencesNode prefNode : prefNodes) {
                 changedNodes.add(prefNode);
@@ -874,7 +880,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           if (!rebuildRoots && keyExpireSet != null) {
             // update keys
             List<DbPreferencesKey> prefKeys =
-                new DbPreferencesKey(db).selectObjectsWithExpiredTableSerials(keyTableSerial);
+              new DbPreferencesKey(db).selectObjectsWithExpiredTableSerials(keyTableSerial);
             if (prefKeys.size() == keyExpireSet.size()) {
               for (DbPreferencesKey prefKey : prefKeys) {
                 changedKeys.add(prefKey);
@@ -920,85 +926,6 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
       if (!db.isRemote()) {
         ModificationTracker.getInstance().countModification(db, TRACKER_NAME);
       }
-    }
-  }
-
-  /**
-   * Requests for a session to work with.<br>
-   * By default, the thread-local session is used.
-   * If there is no thread-local session, a session cloned from the modification tracker's session is used,
-   * see {@link #getFallbackDb()}.
-   * <p>
-   * In preparation for replication layers, a requested session must be released after use.
-   *
-   * @param forUser true if a user session is required (no modification tracker fallback)
-   * @param forWrite true if the session is used for writing (flush), else read
-   * @return the session
-   */
-  protected Db requestDb(boolean forUser, boolean forWrite) {
-    Db db = (Db) Session.getCurrentSession();
-    if (db == null) {
-      if (forUser) {
-        throw new PersistenceException("no thread-local session for " + Thread.currentThread());
-      }
-      db = getFallbackDb();
-    }
-    return db;
-  }
-
-  /**
-   * Releases the session after use.
-   *
-   * @param db the session
-   */
-  protected void releaseDb(Db db) {
-    if (db != null && TEMP_SESSION_NAME.equals(db.getSessionInfo().getSessionName())) {
-      closeFallbackDb();
-    }
-  }
-
-  /**
-   * Gets the current username.
-   *
-   * @return the username
-   */
-  protected String getUserName() {
-    return requestDb(true, false).getSessionInfo().getUserName();
-  }
-
-
-  /**
-   * Gets a temporary session used if there is no thread-local session.
-   * <p>
-   * The modification tracker's session cannot be used directly, since it is owned by the tracker thread.
-   * Borrowing it via {@link ModificationTracker#requestSession()} would deadlock: the tracker thread invokes
-   * the modification listener of this factory, which needs the monitor of this factory, while the borrowing
-   * thread holds the monitor and waits for the tracker. Instead, a dedicated session is cloned from the
-   * tracker's session. It is used with the monitor of this factory held only (or by the constructor,
-   * before the factory is published), and closed in {@link #releaseDb(Db)} which invokes {@link #closeFallbackDb()}.
-   * We don't keep the session open, since it is only rarely used (mostly on application startup).
-   *
-   * @return the session, never null
-   */
-  private synchronized Db getFallbackDb() {
-    if (fallbackDb == null) {
-      ModificationTracker tracker = ModificationTracker.getInstance();
-      Db trackerDb = (Db) tracker.getSession();
-      if (trackerDb == null) {
-        throw new PersistenceException("no session for " + tracker);
-      }
-      fallbackDb = trackerDb.clone(TEMP_SESSION_NAME);
-    }
-    return fallbackDb;
-  }
-
-  /**
-   * Closes the fallback session, if open.
-   */
-  private synchronized void closeFallbackDb() {
-    if (fallbackDb != null) {
-      fallbackDb.close();
-      fallbackDb = null;
     }
   }
 
