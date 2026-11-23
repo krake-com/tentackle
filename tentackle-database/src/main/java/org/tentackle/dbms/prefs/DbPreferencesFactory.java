@@ -83,6 +83,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   private static final long WRITE_LOCK_POLL_MS = 100;   // interval to check whether the write lock's transaction has ended
   private static final long WRITE_LOCK_MAX_WAIT_MS = 60000;   // max. time to wait for the write lock
 
+  private static final String TEMP_SESSION_NAME = "PRFTMP";   // temporary session name for fallback
 
   /**
    * Listeners are managed by the repository, not the nodes.
@@ -946,39 +947,14 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   }
 
   /**
-   * Gets the session used if there is no thread-local session.
-   * <p>
-   * The modification tracker's session cannot be used directly, since it is owned by the tracker thread.
-   * Borrowing it via {@link ModificationTracker#requestSession()} would deadlock: the tracker thread invokes
-   * the modification listener of this factory, which needs the monitor of this factory, while the borrowing
-   * thread holds the monitor and waits for the tracker. Instead, a dedicated session is cloned from the
-   * tracker's session. It is used with the monitor of this factory held only (or by the constructor,
-   * before the factory is published), and closed when the tracker terminates.
-   *
-   * @return the session, never null
-   */
-  private synchronized Db getFallbackDb() {
-    Db db = fallbackDb;
-    if (db == null || !db.isOpen()) {
-      ModificationTracker tracker = ModificationTracker.getInstance();
-      Db trackerDb = (Db) tracker.getSession();
-      if (trackerDb == null) {
-        throw new PersistenceException("no session for " + tracker);
-      }
-      Db clonedDb = trackerDb.clone("preferences");
-      tracker.addShutdownRunnable(clonedDb::close);
-      fallbackDb = db = clonedDb;
-    }
-    return db;
-  }
-
-  /**
    * Releases the session after use.
    *
    * @param db the session
    */
   protected void releaseDb(Db db) {
-    // default does nothing
+    if (db != null && TEMP_SESSION_NAME.equals(db.getSessionInfo().getSessionName())) {
+      closeFallbackDb();
+    }
   }
 
   /**
@@ -990,6 +966,41 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     return requestDb(true, false).getSessionInfo().getUserName();
   }
 
+
+  /**
+   * Gets a temporary session used if there is no thread-local session.
+   * <p>
+   * The modification tracker's session cannot be used directly, since it is owned by the tracker thread.
+   * Borrowing it via {@link ModificationTracker#requestSession()} would deadlock: the tracker thread invokes
+   * the modification listener of this factory, which needs the monitor of this factory, while the borrowing
+   * thread holds the monitor and waits for the tracker. Instead, a dedicated session is cloned from the
+   * tracker's session. It is used with the monitor of this factory held only (or by the constructor,
+   * before the factory is published), and closed in {@link #releaseDb(Db)} which invokes {@link #closeFallbackDb()}.
+   * We don't keep the session open, since it is only rarely used (mostly on application startup).
+   *
+   * @return the session, never null
+   */
+  private synchronized Db getFallbackDb() {
+    if (fallbackDb == null) {
+      ModificationTracker tracker = ModificationTracker.getInstance();
+      Db trackerDb = (Db) tracker.getSession();
+      if (trackerDb == null) {
+        throw new PersistenceException("no session for " + tracker);
+      }
+      fallbackDb = trackerDb.clone(TEMP_SESSION_NAME);
+    }
+    return fallbackDb;
+  }
+
+  /**
+   * Closes the fallback session, if open.
+   */
+  private synchronized void closeFallbackDb() {
+    if (fallbackDb != null) {
+      fallbackDb.close();
+      fallbackDb = null;
+    }
+  }
 
   /**
    * Rebuilds the given root from scratch.<br>
