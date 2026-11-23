@@ -21,6 +21,8 @@ package org.tentackle.common;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Arrays;
@@ -56,6 +58,11 @@ public abstract sealed class AbstractBinary<T> implements Serializable, Cloneabl
    * The minimum buffer size.
    */
   private static final int MIN_SIZE = 128;
+
+  /**
+   * The maximum buffer size (some VMs reserve header words in an array).
+   */
+  private static final int MAX_SIZE = Integer.MAX_VALUE - 8;
 
 
   /** the byte array of the serialized object. */
@@ -101,13 +108,22 @@ public abstract sealed class AbstractBinary<T> implements Serializable, Cloneabl
       if (bufSize < MIN_SIZE) {
         bufSize = INITIAL_SIZE;
       }
+      else if (bufSize > MAX_SIZE) {
+        bufSize = MAX_SIZE;
+      }
       data = new byte[bufSize];
       int count;
       while ((count = stream.read(data, length, bufSize - length)) >= 0) {
         length += count;
         if (length == bufSize) {
+          if (bufSize == MAX_SIZE) {
+            if (stream.read() < 0) {
+              break;    // fits exactly
+            }
+            throw new IOException("binary exceeds the maximum size of " + MAX_SIZE + " bytes");
+          }
           byte[] oldData = data;
-          bufSize <<= 1;    // double the buffer size
+          bufSize = (int) Math.min((long) bufSize << 1, MAX_SIZE);    // double the buffer size
           data = new byte[bufSize];
           System.arraycopy(oldData, 0, data, 0, length);
         }
@@ -180,6 +196,23 @@ public abstract sealed class AbstractBinary<T> implements Serializable, Cloneabl
       hash = h;
     }
     return hash;
+  }
+
+  /**
+   * Validates a binary read via Java Object Serialization.<br>
+   * The serialized form is not trusted: the length must not exceed the data and the hash is recomputed.
+   *
+   * @param in the object input stream
+   * @throws IOException if reading failed or the binary is inconsistent
+   * @throws ClassNotFoundException if a class could not be found
+   */
+  @Serial
+  private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+    in.defaultReadObject();
+    if (length < 0 || length > (data == null ? 0 : data.length)) {
+      throw new InvalidObjectException("invalid binary length " + length);
+    }
+    hash = null;
   }
 
   /**

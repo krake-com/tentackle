@@ -57,6 +57,9 @@ import java.util.Map;
 @TransportService(QuicTripTransport.PROTOCOL)
 public class QuicTripTransport extends AbstractTransport {
 
+  // not imported: KWIK's logger is
+  private static final org.tentackle.log.Logger LOGGER = org.tentackle.log.Logger.get(QuicTripTransport.class);
+
   /**
    * The protocol name for QUIC.
    */
@@ -108,6 +111,34 @@ public class QuicTripTransport extends AbstractTransport {
    */
   public static final int MIN_STREAM_WINDOW = 1500;
 
+  /**
+   * The default number of consecutive probe timeouts without any acknowledgment after which a client
+   * migrates its QUIC connection to a new source port, applied if the URI does not specify {@code migrate}.
+   * <p>
+   * Two is the smallest number that tells a stalled path from a single burst of losses: the first probe
+   * timeout alone fires on an ordinary lost tail, the second one means that not even the probe got through.
+   * Since the probe timeout backs off exponentially, two of them take about three times the first one,
+   * i.e., a few round trip times.
+   */
+  public static final int DEFAULT_MIGRATION_PROBE_TIMEOUTS = 2;
+
+  /**
+   * The system property KWIK's server reads to decide whether it lets clients migrate.
+   * <p>
+   * Without it, the server advertises {@code disable_active_migration} and a client cannot migrate at all.
+   * KWIK reads it when a {@link ServerConnector} is created and again for every incoming connection, so it is
+   * JVM-global. Unless set explicitly on the command line, {@link #accept()} sets it according to
+   * {@code migrate}.
+   */
+  public static final String KWIK_SERVER_MIGRATION_PROPERTY = "tech.kwik.server.connection-migration.enabled";
+
+  /**
+   * True once {@link #accept()} set {@link #KWIK_SERVER_MIGRATION_PROPERTY} itself.<br>
+   * Tells a value of our own, which a later {@code accept()} may change, from one set explicitly, which is
+   * left alone. Guarded by the class monitor.
+   */
+  private static boolean migrationPropertySetByTransport;
+
 
   private ServerConnector serverConnector;      // the running KWIK server connector, null if not accepting
   private volatile boolean accepting;           // volatile: isAccepting() is not synchronized
@@ -149,6 +180,20 @@ public class QuicTripTransport extends AbstractTransport {
       throw new TripRuntimeException(
         "keystore-file (ksfile) and certificate-alias (ksalias, or a single-entry keystore) must be specified");
     }
+
+    /*
+     * KWIK cannot ask a client for its certificate. Silently accepting clients without one would turn
+     * a security setting into a no-op, so "need" is refused. "want" is a mere offer and is ignored.
+     */
+    switch (sslParameters.getClientAuth()) {
+      case NEED -> throw new TripRuntimeException(
+        "client certificates (clientauth=need) are not supported by KWIK, use the quiche transport instead: " +
+        UriHelper.uriToSafeString(uri));
+      case WANT -> LOGGER.warning("client certificates (clientauth=want) are not supported by KWIK -> ignored: {0}",
+                                  UriHelper.uriToSafeString(uri));
+      case NONE -> { }
+    }
+
     // the key-exchange groups the server accepts, null for all groups KWIK supports
     List<NamedGroup> namedGroups;
     try {
@@ -163,6 +208,8 @@ public class QuicTripTransport extends AbstractTransport {
     ServerConnectionConfig serverConnectionConfig =
       ServerConnectionConfig.builder()
                             .maxOpenPeerInitiatedBidirectionalStreams(getMaxStreams())
+                            // validate the client's address before any connection state is kept
+                            .retryRequired(isRetryRequired())
                             // configured explicitly so that both ends agree instead of relying on
                             // the differing KWIK client- and server defaults
                             .maxIdleTimeoutInSeconds(getMaxIdleSeconds())
@@ -208,6 +255,7 @@ public class QuicTripTransport extends AbstractTransport {
       else {
         throw new TripRuntimeException("missing host in URI " + uri);
       }
+      configureServerMigration(getMigrationProbeTimeouts() > 0);
       connector = builder.build();
       connector.registerApplicationProtocol(alpnId, new QuicProtocolConnectionFactory(this));
       connector.start();
@@ -254,6 +302,22 @@ public class QuicTripTransport extends AbstractTransport {
   }
 
   /**
+   * Returns whether the server validates the address of a client before it accepts the connection.<br>
+   * The server answers the first Initial packet with a Retry carrying a token, which the client must
+   * echo (see RFC-9000, 8.1). Only then does the server keep any state for the connection and run the
+   * TLS handshake. Without it, Initial packets with spoofed source addresses make the server allocate
+   * connections and spend CPU on handshakes for addresses that never answer. It costs one round trip
+   * per connection.
+   * <p>
+   * Configured with the URI parameter {@code retry}: {@code 0} turns it off. Server only.
+   *
+   * @return true if required (default)
+   */
+  public boolean isRetryRequired() {
+    return getUriPars().getOrDefault("retry", 1) != 0;
+  }
+
+  /**
    * Gets the maximum number of concurrent peer-initiated bidirectional streams per QUIC connection.<br>
    * On the server this is the limit advertised to the clients. On the client it bounds the size of the
    * connection pool, since every pooled connection holds one stream for as long as it is in the pool
@@ -290,6 +354,47 @@ public class QuicTripTransport extends AbstractTransport {
         " from URI " + getUri());
     }
     return streamWindow;
+  }
+
+  /**
+   * Gets after how many consecutive probe timeouts without any acknowledgment a client migrates its QUIC
+   * connection to a new source port.<br>
+   * Some networks hash each flow onto one of several paths by its addresses and ports, and a flow that
+   * lands on a path that stopped delivering stays stuck there, whereas a new source port puts it onto
+   * another one. QUIC can move a connection without disturbing its streams (RFC-9000, 9).
+   * <p>
+   * On the server, only zero or not matters: {@code 0} refuses migrating clients, anything else (the
+   * default) lets them migrate, see {@link #KWIK_SERVER_MIGRATION_PROPERTY}.
+   *
+   * @return the number of probe timeouts, 0 if the client never migrates or the server refuses migrations
+   * @throws TripRuntimeException if the configured value is &lt; 0
+   */
+  public int getMigrationProbeTimeouts() {
+    int probeTimeouts = getUriPars().getOrDefault("migrate", DEFAULT_MIGRATION_PROBE_TIMEOUTS);
+    if (probeTimeouts < 0) {
+      throw new TripRuntimeException(
+        "QUIC migrate must be >= 0, got " + probeTimeouts + " from URI " + getUri());
+    }
+    return probeTimeouts;
+  }
+
+  /**
+   * Tells KWIK's server whether it lets clients migrate.<br>
+   * Sets {@link #KWIK_SERVER_MIGRATION_PROPERTY}, unless it was set explicitly, e.g. on the command line,
+   * which always wins.
+   *
+   * @param enabled true to let clients migrate
+   */
+  private static synchronized void configureServerMigration(boolean enabled) {
+    String explicit = System.getProperty(KWIK_SERVER_MIGRATION_PROPERTY);
+    if (explicit != null && !migrationPropertySetByTransport) {
+      if (Boolean.parseBoolean(explicit) != enabled) {
+        LOGGER.info("{0}={1} set explicitly: overrides migrate", KWIK_SERVER_MIGRATION_PROPERTY, explicit);
+      }
+      return;
+    }
+    System.setProperty(KWIK_SERVER_MIGRATION_PROPERTY, Boolean.toString(enabled));
+    migrationPropertySetByTransport = true;
   }
 
   /**

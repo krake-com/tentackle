@@ -82,8 +82,8 @@ public class ServiceAnalyzeHandler extends AbstractAnalyzeHandler {
       if (element.getKind().equals(ElementKind.ANNOTATION_TYPE)) {
         continue;   // ignore annotated annotations (such as in tentackle-core)
       }
-      if (element.getKind().equals(ElementKind.CLASS) ||
-          element.getKind().equals(ElementKind.INTERFACE)) {    // only annotated classes or interfaces
+      if (element.getKind().isClass() ||          // classes, enums and records
+          element.getKind().isInitializer()) {    // interfaces (annotation types are skipped above)
 
         String servicingClassName = element.toString();   // annotated class, the provider
 

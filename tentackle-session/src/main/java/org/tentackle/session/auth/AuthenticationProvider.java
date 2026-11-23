@@ -47,6 +47,11 @@ package org.tentackle.session.auth;
  * user id at zero and lets the {@link UserResolver} map the principal onto the application's
  * user entity.
  * <p>
+ * Providers that need to know more about the client than its credentials, such as the client certificate
+ * of a mutually authenticated TLS connection, override
+ * {@link #authenticate(Credentials, AuthenticationContext)} instead of {@link #authenticate(Credentials)}.
+ * See {@link AbstractCertificateAuthenticationProvider}.
+ * <p>
  * Providers are instantiated once per server and must be thread-safe.
  *
  * @author harald
@@ -68,12 +73,37 @@ public interface AuthenticationProvider {
    * Returning {@code null} abstains and lets the next provider in the chain try. Throwing an
    * {@link AuthenticationException} vetoes the login and stops the chain — use it when the
    * credentials were meant for this provider but are invalid.
+   * <p>
+   * Providers that need the {@link AuthenticationContext} override
+   * {@link #authenticate(Credentials, AuthenticationContext)} instead. The default implementation
+   * refuses the login, since the provider overrides neither method.
    *
    * @param credentials the credentials presented by the client, never null
    * @return the proven identity, null to abstain
    * @throws org.tentackle.session.LoginFailedException if the login must be refused
    */
-  Authentication authenticate(Credentials credentials);
+  default Authentication authenticate(Credentials credentials) {
+    throw new AuthenticationException(getName() + " requires an authentication context");
+  }
+
+  /**
+   * Authenticates the credentials within the context of the client's connection.
+   * <p>
+   * The context holds what the server itself knows about the client, most notably the client certificate
+   * chain the TLS handshake has verified. Unlike the credentials, which the client sends, it can be trusted
+   * as it is.
+   * <p>
+   * The semantics of the return value and of exceptions are the same as for
+   * {@link #authenticate(Credentials)}, to which the default implementation delegates.
+   *
+   * @param credentials the credentials presented by the client, never null
+   * @param context the context of the client's connection, never null
+   * @return the proven identity, null to abstain
+   * @throws org.tentackle.session.LoginFailedException if the login must be refused
+   */
+  default Authentication authenticate(Credentials credentials, AuthenticationContext context) {
+    return authenticate(credentials);
+  }
 
   /**
    * Gets the priority determining the position in the provider chain.<br>

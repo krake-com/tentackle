@@ -36,8 +36,11 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * An ACL-based SecurityManager.
@@ -53,6 +56,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * i.e., by default first the rules for the user, then the rules for all grantees.
  * Within a grantee, the rules are processed by priority (lowest first).
  * For PDOs, the rules for the object are checked before the rules for its class.
+ * <p>
+ * Checks for all instances of a PDO class ({@link #evaluateAllObjects}), as used by bulk updates
+ * or deletes by a where clause, are denied if the class rules deny or any object rule
+ * of that class denies the permission.
  *
  * @author harald
  */
@@ -373,6 +380,7 @@ public class DefaultSecurityManager implements SecurityManager {
   private volatile TreeMap<PdoClassKey,Rule> pdoClassMap;     // pdo class-only rules (immutable map once created)
 
   private volatile boolean invalid;                           // true if cache needs initialization
+  private final AtomicLong invalidations = new AtomicLong();  // counts invalidate() calls to detect them during initialize()
   private volatile boolean enabled;                           // true if security manager is enabled
   private volatile boolean acceptByDefault;                   // true if isAccepted() by default
   private ModificationListener securityListener;              // the listener to invalidate the security manager
@@ -406,6 +414,7 @@ public class DefaultSecurityManager implements SecurityManager {
 
   @Override
   public void invalidate() {
+    invalidations.incrementAndGet();    // count first: see initialize()
     invalid = true;
   }
 
@@ -451,6 +460,45 @@ public class DefaultSecurityManager implements SecurityManager {
     return result;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The permission is accepted if it is accepted at the class level and none of the
+   * instances with object rules is denied. Each such instance is evaluated exactly as
+   * {@link #evaluate(DomainContext, Permission, int, long)} would do, i.e., an object rule only
+   * denies if it is the first rule that fires for that instance.
+   */
+  @Override
+  public SecurityResult evaluateAllObjects(DomainContext context, Permission permission, int objectClassId) {
+    SecurityResult result = evaluate(context, permission, objectClassId, 0);
+    if (result.isAccepted() && isEnabled()) {
+      DomainContext sessionContext = determineSessionContext(context);
+      GranteeDescriptor sessionGrantee = determineGrantee(sessionContext);
+      if (sessionGrantee != null) {
+        ensureInitialized(sessionContext);
+        TreeMap<PdoKey, Rule> localPdoMap = pdoMap;   // determine source map only once
+        if (!localPdoMap.isEmpty()) {
+          // collect the IDs of all instances of the class with object rules for any of the grantees
+          SortedSet<Long> objectIds = new TreeSet<>();
+          for (GranteeDescriptor grantee : getGranteesToCheck(sessionContext, sessionGrantee)) {
+            for (PdoKey key : localPdoMap.subMap(
+                new PdoKey(grantee, objectClassId, Long.MIN_VALUE, Integer.MIN_VALUE, Long.MIN_VALUE), true,
+                new PdoKey(grantee, objectClassId, Long.MAX_VALUE, Integer.MAX_VALUE, Long.MAX_VALUE), true).keySet()) {
+              objectIds.add(key.objectId);
+            }
+          }
+          for (long objectId : objectIds) {
+            SecurityResult objectResult = evaluate(context, permission, objectClassId, objectId);
+            if (!objectResult.isAccepted()) {
+              return objectResult;
+            }
+          }
+        }
+      }
+    }
+    return result;
+  }
+
   @Override
   public void removeObsoleteRules(Session session) {
     long txVoucher = session.begin("removeObsoleteRules");
@@ -477,6 +525,31 @@ public class DefaultSecurityManager implements SecurityManager {
     }
   }
 
+
+  /**
+   * Determines the domain context that provides the session and the grantee.
+   * <p>
+   * If a context is given, it is returned as is.
+   * Otherwise, the permission is requested for all contexts and the root context
+   * of the current thread's session is returned.
+   * Notice that this context is only used to determine the grantee and to load the rules.
+   * The rules themselves are evaluated with no context, see
+   * {@link SecurityDomain#evaluate(DomainContext, Permission)}.
+   *
+   * @param context the domain context, null if all contexts
+   * @return the context, never null
+   * @throws SecurityException if no context is given and the current thread has no session
+   */
+  protected DomainContext determineSessionContext(DomainContext context) {
+    if (context != null) {
+      return context;
+    }
+    Session session = Session.getCurrentSession();
+    if (session == null) {
+      throw new SecurityException("no domain context and no thread-local session");
+    }
+    return Pdo.createDomainContext(session);
+  }
 
   /**
    * Determines the session grantee.
@@ -558,10 +631,6 @@ public class DefaultSecurityManager implements SecurityManager {
 
     if (isEnabled()) {
 
-      if (context == null) {
-        throw new SecurityException("invalid domain context: null");
-      }
-
       if (permission == null) {
         throw new SecurityException("invalid permission: null");
       }
@@ -574,17 +643,13 @@ public class DefaultSecurityManager implements SecurityManager {
         throw new SecurityException("no class or classId given");
       }
 
-      GranteeDescriptor sessionGrantee = determineGrantee(context);
+      DomainContext sessionContext = determineSessionContext(context);
+      GranteeDescriptor sessionGrantee = determineGrantee(sessionContext);
       if (sessionGrantee == null) {
         return noGranteeResult;
       }
 
-      if (invalid) {
-        if (context.getSession().isRemote()) {
-          createSecurityInstance(context).assertRemoteSecurityManagerInitialized();
-        }
-        initialize(context.getSession());
-      }
+      ensureInitialized(sessionContext);
 
       // determine source map only once (must not change during loop below)
       TreeMap<PdoKey, Rule> localPdoMap;
@@ -617,10 +682,7 @@ public class DefaultSecurityManager implements SecurityManager {
 
       boolean fineLoggable = LOGGER.isFineLoggable();   // a little speedup
 
-      Collection<GranteeDescriptor> granteesToCheck =
-          granteeMap.computeIfAbsent(sessionGrantee, g -> determineGranteesToCheck(context, g));
-
-      for (GranteeDescriptor grantee : granteesToCheck) {
+      for (GranteeDescriptor grantee : getGranteesToCheck(sessionContext, sessionGrantee)) {
 
         if (fineLoggable) {
           LOGGER.fine("Checking grantee={0}[{1}], context={2}, permission={3}, object={4}[{5}], class={6}",
@@ -669,12 +731,44 @@ public class DefaultSecurityManager implements SecurityManager {
   }
 
   /**
+   * Initializes the security manager if not yet done or invalidated.
+   *
+   * @param context the domain context
+   */
+  private void ensureInitialized(DomainContext context) {
+    if (invalid) {
+      if (context.getSession().isRemote()) {
+        createSecurityInstance(context).assertRemoteSecurityManagerInitialized();
+      }
+      initialize(context.getSession());
+    }
+  }
+
+  /**
+   * Gets the cached grantees to check for the session grantee.
+   *
+   * @param context the domain context
+   * @param sessionGrantee the session's grantee
+   * @return the grantees to check
+   * @see #determineGranteesToCheck(DomainContext, GranteeDescriptor)
+   */
+  private Collection<GranteeDescriptor> getGranteesToCheck(DomainContext context, GranteeDescriptor sessionGrantee) {
+    return granteeMap.computeIfAbsent(sessionGrantee, g -> determineGranteesToCheck(context, g));
+  }
+
+  /**
    * Initializes the security manager.
+   * <p>
+   * If the manager is invalidated while the rules are being loaded, it remains invalid,
+   * and the rules are reloaded on the next request.
    *
    * @param session the session to load the security rules
    */
   protected synchronized void initialize(Session session) {
     if (invalid) {    // double check (invalid is volatile)
+
+      // invalidations from now on may not be reflected by the loaded rules and require another reload
+      long invalidationsBefore = invalidations.get();
 
       // new instances to allow walking along the subMap during init (see evaluateImpl above)
       TreeMap<ClassKey, Rule> newClassMap = new TreeMap<>();
@@ -704,13 +798,18 @@ public class DefaultSecurityManager implements SecurityManager {
         ModificationTracker.getInstance().addModificationListener(securityListener);
       }
 
-      // switch to new maps, "invalid" flag cleared below!
+      // switch to new maps, "invalid" flag cleared below, unless invalidated meanwhile!
       classMap = newClassMap;
       pdoMap = newPdoMap;
       pdoClassMap = newPdoClassMap;
       granteeMap.clear();
 
+      // Clear the flag first, then check the counter, whereas invalidate() increments the counter first,
+      // then sets the flag. Hence, no invalidation since invalidationsBefore can get lost.
       invalid = false;
+      if (invalidations.get() != invalidationsBefore) {
+        invalid = true;     // rules modified while being loaded: reload on next request
+      }
 
       LOGGER.fine("security manager initialized");
     }

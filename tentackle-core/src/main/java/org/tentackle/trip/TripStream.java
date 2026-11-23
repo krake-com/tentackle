@@ -153,6 +153,118 @@ public interface TripStream {
   TripFilter getFilter();
 
   /**
+   * Sets the policy restricting what is read from a client that is not authenticated yet.<br>
+   * The policy applies to reading only and is not reset by {@link #clear()}, which, however,
+   * starts a new message as far as the policy's size limit is concerned.
+   *
+   * @param policy the policy, null if no restrictions apply (default)
+   */
+  void setReadPolicy(PreAuthenticationPolicy policy);
+
+  /**
+   * Gets the policy restricting what is read from a client that is not authenticated yet.
+   *
+   * @return the policy, null if no restrictions apply
+   */
+  PreAuthenticationPolicy getReadPolicy();
+
+  /**
+   * Checks the number of elements of an array, collection or map read from the stream.<br>
+   * Invoked before anything is allocated for the elements.
+   * Does nothing if there is no read policy.
+   *
+   * @param size the number of elements
+   * @throws TripPolicyViolationException if the read policy refuses the size
+   */
+  void checkSize(int size);
+
+  /**
+   * Accounts for memory allocated ahead of the data it is filled with, such as an array.<br>
+   * Must be invoked before the memory is allocated. The amounts are summed up per message
+   * and reset by {@link #clear()}.
+   * <p>
+   * Arrays are allocated with the length announced by the sender, but filled with what follows.
+   * Since default values are skipped, a few bytes on the wire may allocate gigabytes.
+   * The budget limits the total per message, whatever the number of arrays.
+   *
+   * @param bytes the estimated number of bytes allocated
+   * @throws TripPolicyViolationException if the read policy or the {@link #setAllocationLimit(long) allocation limit}
+   *                                      refuses the total of the current message
+   */
+  void checkAllocation(long bytes);
+
+  /**
+   * Sets the maximum number of bytes allocated ahead of their data per message.<br>
+   * Not reset by {@link #clear()}. The read policy, if any, takes precedence.
+   *
+   * @param bytes the maximum number of bytes, 0 if unlimited (default)
+   * @see #checkAllocation(long)
+   */
+  void setAllocationLimit(long bytes);
+
+  /**
+   * Gets the maximum number of bytes allocated ahead of their data per message.
+   *
+   * @return the maximum number of bytes, 0 if unlimited
+   */
+  long getAllocationLimit();
+
+  /**
+   * Enters the contents of an object, array, collection or map while reading.<br>
+   * Must be paired with {@link #leaveNested()} in a {@code finally} block.
+   * Checked against the maximum depth of the read policy, if any.
+   *
+   * @throws TripPolicyViolationException if the read policy refuses the depth
+   */
+  void enterNested();
+
+  /**
+   * Leaves the contents of an object, array, collection or map while reading.
+   *
+   * @see #enterNested()
+   */
+  void leaveNested();
+
+  /**
+   * Enters a value the receiving container will hash while reading, such as an element of a hash set
+   * or the key of a hash map.<br>
+   * Must be paired with {@link #leaveHashed()} in a {@code finally} block. May be nested.
+   * <p>
+   * Within a hashed value, back-references are refused unless they refer to an object whose hash code
+   * does not depend on other objects, such as a {@code String}, a number, an enum, a {@code UUID}, an
+   * array, an object inheriting {@code hashCode} and {@code equals} from {@link Object} or an object
+   * annotated with {@link TripShallowHash}. Otherwise, a
+   * few kilobytes of containers sharing each other make computing the hash code take forever, whatever
+   * the nesting depth. This applies to authenticated clients as well.
+   */
+  void enterHashed();
+
+  /**
+   * Leaves a value the receiving container will hash while reading.
+   *
+   * @see #enterHashed()
+   */
+  void leaveHashed();
+
+  /**
+   * Suspends the hashed values entered so far while reading.<br>
+   * Used while reading the contents of an object whose hash code does not depend on them
+   * (see {@link TripShallowHash}). Hashed values entered within are guarded on their own.<br>
+   * Must be paired with {@link #resumeHashed(int)} in a {@code finally} block.
+   *
+   * @return the state to pass to {@link #resumeHashed(int)}
+   * @see #enterHashed()
+   */
+  int suspendHashed();
+
+  /**
+   * Resumes the hashed values suspended by {@link #suspendHashed()}.
+   *
+   * @param hashed the state returned by {@link #suspendHashed()}
+   */
+  void resumeHashed(int hashed);
+
+  /**
    * Writes a component ordinal to the stream.
    *
    * @param ordinal the ordinal to write

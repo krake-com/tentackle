@@ -106,7 +106,9 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
   /**
    * {@inheritDoc}
    * <p>
-   * The rule applies if the given context is within the rule's domain context (or no context is given).
+   * The rule applies if the given context is within the rule's domain context.
+   * If no context is given, i.e., the permission is requested for all contexts, a deny-rule always applies,
+   * whereas an allow-rule applies only if it is not restricted to a context (negative context id).
    * Depending on whether the rule allows or denies, the permission is checked to be allowed or denied by
    * the rule's permissions, respectively.
    */
@@ -114,7 +116,9 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
   public boolean evaluate(DomainContext context, Permission permission) {
     SecurityPersistence po = po();
     return // check that the context applies
-           (context == null || context.isWithinContext(po.getDomainContextId(), po.getDomainContextClassId())) &&
+           (context == null ?
+              !po.isAllowed() || po.getDomainContextId() < 0 :
+              context.isWithinContext(po.getDomainContextId(), po.getDomainContextClassId())) &&
            // check that requested permission applies to this rule
            (po.isAllowed() ?
               permission.isAllowedBy(getPermissions()) :
@@ -158,8 +162,17 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
     return buf.toString();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Returns {@value SecurityDomain#ANY_CONTEXT} if the rule applies to any context,
+   * null if it is restricted to the default context.
+   */
   @Override
   public String contextToString() {
+    if (po().getDomainContextId() < 0) {
+      return ANY_CONTEXT;
+    }
     PersistentDomainObject<?> contextPdo = po().getDomainContextObject();
     return contextPdo == null ? null : contextPdo.toString();
   }

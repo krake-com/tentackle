@@ -110,7 +110,7 @@ public class SortedSetTripType<T extends SortedSet> extends CollectionTripType<T
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
   protected CollectionHeader<T> readHeader(TripStream stream, OpCode opCode) {
-    int size = checkSize(SortedSetTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
+    int size = checkSize(stream, SortedSetTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
     Comparator comparator = ComparatorSupport.read(stream);
     if (comparator != null) {
       try {

@@ -18,6 +18,7 @@
 
 package org.tentackle.trip.transport;
 
+import org.tentackle.trip.PreAuthenticationPolicy;
 import org.tentackle.trip.TripStream;
 
 import java.io.ByteArrayInputStream;
@@ -51,6 +52,30 @@ public class LoopbackConnectionHandler extends ConnectionHandler {
   protected TripStream createStream(UUID id, boolean clientDictionaryEmpty) {
     stream = super.createStream(id, clientDictionaryEmpty);
     return stream;
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The loopback client runs in the same JVM: there is nobody to hide from.
+   *
+   * @return false
+   */
+  @Override
+  protected boolean isRejectionDelayed() {
+    return false;
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The loopback client waits for an answer.
+   *
+   * @return false
+   */
+  @Override
+  protected boolean isErrorSuppressed(PreAuthenticationPolicy policy, PreAuthenticationPolicy.Admission admission) {
+    return false;
   }
 
   @Override

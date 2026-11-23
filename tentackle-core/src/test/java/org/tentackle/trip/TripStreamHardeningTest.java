@@ -20,14 +20,28 @@ package org.tentackle.trip;
 
 import org.testng.annotations.Test;
 
+import org.tentackle.common.AbstractBinary;
+import org.tentackle.common.TBinary;
 import org.tentackle.trip.impl.DefaultOpCode;
 import org.tentackle.trip.impl.EchoTransceiver;
+import org.tentackle.trip.impl.TestJOSClass;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
@@ -53,6 +67,21 @@ public class TripStreamHardeningTest {
     public DictionaryEntry getEntry(int ordinal) {
       requestedOrdinals.add(ordinal);
       return null;    // never waits, unlike the default implementation
+    }
+
+    @Override
+    public DictionaryEntry getEntry(int ordinal, long maxWaitTime) {
+      return null;
+    }
+
+    @Override
+    public boolean isAuthenticated() {
+      return false;
+    }
+
+    @Override
+    public void setAuthenticated() {
+
     }
 
     @Override public UUID getId() { return delegate.getId(); }
@@ -136,6 +165,162 @@ public class TripStreamHardeningTest {
     OpCode opCode = inStream.getDeserializer().deserializeOpCode();
     TripRuntimeException tx = expectThrows(TripRuntimeException.class, () -> Reference.read(inStream, opCode));
     assertTrue(tx.getMessage().contains("negative reference id"), tx.getMessage());
+  }
+
+  /**
+   * The length of a binary is read ahead of its data. It must not be allocated before the data arrives:
+   * the stream ends long before 2 GiB, and nothing is held while waiting for the rest.
+   */
+  @Test(timeOut = 30000)
+  @SuppressWarnings("rawtypes")
+  void doesNotAllocateTheAnnouncedLengthOfABinary() {
+    EchoTransceiver transceiver = new EchoTransceiver();
+    TripStream stream = transceiver.getStream();
+    stream.getSerializer().serializeOpCode(DefaultOpCode.BINARY);
+    stream.getSerializer().serializeByte((byte) 'T');
+    stream.getSerializer().serializeInt(Integer.MAX_VALUE);
+    stream.getSerializer().serializeBoolean(false);
+    stream.getSerializer().serialize(new byte[100], 0, 100);
+    transceiver.echo();
+
+    TripStream inStream = transceiver.getStream();
+    TripType<AbstractBinary> type = inStream.getType(TBinary.class);
+    OpCode opCode = inStream.getDeserializer().deserializeOpCode();
+    expectThrows(TripStreamClosedException.class, () -> type.read(inStream, opCode));
+  }
+
+  /**
+   * Same for an object serialized via Java Object Serialization.
+   */
+  @Test(timeOut = 30000)
+  void doesNotAllocateTheAnnouncedSizeOfAJosObject() {
+    EchoTransceiver transceiver = new EchoTransceiver();
+    TripStream stream = transceiver.getStream();
+    stream.getSerializer().serializeOpCode(DefaultOpCode.JOS);
+    stream.getReference(new Object(), false).send(stream);
+    stream.getType(Class.class).write(TestJOSClass.class, stream);
+    stream.getSerializer().serializeInt(Integer.MAX_VALUE);
+    stream.getSerializer().serialize(new byte[100], 0, 100);
+    transceiver.echo();
+
+    TripStream inStream = transceiver.getStream();
+    TripType<TestJOSClass> type = inStream.getType(TestJOSClass.class);
+    OpCode opCode = inStream.getDeserializer().deserializeOpCode();
+    TripRuntimeException tx = expectThrows(TripRuntimeException.class, () -> type.read(inStream, opCode));
+    assertFalse(tx instanceof TripPolicyViolationException);
+  }
+
+  private static final AtomicInteger GADGET_READ = new AtomicInteger();
+
+  /**
+   * Stands in for a deserialization gadget: Serializable, but not serialized via JOS by TRIP.
+   */
+  public static class JosGadget implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    @Serial
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+      in.defaultReadObject();
+      GADGET_READ.incrementAndGet();
+    }
+  }
+
+  /**
+   * Writes a JOS object the way {@code JOSTripType} does, but with an arbitrary announced class.
+   *
+   * @param announcedClass the class sent via TRIP, null to send none
+   * @param object the object sent via Java Object Serialization
+   * @return the stream to read from, positioned at the JOS opcode
+   */
+  private TripStream writeJos(Class<?> announcedClass, Object object) throws IOException {
+    EchoTransceiver transceiver = new EchoTransceiver();
+    TripStream stream = transceiver.getStream();
+    stream.getSerializer().serializeOpCode(DefaultOpCode.JOS);
+    stream.getReference(object, false).send(stream);
+    stream.getType(Class.class).write(announcedClass, stream);
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    try (ObjectOutputStream os = new ObjectOutputStream(bos)) {
+      os.writeObject(object);
+    }
+    stream.getSerializer().serializeInt(bos.size());
+    stream.getSerializer().serialize(bos.toByteArray(), 0, bos.size());
+    transceiver.echo();
+    return transceiver.getStream();
+  }
+
+  private Object readJos(TripStream inStream) {
+    TripType<TestJOSClass> type = inStream.getType(TestJOSClass.class);
+    OpCode opCode = inStream.getDeserializer().deserializeOpCode();
+    return type.read(inStream, opCode);
+  }
+
+  /**
+   * The class of a JOS object is announced via TRIP ahead of the Java-serialized form.
+   * A class the receiver doesn't serialize via JOS itself is refused before the JOS stream is read.
+   */
+  @Test(timeOut = 30000)
+  void refusesJosObjectsOfClassesNotSerializedViaJos() throws IOException {
+    TripStream inStream = writeJos(JosGadget.class, new JosGadget());
+    int readBefore = GADGET_READ.get();
+    TripPolicyViolationException tx = expectThrows(TripPolicyViolationException.class, () -> readJos(inStream));
+    assertTrue(tx.getMessage().contains("not serialized via JOS"), tx.getMessage());
+    assertEquals(GADGET_READ.get(), readBefore, "gadget deserialized");
+  }
+
+  /**
+   * The root object of the Java-serialized form must be of the announced class.
+   * Anything else is refused before it is instantiated.
+   */
+  @Test(timeOut = 30000)
+  void refusesJosObjectsNotOfTheAnnouncedClass() throws IOException {
+    TripStream inStream = writeJos(TestJOSClass.class, new JosGadget());
+    int readBefore = GADGET_READ.get();
+    TripPolicyViolationException tx = expectThrows(TripPolicyViolationException.class, () -> readJos(inStream));
+    assertTrue(tx.getMessage().contains(JosGadget.class.getName()), tx.getMessage());
+    assertEquals(GADGET_READ.get(), readBefore, "gadget deserialized");
+
+    // the announced class itself is still accepted
+    TestJOSClass obj = new TestJOSClass();
+    obj.name = "accepted";
+    assertEquals(readJos(writeJos(TestJOSClass.class, obj)), obj);
+  }
+
+  /**
+   * A JOS object without a class is refused.
+   */
+  @Test(timeOut = 30000)
+  void refusesJosObjectsWithoutClass() throws IOException {
+    TripStream inStream = writeJos(null, new TestJOSClass());
+    expectThrows(TripPolicyViolationException.class, () -> readJos(inStream));
+  }
+
+  /**
+   * Binaries larger than the initial buffer grow while their data arrives, and what follows them is read in sync.
+   */
+  @Test
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  void readsLargeBinariesInChunks() throws IOException {
+    byte[] data = new byte[300_000];
+    new Random(4711).nextBytes(data);
+    for (int length : new int[] { 0, 1, 65535, 65536, 65537, 300_000 }) {
+      byte[] bytes = Arrays.copyOf(data, length);
+      TBinary<?> binary = TBinary.create(new ByteArrayInputStream(bytes), 0, true);
+      EchoTransceiver transceiver = new EchoTransceiver();
+      TripStream stream = transceiver.getStream();
+      List<Object> message = new ArrayList<>(List.of(binary, new TestJOSClass(), "trailer"));
+      TripType<List<Object>> type = (TripType) stream.getType(ArrayList.class);
+      type.write(message, stream);
+      transceiver.echo();
+      TripStream inStream = transceiver.getStream();
+      List<Object> result = type.read(inStream, inStream.getDeserializer().deserializeOpCode());
+      TBinary<?> resultBinary = (TBinary<?>) result.get(0);
+      assertEquals(resultBinary.getLength(), length);
+      assertEquals(Arrays.copyOf(resultBinary.getData(), length), bytes, "length " + length);
+      assertTrue(resultBinary.isFrozen());
+      assertEquals(result.get(1), message.get(1));
+      assertEquals(result.get(2), "trailer");
+    }
   }
 
 }

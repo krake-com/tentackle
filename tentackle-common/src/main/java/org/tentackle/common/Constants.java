@@ -92,6 +92,14 @@ public final class Constants {
    */
   public static final String BACKEND_AUTHENTICATION = "authentication";
 
+  /**
+   * Property key to require a secret for the certificate-based authentication method.<br>
+   * If {@code true}, the user must enter a secret, such as a PIN, which is sent along with the login and
+   * verified by the server, in addition to the client certificate presented by the TLS connection.
+   * Defaults to {@code false}.
+   */
+  public static final String BACKEND_AUTHENTICATION_SECRET = "authenticationSecret";
+
   /** intro in URL to denote a JDBC connection. */
   public static final String BACKEND_JDBC_URL_INTRO = "jdbc:";
 

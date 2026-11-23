@@ -21,11 +21,13 @@ package org.tentackle.trip.impl;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Holder;
+import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.DictionaryEntry;
 import org.tentackle.trip.OpCode;
+import org.tentackle.trip.PreAuthenticationPolicy;
 import org.tentackle.trip.PredefinedArrayType;
 import org.tentackle.trip.Reference;
 import org.tentackle.trip.Serializer;
@@ -33,16 +35,24 @@ import org.tentackle.trip.TripComponent;
 import org.tentackle.trip.TripConstants;
 import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripFilter;
+import org.tentackle.trip.TripPolicyViolationException;
 import org.tentackle.trip.TripRuntimeException;
+import org.tentackle.trip.TripShallowHash;
 import org.tentackle.trip.TripStream;
 import org.tentackle.trip.TripStreamClosedException;
 import org.tentackle.trip.TripType;
 
+import java.lang.reflect.Proxy;
+import java.time.temporal.TemporalAccessor;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TimeZone;
+import java.util.UUID;
 import java.util.function.Function;
 
 /**
@@ -50,10 +60,133 @@ import java.util.function.Function;
  * <p>
  * As it doesn't make sense that multiple threads read from or write to the same stream concurrently,
  * streams are not thread-safe and attaching streams to threads must be synchronized externally.
+ * <p>
+ * The hash guard (see {@link #enterHashed()}) applies to every stream, whether the peer is authenticated
+ * or not. It can be disabled via {@link #setHashGuardEnabled(boolean)} or the system property
+ * {@value #DISABLE_HASH_GUARD_PROPERTY}.
+ * <p>
+ * The allocation budget (see {@link #checkAllocation(long)}) is unlimited for a new stream. Servers apply
+ * the {@link #getDefaultAllocationLimit() default limit}, which can be changed via
+ * {@link #setDefaultAllocationLimit(long)} or the system property {@value #ALLOCATION_LIMIT_PROPERTY}.
  */
 public class DefaultTripStream implements TripStream {
 
   private static final Logger LOGGER = Logger.get(DefaultTripStream.class);
+
+  /**
+   * System property to disable the hash guard.
+   */
+  public static final String DISABLE_HASH_GUARD_PROPERTY = "tentackle.trip.disableHashGuard";
+
+  private static volatile boolean hashGuardEnabled = !Boolean.getBoolean(DISABLE_HASH_GUARD_PROPERTY);
+
+  /**
+   * System property to change the default allocation limit in bytes, 0 if unlimited.
+   */
+  public static final String ALLOCATION_LIMIT_PROPERTY = "tentackle.trip.maxAllocation";
+
+  /**
+   * Default maximum number of bytes allocated ahead of their data per message (256 MiB).
+   */
+  public static final long DEFAULT_ALLOCATION_LIMIT = 256L * 1024 * 1024;
+
+  private static volatile long defaultAllocationLimit = Long.getLong(ALLOCATION_LIMIT_PROPERTY, DEFAULT_ALLOCATION_LIMIT);
+
+  /**
+   * Tells whether instances of a class are hashed and compared by identity.
+   */
+  private static final ClassValue<Boolean> IDENTITY_HASHED = new ClassValue<>() {
+    @Override
+    protected Boolean computeValue(Class<?> clazz) {
+      if (Proxy.isProxyClass(clazz)) {
+        return false;
+      }
+      try {
+        return clazz.getMethod("hashCode").getDeclaringClass() == Object.class &&
+               clazz.getMethod("equals", Object.class).getDeclaringClass() == Object.class;
+      }
+      catch (NoSuchMethodException | RuntimeException e) {
+        return false;
+      }
+    }
+  };
+
+  /**
+   * Tells whether the hash codes of the instances of a class do not depend on the objects they refer to.
+   */
+  private static final ClassValue<Boolean> SHALLOW_HASHED = new ClassValue<>() {
+    @Override
+    protected Boolean computeValue(Class<?> clazz) {
+      return clazz.isAnnotationPresent(TripShallowHash.class);
+    }
+  };
+
+  /**
+   * Returns whether the hash code of an object does not depend on the objects it refers to.<br>
+   * This is the case if its class is annotated with {@link TripShallowHash}, or, for a dynamic proxy,
+   * the class of its invocation handler.
+   *
+   * @param object the object, null if none
+   * @return true if shallow hashed
+   */
+  public static boolean isShallowHashed(Object object) {
+    if (object == null) {
+      return false;
+    }
+    Class<?> clazz = object.getClass();
+    if (Proxy.isProxyClass(clazz)) {
+      clazz = Proxy.getInvocationHandler(object).getClass();
+    }
+    return SHALLOW_HASHED.get(clazz);
+  }
+
+  /**
+   * Returns whether back-references within hashed values are restricted (see {@link #isHashShareable(Object)}).
+   *
+   * @return true if enabled (default)
+   * @see #enterHashed()
+   */
+  public static boolean isHashGuardEnabled() {
+    return hashGuardEnabled;
+  }
+
+  /**
+   * Enables or disables the hash guard for all streams.
+   * <p>
+   * Disable it only if the application really shares mutable objects within the elements of
+   * hash sets or the keys of hash maps, and only if all peers are trusted.
+   *
+   * @param enabled true to enable (default), false to disable
+   * @see #enterHashed()
+   */
+  public static void setHashGuardEnabled(boolean enabled) {
+    hashGuardEnabled = enabled;
+  }
+
+  /**
+   * Gets the allocation limit servers apply to the messages they receive.
+   *
+   * @return the maximum number of bytes allocated ahead of their data per message, 0 if unlimited
+   * @see #setAllocationLimit(long)
+   */
+  public static long getDefaultAllocationLimit() {
+    return defaultAllocationLimit;
+  }
+
+  /**
+   * Sets the allocation limit servers apply to the messages they receive.<br>
+   * Applies to connections opened afterward.
+   * <p>
+   * The limit must allow for the largest arrays a single remote call of the application legitimately
+   * sends. A sparse 1000 x 1000 {@code double} matrix, for example, takes about 8 MiB.
+   *
+   * @param bytes the maximum number of bytes allocated ahead of their data per message, 0 if unlimited
+   * @see #setAllocationLimit(long)
+   */
+  public static void setDefaultAllocationLimit(long bytes) {
+    defaultAllocationLimit = Math.max(bytes, 0);
+  }
+
 
   private static final int INITIAL_REF_ARRAY_SIZE = 256;
   private static final int INITIAL_DICTIONARY_ARRAY_SIZE = 64;
@@ -104,6 +237,11 @@ public class DefaultTripStream implements TripStream {
   private final Function<Class<?>, TripType<?>> typeResolver;
 
   private TripFilter filter;
+  private PreAuthenticationPolicy readPolicy;
+  private int depth;              // the current nesting depth while reading
+  private int hashed;             // > 0 while reading a value the receiving container will hash
+  private long allocated;         // bytes allocated ahead of their data in the current message
+  private long allocationLimit;   // maximum of allocated, 0 if unlimited
 
 
   /**
@@ -138,7 +276,7 @@ public class DefaultTripStream implements TripStream {
         // Do not size the cache from an ordinal read off the stream: a corrupted one would
         // allocate gigabytes. Beyond the cache the dictionary is asked every time, which is
         // where an unknown ordinal is rejected anyway.
-        return dictionary.getEntry(ordinal);
+        return lookupEntry(ordinal);
       }
       if (dictionaryEntries == null) {
         dictionaryEntries = new DictionaryEntry[alignDictionarySize(INITIAL_DICTIONARY_ARRAY_SIZE, ordinal)];
@@ -151,7 +289,7 @@ public class DefaultTripStream implements TripStream {
       }
       DictionaryEntry entry = dictionaryEntries[ordinal];
       if (entry == null) {
-        entry = dictionary.getEntry(ordinal);
+        entry = lookupEntry(ordinal);
         dictionaryEntries[ordinal] = entry;
       }
       return entry;
@@ -160,7 +298,7 @@ public class DefaultTripStream implements TripStream {
       // -ordinal would overflow for Integer.MIN_VALUE, mapping it to a positive index again
       int index = ordinal == Integer.MIN_VALUE ? MAX_CACHED_DICTIONARY_ENTRIES : -ordinal - 1;
       if (index >= MAX_CACHED_DICTIONARY_ENTRIES) {
-        return dictionary.getEntry(ordinal);    // see above
+        return lookupEntry(ordinal);    // see above
       }
       if (temporaryDictionaryEntries == null) {
         temporaryDictionaryEntries = new DictionaryEntry[alignDictionarySize(INITIAL_DICTIONARY_ARRAY_SIZE, index)];
@@ -171,7 +309,7 @@ public class DefaultTripStream implements TripStream {
       }
       DictionaryEntry entry = temporaryDictionaryEntries[index];
       if (entry == null) {
-        entry = dictionary.getEntry(ordinal);
+        entry = lookupEntry(ordinal);
         temporaryDictionaryEntries[index] = entry;
       }
       // when server entries replace client-only entries, client-entries become obsolete
@@ -271,6 +409,22 @@ public class DefaultTripStream implements TripStream {
     if (reference == null) {
       throw new TripRuntimeException("no such reference id " + referenceId + " for " + clazz);
     }
+    if (hashed > 0 && hashGuardEnabled && !isHashShareable(reference.getObject())) {
+      // Hashing a graph with shared containers visits each container once per path to it, which
+      // takes exponential time, whatever its depth. Without back-references to objects whose hash code
+      // depends on other objects, the hashed value is a tree bounded by the size of the message.
+      Object object = reference.getObject();
+      throw new TripPolicyViolationException("back-reference to " +
+                                             (object == null ? "an incomplete object" : EffectiveClassProvider.getEffectiveClass(object)) +
+                                             " within a hashed value");
+    }
+    if (readPolicy != null && !isShareable(reference.getObject())) {
+      // A shared container turns a few bytes into an object graph whose hash code takes
+      // exponential time to compute. Without back-references, the graph is a tree bounded
+      // by the size of the message.
+      Object object = reference.getObject();
+      readPolicy.violation("back-reference to " + (object == null ? "an incomplete object" : object.getClass().getName()));
+    }
     return reference;
   }
 
@@ -301,6 +455,10 @@ public class DefaultTripStream implements TripStream {
 
   @Override
   public void clear() {
+    applyReadLimit();
+    depth = 0;
+    hashed = 0;
+    allocated = 0;
     if (references != null && references.length == INITIAL_REF_ARRAY_SIZE) {
       // A small message: the array never grew, so neither map holds more than its length.
       // Recycling them is cheaper than allocating anew, which would happen several times per remote call.
@@ -338,6 +496,94 @@ public class DefaultTripStream implements TripStream {
   @Override
   public TripFilter getFilter() {
     return filter;
+  }
+
+  @Override
+  public void setReadPolicy(PreAuthenticationPolicy readPolicy) {
+    this.readPolicy = readPolicy;
+    applyReadLimit();
+  }
+
+  @Override
+  public PreAuthenticationPolicy getReadPolicy() {
+    return readPolicy;
+  }
+
+  @Override
+  public void checkSize(int size) {
+    if (readPolicy != null) {
+      int maxElements = readPolicy.getMaxElements();
+      if (maxElements > 0 && size > maxElements) {
+        readPolicy.violation("number of elements " + size + " exceeds the maximum of " + maxElements);
+      }
+    }
+  }
+
+  @Override
+  public void checkAllocation(long bytes) {
+    allocated += bytes;
+    if (readPolicy != null) {
+      long maxAllocation = readPolicy.getMaxAllocation();
+      if (maxAllocation > 0) {
+        if (allocated > maxAllocation && allocated - bytes <= maxAllocation) {
+          // reported once per message: in audit mode, reading continues
+          readPolicy.violation("allocation exceeds the maximum of " + maxAllocation + " bytes per message");
+        }
+        return;
+      }
+    }
+    if (allocationLimit > 0 && allocated > allocationLimit) {
+      throw new TripPolicyViolationException("allocation of " + allocated + " bytes exceeds the maximum of " +
+                                             allocationLimit + " bytes per message");
+    }
+  }
+
+  @Override
+  public void setAllocationLimit(long bytes) {
+    allocationLimit = Math.max(bytes, 0);
+  }
+
+  @Override
+  public long getAllocationLimit() {
+    return allocationLimit;
+  }
+
+  @Override
+  public void enterNested() {
+    if (readPolicy != null) {
+      int maxDepth = readPolicy.getMaxDepth();
+      if (maxDepth > 0 && depth >= maxDepth) {
+        readPolicy.violation("nesting depth exceeds the maximum of " + maxDepth);   // throws if enforcing
+      }
+    }
+    depth++;
+  }
+
+  @Override
+  public void leaveNested() {
+    depth--;
+  }
+
+  @Override
+  public void enterHashed() {
+    hashed++;
+  }
+
+  @Override
+  public void leaveHashed() {
+    hashed--;
+  }
+
+  @Override
+  public int suspendHashed() {
+    int suspended = hashed;
+    hashed = 0;
+    return suspended;
+  }
+
+  @Override
+  public void resumeHashed(int hashed) {
+    this.hashed = hashed;
   }
 
   @Override
@@ -493,6 +739,13 @@ public class DefaultTripStream implements TripStream {
       // must be the ordinal
       int ordinal = readDictionaryOrdinal(opCode);
       entry = getDictionaryEntry(ordinal);
+      if (readPolicy != null && entry != null && !entry.isClientOnly()) {
+        // A permanent entry was created by the server for a class it sent to the client.
+        // The client's own entries were checked when received, but these must be checked as well.
+        if (entry.isProxy() || !readPolicy.isClassAllowed(entry.getClassName())) {
+          readPolicy.violation("class " + entry.getClassName());
+        }
+      }
     }
     return entry;
   }
@@ -590,6 +843,59 @@ public class DefaultTripStream implements TripStream {
     return map;
   }
 
+
+  /**
+   * Looks up a dictionary entry not cached by this stream.<br>
+   * A client that is not authenticated yet is not waited for that long.
+   *
+   * @param ordinal the ordinal
+   * @return the entry
+   */
+  private DictionaryEntry lookupEntry(int ordinal) {
+    return readPolicy != null && readPolicy.isEnforcing() ?
+             dictionary.getEntry(ordinal, readPolicy.getDictionaryWaitTime()) :
+             dictionary.getEntry(ordinal);
+  }
+
+  /**
+   * Returns whether an object received before may be referenced again by a client that is not
+   * authenticated yet.<br>
+   * Only immutable values whose hash code does not depend on other objects may be shared.
+   *
+   * @param object the referenced object, null if not completely read yet
+   * @return true if allowed
+   */
+  protected boolean isShareable(Object object) {
+    return object instanceof String || object instanceof Number || object instanceof Boolean ||
+           object instanceof Character || object instanceof Enum<?> || object instanceof UUID ||
+           object instanceof Locale || object instanceof TimeZone || object instanceof Class<?> ||
+           object instanceof TemporalAccessor || object instanceof Date;
+  }
+
+  /**
+   * Returns whether an object received before may be referenced again within a hashed value.<br>
+   * Besides the {@link #isShareable(Object) shareable} values, these are the objects whose hash code
+   * does not depend on other objects: arrays, objects inheriting {@code hashCode} and {@code equals}
+   * from {@link Object} and objects annotated with {@link TripShallowHash}. Dynamic proxies are not,
+   * unless their invocation handler is annotated with {@link TripShallowHash}, since the handler decides.
+   *
+   * @param object the referenced object, null if not completely read yet
+   * @return true if allowed
+   * @see #enterHashed()
+   */
+  protected boolean isHashShareable(Object object) {
+    return isShareable(object) ||
+           object != null && (object.getClass().isArray() || IDENTITY_HASHED.get(object.getClass()) ||
+                              isShallowHashed(object));
+  }
+
+  /**
+   * Applies the size limit of the read policy to the deserializer.<br>
+   * Starts a new message as far as the limit is concerned.
+   */
+  private void applyReadLimit() {
+    deserializer.setReadLimit(readPolicy != null && readPolicy.isEnforcing() ? readPolicy.getMaxMessageSize() : 0);
+  }
 
   private <T> Reference<T> createAndAddReference(T object) {
     if (nextReferenceId == Integer.MAX_VALUE) {

@@ -3,7 +3,7 @@
 
 The page content lives in the repository's real docs — the core docs under
 ``src/main/docs`` and every module's ``<module>/src/main/docs/*.md`` — plus the
-repo README. This script assembles a clean MkDocs ``docs_dir`` from them without
+repo README (as the home page) and the repo HISTORY.md. This script assembles a clean MkDocs ``docs_dir`` from them without
 ever modifying the sources, so GitHub rendering keeps working. Run it via
 ``make prepare`` (automatically invoked by ``make serve`` / ``make build``).
 
@@ -26,6 +26,7 @@ HERE = Path(__file__).resolve().parent                  # src/mkdocs
 REPO_ROOT = (HERE / ".." / "..").resolve()              # repository root
 CORE_DOCS = REPO_ROOT / "src" / "main" / "docs"         # src/main/docs
 REPO_README = REPO_ROOT / "README.md"
+REPO_HISTORY = REPO_ROOT / "HISTORY.md"                # staged as history.md
 THEME = HERE / "theme"
 OUT = HERE / "docs"                                     # generated docs_dir (git-ignored)
 
@@ -40,7 +41,9 @@ EXCLUDE = {"toc.md"}
 # index.md (alphabetical concept index) is staged as concept-index.md so it does
 # not clash with the README-derived home page. toc.md is not staged (the Material
 # nav replaces it), so links pointing at it are redirected to the A–Z index.
-RENAME = {"index.md": "concept-index.md", "toc.md": "concept-index.md"}
+# The repo-level HISTORY.md is staged lower-case to keep its site URL (/history/).
+RENAME = {"index.md": "concept-index.md", "toc.md": "concept-index.md",
+          "HISTORY.md": "history.md"}
 
 IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp")
 
@@ -128,8 +131,9 @@ def readme_to_index(text: str, src_file: Path) -> str:
 
 
 def collect_sources() -> list[Path]:
-    """All staged source docs: core docs + every module's docs (minus EXCLUDE)."""
+    """All staged source docs: core docs + HISTORY.md + every module's docs (minus EXCLUDE)."""
     sources = sorted(CORE_DOCS.glob("*.md"))
+    sources.append(REPO_HISTORY)
     sources += sorted(REPO_ROOT.glob("tentackle-*/src/main/docs/*.md"))
     return [p for p in sources if p.name not in EXCLUDE]
 

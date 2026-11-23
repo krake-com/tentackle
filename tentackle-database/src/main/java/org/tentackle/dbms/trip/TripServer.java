@@ -24,9 +24,12 @@ import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.io.UriHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.session.SessionInfo;
+import org.tentackle.trip.PreAuthenticationPolicy;
+import org.tentackle.trip.RejectionDelay;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TransportManager;
 import org.tentackle.trip.TripRuntimeException;
+import org.tentackle.trip.impl.DefaultPreAuthenticationPolicy;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -79,6 +82,18 @@ import java.util.TreeMap;
  *  The default session timeout (in polling-intervals) for dead client connections.
  *  Defaults to 30, i.e., 30 seconds.
  * </li>
+ * <li>
+ * {@code preauth=enforce|audit|off}:
+ *  What a client may send before it has logged in (see {@link PreAuthenticationPolicy}).
+ *  {@code enforce} (default) refuses everything a login doesn't need, {@code audit} only logs it,
+ *  and {@code off} accepts everything from everyone, as in former releases.
+ * </li>
+ * <li>
+ * {@code maxlogins=<number>}:
+ *  The maximum number of logins processed concurrently (default 64, 0 = unlimited).
+ *  Each login holds a session while the credentials are verified.
+ *  A login exceeding the limit waits up to 10 seconds and is then refused as "server busy".
+ * </li>
  * </ul>
  *
  * @author harald
@@ -111,6 +126,28 @@ public class TripServer {
   public static final String TIMEOUT_INTERVAL = "timeoutinterval";
 
   /**
+   * The property key for the maximum number of concurrent logins.
+   */
+  public static final String MAX_CONCURRENT_LOGINS = "maxlogins";
+
+  /**
+   * The property key for the minimum milliseconds until a failed login is answered.<br>
+   * Applies to all rejections of unauthenticated clients (see {@link RejectionDelay}).
+   */
+  public static final String LOGIN_FAILURE_MIN_DELAY = "loginfailmindelay";
+
+  /**
+   * The property key for the maximum milliseconds until a failed login is answered.<br>
+   * Applies to all rejections of unauthenticated clients (see {@link RejectionDelay}).
+   */
+  public static final String LOGIN_FAILURE_MAX_DELAY = "loginfailmaxdelay";
+
+  /**
+   * The property key for the pre-authentication policy mode.
+   */
+  public static final String PRE_AUTHENTICATION = "preauth";
+
+  /**
    * Default timeout check interval in milliseconds (1s).
    */
   private static final long DEFAULT_CHECK_INTERVAL = 1000;
@@ -128,6 +165,10 @@ public class TripServer {
   private Class<? extends RemoteDbConnection> connectionClass;        // class for connection object
   private int sessionTimeout;                                         // default session timeout in seconds
   private long sessionTimeoutCheckInterval;                           // check interval for session timeout in milliseconds, 0 = none
+  private PreAuthenticationPolicy.Mode preAuthenticationMode;         // null = no pre-authentication policy
+  private int maxConcurrentLogins;                                    // maximum number of concurrent logins, 0 = unlimited
+  private long loginFailureMinDelay;                                  // minimum response time of a failed login in milliseconds
+  private long loginFailureMaxDelay;                                  // maximum response time of a failed login in milliseconds, 0 = immediately
 
 
 
@@ -170,6 +211,31 @@ public class TripServer {
     }
     else  {
       sessionTimeoutCheckInterval = DEFAULT_CHECK_INTERVAL;
+    }
+
+    val = props.getPropertyIgnoreCase(MAX_CONCURRENT_LOGINS);
+    maxConcurrentLogins = val != null ? Integer.parseInt(val) : RemoteDbSessionImpl.DEFAULT_MAX_CONCURRENT_LOGINS;
+
+    val = props.getPropertyIgnoreCase(LOGIN_FAILURE_MIN_DELAY);
+    loginFailureMinDelay = val != null ? Long.parseLong(val) : RejectionDelay.DEFAULT_MIN_DELAY;
+
+    val = props.getPropertyIgnoreCase(LOGIN_FAILURE_MAX_DELAY);
+    loginFailureMaxDelay = val != null ? Long.parseLong(val) : RejectionDelay.DEFAULT_MAX_DELAY;
+
+    val = props.getPropertyIgnoreCase(PRE_AUTHENTICATION);
+    if (val == null || val.equalsIgnoreCase("enforce")) {
+      preAuthenticationMode = PreAuthenticationPolicy.Mode.ENFORCE;
+    }
+    else if (val.equalsIgnoreCase("audit")) {
+      preAuthenticationMode = PreAuthenticationPolicy.Mode.AUDIT;
+    }
+    else if (val.equalsIgnoreCase("off")) {
+      preAuthenticationMode = null;
+      LOGGER.warning("pre-authentication policy turned off: unauthenticated clients are not restricted");
+    }
+    else {
+      throw new TentackleRuntimeException("invalid value '" + val + "' for " + PRE_AUTHENTICATION +
+                                          ", expected enforce, audit or off");
     }
 
     // first pass: collect the raw (unexpanded) service configurations
@@ -280,17 +346,108 @@ public class TripServer {
   }
 
   /**
+   * Gets the mode of the pre-authentication policy.
+   *
+   * @return the mode, null if the transports accept everything from unauthenticated clients
+   */
+  public PreAuthenticationPolicy.Mode getPreAuthenticationMode() {
+    return preAuthenticationMode;
+  }
+
+  /**
+   * Sets the mode of the pre-authentication policy.<br>
+   * Must be invoked before {@link #start()}.
+   *
+   * @param preAuthenticationMode the mode, null to accept everything from unauthenticated clients
+   */
+  public void setPreAuthenticationMode(PreAuthenticationPolicy.Mode preAuthenticationMode) {
+    this.preAuthenticationMode = preAuthenticationMode;
+  }
+
+  /**
+   * Gets the maximum number of logins processed concurrently.
+   *
+   * @return the maximum number, 0 if unlimited
+   */
+  public int getMaxConcurrentLogins() {
+    return maxConcurrentLogins;
+  }
+
+  /**
+   * Sets the maximum number of logins processed concurrently.<br>
+   * Must be invoked before {@link #start()}.
+   *
+   * @param maxConcurrentLogins the maximum number, 0 if unlimited
+   */
+  public void setMaxConcurrentLogins(int maxConcurrentLogins) {
+    this.maxConcurrentLogins = maxConcurrentLogins;
+  }
+
+  /**
+   * Gets the minimum time until a failed login is answered.
+   *
+   * @return the minimum delay in milliseconds
+   */
+  public long getLoginFailureMinDelay() {
+    return loginFailureMinDelay;
+  }
+
+  /**
+   * Gets the maximum time until a failed login is answered.
+   *
+   * @return the maximum delay in milliseconds, 0 if answered immediately
+   */
+  public long getLoginFailureMaxDelay() {
+    return loginFailureMaxDelay;
+  }
+
+  /**
+   * Sets the interval for the response time of a failed login.<br>
+   * A failed login is answered after a random time within this interval, so that an attacker cannot tell
+   * from the response time whether the user doesn't exist or the credentials are just wrong.
+   * The same interval applies to every rejection of an unauthenticated client: an invalid TRIP magic,
+   * the lookup of an unknown service name, and an incompatible client version.
+   * Must be invoked before {@link #start()}.
+   *
+   * @param minDelay the minimum delay in milliseconds
+   * @param maxDelay the maximum delay in milliseconds, 0 to answer failed logins immediately
+   * @see RejectionDelay#setInterval(long, long)
+   */
+  public void setLoginFailureDelay(long minDelay, long maxDelay) {
+    this.loginFailureMinDelay = minDelay;
+    this.loginFailureMaxDelay = maxDelay;
+  }
+
+  /**
+   * Creates the pre-authentication policy for a transport.<br>
+   * Applications may override this method to add classes to the allowlist or to change the limits.
+   *
+   * @param transport the server transport
+   * @param mode the mode
+   * @return the policy, null if none
+   */
+  protected PreAuthenticationPolicy createPreAuthenticationPolicy(Transport transport, PreAuthenticationPolicy.Mode mode) {
+    return new DefaultPreAuthenticationPolicy(mode);
+  }
+
+  /**
    * Starts the TRIP server.
    */
   public void start() {
     // start the transports in alphabetical order
     LOGGER.info("TRIP-server " + getClass().getName() + " starting...");
+    RemoteDbSessionImpl.setMaxConcurrentLogins(maxConcurrentLogins);
+    RejectionDelay.setInterval(loginFailureMinDelay, loginFailureMaxDelay);
     for (Map.Entry<String, URI> serviceEntry : services.entrySet()) {
       String name = serviceEntry.getKey();
       URI uri = serviceEntry.getValue();
       LOGGER.info("starting transport" + (name.isEmpty() ? ": " : (" '" + name + "': ")) + UriHelper.uriToSafeString(uri));
       try {
         Transport transport = TransportManager.getInstance().requestTransport(uri);
+        if (preAuthenticationMode != null && transport.getPreAuthenticationPolicy() == null) {
+          // before accepting: the policy applies to a connection from its very beginning
+          transport.setPreAuthenticationPolicy(createPreAuthenticationPolicy(transport, preAuthenticationMode));
+        }
         if (!transport.isAccepting()) {
           // new transport
           transport.accept();

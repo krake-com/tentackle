@@ -20,6 +20,7 @@ package org.tentackle.session.auth;
 
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.misc.Secret;
+import org.tentackle.trip.TripPreAuth;
 import org.tentackle.trip.TripReferencable;
 
 import java.io.Serial;
@@ -35,9 +36,12 @@ import java.util.Map;
  * <p>
  * The optional refresh token is meant for the <em>client</em> side only
  * ({@link CredentialsProvider#refresh(Credentials)}); a server-side provider never needs it.
+ * Hence, it is not serialized: it never leaves the client's JVM, and neither the server nor any
+ * other tier of a cascade ever sees it.
  *
  * @author harald
  */
+@TripPreAuth("login")
 @TripReferencable(TripReferencable.NEVER)
 public class TokenCredentials implements Credentials, Cloneable {
 
@@ -52,7 +56,7 @@ public class TokenCredentials implements Credentials, Cloneable {
 
   private String tokenType;                 // the token type, e.g. "Bearer"
   private Secret token;                     // the token itself
-  private Secret refreshToken;              // the optional refresh token (client side only)
+  private transient Secret refreshToken;    // the optional refresh token (client side only, never serialized)
   private String issuer;                    // the optional issuer that minted the token
   private long expiresAt;                   // epochal millis the token expires, 0 if unknown
   @SuppressWarnings("serial")
@@ -137,16 +141,30 @@ public class TokenCredentials implements Credentials, Cloneable {
    * @return the refresh token, null if none or cleared
    */
   public char[] getRefreshToken() {
-    return refreshToken.get();
+    return refreshToken().get();
   }
 
   /**
-   * Sets the refresh token.
+   * Sets the refresh token.<br>
+   * The refresh token stays in this JVM: it is not serialized.
    *
    * @param refreshToken the refresh token, null if none
    */
   public void setRefreshToken(char[] refreshToken) {
-    this.refreshToken.set(refreshToken);
+    refreshToken().set(refreshToken);
+  }
+
+  /**
+   * Gets the secret holding the refresh token.<br>
+   * Since the field is transient, it is null after a deserialization that bypasses the constructor.
+   *
+   * @return the secret, never null
+   */
+  private synchronized Secret refreshToken() {
+    if (refreshToken == null) {
+      refreshToken = new Secret();
+    }
+    return refreshToken;
   }
 
   /**
@@ -210,7 +228,7 @@ public class TokenCredentials implements Credentials, Cloneable {
   @Override
   public void clear() {
     token.clear();
-    refreshToken.clear();
+    refreshToken().clear();
   }
 
   @Override
@@ -223,7 +241,7 @@ public class TokenCredentials implements Credentials, Cloneable {
       throw new TentackleRuntimeException(ex);    // this shouldn't happen, since we are Cloneable
     }
     credentials.token = token.clone();
-    credentials.refreshToken = refreshToken.clone();
+    credentials.refreshToken = refreshToken().clone();
     credentials.parameters = new LinkedHashMap<>(parameters);
     return credentials;
   }

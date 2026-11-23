@@ -192,12 +192,12 @@ A [`Security`](../java/org/tentackle/security/pdo/Security.java) rule (table
 `secrules`, class id `5`) is an ACL entry. Its fields answer *who*, *on what*,
 *where*, and *what*:
 
-| Field group        | Columns                                         | Meaning                                                                                                                                                 |
-|--------------------|-------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Secured object** | `objectClassName`, `objectClassId`, `objectId`  | The protected target. A non-PDO class (by name), a PDO class (`objectClassId`, `objectId = 0` → *all instances*), or one PDO instance (`objectId ≠ 0`). |
-| **Grantee**        | `granteeClassId`, `granteeId`                   | The user/group entity the rule applies to. `0/0` means **all grantees**.                                                                                |
-| **Context**        | `domainContextClassId`, `domainContextId`       | Optional restriction to a [domain context](pdo.md#the-domaincontext-and-ddd) entity (e.g., a tenant). `0/0` → the default context.                      |
-| **Decision**       | `permissions`, `allowed`, `message`, `priority` | A comma-separated permission list, the allow/deny flag, an optional explanation shown to the user, and the evaluation order.                            |
+| Field group        | Columns                                         | Meaning                                                                                                                                                                 |
+|--------------------|-------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Secured object** | `objectClassName`, `objectClassId`, `objectId`  | The protected target. A non-PDO class (by name), a PDO class (`objectClassId`, `objectId = 0` → *all instances*), or one PDO instance (`objectId ≠ 0`).                 |
+| **Grantee**        | `granteeClassId`, `granteeId`                   | The user/group entity the rule applies to. `0/0` means **all grantees**.                                                                                                |
+| **Context**        | `domainContextClassId`, `domainContextId`       | Optional restriction to a [domain context](pdo.md#the-domaincontext-and-ddd) entity (e.g., a tenant). `0/0` → the default context, `domainContextId < 0` → any context. |
+| **Decision**       | `permissions`, `allowed`, `message`, `priority` | A comma-separated permission list, the allow/deny flag, an optional explanation shown to the user, and the evaluation order.                                            |
 
 A rule for a PDO class or instance must leave `objectClassName` empty, a rule for a non-PDO class
 must set it, and every rule needs at least one permission — the
@@ -228,6 +228,21 @@ a grantee, in priority order — first match wins**:
 5. **Fall back.** For an instance request with no matching instance rule, the
    manager retries at the **class** level (`objectId = 0`). If still nothing fires,
    the **default** applies.
+
+Operations on an unknown set of instances, such as the generated `deleteBy…` and
+`updateBy…` methods that work through a where clause, can't check each object. They call
+`SecurityManager.evaluateAllObjects(context, permission, classId)` instead. It accepts only if
+the class-level request is accepted **and** no instance of that class is denied, where each
+instance with rules is evaluated as described above. A rule denying `WRITE` for a single
+PDO therefore also denies bulk updates and deletes of its class.
+
+A request without a domain context (`context == null`) asks for the permission in **all
+contexts**. The grantee then comes from the current thread's session
+(`Session.getCurrentSession()`), and the request is denied if there is none. The rules
+are evaluated conservatively: a deny rule fires whatever context it is restricted to, but an
+allow rule fires only if it applies in any context (`domainContextId < 0`). The request is
+therefore accepted only if it would be accepted in every context.
+In the RDC `SecurityEditor`, such a rule is created with the *any context* checkbox.
 
 ```java
 SecurityResult r = SecurityFactory.getInstance().getSecurityManager()

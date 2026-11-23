@@ -20,6 +20,7 @@ package org.tentackle.update;
 
 import org.tentackle.common.StringHelper;
 import org.tentackle.trip.TripDeduplicatable;
+import org.tentackle.trip.TripPreAuth;
 import org.tentackle.trip.TripReferencable;
 
 /**
@@ -34,6 +35,7 @@ import org.tentackle.trip.TripReferencable;
  * @see UpdateInfo
  * @see org.tentackle.trip.transport.EncryptedTransport
  */
+@TripPreAuth("update")
 @TripReferencable(TripReferencable.NEVER)
 @TripDeduplicatable(TripDeduplicatable.NEVER)
 public record ClientInfo(String application, String version, String platform,

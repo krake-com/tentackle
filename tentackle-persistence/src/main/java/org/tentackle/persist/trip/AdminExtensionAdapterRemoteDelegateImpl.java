@@ -26,6 +26,7 @@ import org.tentackle.dbms.Db;
 import org.tentackle.dbms.trip.RemoteDbDelegateImpl;
 import org.tentackle.dbms.trip.RemoteDbSessionImpl;
 import org.tentackle.log.Logger;
+import org.tentackle.pdo.AdminExtension;
 import org.tentackle.pdo.AdminExtension.SessionData;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.persist.AdminExtensionAdapter;
@@ -33,6 +34,7 @@ import org.tentackle.security.SecurityException;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.SecurityResult;
 import org.tentackle.session.SessionInfo;
+import org.tentackle.trip.transport.TcpTransport;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -145,12 +147,55 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDbDelegateImp
    * @param context the invoking user's domain context
    */
   private void checkPermission(DomainContext context) {
+    if (!isAdministrationAllowed(context)) {
+      throw new SecurityException("no explicit execute permission for " + AdminExtension.class.getName());
+    }
+  }
+
+  /**
+   * Determines whether the client is allowed to administrate the sessions.
+   * <p>
+   * The administration fails closed: the default implementation requires a security rule that explicitly grants the
+   * execute permission for the {@link AdminExtension}, or a privileged session (see
+   * {@link RemoteDbSessionImpl#setPrivilegedSession(boolean)}). An execute permission accepted by default,
+   * because no rule fired, is not sufficient.
+   *
+   * @param context the domain context
+   * @return true if allowed
+   */
+  protected boolean isAdministrationAllowed(DomainContext context) {
+    if (getServerSession().isPrivilegedSession()) {
+      return true;
+    }
     SecurityFactory sf = SecurityFactory.getInstance();
     org.tentackle.security.SecurityManager sm = sf.getSecurityManager();
-    SecurityResult sr = sm.evaluate(context, sf.getExecutePermission(), getServicedClass());
-    if (!sr.isAccepted()) {
-      throw new SecurityException(sr.explain("no execute permission for " + getServicedClass().getName()));
+    // the interface, as checked by the client and edited in the SessionsView of the RDC
+    SecurityResult sr = sm.evaluate(context, sf.getExecutePermission(), AdminExtension.class);
+    if (!sr.isAccepted() || sr.isDefault()) {
+      LOGGER.warning("session administration denied for {0}: {1}", getServerSession(),
+                     sr.explain("no explicit execute permission"));
+      return false;
     }
+    return true;
+  }
+
+
+  /**
+   * Creates the client host string shown in the session data.<br>
+   * The transport is appended, separated by a slash, unless it is plain {@code trip}.
+   * For TRIP protocols the leading {@code trip} is omitted, i.e. {@code 127.0.0.1} over {@code tripcq}
+   * becomes {@code 127.0.0.1/cq}. Application-specific protocols are appended as a whole.
+   *
+   * @param host the client host address
+   * @param protocol the TRIP protocol of the client's transport, null if unknown
+   * @return the client host string
+   */
+  static String toClientHost(String host, String protocol) {
+    if (protocol == null || protocol.isEmpty() || protocol.equals(TcpTransport.PROTOCOL)) {
+      return host;
+    }
+    return host + "/" + (protocol.startsWith(TcpTransport.PROTOCOL) ?
+                         protocol.substring(TcpTransport.PROTOCOL.length()) : protocol);
   }
 
 
@@ -199,7 +244,7 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDbDelegateImp
       else {
         timeZone = null;
       }
-      clientHost = remoteSession.getClientHostString();
+      clientHost = toClientHost(remoteSession.getClientHostString(), remoteSession.getClientProtocol());
       sessionNumber = remoteSession.getSessionNumber();
       sessionGroup = remoteSession.getSession().getExportedSessionGroupId();
       options = remoteSession.getOptions();

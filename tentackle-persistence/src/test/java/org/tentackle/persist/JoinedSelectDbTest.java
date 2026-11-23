@@ -18,7 +18,6 @@ import org.testng.annotations.Test;
 
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
-import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.JoinType;
@@ -57,8 +56,7 @@ public class JoinedSelectDbTest extends AbstractPersistenceDbTest {
 
   private final BiConsumer<DemoEntity, DemoComponent> joiner =
       (entity, component) ->
-          joinedPairs.add(((DemoEntityPersistenceImpl) entity.getPersistenceDelegate()).getName() + "<-" +
-                          ((DemoComponentPersistenceImpl) component.getPersistenceDelegate()).getText());
+          joinedPairs.add(entity.getName() + "<-" + component.getText());
 
 
   /** the roots collected by the cascaded joiner. */
@@ -66,8 +64,7 @@ public class JoinedSelectDbTest extends AbstractPersistenceDbTest {
 
   private final BiConsumer<DemoComponent, DemoEntity> backJoiner =
       (component, entity) ->
-          backJoinedPairs.add(((DemoComponentPersistenceImpl) component.getPersistenceDelegate()).getText() + "->" +
-                              ((DemoEntityPersistenceImpl) entity.getPersistenceDelegate()).getName());
+          backJoinedPairs.add(component.getText() + "->" + entity.getName());
 
 
   @BeforeMethod
@@ -100,19 +97,24 @@ public class JoinedSelectDbTest extends AbstractPersistenceDbTest {
                       DemoEntity.class, NESTED_JOIN_ALIAS, backJoiner);
   }
 
-  private DemoEntityPersistenceImpl entity(String name) {
-    DemoEntityPersistenceImpl po =
-        (DemoEntityPersistenceImpl) Pdo.create(DemoEntity.class, getDomainContext()).getPersistenceDelegate();
-    po.setName(name);
-    return po;
-  }
-
-  private void component(DemoEntityPersistenceImpl root, String text) {
-    DomainContext rootContext = getDomainContext().getRootContext(root.getPdo());
-    DemoComponentPersistenceImpl po =
-        (DemoComponentPersistenceImpl) Pdo.create(DemoComponent.class, rootContext).getPersistenceDelegate();
-    po.setText(text);
-    po.saveObject();
+  /**
+   * Creates and persists an aggregate.<br>
+   * Components are persisted only along with their root entity, i.e., by adding them to the
+   * component list of the root and persisting the root.
+   *
+   * @param name the name of the root entity
+   * @param texts the texts of the components
+   * @return the persisted root entity
+   */
+  private DemoEntity aggregate(String name, String... texts) {
+    DemoEntity root = Pdo.create(DemoEntity.class, getDomainContext());
+    root.setName(name);
+    for (String text : texts) {
+      DemoComponent component = root.on(DemoComponent.class);
+      component.setText(text);
+      root.getComponentList().add(component);
+    }
+    return root.persist();
   }
 
 
@@ -168,10 +170,7 @@ public class JoinedSelectDbTest extends AbstractPersistenceDbTest {
    */
   @Test
   public void testCascadedJoinsArePopulatedFromTheSameRow() {
-    DemoEntityPersistenceImpl root = entity("root");
-    root.save();
-    component(root, "a");
-    component(root, "b");
+    DemoEntity root = aggregate("root", "a", "b");
 
     DemoEntity pdo = Pdo.create(DemoEntity.class, getDomainContext());
     DemoEntityPersistenceImpl po = (DemoEntityPersistenceImpl) pdo.getPersistenceDelegate();
@@ -221,7 +220,7 @@ public class JoinedSelectDbTest extends AbstractPersistenceDbTest {
    * @return the executable statement
    */
   private PreparedStatementWrapper joinedStatement(DemoEntity pdo, JoinedSelect<DemoEntity> js,
-                                                   DemoEntityPersistenceImpl root) {
+                                                   DemoEntity root) {
     String sql = joinedSql(pdo, js) + " ORDER BY " + JOIN_ALIAS + "." + DemoComponentPersistenceImpl.CN_TEXT;
     PreparedStatementWrapper st = getSession().createPreparedStatement(_ -> sql);
     // the joined select of a component carries its own context condition, hence this parameter
@@ -239,7 +238,7 @@ public class JoinedSelectDbTest extends AbstractPersistenceDbTest {
    * @return the executable statement
    */
   private PreparedStatementWrapper scrollableJoinedStatement(DemoEntity pdo, JoinedSelect<DemoEntity> js,
-                                                              DemoEntityPersistenceImpl root) {
+                                                             DemoEntity root) {
     String sql = joinedSql(pdo, js) + " ORDER BY " + JOIN_ALIAS + "." + DemoComponentPersistenceImpl.CN_TEXT;
     PreparedStatementWrapper st = getSession().createPreparedStatement(
         _ -> sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
@@ -250,11 +249,7 @@ public class JoinedSelectDbTest extends AbstractPersistenceDbTest {
 
   @Test
   public void testTheJoinedSqlIsAcceptedByTheDatabaseAndCollapsesTheRows() {
-    DemoEntityPersistenceImpl root = entity("root");
-    root.save();
-    component(root, "a");
-    component(root, "b");
-    component(root, "c");
+    DemoEntity root = aggregate("root", "a", "b", "c");
 
     DemoEntity pdo = Pdo.create(DemoEntity.class, getDomainContext());
     DemoEntityPersistenceImpl po = (DemoEntityPersistenceImpl) pdo.getPersistenceDelegate();
@@ -267,18 +262,14 @@ public class JoinedSelectDbTest extends AbstractPersistenceDbTest {
 
     // three joined rows, one root entity
     assertEquals(list.size(), 1);
-    assertEquals(list.get(0).getPersistenceDelegate().getId(), root.getId());
+    assertEquals(list.get(0).getId(), root.getId());
     // and the joiner has seen every component exactly once
     assertEquals(joinedPairs, List.of("root<-a", "root<-b", "root<-c"));
   }
 
   @Test
   public void testAJoinedCursorCollapsesTheRowsOfOneRoot() {
-    DemoEntityPersistenceImpl root = entity("root");
-    root.save();
-    component(root, "a");
-    component(root, "b");
-    component(root, "c");
+    DemoEntity root = aggregate("root", "a", "b", "c");
 
     DemoEntity pdo = Pdo.create(DemoEntity.class, getDomainContext());
     JoinedSelect<DemoEntity> js = new JoinedSelect<>(List.of(listJoin(JoinType.LEFT)));
@@ -287,7 +278,7 @@ public class JoinedSelectDbTest extends AbstractPersistenceDbTest {
              new ResultSetCursor<>(pdo, joinedStatement(pdo, js, root).executeQuery(), js)) {
       List<DemoEntity> found = cursor.toList();
       assertEquals(found.size(), 1, "three joined rows, one root PDO");
-      assertEquals(((DemoEntityPersistenceImpl) found.get(0).getPersistenceDelegate()).getName(), "root");
+      assertEquals(found.get(0).getName(), "root");
     }
     // every component is joined exactly once -- in particular the first one, which the cursor
     // used to drop because get() re-read the row first() had positioned on
@@ -296,10 +287,7 @@ public class JoinedSelectDbTest extends AbstractPersistenceDbTest {
 
   @Test
   public void testAJoinedCursorSeparatesTheRoots() {
-    DemoEntityPersistenceImpl rootA = entity("rootA");
-    rootA.save();
-    component(rootA, "a1");
-    component(rootA, "a2");
+    DemoEntity rootA = aggregate("rootA", "a1", "a2");
 
     DemoEntity pdo = Pdo.create(DemoEntity.class, getDomainContext());
     JoinedSelect<DemoEntity> js = new JoinedSelect<>(List.of(listJoin(JoinType.LEFT)));
@@ -310,14 +298,13 @@ public class JoinedSelectDbTest extends AbstractPersistenceDbTest {
      * comes back through the LEFT JOIN without components, which is exactly the case that makes
      * the cursor switch from one root PDO to the next.
      */
-    DemoEntityPersistenceImpl rootB = entity("rootB");
-    rootB.save();
+    aggregate("rootB");
 
     try (ResultSetCursor<DemoEntity> cursor =
              new ResultSetCursor<>(pdo, joinedStatement(pdo, js, rootA).executeQuery(), js)) {
       List<DemoEntity> found = cursor.toList();
       assertEquals(found.stream()
-                        .map(e -> ((DemoEntityPersistenceImpl) e.getPersistenceDelegate()).getName())
+                        .map(DemoEntity::getName)
                         .sorted()
                         .toList(),
                    List.of("rootA", "rootB"));
@@ -327,11 +314,7 @@ public class JoinedSelectDbTest extends AbstractPersistenceDbTest {
 
   @Test
   public void testBeforeFirstRewindsAJoinedCursor() {
-    DemoEntityPersistenceImpl root = entity("root");
-    root.save();
-    component(root, "a");
-    component(root, "b");
-    component(root, "c");
+    DemoEntity root = aggregate("root", "a", "b", "c");
 
     DemoEntity pdo = Pdo.create(DemoEntity.class, getDomainContext());
     JoinedSelect<DemoEntity> js = new JoinedSelect<>(List.of(listJoin(JoinType.LEFT)));
@@ -348,7 +331,7 @@ public class JoinedSelectDbTest extends AbstractPersistenceDbTest {
       assertTrue(cursor.next(), "a row exists after rewinding a joined cursor");
       DemoEntity afterRewind = cursor.get();
       assertNotNull(afterRewind, "get() must return the row next() just reported after beforeFirst()");
-      assertEquals(((DemoEntityPersistenceImpl) afterRewind.getPersistenceDelegate()).getName(), "root");
+      assertEquals(afterRewind.getName(), "root");
     }
     // every component must be joined exactly once per pass, before and after the rewind
     assertEquals(joinedPairs, List.of("root<-a", "root<-b", "root<-c", "root<-a", "root<-b", "root<-c"));

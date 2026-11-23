@@ -99,7 +99,7 @@ public class WrappedSortedMapTripType<T extends Map> extends MapTripType<T> {
   @Override
   @SuppressWarnings("unchecked")
   protected MapHeader<T> readHeader(TripStream stream, OpCode opCode) {
-    int size = checkSize(WrappedSortedMapTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
+    int size = checkSize(stream, WrappedSortedMapTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
     return new MapHeader<>(size, (T) new TreeMap<>(ComparatorSupport.read(stream)));
   }
 

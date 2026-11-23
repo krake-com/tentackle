@@ -180,26 +180,32 @@ public class RecordTripType<T extends Record> extends AbstractDictionaryBasedTri
     if (readContent) {
       Object[] constructorArgs = new Object[components.length];
 
-      int lastOrdinal = -1;
-      while (opCode != DefaultOpCode.END) {
-        int ordinal;
-        if (opCode.isComponentOrdinal()) {
-          lastOrdinal = ordinal = stream.readNextComponentOrdinal(lastOrdinal, opCode);   // component ordinal in the dictionary
+      stream.enterNested();
+      try {
+        int lastOrdinal = -1;
+        while (opCode != DefaultOpCode.END) {
+          int ordinal;
+          if (opCode.isComponentOrdinal()) {
+            lastOrdinal = ordinal = stream.readNextComponentOrdinal(lastOrdinal, opCode);   // component ordinal in the dictionary
+            opCode = stream.receiveOpCode();
+          }
+          else {
+            ordinal = ++lastOrdinal;
+          }
+          TripComponent component = entry.getTypeComponent(ordinal);
+          if (component == null) {
+            throw new TripRuntimeException(getObjectClass() + " does not provide the component " +
+                                           entry.getComponent(ordinal).getComponentName());
+          }
+          // the canonical constructor takes its arguments as objects, so a primitive component
+          // has to be boxed here no matter what
+          constructorArgs[component.getOrdinal()] = component.readValue(stream, opCode);
+          // next component
           opCode = stream.receiveOpCode();
         }
-        else {
-          ordinal = ++lastOrdinal;
-        }
-        TripComponent component = entry.getTypeComponent(ordinal);
-        if (component == null) {
-          throw new TripRuntimeException(getObjectClass() + " does not provide the component " +
-                                         entry.getComponent(ordinal).getComponentName());
-        }
-        // the canonical constructor takes its arguments as objects, so a primitive component
-        // has to be boxed here no matter what
-        constructorArgs[component.getOrdinal()] = component.readValue(stream, opCode);
-        // next component
-        opCode = stream.receiveOpCode();
+      }
+      finally {
+        stream.leaveNested();
       }
 
       try {

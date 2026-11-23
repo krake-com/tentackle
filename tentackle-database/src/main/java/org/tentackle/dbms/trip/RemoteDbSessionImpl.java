@@ -19,7 +19,12 @@
 package org.tentackle.dbms.trip;
 
 import org.tentackle.dbms.Db;
+import org.tentackle.dbms.DbModification;
 import org.tentackle.dbms.DbUtilities;
+import org.tentackle.dbms.ModificationLog;
+import org.tentackle.dbms.MultiUserDbPool;
+import org.tentackle.dbms.prefs.DbPreferencesKey;
+import org.tentackle.dbms.prefs.DbPreferencesNode;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
 import org.tentackle.log.LoggerFactory;
@@ -36,10 +41,13 @@ import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
 import org.tentackle.session.SessionPoolProvider;
 import org.tentackle.session.auth.Authentication;
+import org.tentackle.session.auth.AuthenticationContext;
 import org.tentackle.session.auth.AuthenticationManager;
 import org.tentackle.session.auth.AuthenticationProvider;
+import org.tentackle.session.auth.DefaultAuthenticationContext;
 import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.Registry;
+import org.tentackle.trip.RejectionDelay;
 import org.tentackle.trip.Remote;
 import org.tentackle.trip.RemoteRoot;
 import org.tentackle.trip.TripRuntimeException;
@@ -52,17 +60,23 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * User session within the application server.
@@ -83,6 +97,49 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    */
   private static final Set<WeakReference<RemoteDbSessionImpl>> SESSIONS = ConcurrentHashMap.newKeySet();
 
+
+  /**
+   * Serializes the verification of the session info and the registration of the new session.<br>
+   * The credentials themselves are verified without holding it (see {@link #verifySessionInfo(SessionInfo)}).
+   */
+  private static final ReentrantLock LOGIN_LOCK = new ReentrantLock();
+
+  /** Default maximum number of logins processed concurrently. */
+  public static final int DEFAULT_MAX_CONCURRENT_LOGINS = 64;
+
+  /** Default milliseconds a login waits for its turn if the maximum number of concurrent logins is reached. */
+  public static final long DEFAULT_LOGIN_WAIT_TIME = 10000;
+
+  /** Milliseconds a login waits for its turn if the maximum number of concurrent logins is reached. */
+  private static volatile long loginWaitTime = DEFAULT_LOGIN_WAIT_TIME;
+
+  /**
+   * Limits the number of logins processed concurrently, null if unlimited.<br>
+   * Each login holds a session from the pool while it is verified.
+   */
+  private static volatile Semaphore loginPermits = new Semaphore(DEFAULT_MAX_CONCURRENT_LOGINS);
+
+  /**
+   * Sets the maximum number of logins processed concurrently.<br>
+   * Each login holds a database session while the credentials are verified. Without a limit,
+   * clients that cannot log in could exhaust the session pool (or the database's connections)
+   * just by trying.
+   *
+   * @param maxConcurrentLogins the maximum number, 0 if unlimited
+   */
+  public static void setMaxConcurrentLogins(int maxConcurrentLogins) {
+    loginPermits = maxConcurrentLogins > 0 ? new Semaphore(maxConcurrentLogins) : null;
+  }
+
+  /**
+   * Sets the time a login waits for its turn if the maximum number of concurrent logins is reached.
+   *
+   * @param loginWaitTime the wait time in milliseconds
+   * @see #setMaxConcurrentLogins(int)
+   */
+  public static void setLoginWaitTime(long loginWaitTime) {
+    RemoteDbSessionImpl.loginWaitTime = loginWaitTime;
+  }
 
   /**
    * The session cleanup thread.
@@ -296,6 +353,8 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   private final SessionInfo serverInfo;                       // the server info for creating a new session
   private final long sessionNumber;                           // unique session number
   private final String clientHost;                            // the client host string
+  private final String clientProtocol;                        // the TRIP protocol of the client's transport
+  private final List<X509Certificate> clientCertificates;     // the verified certificate chain of the client, empty if none
   private final Dictionary dictionary;                        // to prevent GC as long as this session is open
   private final Map<String, Logger> loggers;                  // logger-name :: logger
   private volatile int timeout;                               // timeout in polling intervals of the RemoteDbSessionCleanupThread (read by that thread)
@@ -306,7 +365,10 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   private UUID remoteId;                                      // the remote delegate ID of this session
   private RemoteDbSessionInvocationFilter invocationFilter;   // optional invocation filter
   private Authentication authentication;                      // the proven identity, null if not authenticated yet
+  private AuthenticationContext authenticationContext;        // the context of the authentication, null if not authenticated yet
   private final AtomicBoolean modificationTrackerSession;     // true if this the remote ModificationTracker's session
+  private volatile boolean privilegedSession;                 // true if access to internal tables is allowed
+  private volatile boolean serverSession;                     // true if this a a remote server session
   private final Queue<MasterSerialEvent> masterSerialEvents;  // master serial event queue
   private final AtomicReference<Thread> invokingThread;       // the thread invoking a delegate method, null if none
   private int invocationDepth;                                // nested invocations (accessed by the invoking thread only)
@@ -342,6 +404,8 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
     masterSerialEvents = new ConcurrentLinkedQueue<>();
     invokingThread = new AtomicReference<>();
 
+    long loginStarted = System.nanoTime();
+    Semaphore permits = acquireLoginPermit();
     Db db = null;
     try {
       TransportClientInfo transportInfo = TransportClientInfo.get();
@@ -349,6 +413,8 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
         // use only the host address since the port-number is the one at this moment
         // and is not fixed for further invocations for this session
         clientHost = transportInfo.getHost();
+        clientProtocol = transportInfo.transport() == null ? null : transportInfo.transport().getUri().getScheme();
+        clientCertificates = transportInfo.peerCertificates();
         // Since the dictionary is shared among all TRIP connections of the same client,
         // it must not be GC'd as long as a single session for this client is still open.
         // TCP connections remain open until explicitly closed.
@@ -359,6 +425,8 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
       }
       else {
         clientHost = "?";
+        clientProtocol = null;
+        clientCertificates = List.of();
         dictionary = null;
       }
       db = openDb();
@@ -366,12 +434,22 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
       // before SESSIONS.add: from then on, the cleanup thread checks this session for timeouts
       timeout = determineTimeout(db, clientInfo, serverInfo);
       resources.name = toString();    // chicken egg...
-      synchronized (SESSIONS) {   // prevents race condition between verifySessionInfo and SESSIONS.add
+      LOGIN_LOCK.lock();    // prevents race condition between verifySessionInfo and SESSIONS.add
+      try {
         this.clientInfo.setSince(System.currentTimeMillis());
         db.makeCurrent();   // authentication providers may need the persistence layer to look up the user
         verifySessionInfo(this.clientInfo);
+        // only an authenticated client may learn that its version is incompatible (and the server's version)
+        con.checkClientVersion(this.clientInfo.getClientVersion());
         db.setSessionInfo(this.clientInfo);  // switch to client info for the lifetime of this remote session
         SESSIONS.add(new WeakReference<>(this));
+      }
+      finally {
+        LOGIN_LOCK.unlock();
+      }
+      if (transportInfo != null && dictionary != null) {
+        // logged in: the transport's pre-authentication policy no longer applies to this client
+        transportInfo.authenticate();
       }
       if (dictionary == null) {
         LOGGER.warning("no dictionary assigned to {0}", this);
@@ -389,9 +467,22 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
         }
       }
       if (ex instanceof LoginFailedException) {
+        // the delay must not hold a permit, or failing logins could keep the real users out
+        if (permits != null) {
+          permits.release();
+          permits = null;
+        }
+        // Within a TRIP call, the response is delayed, not the call: the connection's virtual thread
+        // waits before it sends the response, and this regular thread of the call pool is free at once.
+        RejectionDelay.defer(loginStarted);
         throw ex;
       }
       throw new PersistenceException("could not setup remote session", ex);
+    }
+    finally {
+      if (permits != null) {
+        permits.release();
+      }
     }
 
     cleanable = CLEANER.register(this, resources);
@@ -489,13 +580,89 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    * or writing an audit record. They should invoke {@code super.verifySessionInfo(sessionInfo)}
    * first, so the credentials are still verified by the provider chain.
    * <p>
+   * This method is invoked while holding a lock that makes it atomic with the registration of the
+   * new session. The default implementation, however, releases the lock while it verifies the
+   * credentials (see {@link #authenticate(SessionInfo)}), so that a slow verification doesn't
+   * serialize the logins of all clients. Session concerns must therefore be checked <em>after</em>
+   * invoking {@code super.verifySessionInfo}.
+   * <p>
    * Throws LoginFailedException if login is not allowed for whatever reason.
    *
    * @param sessionInfo the session info
    */
   public void verifySessionInfo(SessionInfo sessionInfo) {
-    authentication = AuthenticationManager.getInstance().authenticate(sessionInfo.getCredentials());
+    // Invoked while holding a lock that serializes all logins, so that a session concern, such as
+    // refusing a second login of the same user, and the registration of the session are atomic.
+    // Verifying the credentials, however, takes time: hashing a password, asking a directory or an
+    // identity provider. It must not serialize the logins of all clients, or anybody able to reach
+    // the server could keep the real users from logging in just by trying.
+    // The lock is therefore released while the credentials are verified.
+    int holdCount = LOGIN_LOCK.getHoldCount();
+    for (int i = 0; i < holdCount; i++) {
+      LOGIN_LOCK.unlock();
+    }
+    try {
+      authentication = authenticate(sessionInfo);
+    }
+    finally {
+      for (int i = 0; i < holdCount; i++) {
+        LOGIN_LOCK.lock();
+      }
+    }
     applyAuthentication(sessionInfo, authentication);
+  }
+
+  /**
+   * Verifies the credentials of the session info.<br>
+   * Invoked by {@link #verifySessionInfo(SessionInfo)} without holding the lock that serializes the logins.
+   * <p>
+   * The default implementation hands the credentials to the {@link AuthenticationManager}, along with the
+   * {@link AuthenticationContext} created by {@link #createAuthenticationContext()}.
+   *
+   * @param sessionInfo the session info
+   * @return the proven identity
+   * @throws LoginFailedException if the credentials are not valid
+   */
+  protected Authentication authenticate(SessionInfo sessionInfo) {
+    authenticationContext = createAuthenticationContext();
+    return AuthenticationManager.getInstance().authenticate(sessionInfo.getCredentials(), authenticationContext);
+  }
+
+  /**
+   * Creates the context of the client's connection for the authentication.
+   * <p>
+   * The context carries what the server itself knows about the client: the host, the protocol and,
+   * if the transport requested client certificates, the certificate chain verified by the TLS handshake.
+   *
+   * @return the context, never null
+   */
+  protected AuthenticationContext createAuthenticationContext() {
+    return new DefaultAuthenticationContext(clientHost, clientProtocol, clientCertificates);
+  }
+
+  /**
+   * Acquires a permit to log in.
+   *
+   * @return the permits to release, null if unlimited
+   * @throws LoginFailedException if the server is too busy
+   */
+  private static Semaphore acquireLoginPermit() {
+    Semaphore permits = loginPermits;
+    if (permits != null) {
+      boolean acquired;
+      try {
+        acquired = permits.tryAcquire(loginWaitTime, TimeUnit.MILLISECONDS);
+      }
+      catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        acquired = false;
+      }
+      if (!acquired) {
+        LOGGER.warning("login refused: too many concurrent logins");
+        throw new LoginFailedException((Session) null, "server busy, please try again later");
+      }
+    }
+    return permits;
   }
 
   /**
@@ -525,6 +692,27 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    */
   public Authentication getAuthentication() {
     return authentication;
+  }
+
+  /**
+   * Gets the context the client was authenticated in.
+   * <p>
+   * Provides the application with what the server knew about the client at login, such as the
+   * verified client certificate.
+   *
+   * @return the context, null if the application authenticated without the provider chain
+   */
+  public AuthenticationContext getAuthenticationContext() {
+    return authenticationContext;
+  }
+
+  /**
+   * Gets the verified certificate chain the client presented.
+   *
+   * @return the certificates, leaf first, empty if the client presented none
+   */
+  public List<X509Certificate> getClientCertificates() {
+    return clientCertificates;
   }
 
   /**
@@ -580,6 +768,16 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   @Override
   public SessionInfo getClientSessionInfo() {
     return clientInfo;
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The default implementation returns null.
+   */
+  @Override
+  public String getServerVersion() {
+    return null;
   }
 
   /**
@@ -654,6 +852,99 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   }
 
   /**
+   * Returns whether this is a privileged session.
+   *
+   * @return true if privileged
+   * @see #setPrivilegedSession(boolean)
+   */
+  public boolean isPrivilegedSession() {
+    return privilegedSession;
+  }
+
+  /**
+   * Sets whether this is a privileged session.
+   * <p>
+   * Only privileged sessions may access the framework's internal tables directly, such as the
+   * modification log or the persisted preferences (see {@link #isRemoteAccessAllowed(Class)}).
+   * This is necessary, for example, for replication tools processing the modification log remotely.
+   * <p>
+   * Sessions are not privileged by default. The flag is set by the server, usually in
+   * {@link #verifySessionInfo(SessionInfo)} according to the authenticated user.
+   * It cannot be set by the client.
+   *
+   * @param privilegedSession true if privileged
+   */
+  public void setPrivilegedSession(boolean privilegedSession) {
+    this.privilegedSession = privilegedSession;
+  }
+
+  /**
+   * Returns whether this is a remove server session.<br>
+   * Server sessions must be able to be grouped with other remote client sessions.
+   * How a server session is identified is application specific.
+   *
+   * @return true if this is a server session
+   */
+  public boolean isServerSession() {
+    return serverSession;
+  }
+
+  /**
+   * Sets whether this is a remove server session.<br>
+   * How a server session is identified is application specific
+   * and usually determined in {@link #verifySessionInfo(SessionInfo)}.
+   *
+   * @param serverSession true if this is a server session
+   */
+  public void setServerSession(boolean serverSession) {
+    this.serverSession = serverSession;
+  }
+
+  /**
+   * Determines whether the client may access the persisted preferences of a user.
+   * <p>
+   * Invoked by the remote delegate of the {@link org.tentackle.dbms.prefs.DbPreferencesOperation}.
+   * The default implementation allows:
+   * <ul>
+   *   <li>reading the system preferences,</li>
+   *   <li>reading and writing the preferences of the session's user,</li>
+   *   <li>everything, if the session is privileged (see {@link #setPrivilegedSession(boolean)}).</li>
+   * </ul>
+   * Applications may override this method, for example, to let administrators write the system preferences
+   * or clients running in system-only mode (see {@link org.tentackle.prefs.PersistedPreferencesFactory#isSystemOnly()}).
+   *
+   * @param user the username, null or empty for the system preferences
+   * @param write true for write access, false for read access
+   * @return true if allowed
+   */
+  public boolean isPreferencesAccessAllowed(String user, boolean write) {
+    if (isPrivilegedSession()) {
+      return true;
+    }
+    if (user == null || user.isEmpty()) {
+      return !write;
+    }
+    return user.equals(clientInfo.getUserName());
+  }
+
+  /**
+   * Gets the remote session a local session is used by.
+   *
+   * @param session the local session
+   * @return the remote session, null if the session is not used by an open remote session
+   */
+  public static RemoteDbSessionImpl getRemoteSession(Db session) {
+    if (session != null) {
+      for (RemoteDbSessionImpl remoteSession : getOpenSessions()) {
+        if (remoteSession.getSession() == session) {
+          return remoteSession;
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
    * Counts the invocation of a delegate method.
    *
    * @param method the method invoked
@@ -671,6 +962,16 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    */
   public String getClientHostString() {
     return clientHost;
+  }
+
+  /**
+   * Gets the TRIP protocol the client is connected through.<br>
+   * This is the URI scheme of the server transport, such as {@code trip} or {@code tripcq}.
+   *
+   * @return the protocol, null if unknown
+   */
+  public String getClientProtocol() {
+    return clientProtocol;
   }
 
   /**
@@ -719,7 +1020,6 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   public boolean isOpen() {
     return resources.db != null;
   }
-
 
   /**
    * {@inheritDoc}
@@ -808,6 +1108,13 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
         if (delegateClasses == null) {
           throw new TripRuntimeException("no delegate class found for " + clazz, nfe);
         }
+      }
+
+      // checked for each request, since the mapping is shared by all sessions
+      if (!isRemoteAccessAllowed(delegateClasses.clazz) ||
+          delegateClasses.effectiveClass != null && !isRemoteAccessAllowed(delegateClasses.effectiveClass)) {
+        LOGGER.warning("remote access to {0} denied for {1}", classname, this);
+        throw new PersistenceException(getSession(), "remote access to " + classname + " denied");
       }
 
       T delegate = (T) createRemoteDelegate(delegateClasses.delegateClass, delegateClasses.delegateImplClass,
@@ -945,6 +1252,79 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
 
 
   /**
+   * Determines whether the client may access the given class remotely.
+   * <p>
+   * Invoked whenever the client requests a remote delegate.
+   * The default implementation denies access to the framework's internal tables, unless the session
+   * is privileged (see {@link #setPrivilegedSession(boolean)}): the generic remote delegates of those
+   * classes provide plain inserts, updates, and deletes, which would allow tampering with the modification
+   * log and other users' preferences. Regular clients don't need them: the preferences are accessed via
+   * the {@link org.tentackle.dbms.prefs.DbPreferencesOperation}, and modification logs are written by the server.
+   * <p>
+   * Applications may override this method to restrict the remote access further.
+   *
+   * @param clazz the class the client requested the remote delegate for
+   * @return true if allowed
+   */
+  protected boolean isRemoteAccessAllowed(Class<?> clazz) {
+    return isPrivilegedSession() || !isInternalClass(clazz);
+  }
+
+  /**
+   * Returns whether this is the main remote middle tier server session
+   * and the incoming client session belongs to that remote server.<br>
+   * The default implementation only checks {@link #isServerSession()}.
+   * Should be overridden by subclasses to restrict remote access further.
+   *
+   * @param clientSession the incoming new client session
+   * @return true if belongs to this remote server
+   */
+  protected boolean isServerSessionFor(RemoteDbSessionImpl clientSession) {
+    return isServerSession();
+  }
+
+  /**
+   * Determines whether the client may group this session with another remote session.
+   * <p>
+   * When a session of a group dies within a transaction, all sessions of the group are closed.
+   * Hence, a client must not be able to join the sessions of other clients.
+   * The default implementation allows grouping only with sessions of the same user, opened by the same
+   * client JVM. The latter is determined by the TRIP dictionary shared by all connections of a client,
+   * or, if there is no dictionary, by the client's host.
+   *
+   * @param other the other remote session
+   * @return true if allowed
+   */
+  protected boolean isGroupingAllowed(RemoteDbSessionImpl other) {
+    if (other == this || other.isServerSessionFor(this)) {
+      return true;
+    }
+    SessionInfo otherInfo = other.getClientSessionInfo();
+    if (clientInfo.getUserId() != otherInfo.getUserId() ||
+        clientInfo.getUserClassId() != otherInfo.getUserClassId() ||
+        !Objects.equals(clientInfo.getUserName(), otherInfo.getUserName())) {
+      return false;
+    }
+    if (dictionary != null || other.dictionary != null) {
+      return dictionary == other.dictionary;
+    }
+    return Objects.equals(clientHost, other.clientHost);
+  }
+
+  /**
+   * Returns whether the given class is one of the framework's internal persistent classes.
+   *
+   * @param clazz the class
+   * @return true if internal
+   */
+  protected boolean isInternalClass(Class<?> clazz) {
+    return ModificationLog.class.isAssignableFrom(clazz) ||
+           DbModification.class.isAssignableFrom(clazz) ||
+           DbPreferencesNode.class.isAssignableFrom(clazz) ||
+           DbPreferencesKey.class.isAssignableFrom(clazz);
+  }
+
+  /**
    * Determines the session timeout count.<br>
    * The default implementation returns {@link TripServer#getSessionTimeout()}.
    *
@@ -975,9 +1355,23 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
         else {
           MultiUserSessionPool remoteSessionPool = sessionPoolProvider.getRemoteSessionPool();
           if (remoteSessionPool != null) {
-            SessionInfo sessionInfo = getClientSessionInfo();
-            sessionInfo.setProperties(serverInfo.getProperties());
-            pooledDb = (Db) remoteSessionPool.get(sessionInfo);
+            // The client's credentials with the server's backend properties.
+            // A copy, since the client info is sent back to the client (see getClientSessionInfo),
+            // which must never learn the server's properties.
+            SessionInfo poolInfo = clientInfo.clone();
+            poolInfo.setSessionName(clientInfo.getSessionName());   // sessionName was cleared in clone()
+            if (!clientInfo.isCloned()) {
+              poolInfo.clearCloned();
+            }
+            poolInfo.setProperties(serverInfo.getProperties());
+            if (remoteSessionPool instanceof MultiUserDbPool multiUserDbPool &&
+                !multiUserDbPool.isMatchingCredentials(poolInfo)) {
+              // the pooled sessions of this user were opened with other credentials:
+              // open a session of its own, which is authenticated with the presented credentials
+              LOGGER.info("credentials differ from the pooled sessions of {0} -> not pooled", poolInfo.getUserName());
+              return (Db) SessionFactory.getInstance().create(poolInfo);
+            }
+            pooledDb = (Db) remoteSessionPool.get(poolInfo);
           }
         }
       }

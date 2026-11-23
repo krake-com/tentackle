@@ -102,6 +102,7 @@ timezones** and optional immutability. Most are usable directly as model attribu
   [`ObjectSerializer`](../java/org/tentackle/common/ObjectSerializer.java) (TRIP's serializer if `tentackle-core` is
   present, see below), so the object need not implement `Serializable`.
   [`AbstractBinary`](../java/org/tentackle/common/AbstractBinary.java) is the shared base.
+  Both deserialize through a filter, see [Deserialization filter](#deserialization-filter).
 - [`I18NText`](../java/org/tentackle/common/I18NText.java) — a multilingual string usable
   as a model attribute (`org.tentackle.sql.datatypes.I18NTextType`); implements `CharSequence`/`Comparable` for
   the current locale.
@@ -115,6 +116,37 @@ timezones** and optional immutability. Most are usable directly as model attribu
 serialization; [`DefaultObjectSerializer`](../java/org/tentackle/common/DefaultObjectSerializer.java) is the
 JOS-based default. This is the seam that lets `TBinary` (and other framework code) serialize via TRIP instead of
 plain Java serialization when `tentackle-core` is present.
+
+### Deserialization filter
+
+Deserializing an arbitrary object graph via Java Object Serialization (JOS) runs code of whatever classes the
+bytes name. A forged byte stream can therefore abuse *gadget classes* on the class- or module path. The bytes of a
+`Binary` usually come from a database BLOB or a remote peer. TRIP transfers them as an opaque byte array, so
+they are **not** covered by TRIP's [allowlist](../../../../tentackle-core/src/main/docs/trip.md#hardening-deserialization).
+
+`Binary.getObject()` and `DefaultObjectSerializer.deserialize()` therefore read through an `ObjectInputFilter`
+(and so do TRIP's [`@TripViaJOS`](../../../../tentackle-core/src/main/docs/trip.md#tripviajos) objects, for the
+same reason)
+created by [`Settings.createDeserializationFilter`](../java/org/tentackle/common/Settings.java). It rejects a
+class if any of the following does:
+
+1. the limits `Settings.DESERIALIZATION_LIMITS` (nesting depth and number of references), plus the size of
+   the binary as the limit for the stream bytes and array lengths;
+2. the application filter: `Settings.setDeserializationFilter(...)`, initially created from the system
+   property `tentackle.serialFilter` (the pattern syntax of `ObjectInputFilter.Config.createFilter`);
+3. the JVM-wide filter `jdk.serialFilter`. It has to be merged explicitly, since a filter set on a stream
+   replaces the JVM-wide filter by default.
+
+Out of the box only the limits and the JVM-wide filter apply, so existing applications keep working. An
+application that reads binaries written by someone it does not trust should configure an allowlist:
+
+```
+-Dtentackle.serialFilter=com.example.myapp.**;java.base/*;!*
+```
+
+An invalid pattern fails every deserialization rather than silently deserializing unfiltered.
+`DefaultObjectSerializer.copy()` is not filtered, since it reads back the bytes it has just created from an
+in-memory object.
 
 ### Security and configuration
 
@@ -182,8 +214,11 @@ A set of static-method helper classes (not instantiable) and small utilities use
   configurable window around the current date.
 - [`FileHelper`](../java/org/tentackle/common/FileHelper.java) — file and resource helpers: loading properties
   (`loadProperties(name)` tries the filesystem first, then the classpath, and returns `EncryptedProperties`),
-  copying files and directories, `unzip` with zip-slip protection, `download`, and `openStreamUncached`, which
-  avoids the JVM-wide jar URL cache (a closed classloader of a concurrent build would otherwise break the stream).
+  copying files and directories, `unzip` with zip-slip and zip-bomb protection (limits on the number of entries and
+  the uncompressed size, by default 100,000 entries and 100 times the size of the ZIP, but at least 64 MiB),
+  `download` into memory (limited to 256 MiB by default, checked against the announced content length and the
+  bytes actually read), and `openStreamUncached`, which avoids the JVM-wide jar URL cache (a closed classloader of
+  a concurrent build would otherwise break the stream).
 - [`ExceptionHelper`](../java/org/tentackle/common/ExceptionHelper.java) — exception chain helpers: extracting an
   exception of given types, handling it via `Handler`s, finding a *temporary* `TentackleRuntimeException`,
   concatenating messages, and filtering noisy JDK and proxy frames from stack traces.

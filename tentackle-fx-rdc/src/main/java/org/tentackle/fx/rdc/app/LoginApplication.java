@@ -44,7 +44,6 @@ import javafx.stage.StageStyle;
 import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
 import java.awt.SplashScreen;
-import java.util.Locale;
 
 /**
  * The login FX application.
@@ -158,6 +157,7 @@ public class LoginApplication extends FxApplication {
     if (sessionInfo.getUserName() == null) {
       updateSessionInfoFromEnvironment(sessionInfo);
     }
+    RestartCredentials.discard(application.getName());   // never leave credentials behind
     if (sessionInfo.getUserName() == null) {
       sessionInfo.setUserName(System.getProperty("user.name"));
     }
@@ -200,31 +200,18 @@ public class LoginApplication extends FxApplication {
   }
 
   /**
-   * Updates the session with the username and password from the process environment.
+   * Updates the session with the username and password passed by the previous instance of the application.<br>
+   * Used by the auto-update feature when restarting the updated application
+   * (see {@code org.tentackle.fx.rdc.update.LoginFailedWithUpdateHandler.passSessionInfoViaEnvironment}).
+   * The process environment holds the path of a credentials file, which is read and deleted
+   * (see {@link RestartCredentials}). Requires a {@link Cryptor}.
    *
    * @param sessionInfo the session info to update
    */
   protected void updateSessionInfoFromEnvironment(SessionInfo sessionInfo) {
     Cryptor cryptor = Cryptor.getInstance();
     if (cryptor != null) {
-      // Get user/passwd from the environment.
-      // Must be encrypted to provide a minimum level of security.
-      // Used by the auto-update feature when restarting the updated application
-      // (see org.tentackle.fx.rdc.update.LoginFailedWithUpdateHandler.passSessionInfoViaEnvironment)
-      String envPrefix = StringHelper.toAsciiLetterOrDigit(Application.getInstance().getName());
-      try {
-        String encUser = System.getenv((envPrefix + "_" + Constants.BACKEND_USER).toUpperCase(Locale.ROOT));
-        if (encUser != null) {
-          sessionInfo.setUserName(Cryptor.getInstance().decrypt64(encUser));
-          String encPass = System.getenv((envPrefix + "_" + Constants.BACKEND_PASSWORD).toUpperCase(Locale.ROOT));
-          if (encPass != null) {
-            sessionInfo.setPassword(Cryptor.getInstance().decrypt64ToChars(encPass));
-          }
-        }
-      }
-      catch (RuntimeException rx) {
-        LOGGER.warning("decryption of username/password from environment failed", rx);
-      }
+      RestartCredentials.read(Application.getInstance().getName(), cryptor, sessionInfo);
     }
   }
 

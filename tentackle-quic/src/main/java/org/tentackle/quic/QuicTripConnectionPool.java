@@ -36,18 +36,23 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -60,6 +65,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * out connections belonging to a QUIC connection that is long gone. Should it be lost nevertheless,
  * it is re-established when the next connection is requested from the pool, see
  * {@link #restoreMinimumSize(int)}.
+ * <p>
+ * Before it comes to that, a connection whose path stalls migrates to a new source port, see
+ * {@link QuicTripTransport#getMigrationProbeTimeouts()}.
  * <p>
  * Because each pooled connection holds one of the streams the peer allows for the whole time it is
  * in the pool, the pool's maximum size defaults to {@link QuicTripTransport#getMaxStreams()} instead
@@ -105,11 +113,16 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
   private final int streamWindow;
   private final int keepAliveSeconds;
   private final int connectTimeoutSeconds;
+  private final int migrationProbeTimeouts;         // 0 to never migrate
   private final int streamTimeoutSeconds;
-  private final X509TrustManager trustManager;    // checks the server certificate, null if certcheck is disabled
-  private final List<NamedGroup> namedGroups;     // the key-exchange groups to offer, null for the KWIK default
-  private final boolean hostCheck;                // true if the server's host name is verified (if certcheck)
+  private final X509TrustManager trustManager;      // checks the server certificate, null if certcheck is disabled
+  private final List<NamedGroup> namedGroups;       // the key-exchange groups to offer, null for the KWIK default
+  private final boolean hostCheck;                  // true if the server's host name is verified (if certcheck)
+  private final X509Certificate clientCertificate;  // the certificate presented to the server, null if none
+  private final PrivateKey clientKey;               // the private key of the client certificate, null if none
   private QuicClientConnection connection;
+  private volatile QuicMigrator migrator;           // migrates the current connection, null if none
+  private final AtomicInteger previousMigrations = new AtomicInteger();  // migrations of the connections replaced
 
   /**
    * Creates a QUIC connection pool and establishes the QUIC connection.
@@ -151,6 +164,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     String scheme = uri.getScheme();    // default alpnId is the same as the scheme
     alpnId = queryParameters.getOrDefault("alpnid", scheme);
     keepAliveSeconds = transport.getUriPars().getOrDefault("keepalive", -1);
+    migrationProbeTimeouts = transport.getMigrationProbeTimeouts();
     maxIdleSeconds = transport.getMaxIdleSeconds();
     streamWindow = transport.getStreamWindow();   // validated here rather than by every connect attempt
     trustManager = Boolean.parseBoolean(queryParameters.getOrDefault("certcheck", "true")) ?
@@ -158,6 +172,33 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     SslParameters sslParameters = new SslParameters(uri);
     namedGroups = toNamedGroups(sslParameters.getNamedGroups(), uri);
     hostCheck = sslParameters.isHostCheck();
+    KeyStore keyStore = sslParameters.getKeyStore();
+    if (keyStore != null) {
+      // like the TCP transports, the client presents its certificate if the server asks for one
+      String alias = sslParameters.getCertificateAlias();
+      if (alias == null) {
+        throw new TripRuntimeException(
+          "the client keystore holds more than one key: the certificate-alias (ksalias) must be specified");
+      }
+      char[] password = sslParameters.getKeyPassword();
+      try {
+        clientCertificate = (X509Certificate) keyStore.getCertificate(alias);
+        clientKey = (PrivateKey) keyStore.getKey(alias, password);
+      }
+      catch (GeneralSecurityException | ClassCastException e) {
+        throw new TripRuntimeException("cannot load the client certificate '" + alias + "' for " +
+                                       UriHelper.uriToSafeString(uri), e);
+      }
+      finally {
+        if (password != null) {
+          Arrays.fill(password, ' ');
+        }
+      }
+    }
+    else {
+      clientCertificate = null;
+      clientKey = null;
+    }
 
     connect();
   }
@@ -339,6 +380,14 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
         quicConnection.keepAlive(keepAliveSeconds < 0 ? Integer.MAX_VALUE : keepAliveSeconds);
       }
       connection = quicConnection;
+      if (migrationProbeTimeouts > 0) {
+        // installed only once the connection is ours: the listener of one given up on must not count
+        QuicMigrator quicMigrator = new QuicMigrator(quicConnection, migrationProbeTimeouts,
+                                                     Duration.ofSeconds(connectTimeoutSeconds),
+                                                     UriHelper.uriToSafeString(uri));
+        quicConnection.setConnectionListener(quicMigrator);
+        migrator = quicMigrator;
+      }
     }
     catch (TimeoutException e) {
       connector.interrupt();
@@ -427,6 +476,10 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     if (namedGroups != null) {
       // KWIK sends a key share for the first group and falls back to a HelloRetryRequest for the others
       builder.supportedGroups(namedGroups);
+    }
+    if (clientCertificate != null && clientKey != null) {
+      builder.clientCertificate(clientCertificate)
+             .clientCertificateKey(clientKey);
     }
     QuicClientConnection quicConnection = builder.build();
     try {
@@ -552,12 +605,40 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
   }
 
   /**
+   * Gets how often the QUIC connections of this pool migrated to a new source port.<br>
+   * Counts the migrations of all QUIC connections the pool ever established, see
+   * {@link QuicTripTransport#getMigrationProbeTimeouts()}.
+   *
+   * @return the number of migrations
+   */
+  public int getMigrationCount() {
+    QuicMigrator quicMigrator = migrator;
+    return previousMigrations.get() + (quicMigrator == null ? 0 : quicMigrator.getMigrationCount());
+  }
+
+  /**
+   * Gets the local address the QUIC connection currently sends from.<br>
+   * Changes whenever the connection migrates.
+   *
+   * @return the local address, null if not connected
+   */
+  public InetSocketAddress getLocalAddress() {
+    QuicClientConnection quicConnection = connection;
+    return quicConnection == null ? null : quicConnection.getLocalAddress();
+  }
+
+  /**
    * Closes the QUIC connection if there is one.<br>
    * Closing is best effort: the connection may be gone already.
    */
   protected void closeConnection() {
     QuicClientConnection quicConnection = connection;
     connection = null;
+    QuicMigrator quicMigrator = migrator;
+    migrator = null;
+    if (quicMigrator != null) {
+      previousMigrations.addAndGet(quicMigrator.getMigrationCount());
+    }
     if (quicConnection != null) {
       try {
         quicConnection.close();

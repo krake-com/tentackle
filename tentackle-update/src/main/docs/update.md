@@ -50,7 +50,8 @@ plugs everything together.
 - **No secrets in the payload.** `UpdateInfo` is *not* encrypted by itself. To protect it in transit, publish the
   service over the PSK-encrypted (pre-shared key) `tripe` transport rather than over TLS: a new server version may
   come with a new certificate that the outdated client does not trust yet. The download itself is plain HTTP(S)
-  and is protected by a **SHA-256 checksum** rather than by transport encryption.
+  and is protected by a **SHA-256 checksum** rather than by transport encryption. Encryption alone does not keep
+  an attacker out, though — see [The Threat Model](#the-threat-model).
 - **Convention-based artifact layout.** The server derives the download URLs purely from a naming convention
   (`<artifact>-<version>-<platform>-<arch>[-pkg].zip` plus a matching `.sha256` file) under a configurable base
   URL, so adding a new platform/architecture is a matter of publishing the right files — no server code changes.
@@ -118,6 +119,10 @@ exactly the checksum, and runs exactly the executor the server named. `UpdateInf
 and returns `true` from `isCloseAllTransportsRequested()` so the transport is torn down cleanly once the answer has
 been received.
 
+A signed or short-lived download URL carries its access token in the query, and maybe credentials in the user
+info. `toString()` therefore shows the URL without them, as does `getSafeUrlString()`, which the client uses in
+its log and error messages.
+
 ### InstallationType
 
 [`InstallationType`](../java/org/tentackle/update/InstallationType.java) distinguishes the two supported per-user
@@ -147,6 +152,26 @@ The implementation class must provide a public constructor with a single `String
 download base URL. Transport failures are wrapped in a `TripRuntimeException`, while a class that cannot be
 instantiated raises a `TentackleRuntimeException`.
 
+The update check runs before the client has logged in. On a transport with a
+[pre-authentication policy](../../../../tentackle-core/src/main/docs/trip.md#unauthenticated-peers) — such as the
+one of a `TripServer` — the service is reachable nevertheless: it is registered by name, which makes it a public
+entry point, and `ClientInfo` and `InstallationType` are annotated with `@TripPreAuth("update")`. A transport of its
+own, for example on a port of its own, gets a `DefaultPreAuthenticationPolicy` from `ServerUpdateUtilities`
+before it starts accepting. Since update clients never log in, the policy restricts all of them for good. To change
+the limits, override `ServerUpdateUtilities.createPreAuthenticationPolicy` (it is a replaceable service), or install a
+policy on the transport before starting the service:
+
+```java
+Transport transport = TransportManager.getInstance().requestTransport(URI.create(serviceUrl));
+DefaultPreAuthenticationPolicy policy = new DefaultPreAuthenticationPolicy();
+policy.setMaxConnectionsPerHost(16);
+transport.setPreAuthenticationPolicy(policy);
+ServerUpdateUtilities.getInstance().startUpdateService(serviceUrl, downloadUrl, UpdateServiceImpl.class);
+```
+
+A transport that is already accepting, such as one shared with a `TripServer`, keeps whatever policy its server
+installed.
+
 ### AbstractUpdateServiceImpl — the default implementation
 
 [`AbstractUpdateServiceImpl`](../java/org/tentackle/update/AbstractUpdateServiceImpl.java) implements
@@ -172,22 +197,35 @@ Given a `ClientInfo`, the base implementation builds the download artifact name 
 with a sibling `.sha256` file. (`-pkg` is appended for `JPACKAGE` installations.) A missing trailing slash of the
 base URL is added automatically. It then:
 
-1. **resolves the checksum** by downloading the `.sha256` file (`FileHelper.download`) and taking its first
-   whitespace-delimited token, so the output of `sha256sum` can be published as is;
-2. **resolves the size** by issuing an HTTP `HEAD` request (via `java.net.http.HttpClient`, following redirects)
-   and reading `content-length`. Any status other than 2xx fails the request, so that the length of an error page
-   is never taken for the size of the ZIP;
-3. **chooses the executor** — `update.cmd` if the platform contains `win`, `update.sh` elsewhere;
-4. returns the assembled `UpdateInfo` (always reporting `getVersion()` as the new version).
+1. **validates the client info** (`validateClientInfo`). The `ClientInfo` comes from a client that has not logged
+   in, and its platform and architecture become part of URLs the server fetches. Both must consist of 1 to 32
+   letters, digits or underscores; anything else, such as `../`, `?` or `#`, would let the client steer the server
+   to arbitrary resources on the update host — or, via a redirect, beyond. The application name and version are
+   not used and therefore not checked: a subclass that uses them must validate them as well;
+2. **resolves the checksum** by downloading the `.sha256` file (HTTP `GET`, at most 64 KB, status 2xx) and taking
+   its first whitespace-delimited token, so the output of `sha256sum` can be published as is. The token must be a
+   SHA-256 hash in hex (`isValidChecksum`), so that an error page a CDN delivers with status 200 is not cached and
+   handed to every client;
+3. **resolves the size** by issuing an HTTP `HEAD` request and reading `content-length`. Any status other than 2xx
+   fails the request, so that the length of an error page is never taken for the size of the ZIP;
+4. **chooses the executor** — `update.cmd` if the platform contains `win`, `update.sh` elsewhere;
+5. returns the assembled `UpdateInfo` (always reporting `getVersion()` as the new version).
+
+Both requests go through `java.net.http.HttpClient`, follow redirects (but not from HTTPS to HTTP), and are
+bounded by `getTimeout()` (30 seconds by default) as a whole, body included, so that a hanging update host cannot
+block the threads of the service.
 
 If the checksum or the size cannot be determined — typically because the artifact is not published — the call
-fails with a `TentackleRuntimeException`, which TRIP passes on to the client.
+fails with a `TentackleRuntimeException("cannot create update info")`, which TRIP passes on to the client. The
+reason is logged on the server, but not passed on: the client has not logged in, and the reason would reveal
+URLs and host names.
 
 The checksum hashes and the download sizes are cached in `ConcurrentHashMap`s keyed by URL, so repeated client
 requests for the same artifact do not re-fetch the metadata. Only a known size is cached, though: a response
-without `content-length` yields `-1` and is queried again on the next request. Every URL-building,
-executor-naming, and `UpdateInfo`-construction step is a `protected` method, so subclasses can customize the
-layout (different file extensions, per-customer artifacts, signed executors, …) without rewriting the flow.
+without `content-length` yields `-1` and is queried again on the next request. As a safety net, each cache holds
+at most 256 entries. Every validation, URL-building, executor-naming, and `UpdateInfo`-construction step is a
+`protected` method, so subclasses can customize the layout (different file extensions, per-customer artifacts,
+signed executors, …) without rewriting the flow.
 
 ---
 
@@ -205,7 +243,9 @@ gathering everything the client needs:
   standard subdirectories (`bin`, `conf`, `include`, `legal`, `lib`) exist and are writable; for the application
   itself, it checks the current working directory, since a jlink image is started from its root. The jpackage
   check first locates the package root (`determineJPackageRoot()`, derived from the path of the running
-  executable) and then applies the jlink check to the embedded runtime:
+  executable) and then applies the jlink check to the embedded runtime. Either way, the directory must also be the
+  running JVM's `java.home` (`isJavaHome(File)`), so that an application started from within another, writable
+  jlink image does not update that one:
 
   | OS      | Package root                         | Embedded runtime                   |
   |---------|--------------------------------------|------------------------------------|
@@ -217,13 +257,24 @@ gathering everything the client needs:
   the remote `UpdateService` proxy. If a [`Cryptor`](../../../../tentackle-common/src/main/docs/common.md) is
   configured, the service URL may be given in encrypted form, disguised as an `http:`, `https:` or `rmi:` URL;
   `Cryptor.deriveURL(...)` decrypts it before the transport is requested. This keeps the real address out of
-  plain-text configuration files.
-- **Downloading and verifying.** `downloadZip(updateInfo, updateDir, progressConsumer)` creates the update
-  directory (removing and recreating it if it already exists, so it is always empty), streams the ZIP into it
-  through a [`CallbackReadableByteChannel`](../java/org/tentackle/update/CallbackReadableByteChannel.java) (so
-  progress can be reported), then recomputes the **SHA-256** digest and compares it case-insensitively against
-  `updateInfo.checksum()` (`sha256sum` writes lowercase, `certutil` uppercase). A missing checksum or a mismatch
-  fails with a `TentackleRuntimeException`; only a verified file is returned.
+  plain-text configuration files. Since the client downloads and runs whatever the service tells it to, the
+  transport must authenticate the server: `isTransportAllowed(URI)` refuses the plain TCP transports `trip` and
+  `tripc` before a connection is made, as anybody on the network path could answer in their place. All other
+  transports authenticate the server, by its TLS certificate or by the pre-shared key of `tripe`/`tripce`.
+  Applications that need a plain transport, in a closed test network for example, may override the method.
+- **Downloading and verifying.** `downloadZip(updateInfo, updateDir, progressConsumer)` first validates the
+  update info (`validateUpdateInfo`): the download URL must be `http` or `https`, a checksum must be provided, and
+  the update executor must be a plain file name, since it is resolved against the `bin` directory of the unzipped
+  update and executed. It then creates the update directory (removing and recreating it if it already exists, so
+  it is always empty) and streams the ZIP into it through a
+  [`CallbackReadableByteChannel`](../java/org/tentackle/update/CallbackReadableByteChannel.java) (so progress can
+  be reported), computing the **SHA-256** digest on the fly, which it compares case-insensitively against
+  `updateInfo.checksum()` (`sha256sum` writes lowercase, `certutil` uppercase). The ZIP is stored under the last
+  segment of the URL's path, or as `update.zip` if that is not a plain file name. The download must not exceed the
+  announced `updateInfo.size()`, or `getMaxDownloadSize()` (2 GB) if the size is unknown, and connecting and each
+  read are bounded by `getTimeout()` (30 seconds). Any failure — an invalid update info, an oversized download, a
+  mismatching checksum — throws a `TentackleRuntimeException` and removes the partial file; only a verified file
+  is returned.
 
 ### CallbackReadableByteChannel
 
@@ -231,7 +282,9 @@ gathering everything the client needs:
 `ReadableByteChannel` wrapper that, after every read returning data, feeds a `Consumer<Double>` the fraction
 `bytesRead / expectedSize` (0.0–1.0). This is what drives the download progress bar. With a negative (unknown)
 expected size, the reported value is negative as well, which a JavaFX progress bar displays as indeterminate.
-The byte count is a `long`, so images larger than 2 GB are fine.
+The byte count is a `long`, so images larger than 2 GB are fine. Without an announced size, however,
+`ClientUpdateUtilities` limits the download to `getMaxDownloadSize()` (2 GB by default), so the update host
+must send a `content-length` for larger images, or the application must override that method.
 
 ---
 
@@ -273,7 +326,9 @@ The end-to-end flow, as wired up by [`tentackle-fx-rdc-update`](../../../../tent
    ([`LoginFailedWithUpdateHandler`](../../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)). When the client gets a
    `VersionIncompatibleException` (or an SSL handshake error caused by a server upgrade) *and* it runs from an
    updatable image, it builds a `ClientInfo` and calls `UpdateService.getUpdateInfo(...)` on the service named by
-   its own `updateService` property.
+   its own `updateService` property. The server reports an incompatible version only after the credentials were
+   verified (see [Failed logins](../../../../tentackle-database/src/main/docs/database.md#failed-logins)), so the
+   update is offered to a user who entered valid credentials.
 4. **Decision.** If `updateInfo.version()` differs from the running version, the user is asked whether to install
    (with an optional countdown for unattended/kiosk setups). Applications may override this to update silently.
 5. **Download & verify.** `ClientUpdateUtilities.downloadZip(...)` fetches the ZIP into an `update` directory
@@ -282,8 +337,66 @@ The end-to-end flow, as wired up by [`tentackle-fx-rdc-update`](../../../../tent
 6. **Swap & restart.** The ZIP is unzipped, and the `updateExecutor` script (`update.sh`/`update.cmd`) from its
    `bin` directory is launched with the current PID (and, for jpackage, the path of the executable to restart).
    The script waits for this process to exit, overwrites the image files, and relaunches the application. The client
-   then `System.exit(0)`s. Optionally, the encrypted username/password are handed to the new process via
-   environment variables so the user does not have to log in again.
+   then `System.exit(0)`s. Optionally, the encrypted username/password are handed to the new process via a
+   temporary file only the user can access, whose path is passed in the environment, so the user does not have to
+   log in again.
+
+---
+
+## The Threat Model
+
+The update check runs **before the login**, and the `UpdateService` is registered by name, which makes it a public
+entry point. Encrypting the channel does not change that: with server-only TLS (`trips`, `tripq`, `tripj`), the
+client verifies the server, but the server does not verify the client. An attacker who gained access to the network
+can happily establish a connection to the TLS-encrypted endpoint and talk TRIP to it, because no shared secret is
+required.
+
+Therefore, publish the update service over one of these:
+
+- the **PSK transport** `tripe` (or `tripce`), which encrypts with a pre-shared key, or
+- **TLS with a client certificate**, i.e. a server URI with `clientauth=need` and a client presenting a certificate
+  from its keystore (see [SSL/TLS configuration](../../../../tentackle-core/src/main/docs/trip.md#ssltls-configuration)).
+
+Either way, a client must know a shared secret — the pre-shared key or the client certificate — before the server
+deserializes a single byte from it. Of the two, `tripe` is the default for the update service, because a new server
+version may come with a new certificate that the outdated client does not trust yet.
+With `tripe`, the client proves that it knows the key with its first 67 bytes 
+(see [PSK encryption](../../../../tentackle-core/src/main/docs/trip.md#psk-encryption)). 
+Clients of the previous version, which encrypted with unauthenticated AES/ECB, are refused unless the server is
+started with `legacy=1`. Set it only while such clients still have to be updated, and remove it afterwards.
+
+The secret ships with the client, however. The pre-shared key is the passphrase of the application's
+[`Cryptor`](../../../../tentackle-common/src/main/docs/cryptor.md#threat-model-and-limits), compiled into the image,
+and the client certificate sits in the keystore next to it. As TRIP's chapter on
+[unauthenticated peers](../../../../tentackle-core/src/main/docs/trip.md#unauthenticated-peers) puts it, a client
+that can be downloaded gives its key away. What such a client can send before the login is limited by the
+pre-authentication policy (see *ServerUpdateUtilities* above), which
+remains the last line of defense. For the same reason, the service treats the `ClientInfo` as untrusted input and
+validates it before deriving any URL from it (see *AbstractUpdateServiceImpl* above).
+
+Further hardening:
+
+- **Add a secret that is not part of the image** to the client info, entered manually or taken from an external
+  source, such as the [OS credential store](../../../../tentackle-keyring/src/main/docs/platform-keyring.md), a
+  mounted volume or a platform secret store, and check it in the `AbstractUpdateServiceImpl` subclass. `ClientInfo`
+  is a record without a field for it, so this takes an application-specific request type, annotated with
+  `@TripPreAuth`, and a service contract of its own.
+- **Keep the image private.** Whoever gets the ZIP gets the key. Protect the download URL with signed or short-lived
+  CDN URLs, by authentication, or by a mirror that is reachable only through the company VPN. The client keeps such
+  a URL's token out of its log (see *UpdateInfo* above).
+- **Use a transport of its own for the update service**, on a port of its own and with a key of its own, apart from
+  the transport of the application server. A leaked update key then reaches only the update check, which the
+  pre-authentication policy confines.
+- **Authenticate the server.** The client downloads the URL and runs the script the server names, so whoever can
+  impersonate the update server can run code on the client. The SHA-256 checksum detects a tampered download, but
+  not a forged `UpdateInfo`, since the checksum comes from the same reply. With `tripe`, impersonating the server
+  takes the pre-shared key, which is one more reason to keep it out of reach. The client refuses the plain `trip`
+  and `tripc` transports for the update service, which authenticate nobody (see *ClientUpdateUtilities* above).
+  With TLS, put a long-lived, private CA
+  into the client's truststore rather than the server certificate itself, so that renewing the server certificate
+  does not lock out the outdated clients.
+- **Restrict the network.** A firewall or VPN that admits only known networks to the update port keeps most
+  attackers from getting a connection at all.
 
 ---
 
@@ -304,8 +417,8 @@ The end-to-end flow, as wired up by [`tentackle-fx-rdc-update`](../../../../tent
   [`tentackle-common`](../../../../tentackle-common/src/main/docs/common.md)) for TRIP remoting, the `Cryptor`,
   `FileHelper`/`StringHelper` and the `@Service`/`ServiceFactory` SPI. The dependency is declared `optional` in the
   POM to avoid leaking it transitively onto downstream artifacts.
-- It **requires** `java.net.http` for the server's HTTP `HEAD` request. The checksum file and the ZIP are
-  downloaded via plain `java.net.URL` connections.
+- It **requires** `java.net.http` for the server's HTTP requests (the checksum file and the `HEAD` request for the
+  size). The client downloads the ZIP via a plain `java.net.URL` connection.
 - It **opens** `org.tentackle.update` to `org.tentackle.core` so TRIP can serialize `ClientInfo`/`UpdateInfo`.
 - It **provides** a `ModuleHook` service (`org.tentackle.update.service.Hook`), which loads resource bundles within
   the context of this module.

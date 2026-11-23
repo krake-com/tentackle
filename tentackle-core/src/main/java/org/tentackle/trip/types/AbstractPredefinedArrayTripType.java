@@ -54,6 +54,7 @@ public abstract class AbstractPredefinedArrayTripType<T> extends AbstractTripTyp
   protected static final int MAX_INNER_ZEROS = 3;
 
   private final PredefinedArrayType subType;
+  private final int slotBytes;    // bytes per element
 
   /**
    * Creates the type.
@@ -66,7 +67,9 @@ public abstract class AbstractPredefinedArrayTripType<T> extends AbstractTripTyp
     if (subType == null) {
       throw new TripRuntimeException("The class " + clazz.getName() + " is not a predefined array type");
     }
+    slotBytes = getSlotBytes(clazz.getComponentType());
   }
+
 
   @Override
   public boolean isReferencable(T value) {
@@ -144,6 +147,21 @@ public abstract class AbstractPredefinedArrayTripType<T> extends AbstractTripTyp
   }
 
   /**
+   * Reads the array header and validates the length.<br>
+   * The read starts <em>after</em> the predefined array subcode and the reference id.
+   * Accounts for the memory of the array, which must be allocated afterward.
+   *
+   * @param stream the stream
+   * @param opCode the array op code
+   * @return the array length
+   * @throws TripRuntimeException if the length is negative or exceeds the limits of the stream
+   * @see #checkArrayLength(TripStream, int, int)
+   */
+  protected int readArrayLength(TripStream stream, OpCode opCode) {
+    return checkArrayLength(stream, readArrayLength(stream.getDeserializer(), opCode), slotBytes);
+  }
+
+  /**
    * Reads the array skip, if the opcode is one.
    * <p>
    * The counterpart of {@link #writeSkip}, shared by the read loop of every predefined array type.
@@ -194,6 +212,26 @@ public abstract class AbstractPredefinedArrayTripType<T> extends AbstractTripTyp
       serializer.serializeOpCode(DefaultOpCode.SKIP);
       serializer.serializeInt(skip);
     }
+  }
+
+
+  /**
+   * Gets the number of bytes per element of an array.
+   *
+   * @param componentType the array's component type
+   * @return the bytes per element, 8 for references
+   */
+  private static int getSlotBytes(Class<?> componentType) {
+    if (componentType == boolean.class || componentType == byte.class) {
+      return 1;
+    }
+    if (componentType == char.class || componentType == short.class) {
+      return 2;
+    }
+    if (componentType == int.class || componentType == float.class) {
+      return 4;
+    }
+    return 8;   // long, double, or reference
   }
 
 }

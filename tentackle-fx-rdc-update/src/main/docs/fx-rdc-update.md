@@ -35,8 +35,9 @@ consumes them.
 - **User in control, with an unattended escape hatch.** By default, the user is asked before installing, with a
   short countdown that auto-confirms — convenient for kiosks/dashboards — but the relevant methods are `protected`
   so an application can update silently.
-- **Seamless restart.** Where a `Cryptor` is available, the current credentials are encrypted and passed to the
-  relaunched process via environment variables so the user does not have to log in again after the update.
+- **Seamless restart.** Where a `Cryptor` is available, the current credentials are encrypted and handed to the
+  relaunched process via a temporary file only the user can access, so the user does not have to log in again
+  after the update.
 
 ---
 
@@ -64,7 +65,8 @@ RDC `DesktopApplication<C>` (where `C` is the main controller type) and adds two
 
    The lockfile is never deleted: only the lock counts, and the operating system releases it when the process
    ends. A lockfile left behind by a crashed instance therefore does no harm — the next start simply locks it again
-   and overwrites the PID.
+   and overwrites the PID. Since the lockfile is truncated, it is opened without following symbolic links: a
+   symlink in its place makes the application refuse to start instead of truncating the file it points to.
 
 Applications simply make their main class extend `UpdatableDesktopApplication` instead of `DesktopApplication` to
 opt into auto-update. The single-instance check can be adapted by overriding:
@@ -106,7 +108,7 @@ Its responsibilities, all overridable, are:
 | `createCountdownTimeline(...)`       | A 3-2-1 countdown on the Yes button that auto-confirms after about four seconds; return `null` to disable. |
 | `createUpdateDirectory(...)`         | Choose where to download/unzip — `update` below the package root for jpackage, `./update` for jlink.       |
 | `update(...)`                        | Download, verify, unzip, launch the update script and exit.                                                |
-| `passSessionInfoViaEnvironment(...)` | Hand the encrypted credentials to the restarted process for auto-login.                                    |
+| `passSessionInfoViaEnvironment(...)` | Hand the encrypted credentials to the restarted process for auto-login, via a private temporary file.      |
 | `setStopReason(Throwable)`           | Record `EXIT_VALUE_OUTDATED` and the cause as the exit value of the application.                           |
 | `terminate(...)`                     | Record the stop reason, show an error/info and close the window, which terminates the application.         |
 
@@ -132,13 +134,21 @@ progress through `showApplicationStatus`), unzips the archive with `FileHelper.u
 files — required on Windows) and, for jpackage, the path of the launcher to restart. Finally, it
 `System.exit(0)`s so the script can replace the running image.
 
-For the seamless restart, `passSessionInfoViaEnvironment(...)` adds the username — and the password, if the
-credentials are password-based — encrypted with the application's `Cryptor` to the script's environment. The
-variables are named `<APP>_USER` and `<APP>_PASSWORD`, where `<APP>` is the application name reduced to ASCII
-letters and digits, in upper case. The restarted client picks them up in
-`LoginApplication.updateSessionInfoFromEnvironment(...)` of
-[`tentackle-fx-rdc`](../../../../tentackle-fx-rdc/src/main/docs/rdc.md). Without a `Cryptor`, nothing is passed and
-the user logs in again.
+For the seamless restart, `passSessionInfoViaEnvironment(...)` hands over the username — and the password, if the
+credentials are password-based — via
+[`RestartCredentials`](../../../../tentackle-fx-rdc/src/main/java/org/tentackle/fx/rdc/app/RestartCredentials.java)
+of [`tentackle-fx-rdc`](../../../../tentackle-fx-rdc/src/main/docs/rdc.md#restart-credentials). The credentials are
+encrypted with the application's `Cryptor` and written to a new file in the temporary directory that only the
+current user can access (POSIX mode `600`, or an ACL for the owner alone on Windows). The script's environment
+receives only the file's path, in `<APP>_CREDENTIALS`, where `<APP>` is the application name reduced to ASCII
+letters and digits, in upper case. The restarted client reads and deletes the file in
+`LoginApplication.updateSessionInfoFromEnvironment(...)`.
+
+The credentials themselves are kept out of the environment on purpose. A process cannot remove a variable from its
+own environment, so the restarted client would carry them for its whole lifetime and pass them on to every process
+it starts. And since the `Cryptor`'s key ships with the client, its encryption does not protect them from whoever
+gets hold of the variable. If the file cannot be written, or there is no `Cryptor`, nothing is passed and the user
+logs in again. If starting the script fails, the file is deleted.
 
 ### UpdateFxRdcBundle and localization
 
@@ -158,16 +168,16 @@ The client-side half of the end-to-end update flow (the server side is set up vi
 
 1. **Launch.** The application's main class extends `UpdatableDesktopApplication`. On `initialize()`, if it runs
    from an updatable image, it takes the PID lockfile to guarantee it is the only instance.
-2. **Login fails with a version mismatch.** The user tries to connect to an upgraded server and gets a
-   `VersionIncompatibleException` (or a TLS handshake error). The RDC framework routes this to
+2. **Login fails with a version mismatch.** The user tries to connect to an upgraded server and, once the
+   credentials were verified, gets a `VersionIncompatibleException` (or a TLS handshake error). The RDC framework routes this to
    `LoginFailedWithUpdateHandler.handle(...)`.
 3. **Check.** If the image is updatable and an `updateService` property is configured, the handler asks the remote
    `UpdateService` for the matching `UpdateInfo`.
 4. **Confirm.** If a newer version is offered, the user is shown an "install version X?" dialog (with the
    auto-confirm countdown). Unattended applications can override this to proceed silently.
 5. **Install.** `ClientUpdateUtilities.downloadZip(...)` downloads and SHA-256-verifies the ZIP into the update
-   directory; the handler unzips it and launches the bundled update script with the current PID (and credentials
-   for auto-login), then exits so the script can overwrite the image and restart it.
+   directory; the handler unzips it and launches the bundled update script with the current PID (and the path of a
+   private credentials file for auto-login), then exits so the script can overwrite the image and restart it.
 6. **Not updatable.** If the client is outdated but cannot self-update (e.g., a plain jar launch), it shows the
    "contact your administrator" message and stops.
 

@@ -492,7 +492,8 @@ local registry/file:
 - [`DbPreferencesFactory`](../java/org/tentackle/dbms/prefs/DbPreferencesFactory.java)
   (`@Service(PersistedPreferencesFactory.class)`) — a drop-in replacement for the JRE preferences factory,
   normally reached via `PersistedPreferencesFactory.getInstance()`.
-- `prefs/trip` — the remote delegate so preferences work over a remote connection.
+- `prefs/trip` — the remote delegate so preferences work over a remote connection. A remote client may write only
+  its own user's preferences, see [After the login](#after-the-login).
 
 ---
 
@@ -533,6 +534,99 @@ of a remote insert/update/delete back to the client. [`SQLExceptionComponentProv
 / [`SQLExceptionInstanceCreator`](../java/org/tentackle/dbms/trip/SQLExceptionInstanceCreator.java) ensure JDBC
 exceptions serialize correctly across the wire, and [`DefaultMasterSerial`](../java/org/tentackle/dbms/trip/DefaultMasterSerial.java)
 carries the master modification serial back to clients.
+
+### Before the login
+
+Until a client has logged in, the server doesn't trust it: server-only TLS encrypts the traffic but
+lets anyone talk to the server. `TripServer` therefore installs a
+[pre-authentication policy](../../../../tentackle-core/src/main/docs/trip.md#unauthenticated-peers) on its
+transports, which accepts only what a lookup, a login and the update check need. `RemoteDbSessionImpl`
+lifts the restrictions for all connections of the client's transport as soon as `verifySessionInfo` has
+accepted the credentials.
+
+The backend property `preauth` of the server selects the mode:
+
+| Value               | Meaning                                                                                   |
+|---------------------|-------------------------------------------------------------------------------------------|
+| `enforce` (default) | refuses everything a login doesn't need and closes the connection                         |
+| `audit`             | refuses nothing, but logs each distinct violation once — to find out what a client sends  |
+| `off`               | accepts everything from everyone, as in former releases                                   |
+
+An application whose `SessionInfo` or `Credentials` are subclassed must annotate them with
+`@TripPreAuth("login")`, or the login is refused. To add more classes or change the limits, override
+`TripServer.createPreAuthenticationPolicy`. Remote objects registered by name, like the
+`RemoteDbConnection`, are public entry points, reachable before the login.
+
+Each login holds a session while the credentials are verified. The backend property
+`maxlogins` (default 64, `0` = unlimited) limits the logins processed concurrently: a login exceeding it
+waits up to 10 seconds and is then refused as "server busy". The verification itself (hashing a password,
+asking a directory or an identity provider) runs in parallel. Only what an overridden `verifySessionInfo`
+checks *after* `super.verifySessionInfo`, such as refusing a second login of the same user, is atomic with
+the registration of the new session.
+
+### Failed logins
+
+A failed login is answered after a random time within the interval set by the backend properties
+`loginfailmindelay` and `loginfailmaxdelay` (default 1–5 s, `loginfailmaxdelay=0` answers immediately).
+The time is measured from the start of the login, so it also hides how long the credentials were verified:
+an attacker can tell neither whether the user exists nor whether only the password was wrong. It also throttles
+brute-force attacks. Neither a session nor a login permit is held during the delay, so failing logins can't
+keep the real users out. Nor is a thread of the server's call pool: the login returns at once, and the
+virtual thread of the TRIP connection waits before it sends the response.
+
+The interval is the [`RejectionDelay`](../../../../tentackle-core/src/main/java/org/tentackle/trip/RejectionDelay.java)
+of TRIP, which also applies to a connection with an invalid magic and to the lookup of an unknown
+service name (see [Unauthenticated peers](../../../../tentackle-core/src/main/docs/trip.md#unauthenticated-peers)).
+All rejections share one interval, so the response time doesn't tell which one occurred.
+
+The delay hides the result of a login, not its cost: each attempt still runs `verifySessionInfo`, often a
+database query plus whatever the application's password check costs, in a thread of the call pool the
+logged-in users share.
+Anybody who knows the service name can make the server do that work, bounded only by the connection limits and
+the connection rate of the pre-authentication policy. Keep the service names secret (see
+[Denial of service](../../../../tentackle-core/src/main/docs/trip.md#denial-of-service)).
+
+The **client's version is checked only after its credentials were verified**: `RemoteDbSessionImpl` invokes
+`RemoteDbConnectionImpl.checkClientVersion` right after `verifySessionInfo`, before the session is registered
+and the client is marked as authenticated. A client with wrong credentials therefore always gets the plain
+`LoginFailedException`. A `VersionIncompatibleException`, which usually carries the server's version, reaches
+only a user who could have logged in, and it is delayed like any failed login. The auto-update of an outdated
+client is triggered as before, once the user entered valid credentials.
+
+For the same reason, the client gets the server's version from the session (`RemoteDbSession.getServerVersion`,
+overridden in the application's `RemoteDbSessionImpl`) and checks it with `SessionInfo.checkServerVersion` after the
+login.
+
+### After the login
+
+A logged-in client is authenticated, but that doesn't make it trustworthy. `RemoteDbSessionImpl` and the
+delegates therefore restrict what a client may do beyond the PDO layer's security rules:
+
+- **Internal tables.** The generic delegate of an `AbstractDbObject` provides plain inserts, updates and deletes.
+  For the framework's own tables (`ModificationLog`, `DbModification`, `DbPreferencesNode`, `DbPreferencesKey`)
+  that would allow tampering with the modification log or other users' preferences. `getRemoteDelegate` therefore
+  refuses these classes unless the server marked the session **privileged** with
+  `RemoteDbSessionImpl.setPrivilegedSession(true)`, usually in an overridden `verifySessionInfo` according to the
+  authenticated user. A tool processing the modification log remotely needs a privileged session. Regular clients
+  don't: the preferences go through the `DbPreferencesOperation`, and the modification logs are written by the
+  server. Override `isRemoteAccessAllowed(Class)` to restrict the remote access further.
+- **Preferences.** The client may read the system preferences and read and write its own user's preferences, the
+  user being the one of the remote session. A privileged session may access all preferences. Override
+  `RemoteDbSessionImpl.isPreferencesAccessAllowed(String, boolean)` to change the rules, for example, to let
+  administrators write the system preferences. Since the client sends the persisted nodes and keys along with their
+  IDs, a flush is checked against the database: every persisted node and key must belong to the tree of the user
+  flushed.
+- **Session groups.** `DbRemoteDelegate.groupWith` joins only a session of the same user opened by the same client
+  JVM (the one sharing the TRIP dictionary, see `RemoteDbSessionImpl.isGroupingAllowed`). Otherwise, a client
+  could join the session of another user and have it closed along with its own hanging transaction.
+- **Tracked names.** The modification tracker creates a row in the modification table for each new name a client
+  requests. The name is bound as a statement parameter, and `DbModificationTrackerRemoteDelegateImpl.validateTrackedName`
+  refuses names that are empty, longer than the column, or contain control characters.
+- **Multi-user pools.** A [`MultiUserDbPool`](../java/org/tentackle/dbms/MultiUserDbPool.java) maps its
+  sub-pools by username, and their sessions were opened with the credentials of the first login. A login whose
+  password differs from the sub-pool's (`MultiUserDbPool.isMatchingCredentials`) gets a session of its own,
+  opened with the presented credentials, instead of a pooled one. The server's backend properties are never copied
+  into the client's session info, which is sent back to the client.
 
 ### Preloading remote delegates
 

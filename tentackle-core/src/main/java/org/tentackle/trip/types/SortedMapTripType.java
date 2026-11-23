@@ -110,7 +110,7 @@ public class SortedMapTripType<T extends SortedMap> extends MapTripType<T> {
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
   protected MapHeader<T> readHeader(TripStream stream, OpCode opCode) {
-    int size = checkSize(SortedMapTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
+    int size = checkSize(stream, SortedMapTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
     Comparator comparator = ComparatorSupport.read(stream);
     if (comparator != null) {
       try {

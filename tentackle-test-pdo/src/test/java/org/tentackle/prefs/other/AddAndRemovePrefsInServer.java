@@ -97,6 +97,16 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
     @Override
     public void verifySessionInfo(SessionInfo sessionInfo) throws LoginFailedException {
     }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The client writes the system preferences, which remote clients are not allowed to by default.
+     */
+    @Override
+    public boolean isPreferencesAccessAllowed(String user, boolean write) {
+      return true;
+    }
   }
 
 

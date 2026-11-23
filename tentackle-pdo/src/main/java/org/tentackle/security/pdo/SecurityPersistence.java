@@ -146,16 +146,16 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   /**
    * Gets the attribute 'domainContextClassId'.
    *
-   * @return the class id of the DomainContext's context entity, 0 if all contexts
+   * @return the class id of the DomainContext's context entity, 0 if default context
    */
-  @Persistent(ordinal=3, comment="the class id of the DomainContext's context entity, 0 if all contexts")
+  @Persistent(ordinal=3, comment="the class id of the DomainContext's context entity, 0 if default context")
   @Bindable(ordinal=3)
   int getDomainContextClassId();
 
   /**
    * Sets the attribute 'domainContextClassId'.
    *
-   * @param domainContextClassId the class id of the DomainContext's context entity, 0 if all contexts
+   * @param domainContextClassId the class id of the DomainContext's context entity, 0 if default context
    */
   @Bindable(ordinal=3)
   void setDomainContextClassId(int domainContextClassId);
@@ -163,16 +163,16 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   /**
    * Gets the attribute 'domainContextId'.
    *
-   * @return the id of DomainContext's context object, 0 if all instances
+   * @return the id of DomainContext's context object, 0 if default context, negative if any context
    */
-  @Persistent(ordinal=4, comment="the id of DomainContext's context object, 0 if all instances")
+  @Persistent(ordinal=4, comment="the id of DomainContext's context object, 0 if default context, negative if any context")
   @Bindable(ordinal=4)
   long getDomainContextId();
 
   /**
    * Sets the attribute 'domainContextId'.
    *
-   * @param domainContextId the id of DomainContext's context object, 0 if all instances
+   * @param domainContextId the id of DomainContext's context object, 0 if default context, negative if any context
    */
   @Bindable(ordinal=4)
   void setDomainContextId(long domainContextId);
@@ -387,7 +387,9 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   List<Security> selectByDomainContext(int domainContextClassId, long domainContextId);
 
   /**
-   * Delete all rules for given grantee.<br>
+   * Delete all rules for given grantee.
+   * <p>
+   * Invocation is only allowed for local sessions, not remote sessions!
    *
    * @param granteeClassId the grantee's class ID
    * @param granteeId the grantee's object ID
@@ -397,6 +399,8 @@ public interface SecurityPersistence extends PersistentObject<Security> {
 
   /**
    * Deletes all pdo-rules for given objectId and objectClassId.
+   * <p>
+   * Invocation is only allowed for local sessions, not remote sessions!
    *
    * @param objectClassId the object's class id
    * @param objectId the object's ID
@@ -405,7 +409,9 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   int deleteByObject(int objectClassId, long objectId);
 
   /**
-   * Delete all non-PDO rules for given objectClassName.<br>
+   * Delete all non-PDO rules for given objectClassName.
+   * <p>
+   * Invocation is only allowed for local sessions, not remote sessions!
    *
    * @param objectClassName the object class name
    * @return the number of deleted rules
@@ -413,7 +419,9 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   int deleteByObjectClass(String objectClassName);
 
   /**
-   * Delete all rules for given DomainContext.<br>
+   * Delete all rules for given DomainContext.
+   * <p>
+   * Invocation is only allowed for local sessions, not remote sessions!
    *
    * @param domainContextClassId the domain context class id
    * @param domainContextId the domain context object id

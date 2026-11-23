@@ -36,6 +36,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -87,6 +88,7 @@ public abstract class UpdatableDesktopApplication<C extends FxController> extend
    * The check is based on an exclusive lock on a lockfile, which receives the PID of the running instance.
    * The lockfile is kept open until the application terminates and is never deleted:
    * only the lock counts, so a lockfile left behind by a crashed instance does no harm.
+   * A symbolic link in place of the lockfile is refused, since the lockfile is truncated.
    * Does nothing if the application does not run from an updatable installation.
    *
    * @see #createLockFilePath(InstallationType)
@@ -106,7 +108,8 @@ public abstract class UpdatableDesktopApplication<C extends FxController> extend
           created = false;
         }
 
-        channel = FileChannel.open(lockPath, StandardOpenOption.WRITE);
+        // never follow a symlink: the lockfile is truncated below
+        channel = FileChannel.open(lockPath, StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS);
 
         if (channel.tryLock() == null) {
           // another instance is holding the lock
@@ -137,7 +140,7 @@ public abstract class UpdatableDesktopApplication<C extends FxController> extend
    * @throws IOException if reading the lockfile failed
    */
   protected String readPidFromLockFile(Path lockPath) throws IOException {
-    try (FileChannel readChannel = FileChannel.open(lockPath, StandardOpenOption.READ)) {
+    try (FileChannel readChannel = FileChannel.open(lockPath, StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS)) {
       ByteBuffer buff = ByteBuffer.allocate(64);
       int count = readChannel.read(buff);
       if (count <= 0) {

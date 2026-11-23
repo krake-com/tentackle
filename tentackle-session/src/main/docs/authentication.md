@@ -27,9 +27,9 @@ the client and the server live in different JVMs.
  Credentials ──────► SessionInfo.setCredentials(..) ──TRIP──►  RemoteDbConnection.login(SessionInfo)
    PasswordCredentials                                             │
    TokenCredentials                                                ▼
-                                                        RemoteDbSessionImpl.verifySessionInfo()
-                                                                   │
-                                                                   ▼
+   CertificateCredentials                               RemoteDbSessionImpl.verifySessionInfo()
+                                                                   │  + AuthenticationContext
+                                                                   ▼    (client host, TLS client certificate)
                                                         AuthenticationManager
                                                           ├─ AuthenticationProvider  @Service   ─┐
                                                           ├─ AuthenticationProvider  @Service    │ supports()/
@@ -50,6 +50,8 @@ Everything lives in `org.tentackle.session.auth`, so both the client (`Db.open`)
 | [`Credentials`](../java/org/tentackle/session/auth/Credentials.java)                       | What the client presents. Travels on the `SessionInfo` via TRIP.            |
 | [`PasswordCredentials`](../java/org/tentackle/session/auth/PasswordCredentials.java)       | Username and password — the default.                                        |
 | [`TokenCredentials`](../java/org/tentackle/session/auth/TokenCredentials.java)             | A bearer token, plus optional refresh token, issuer and expiry.             |
+| [`CertificateCredentials`](../java/org/tentackle/session/auth/CertificateCredentials.java) | Log in by the TLS client certificate, with an optional PIN.                 |
+| [`AuthenticationContext`](../java/org/tentackle/session/auth/AuthenticationContext.java)   | What the server knows about the client: host, protocol, client certificate. |
 | [`AuthenticationProvider`](../java/org/tentackle/session/auth/AuthenticationProvider.java) | **The server-side SPI**: verifies credentials.                              |
 | [`AuthenticationManager`](../java/org/tentackle/session/auth/AuthenticationManager.java)   | Drives the provider chain. Deny by default.                                 |
 | [`Authentication`](../java/org/tentackle/session/auth/Authentication.java)                 | The proven identity: name, claims, roles, and the application's user.       |
@@ -129,6 +131,13 @@ public class OidcAuthenticationProvider implements AuthenticationProvider {
   }
 }
 ```
+
+A provider that needs more than the credentials overrides `authenticate(Credentials, AuthenticationContext)`
+instead. The [`AuthenticationContext`](../java/org/tentackle/session/auth/AuthenticationContext.java) holds
+what the server itself knows about the client, as opposed to what the client claims: its host, the
+protocol, and the client certificate the TLS handshake verified (see [Client Certificates](#client-certificates)).
+The manager always calls the two-argument method, and its default delegates to the one-argument method,
+so existing providers keep working.
 
 The chain is ordered by `getPriority()` and then by class name, so it is deterministic no matter in
 which order the modules happen to be discovered. Providers are instantiated once per server and must
@@ -272,11 +281,127 @@ the refresh token is a key to the user's account.
 
 ---
 
+## Client Certificates
+
+A client certificate proves that the client holds a private key, and the TLS handshake proves it before
+the first TRIP message is exchanged. Tentackle hands the verified certificate on to the provider chain,
+so an application can log its users in by their certificate, instead of or in addition to a password.
+
+```
+ CLIENT                                                SERVER
+ ──────                                                ──────
+ keystore (ksfile) ── unlocked by the keystore password, which never leaves the client
+   │
+   ▼  TLS handshake: presents the certificate ───────► verified against the truststore (tsfile)
+                                                         │  TransportClientInfo.peerCertificates()
+ CertificateCredentials(PIN) ──────TRIP──────────────►  RemoteDbSessionImpl
+                                                         │  AuthenticationContext.getPeerCertificate()
+                                                         ▼
+                                                       AuthenticationProvider: certificate → user, check PIN
+```
+
+### Configuring the transport
+
+The server requests client certificates with `clientauth` on its TLS service URI. Its truststore holds
+the CAs whose certificates it accepts:
+
+```properties
+service=trips://0.0.0.0:28000/myapp?ksfile=server.p12&kspass=...&tsfile=clients.p12&tspass=...&clientauth=want
+```
+
+Always configure a dedicated truststore. Without one, the JVM's default CAs apply, and any certificate a
+public CA ever issued would pass the handshake. With `clientauth=need`, a client without a certificate
+fails the handshake. With `want`, it gets as far as the provider chain, which is useful if the server
+serves certificate and password logins alike. Certificates are supported by `trips`, `tripcs` and the
+quiche transports `tripj`/`tripcj` (leaf certificate only). KWIK (`tripq`) cannot request them, see
+[TRIP](../../../../tentackle-core/src/main/docs/trip.md#client-certificates-reach-the-application).
+
+The client presents the certificate from its keystore. In `backend.properties`:
+
+```properties
+url=trips://server.example.com:28000/myapp?ksfile=/home/hugo/hugo.p12&tsfile=/etc/myapp/server-trust.p12&tspass=...
+authentication=certificate
+authenticationSecret=true
+```
+
+### The two secrets
+
+A certificate login can involve two secrets, and they must not be confused:
+
+| Secret                | Asked for if                | Verified by                   | Leaves the client?      |
+|-----------------------|-----------------------------|-------------------------------|-------------------------|
+| the keystore password | `ksfile` without `kspass`   | the client, unlocking the key | **never**               |
+| the PIN               | `authenticationSecret=true` | the server's provider         | yes, in the credentials |
+
+The keystore password protects the private key on the client. If `kspass` is not configured,
+[`CertificateCredentialsProvider`](../java/org/tentackle/session/auth/CertificateCredentialsProvider.java),
+the `certificate` login method, asks for it, checks it against the keystore right away and registers it at the
+[`KeyStorePasswordProvider`](../../../../tentackle-core/src/main/java/org/tentackle/io/KeyStorePasswordProvider.java),
+where the TLS layer picks it up when the connection is established. A wrong password is reported at once
+and can be entered again, up to three times.
+
+The PIN is a second factor: something the user knows, in addition to the key the user has. A stolen
+laptop with a keystore whose password is in a configuration file is otherwise enough to log in. With
+`authenticationSecret=true`, the provider asks for it, and it travels to the server in the
+[`CertificateCredentials`](../java/org/tentackle/session/auth/CertificateCredentials.java), which hold
+nothing else. In particular, they never hold the certificate: anything the client sends is a claim,
+while the certificate in the `AuthenticationContext` has been proven.
+
+The provider is interactive, so the desktop client shows a sign-in button instead of the username and
+password fields, and asks for the secrets in dialogs. Both prompts go through `CredentialsPrompt.promptSecret`.
+
+### Authenticating the certificate
+
+On the server,
+[`AbstractCertificateAuthenticationProvider`](../java/org/tentackle/session/auth/AbstractCertificateAuthenticationProvider.java)
+does the generic part. It supports `CertificateCredentials`, and it vetoes the login if the connection
+carries no certificate, instead of abstaining: a client that asked for a certificate login it cannot prove
+must not be logged in by another provider. What is left to the application is to map the certificate onto
+its user and to check the PIN:
+
+```java
+@Service(AuthenticationProvider.class)
+public class MyCertificateAuthenticationProvider extends AbstractCertificateAuthenticationProvider {
+
+  @Override
+  protected Authentication authenticate(CertificateCredentials credentials, X509Certificate certificate,
+                                        char[] pin, AuthenticationContext context) {
+    // the chain is verified: look the user up by what the CA vouches for
+    String email = getSubjectAlternativeNames(certificate, 1).stream().findFirst().orElse(null);  // rfc822Name
+    User user = email == null ? null : findUserByEmail(email);
+    if (user == null || !user.isCertificateLoginAllowed() || !user.verifyPin(pin)) {
+      throw new AuthenticationException("certificate or PIN rejected");
+    }
+    DefaultAuthentication authentication = new DefaultAuthentication(user.getName(), credentials);
+    authentication.setUserId(user.getId());
+    authentication.setUserClassId(user.getClassId());
+    return authentication;
+  }
+}
+```
+
+Store the PIN as a hash, like a password, and look the user up by a stable attribute of the certificate
+(its e-mail or another subject alternative name, a serial number registered with the user, or the hash of
+its public key), not by a free-text field of the subject. Revocation is not checked by the JDK's default
+trust manager: a provider that relies on long-lived certificates must keep a list of the ones it no longer
+accepts.
+
+The context is available to other providers as well. A password provider can bind a password login to a
+particular certificate, for example, and the application reads it after the login via
+`RemoteDbSessionImpl.getAuthenticationContext()`.
+
+[Client Certificate Login](../../../../src/main/docs/client-certificate-login.md) works all of this out for an
+application generated by the project archetype: the CA, the keystores and truststores, the server's policy, and the provider.
+
+---
+
 ## Known Gaps
 
 - **Mid-session renewal.** Credentials are renewed on the *login* path only. A token that expires
   while a long-running session is already open is not refreshed on a `Session.reOpen()` or a pooled
   reconnect.
+- **Client certificates over KWIK and quiche.** The KWIK transport `tripq` cannot request client
+  certificates, and quiche hands over the leaf certificate only, without its intermediate CAs.
 - **Direct (two-tier) sessions.** A `jdbc:` or `jndi:` URL never reaches `verifySessionInfo` — the
   client authenticates at the database itself, with the credentials from `backend.properties`, and
   the provider chain is not involved. Authentication in Tentackle's sense is a property of the
@@ -287,6 +412,7 @@ the refresh token is a key to the user's account.
 ## See Also
 
 - [Single Sign-On with Google](../../../../src/main/docs/google-sso.md) — the OIDC sketches above worked out end to end: the browser flow with PKCE, offline ID token verification, and the resolver.
+- [Client Certificate Login](../../../../src/main/docs/client-certificate-login.md) — the client-certificate sketches above worked out end to end: the PKI built by the jlink images, `clientAuth=need`, and mapping the certificate onto a user.
 - [Keyring](../../../../tentackle-core/src/main/docs/keyring.md) — where a client keeps the tokens between two starts.
 - [Tentackle Session](session.md) — the session the login creates, and `SessionInfo` itself.
 - [Backend Properties](backend-properties.md) — the `authentication` key and the other connection settings.

@@ -90,7 +90,7 @@ The server uses virtual threads to handle multiple connections concurrently.
 |------------|-------------------------------------------------------------------------------------------------------------------------------------------|
 | `trip`     | Plain TCP sockets                                                                                                                         |
 | `trips`    | TCP with SSL/TLS encryption                                                                                                               |
-| `tripe`    | TCP with pre-shared key (PSK) encryption                                                                                                  |
+| `tripe`    | TCP with pre-shared key (PSK) encryption, see [PSK encryption](#psk-encryption)                                                          |
 | `tripc`    | TCP with deflate compression                                                                                                              |
 | `tripcs`   | TCP with both SSL and compression                                                                                                         |
 | `tripce`   | TCP with both PSK and compression                                                                                                         |
@@ -100,27 +100,29 @@ The server uses virtual threads to handle multiple connections concurrently.
 | `tripcj`   | UDP QUIC protocol on Cloudflare quiche, with compression                                                                                  |
 | `loopback` | In-memory transport for tests: no socket, accepts a single connection, but runs the server side in separate threads like a real transport |
 
-The compressing and PSK-encrypting variants are built from the packet-framed streams in
-`org.tentackle.io` — see [io.md](io.md).
+The compressing variants are built from the packet-framed streams in `org.tentackle.io` — see
+[io.md](io.md). The PSK-encrypting variants use an
+[`EncryptedChannel`](../java/org/tentackle/trip/transport/EncryptedChannel.java).
 
 **URI parameters of the TCP transports.** Transport options are passed in the query string of the
 URI, e.g. `trips://myserver:18000/MyApp?idle=10&backlog=100`. The QUIC transports have their own set,
 see [QUIC](../../../../tentackle-quic/src/main/docs/quic.md) and
 [quiche](../../../../tentackle-quiche/src/main/docs/quiche.md).
 
-| Parameter        | Side   | Default | Meaning                                                                                                                           |
-|------------------|--------|---------|-----------------------------------------------------------------------------------------------------------------------------------|
-| `initial`        | client | `1`     | The initial number of pooled connections to the server.                                                                           |
-| `increment`      | client | `1`     | The number of connections opened at once when all pooled connections are in use.                                                  |
-| `minimum`        | client | `1`     | The number of connections kept open even when idle.                                                                               |
-| `maximum`        | client | `0`     | The maximum number of connections, `0` = unlimited.                                                                               |
-| `idle`           | client | `10`    | Minutes after which an unused pooled connection is closed, `0` = never.                                                           |
-| `usage`          | client | `0`     | Minutes after which a connection is replaced, no matter how busy, `0` = never.                                                    |
-| `connecttimeout` | client | `10`    | Seconds to wait for a connection to the server to be established, including the TLS handshake of the SSL transports. Must be > 0. |
-| `idle`           | server | `5`     | Minutes after which an unused thread of the call-handling thread pool terminates.                                                 |
-| `backlog`        | server | `50`    | The listen backlog of the server socket.                                                                                          |
-| `nodelay`        | both   | `1`     | `0` keeps Nagle's algorithm enabled. By default, `TCP_NODELAY` is set on the client's and on the accepted sockets.                |
-| `mincompress`    | both   | `1024`  | Compressing transports only: packets smaller than this many bytes are sent uncompressed.                                          |
+| Parameter        | Side   | Default | Meaning                                                                                                                                                    |
+|------------------|--------|---------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `initial`        | client | `1`     | The initial number of pooled connections to the server.                                                                                                    |
+| `increment`      | client | `1`     | The number of connections opened at once when all pooled connections are in use.                                                                           |
+| `minimum`        | client | `1`     | The number of connections kept open even when idle.                                                                                                        |
+| `maximum`        | client | `0`     | The maximum number of connections, `0` = unlimited.                                                                                                        |
+| `idle`           | client | `10`    | Minutes after which an unused pooled connection is closed, `0` = never.                                                                                    |
+| `usage`          | client | `0`     | Minutes after which a connection is replaced, no matter how busy, `0` = never.                                                                             |
+| `connecttimeout` | client | `10`    | Seconds to wait for a connection to the server to be established, including the TLS handshake of the SSL transports. Must be > 0.                          |
+| `idle`           | server | `5`     | Minutes after which an unused thread of the call-handling thread pool terminates.                                                                          |
+| `backlog`        | server | `50`    | The listen backlog of the server socket.                                                                                                                   |
+| `nodelay`        | both   | `1`     | `0` keeps Nagle's algorithm enabled. By default, `TCP_NODELAY` is set on the client's and on the accepted sockets.                                         |
+| `mincompress`    | both   | `1024`  | Compressing transports only: packets smaller than this many bytes are sent uncompressed. At least 20, so that the connection request travels uncompressed. |
+| `legacy`         | server | `0`     | PSK transports only: `1` accepts clients of the previous version (AES/ECB), see [PSK encryption](#psk-encryption).                                         |
 
 Connections are created with the pool locked, by the thread requesting one and by the timeout thread
 that all pools share to restore the `minimum`. `connecttimeout` therefore bounds how long a server that
@@ -180,6 +182,45 @@ trips://0.0.0.0:18000/myapp?ksfile=server.p12&kspass=secret&ksalias=server&tsfil
 Client certificates are supported symmetrically: a client presents one by providing `ksfile`
 (and, to pick a specific one, `ksalias`).
 
+#### Client certificates reach the application
+
+The server's truststore (`tsfile`) holds the CAs whose client certificates it accepts. Always
+configure one when requesting client certificates: without it, the JSSE default trust store
+applies, and any certificate issued by a public CA would pass the handshake.
+
+The chain the TLS handshake verified is not lost after the handshake. Each server connection hands it
+to its [`TransportClientInfo`](../java/org/tentackle/trip/transport/TransportClientInfo.java)
+(`peerCertificates()`, leaf first, empty if the client presented none), which a remote method reads via
+`TransportClientInfo.get()`. Unlike anything the client sends through TRIP, the certificate is proven by
+the handshake, so it can authenticate the client: the application server passes it to the
+authentication providers in the `AuthenticationContext`. See
+[Authentication](../../../../tentackle-session/src/main/docs/authentication.md#client-certificates).
+
+The connection handler asks for the certificates only after it has read the connection request.
+The TLS handshake of a TCP connection runs on the first read, so it is still subject to the
+pre-authentication policy and the rejection delay, like any other step of the connection setup.
+
+With `clientauth=want`, a client without a certificate is admitted, and the list is empty. With
+`clientauth=need`, it fails the handshake. The QUIC transports differ:
+
+- `tripj`/`tripcj` (quiche) support both policies. quiche only provides the peer's own certificate,
+  not its intermediate CAs, so the list holds the leaf only. BoringSSL lets a client without a
+  certificate pass the handshake even when the server verifies its peer, so `need` is enforced when the
+  client opens its first stream: the QUIC connection is closed.
+- `tripq`/`tripcq` (KWIK) cannot request a client certificate. A server with `clientauth=need` refuses
+  to start, rather than silently admitting everybody, and `want` is ignored with a warning. A KWIK
+  *client* does present its certificate, for example to a quiche server.
+
+#### The keystore password
+
+A client that authenticates by its certificate should not have its keystore password in
+`backend.properties`, where anybody who can read the file can use the key. If `kspass` (and `kmpass`) is
+left out, `SslParameters` takes the password from the
+[`KeyStorePasswordProvider`](../java/org/tentackle/io/KeyStorePasswordProvider.java), where the client
+registers what the user entered before the connection is established. The `certificate` login method does
+that automatically. A configured password always wins. With nothing registered, the keystore is loaded
+without a password, as before.
+
 #### Post-quantum key exchange
 
 Since Java 27 ([JEP 527](https://openjdk.org/jeps/527)), TLS 1.3 negotiates the hybrid post-quantum
@@ -207,6 +248,38 @@ with the post-quantum key exchanges of `agent15-pqc` and honor `namedgroups` on 
 client offers only classical groups unless it is set.
 [`tripj`/`tripcj`](../../../tentackle-quiche/src/main/docs/quiche.md#post-quantum-key-exchange) use
 BoringSSL, which offers `X25519MLKEM768` by default, and honor `namedgroups` on both ends.
+
+### PSK encryption
+
+`tripe` and `tripce` need no certificate: the key of the application's
+[`Cryptor`](../../../../tentackle-common/src/main/docs/common.md) is pre-shared between client and server.
+The [`EncryptedChannel`](../java/org/tentackle/trip/transport/EncryptedChannel.java) never encrypts with
+that key directly. Each connection derives keys of its own via HKDF-SHA256 (`Cryptor.deriveKey`):
+
+1. The client sends a random 32-byte salt, followed by the TRIP connection request (magic, UUID and
+   dictionary flag) encrypted with AES-GCM under a key derived from that salt. This hello has a fixed size
+   of 67 bytes. With it, the client proves that it knows the key before the server sends a single byte. A recorded
+   hello is answered as well, but without the key the replaying peer can't derive the keys of the connection.
+2. If the hello is not authentic, the server sends nothing and closes the connection after the
+   [rejection delay](#delayed-rejection). Otherwise, it answers with a random 32-byte salt of its own.
+3. Both sides derive one key per direction from both salts. Every packet is a two-byte length,
+   followed by the AES-GCM ciphertext and tag. The length is authenticated, and the nonce counts the
+   packets of each direction.
+
+Identical messages therefore never encrypt identically, a modified, reordered or replayed packet fails
+to decrypt, and since the server contributes a salt, a recorded connection can't be replayed either.
+A packet that fails to decrypt closes the connection; before the login, after the rejection delay.
+
+Up to Tentackle 25.20, these transports encrypted each packet with the plain cipher of the `Cryptor`
+(AES/ECB, no IV, no authentication). For the transition, a server started with `legacy=1` also accepts
+such a client, so that an auto-updating client of the previous version can still reach the update endpoint.
+It is recognized by its first packet, logged as a warning, and served in the old format. By default, such
+clients are refused: a legacy session gets no salt from the server, so a recorded one can be replayed as a
+whole, login included, and its ECB blocks can be spliced. Enable it only for as long as old clients must be
+updated. The fallback will be removed in the next version. A new client can't connect to an old server.
+
+The keys still are as private as the client distribution: whoever has the client has the key (see
+[Unauthenticated peers](#unauthenticated-peers)). The packet lengths travel in the clear.
 
 ### Remote and RemoteDelegate
 
@@ -748,6 +821,37 @@ delayed until the component values are known, which restricts how far a componen
 back to its own object — see
 [delayed construction and back-references](reflect.md#delayed-construction-and-back-references).
 
+#### `@TripShallowHash`
+
+Declares that the `hashCode` and `equals` of a class don't depend on the objects its instances refer to,
+for example because they compare an ID only. The [hash guard](#hashed-values) then treats such an object
+as a leaf: it may be back-referenced within a hash key or set element, and its contents are not part of
+the hashed value. Hash sets and maps within its contents are still guarded on their own.
+
+```java
+@TripShallowHash
+public class Customer {
+  private long id;
+  private Customer parent;          // may back-reference anything, even within a hash set
+  private List<Address> addresses;
+
+  @Override
+  public final int hashCode() {
+    return Long.hashCode(id);
+  }
+
+  @Override
+  public final boolean equals(Object obj) {
+    return obj instanceof Customer other && other.id == id;
+  }
+}
+```
+
+The contract is security-relevant: if `hashCode` or `equals` traverse the referenced objects nevertheless,
+the guard is bypassed. Make both methods final, as `AbstractDbObject` does. Annotated at an
+`InvocationHandler`, it applies to the dynamic proxies of that handler. The `PdoInvocationHandler` is
+annotated this way, because the hash code of a PDO depends on its class and ID only.
+
 #### `@TripSerializeLambda`
 
 By default, TRIP refuses to serialize lambdas, because serializing them would drag in the entire
@@ -906,6 +1010,22 @@ The class must implement `Serializable`.
 public class ThirdPartyValue implements Serializable { ... }
 ```
 
+The class of the object travels via TRIP ahead of its Java-serialized form. The receiver accepts it only if it
+serializes that class via JOS itself, i.e. if its `TripFactory` maps the class to JOS (by the annotation, or by an
+overridden `ObjectTypeBuilder.isSerializableViaJOS`). The root object of the Java-serialized form must be of that
+class: anything else is refused before it is instantiated.
+
+The objects nested within the root object, however, are opaque to TRIP and thus not covered by the
+[allowlist](#allowlisting-disallowedtriptype). They are read through the deserialization filter of
+`tentackle-common` instead (see
+[Deserialization filter](../../../../tentackle-common/src/main/docs/common.md#deserialization-filter)), which an
+application restricts via `Settings.setDeserializationFilter` or `-Dtentackle.serialFilter`.
+Before the client is authenticated, a Java-serialized object is refused altogether (see
+[Unauthenticated peers](#unauthenticated-peers)). After the login, the filter is all that stands between an
+authenticated client and the objects nested in a `@TripViaJOS` class: by default it limits only the size and
+depth, so an application whose `@TripViaJOS` classes hold fields of non-final types (`Object`, `Serializable`,
+interfaces) should restrict the classes as well.
+
 **This is a last resort.** Before reaching for `@TripViaJOS`, consider the following alternatives in decreasing order of preference:
 
 1. **add a @CanonicalConstructor or no-arg constructor**: adding one is usually trivial and makes TRIP work without any annotation.
@@ -933,7 +1053,9 @@ argument-validating constructors — where such a class typically enforces its i
 see those values. As long as the bytes come from a trusted peer over a secured channel (your own
 client or server, connected via the `trips`/`tripcs` SSL transports, the `tripe`/`tripce` PSK-encrypted transports, or
 [QUIC](../../../../tentackle-quic/src/main/docs/quic.md)), that is fine: the sender validated the
-objects before serializing them.
+objects before serializing them. Note, however, that an encrypted channel does not make the peer
+trusted: with server-only TLS, *anyone* with a route to the server can talk TRIP to it. The bytes a
+client sends before it has logged in are covered in [Unauthenticated peers](#unauthenticated-peers).
 
 The picture changes when the bytes do **not** come from a trusted, live peer — for example when
 serialized objects are stored as BLOBs in a database and read back later. Such data may have been
@@ -965,6 +1087,12 @@ The defense against broken invariants is routing every component value through v
 These defenses address the *broken invariants* risk for classes you control. They cannot address
 the *gadget class* risk, because an attacker chooses the class — which is where the allowlist
 comes in.
+
+TRIP itself uses Java Object Serialization in a single place, apart from `@TripViaJOS`: an empty `EnumMap`
+doesn't reveal its key type via public API, so it travels in its JOS form. The receiver reads it through an
+`ObjectInputFilter` admitting nothing but the `EnumMap` and its enum key type, within a few kilobytes, and
+refuses a map that is not empty. A peer, authenticated or not, therefore cannot pass an arbitrary object
+graph to `ObjectInputStream` this way.
 
 ### Final fields (JEP-500)
 
@@ -1033,15 +1161,351 @@ types registered via `@TripTypeService` or `@TripTypeBuilderService` — take pr
 fallback builder and are unaffected. The allowlist governs exactly the dangerous path: arbitrary
 object classes the application never intended to receive.
 
+The payload of a [`Binary`](../../../../tentackle-common/src/main/java/org/tentackle/common/Binary.java) is
+outside the allowlist's reach: TRIP transfers its Java-serialized bytes as an opaque byte array, and they are
+deserialized only when the application invokes `getObject()`. That deserialization goes through the
+`ObjectInputFilter` of `tentackle-common` instead, which an application restricts via
+`Settings.setDeserializationFilter` or `-Dtentackle.serialFilter`. See
+[Deserialization filter](../../../../tentackle-common/src/main/docs/common.md#deserialization-filter).
+
+### Unauthenticated peers
+
+Server-only TLS (`trips`, `tripq`, `tripj`) encrypts the traffic, but it does not authenticate the
+client. An attacker with a route to the server can write their own TRIP client: a TrustManager that
+accepts any certificate is all it takes, no truststore is needed. Such a client can never log in, but
+before the login, the server would deserialize whatever it sends. Mutual TLS (`clientauth=need`) and
+the PSK transports (`tripe`/`tripce`) keep it out, but only as long as the client distribution stays
+private. A client that can be downloaded, by the [update service](../../../../tentackle-update/src/main/docs/update.md)
+for example, gives its key away (see its [threat model](../../../../tentackle-update/src/main/docs/update.md#the-threat-model)).
+
+A [`PreAuthenticationPolicy`](../java/org/tentackle/trip/PreAuthenticationPolicy.java) therefore
+restricts what a server accepts from a client **until the application marks the client as
+authenticated**. Once authenticated, the client is trusted, and the policy costs nothing.
+
+```java
+Transport server = TransportManager.getInstance().requestTransport(uri);
+server.setPreAuthenticationPolicy(new DefaultPreAuthenticationPolicy());    // before accept()!
+server.accept();
+```
+
+The authentication state belongs to the client's transport, not to a single connection: the server
+keeps one [dictionary](#dictionary-lifetime-and-the-connection-handshake) per client transport UUID,
+shared by all its pooled TCP sockets and QUIC streams, and the dictionary carries the state. The
+application sets it when the login succeeded:
+
+```java
+TransportClientInfo.get().authenticate();    // in the remote login method, after verifying the credentials
+```
+
+The [`TripServer`](../../../../tentackle-database/src/main/docs/database.md) of the session layer does
+both: it installs an enforcing policy on its transports, and the remote session authenticates the
+client once `verifySessionInfo` accepted the credentials.
+
+Since the server grants the state to every connection that presents the UUID in its handshake, the UUID
+is a secret: it travels encrypted, and the logs show only its first eight hex digits.
+
+Before the client is authenticated, the [`DefaultPreAuthenticationPolicy`](../java/org/tentackle/trip/impl/DefaultPreAuthenticationPolicy.java) enforces:
+
+| Restriction             | What it prevents                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+|-------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Class allowlist**     | Every class name in a received dictionary entry is checked *as a string, before it is loaded*, so not even the static initializer of a foreign class runs. The component types of an entry must be allowed as well, or be the types the allowed class declares. Dynamic proxies are refused. An entry the server created itself, for a class it sent to the client, is checked when the client refers to it. Java-serialized objects (`@TripViaJOS`) and lambdas travel as opcodes of their own, outside the dictionary, and are refused outright before the login.                                                                                             |
+| **Message size**        | A message may not exceed `maxMessageSize` bytes (default 256 KiB), counted after decompression.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| **Element count**       | Arrays, collections and maps may not exceed `maxElements` (default 4096), checked *before* anything is allocated for them.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **Allocation**          | The arrays of a message may not allocate more than `maxAllocation` bytes in total (default 4 MiB), checked before each array is allocated. Otherwise, a single message of sparse arrays, each within `maxElements`, would allocate hundreds of megabytes. After the login, the [allocation budget](#allocation-budget) still applies.                                                                                                                                                                                                                                                                                                                           |
+| **Object graph**        | Objects, arrays, collections and maps may not nest deeper than `maxDepth` (default 16). An object may be referenced a second time only if it is an immutable value, such as a `String`, a number, an enum or a `UUID`: otherwise a few hundred bytes of hash sets sharing each other make computing a hash code take forever. The received graph is therefore a tree bounded by the message size. After the login, the [hash guard](#hashed-values) still applies.                                                                                                                                                                                              |
+| **Components**          | A dictionary entry may name only components the allowed class declares. Otherwise, the server would keep thousands of made-up names per connection, and the component of an array entry, which names the element class, could load any class.                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| **Messages**            | A connection may send at most `maxMessages` (default 16) messages before the client is authenticated. A client that probes a remote object it was not given, or sends an error, is disconnected.                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| **No waiting**          | An ordinal of a dictionary entry the client never sent fails after `dictionaryWaitTime` (default 5 s) instead of parking the thread for 5 minutes.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **Public entry points** | Only the registry and the remote objects **registered by name** can be invoked. A call of any other remote object is not answered at all, and the connection is closed after the rejection delay.                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| **Connections**         | At most `maxConnections` (default 1024) unauthenticated connections, and `maxConnectionsPerHost` (default 64) per host, where an IPv6 client counts by its /64 network (`ipv6PrefixLength`). When a limit is reached, the oldest connection of the host holding the most connections is closed, preferably one without a call in progress. A connection that didn't complete its first message within `firstMessageTimeout` (default 30 s), including the TLS handshake, or its next message within `idleTimeout` (default 30 s) after a call, is closed as well.                                                                                               |
+| **Connection rate**     | A host may open at most `connectionRate` (default 20) new connections per second, with bursts of up to `connectionBurst` (default 64). A connection above the rate is closed before anything is read from it, before the TLS handshake (for `tripq`/`tripcq` only after it, see [QUIC](../../../../tentackle-quic/src/main/docs/quic.md#denial-of-service)). Otherwise, a host could make the server perform TLS handshakes as fast as the network allows, and keep evicting the connections of other clients sharing its address. The limit counts the new connections of authenticated clients as well, since who connects is known only after the handshake. |
+| **QUIC connections**    | A QUIC connection is admitted as an unauthenticated connection of its host by itself, before its first stream. It must open a stream within `firstMessageTimeout`, and a new one within `idleTimeout` after its last stream was closed, or it is closed. Otherwise, the keep-alive would keep a connection without streams open forever. A client logging in over QUIC therefore holds two admissions, the QUIC connection and its stream, until it is authenticated.                                                                                                                                                                                           |
+
+Closing the oldest connection of the busiest host favors clients that log in quickly over connections
+kept open without logging in, and the real users, spread over many hosts, over an attacker who opens
+connections faster than they can log in.
+
+The deadlines keep an unauthenticated connection from blocking a thread forever. The server reads
+the handshake and the messages with blocking reads, so a client that sends a single byte and then
+nothing would otherwise hold the connection as long as it stays open. Since the connection is
+admitted before its first byte is read, `firstMessageTimeout` covers the handshake, and `idleTimeout`
+covers a client that sends one allowed message, such as a lookup, and then stops. Together with
+`maxMessages`, a connection lives at most about `maxMessages × idleTimeout` without logging in.
+No deadline runs while a call is in progress, so a slow login is not cut off.
+The client should therefore log in right after it connected, as `Db.open` does.
+
+A violation is not answered: the connection is closed after the [rejection delay](#delayed-rejection). An error
+message would tell a prober that it talks to a TRIP server. A legitimate client that sends something not allowed
+gets a `TripStreamClosedException`, and only the server's log tells why. The violation is logged
+as a single line without a stacktrace, with the names
+the client chose truncated and stripped of control characters, so that a client can neither flood the
+log nor forge log lines. Since anybody can open connections as fast as the network allows, the
+messages about unauthenticated peers are throttled by the [`RejectionLog`](../java/org/tentackle/trip/RejectionLog.java):
+at most 100 per minute (`RejectionLog.setMaxMessages` and `setInterval`), followed by a line counting the
+suppressed ones. The connection limits apply to all transports sharing the same policy
+instance. The `TripServer` creates a policy per transport, so each of its ports has limits of its own.
+
+The allowlist holds the TRIP remote calls, the boxed primitives, `String`, `UUID`, `Locale`,
+`TimeZone`, `EncryptedProperties`, the plain JDK lists, sets and maps, and every type annotated with
+[`@TripPreAuth`](../java/org/tentackle/trip/TripPreAuth.java). Types travelling as fixed-type opcodes
+(dates, `BigDecimal`, the predefined arrays) never pass through the dictionary and need no entry.
+Annotate the types a client must send to log in, and nothing else:
+
+```java
+@TripPreAuth("login")
+public class MySessionInfo extends DefaultSessionInfo { ... }
+```
+
+The framework annotates its own: `SessionInfo`, `DefaultSessionInfo`, `PasswordCredentials`,
+`TokenCredentials`, `Secret` and `Logger.Level` for the login, `ClientInfo` and `InstallationType` for
+the update check. The annotations are collected at build time, like the other mapped services, so the
+allowlist is read as plain class names without loading a single class. An application may also add
+classes with `DefaultPreAuthenticationPolicy.allow(...)`.
+
+**Remote objects registered by name are public**: anybody can invoke them before the login. Keep them
+to the login and the update check.
+
+To find out what an application really sends before the login, run the policy in
+`PreAuthenticationPolicy.Mode.AUDIT` first. It refuses nothing, but logs each distinct violation once.
+
+#### Delayed rejection
+
+Some requests of an unauthenticated peer are rejected after a random time instead of at once:
+
+- a connection whose connection request (magic and UUID, 18 bytes) does not start with the TRIP magic is closed.
+  The server reads the whole request before it decides, so that the decision doesn't reveal the length of the
+  magic. What it sent is not logged. The compressing transports (`tripc`, `tripcs`, `tripcq`, `tripcj`) read the
+  request together with the two-byte header of its packet, 20 bytes, and reject a first packet that is compressed,
+  empty or too short for the request in the same way. Otherwise, the header alone would decide: the inflater fails
+  at the first byte of a compressed packet of garbage, and empty packets are skipped.
+- a connection whose handshake fails otherwise is closed: a stale dictionary, a hello of the
+  [PSK transports](#psk-encryption) that is not authentic, a broken stream.
+- the lookup of a name that is not registered is not answered, and the connection is closed. The name is not
+  logged, since the client chose it. Once authenticated, a client gets `null` as before.
+- with an enforcing policy: a violation, a call of a remote object that is not public, an undecodable message and
+  a response that can't be serialized are not answered, and the connection is closed. An exception thrown by a
+  remote method is answered as usual. Once authenticated, a client gets the error as before.
+- a failed login is answered (see [Failed logins](../../../../tentackle-database/src/main/docs/database.md#failed-logins)).
+
+The time is random within the interval of the [`RejectionDelay`](../java/org/tentackle/trip/RejectionDelay.java)
+(default 1–5 s, `RejectionDelay.setInterval`), measured from the start of the rejected request. All rejections
+share this interval, so the response time tells an attacker neither what was wrong (no TRIP at all, a wrong
+service name, a wrong user or password) nor how long the server took to find out. It also throttles guessing.
+Every rejection waits in the virtual thread of the connection, which costs nothing. No regular thread of the
+call pool is blocked by the delay. A remote method that must be answered late, such as a failed login,
+invokes `RejectionDelay.defer`: the call returns at once, and the connection handler sends the response
+after the delay. Outside a TRIP call, `defer` simply waits. That connection keeps counting against the connection limits of the policy, so a single host can't run more
+than `maxConnectionsPerHost` guesses at a time. These rejections don't depend on the policy: they apply
+in every mode, and without a policy too. The loopback transport answers unknown names, since its client
+runs in the same JVM.
+
+A misconfigured client that looks up a wrong service name therefore gets a `TripStreamClosedException`
+after the delay, instead of "remote object not found". A client whose dictionary is stale, e.g. after a server
+restart, is closed after the delay as well, before it establishes a new transport (see
+[Dictionary lifetime](#dictionary-lifetime-and-the-connection-handshake)). Closing it at once would tell a prober
+that the magic was right.
+
+### Per-client remote objects
+
+A remote object's UUID is known to the client that holds it, and nothing stops another client from
+putting that UUID on the wire. So the registry records, for every object it registers while a client
+call is being served, the **owner**: the client transport UUID of that call. Only the owner may invoke
+the object. A call from any other client is answered with "no such delegate", as if the object didn't
+exist — or, before the login, not answered at all (see above). The attempt is logged with the two UUIDs redacted. This holds after the login as well, so one
+authenticated client can never reach another's objects.
+
+Ownership follows the public/private seam already drawn above:
+
+- **Registered by name** (and the registry itself) → **public**, no owner: every client may invoke it.
+  This is how an application shares an object between clients — a login entry point, for example.
+- **Unnamed**, registered while serving a client call → **private** to that call's client. This is the
+  normal case: the remote objects an application returns from a method, such as the session from
+  `login()` and the whole tree of objects reached through it, are minted during that client's call and
+  belong to it.
+- **Unnamed**, registered with no client call in progress (during server setup, say) → no owner, hence
+  public. Give such an object a name if it must stay reachable, since its UUID is otherwise never
+  handed out.
+
+Ownership is per client **transport**, not per connection: all of a client's pooled sockets and QUIC
+streams, and a transport that reconnects with the same UUID, share one owner, exactly like the
+authentication state and the dictionary.
+
+### Fingerprinting
+
+Even a peer that can't log in should not learn that it talks to a TRIP server. Assume an attacker who knows
+the address and port, but nothing about the service, and who can't read the server's files. Tentackle is open
+source, so the attacker knows the magic, the wire format and every default. With an enforcing policy (the
+default of a `TripServer`), the server behaves like this towards that attacker:
+
+- **It sends nothing** before the login, except the responses of successful calls of the public entry points:
+  no error, no "no such delegate", not even a byte that tells what went wrong.
+- **It closes at a time that tells nothing.** Every rejection closes after the same random
+  [delay](#delayed-rejection): no TRIP at all, a wrong magic, a stale dictionary, a wrong key of the PSK
+  transports, a wrong service name, a forbidden class, garbage, a wrong password.
+- **It decides only after the whole connection request**: 18 bytes for the TCP and SSL transports, 20 bytes
+  (the packet header and the request) for the compressing transports, the 67 bytes
+  of the hello for the PSK transports. Anything shorter waits for `firstMessageTimeout`.
+
+What remains is up to the deployment:
+
+| Leak                                     | Remedy                                                                                                                                                                                                                                                                                            |
+|------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Plain `trip`/`tripc`                     | They send the class names (`org.tentackle…`) in the clear to anyone on the path. Use them in trusted networks only.                                                                                                                                                                               |
+| The registered service names             | A public entry point answers whoever knows its name. Don't derive the name from the application's name (the archetype's `<application>Server` is just a placeholder).                                                                                                                             |
+| The server certificate                   | Every TLS client sees it, the ones that don't log in too. Keep the application's name out of its subject. Mutual TLS (`clientauth=need`) stops the attacker at the TLS handshake.                                                                                                                 |
+| The ALPN id of the QUIC transports       | It defaults to the scheme (`tripq`, `tripcq`, `tripj`, `tripcj`), so a QUIC handshake offering it confirms the service. Set a neutral `alpnid` on both sides.                                                                                                                                     |
+| The documented defaults                  | A rejection after 1–5 s, a close after 30 s of silence, the eviction after 64 connections per host, the refusal above 20 connections per second: an attacker who knows the defaults recognizes them. Choose your own with `RejectionDelay.setInterval` and the timeouts and limits of the policy. |
+| The packet lengths of the PSK transports | They travel in the clear, so the traffic pattern is visible. TLS hides more.                                                                                                                                                                                                                      |
+| The TLS and QUIC stacks                  | The JDK's TLS, KWIK and quiche can be fingerprinted (JA4S and the like): they reveal a Java server, not a TRIP server.                                                                                                                                                                            |
+| No policy at all                         | Without a pre-authentication policy, the server answers errors to anybody. The rejections of the handshake and of unknown names still apply.                                                                                                                                                      |
+
+The connection is closed when the delay expires, without reading what the peer sent in the meantime. If unread
+data is pending, the operating system may answer with a reset instead of an orderly close, as for any server.
+
+### Denial of service
+
+The same attacker, who knows the address and the port but can't log in, may still try to keep the real users
+out. This is what bounds the resources such a peer can bind:
+
+| Resource                | Bound                                                                                                                                                                                                                                                                                                                                      |
+|-------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Connections and sockets | `maxConnections` and `maxConnectionsPerHost` of the [policy](#unauthenticated-peers). A QUIC connection counts by itself, before and after its streams.                                                                                                                                                                                    |
+| CPU for handshakes      | `connectionRate` per host, checked before the TLS handshake, except for `tripq`/`tripcq`, where KWIK reports a connection only after it. The PSK transports reject a forged hello with a single HKDF and AES-GCM operation, no asymmetric cryptography. The QUIC transports validate the peer's address with a Retry before the handshake. |
+| Threads                 | Connections are read by virtual threads. A call runs in a platform thread, but a connection runs one call at a time, so the platform threads serving unauthenticated clients are bounded by the connection limits.                                                                                                                         |
+| Memory                  | `maxMessageSize`, `maxElements`, `maxAllocation` and `maxDepth` per message, times the connection limits. A dictionary is created per client transport UUID, but held only as long as one of its connections is open.                                                                                                                      |
+| Time                    | `firstMessageTimeout`, `idleTimeout` and `maxMessages`.                                                                                                                                                                                                                                                                                    |
+| Log volume              | The [`RejectionLog`](../java/org/tentackle/trip/RejectionLog.java).                                                                                                                                                                                                                                                                        |
+
+What remains is up to the deployment:
+
+- **Addresses shared with an attacker.** All limits are per host, and an IPv6 host is its /64 network
+  (`ipv6PrefixLength`). Clients behind the same NAT as the attacker share its limits, and so do all IPv6 clients
+  of the attacker's LAN segment, which usually is a single /64. On such a network, an attacker can evict the
+  connections of the other clients while they log in. Lower the prefix length only if the clients really own
+  smaller networks, and keep the TRIP port out of networks shared with untrusted hosts.
+- **Many addresses.** An attacker holding more host keys than `maxConnections`, such as a routed IPv6 /48,
+  can fill the global limit with one connection per key, and then the busiest host is not necessarily the
+  attacker's.
+- **The public entry points.** A peer that knows a service name can log in, and every login attempt runs 
+  in a platform thread of the call pool the logged-in users share.
+  The delay of a failed login hides the result, but doesn't save the work. Keep the service names secret
+  (see [Fingerprinting](#fingerprinting)), and use mutual TLS or the PSK transports where the clients can be
+  trusted with a key.
+- **Plain `trip` and `tripc`.** The client transport UUID travels in the clear. A peer on the path can connect
+  with the UUID of a victim, share its dictionary and its authentication state, and break its sessions.
+  Use it for development and testing only, never in production.
+- **The network.** SYN floods, UDP floods and saturated links are beyond any server process. Use SYN cookies,
+  limit the connections per source address in the firewall (`connlimit`, `hashlimit`), and filter upstream.
+
+### Hashed values
+
+Before the login, the [policy](#unauthenticated-peers) refuses back-references to anything but immutable
+values, so the received graph is a tree. After the login, back-references are needed: a graph of PDOs shares
+its domain context, and components refer to their root entity. But hashing and back-references don't go
+together, whether the peer is an attacker or a buggy client. When TRIP reads a hash set, it adds each element as
+soon as it is read, and the `add` computes the element's hash code. That hash code recurses through the whole
+graph below the element: lists, the values of maps, records, and any `hashCode` built with `Objects.hash`.
+A shared object is visited once per path leading to it, so the time it takes grows with the number of paths, not
+the number of objects:
+
+```java
+List<Object> list = List.of("x");
+for (int level = 0; level < 3; level++) {
+  list = Collections.nCopies(1000, list);    // 1000 references to the same list
+}
+Set<Object> set = new HashSet<>();
+set.add(list);    // visits 10^9 lists, and 10^12 with a fourth level
+```
+
+Serialized, it is about 10 KB. Its nesting depth is 4, and only one hash set is involved. A limit on the
+nesting depth, of all containers or of hash sets and maps only, would therefore not stop it. Sharing is what
+makes it expensive, so sharing is what TRIP limits: the **hash guard** refuses a back-reference within a value
+the receiving container will hash, unless the hash code of the referenced object doesn't depend on other objects.
+The value is then a tree, and hashing it takes time linear in the size of the message.
+
+- **Hashed values** are the elements of a set and the keys of a map, unless the set or map is sorted
+  (`TreeSet`, `TreeMap`), enum-based (`EnumSet`, `EnumMap`) or an `IdentityHashMap`. This includes `HashSet`,
+  `LinkedHashSet`, `HashMap`, `ConcurrentHashMap`, `Set.of`, `Map.of`, the unmodifiable and synchronized
+  wrappers, and their subclasses. The values of a map are not hashed by `put`, so they may be shared freely,
+  unless the map itself is a hashed value.
+- **Back-references allowed within a hashed value** are the values shareable before the login (`String`,
+  numbers, `Boolean`, `Character`, enums, `UUID`, `Locale`, `TimeZone`, `Class`, dates and times), arrays, and
+  objects inheriting both `hashCode` and `equals` from `Object`, and objects annotated with
+  [`@TripShallowHash`](#tripshallowhash). Dynamic proxies are not, since their handler decides, unless the
+  handler is annotated with `@TripShallowHash`. A set that contains itself, directly or via other containers,
+  is refused as well: its hash code would overflow the stack.
+- **The contents of a `@TripShallowHash` object** are not part of the hashed value, since its hash code
+  doesn't depend on them. This applies to PDOs: their hash code depends on the class and ID only. Hence,
+  the removed components of a `TrackedList`, which are kept in a hash set, may refer to their root entity
+  and share the domain context. Hash sets and maps within the contents are guarded on their own.
+
+A violation throws a `TripPolicyViolationException`. The server logs it and answers with a deserialization error,
+and the client gets the exception with the reason. The guard applies to every TRIP stream, so to responses
+received by the client as well. It costs nothing unless a back-reference is read within a hashed value.
+
+Apart from the removed objects of a `TrackedList`, Tentackle keeps PDOs out of hash sets and maps for good reasons (see
+[object identity](../../../../tentackle-pdo/src/main/docs/pdo.md#object-identity--equals-hashcode-and-why-relations-are-lists)),
+so a legitimate graph rarely triggers the guard. If one does, it shares a mutable object within a hash key, which
+breaks the set or map as soon as that object changes. Prefer immutable keys. As a last resort, and only if all
+peers are trusted, the guard can be disabled with `DefaultTripStream.setHashGuardEnabled(false)` or the system
+property `tentackle.trip.disableHashGuard=true`.
+
+The guard covers the hashing TRIP does while it reads. It does not cover hashing done by the application after
+the call, or by application code during deserialization, such as a canonical constructor, a builder or a
+`TripComponentProvider` that copies a list into a `HashSet`. Nor does it cover the comparisons of a `TreeSet`, or
+classes routed through `@TripViaJOS`. The nesting depth itself is limited only before the login.
+
+### Allocation budget
+
+TRIP skips the default values of arrays: a primitive array sends runs of zeros as a skip count, and an object
+array sends only the indexes and values of its non-null elements. A sparse 1000 x 1000 `double` matrix with a
+few thousand values set is therefore sent in a few kilobytes. But the receiver must allocate each array with the
+length the sender announced, before it reads a single element. A `long[Integer.MAX_VALUE]` with one skip costs
+about a dozen bytes on the wire and allocates 16 GiB. A limit per array doesn't help: an array of a thousand
+such arrays, each within the limit, multiplies the allocation by a thousand.
+
+The **allocation budget** therefore limits the memory all arrays of a message allocate in total. Each array counts
+its length times the size of an element (1 byte for `boolean` and `byte`, 2 for `char` and `short`, 4 for `int`
+and `float`, 8 for `long`, `double` and references), plus 16 bytes for its header, checked *before* it is
+allocated. Each dimension of a multidimensional array is an array of its own. A back-reference to an array
+allocates nothing and counts nothing. The sparse 1000 x 1000 `double` matrix counts about 8 MB.
+
+| Peer                    | Limit                                                                                                                       |
+|-------------------------|-----------------------------------------------------------------------------------------------------------------------------|
+| Before the login        | `maxAllocation` of the [`PreAuthenticationPolicy`](#unauthenticated-peers), 4 MiB by default.                               |
+| After the login         | 256 MiB per remote call by default, enough for a dense `double` matrix of about 5800 x 5800.                                |
+| Responses to the client | Unlimited: the client trusts its server.                                                                                    |
+
+An application that legitimately sends more within a single call raises the limit with
+`DefaultTripStream.setDefaultAllocationLimit(long)` or the system property `tentackle.trip.maxAllocation` (in bytes,
+0 for unlimited), set on the server before the connections are opened. A violation throws a
+`TripPolicyViolationException`: the server logs it and answers with a deserialization error, so the client gets
+the exception with the reason, and closes the connection.
+
+Everything else TRIP reads is backed by the data on the wire, so the budget doesn't count it: collections and maps
+grow as their elements arrive, strings are read in chunks, and so are binaries (`Binary`, `TBinary`), objects
+routed through `@TripViaJOS`, the digits of a `BigDecimal` beyond a `long` and the serialized form of an empty
+`EnumMap`. A binary's buffer starts at 64 KiB and doubles while the data arrives, so a
+legitimate binary may be as large as needed, while a forged length ends up as a closed stream instead of an
+allocation of up to 2 GiB held while the client trickles the data.
+
 ### Practical guidance
 
-- Application-to-application TRIP traffic over the encrypting transports needs no allowlist —
-  both ends are the same trusted code base.
+- Application-to-application TRIP traffic from **authenticated** clients needs no allowlist —
+  both ends are the same trusted code base. Before the login, the server must not trust the client:
+  install a [`PreAuthenticationPolicy`](#unauthenticated-peers), or use a `TripServer`, which does
+  that by default.
+- Don't share mutable objects within the elements of hash sets or the keys of hash maps sent via TRIP: the
+  [hash guard](#hashed-values) refuses them, even from authenticated clients.
+- Remote calls sending more than 256 MiB of arrays need a higher
+  [allocation budget](#allocation-budget) on the server.
 - Serialized objects that **leave the live session** (BLOB columns, files, message queues) should
   be treated as untrusted on the way back in: prefer records for the payload classes, and install
   an allowlisting builder in the tier that reads them.
-- `@TripViaJOS` routes a class through Java Object Serialization and thereby out of TRIP's
-  control; avoid it entirely for data that may be stored or received from outside.
+- `@TripViaJOS` routes a class through Java Object Serialization. TRIP checks the class of the root
+  object, but what it holds is out of TRIP's control, leaving only the
+  [deserialization filter](../../../../tentackle-common/src/main/docs/common.md#deserialization-filter)
+  of `tentackle-common`; avoid it entirely for data that may be stored or received from outside.
 
 ---
 

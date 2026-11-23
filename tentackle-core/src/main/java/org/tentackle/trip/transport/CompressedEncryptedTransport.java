@@ -52,13 +52,13 @@ public class CompressedEncryptedTransport extends EncryptedTransport {
 
 
   @Override
-  protected OutputStream createEncryptingOutputStream(OutputStream outputStream) {
-    return new FastCompressedOutputStream(super.createEncryptingOutputStream(outputStream));
+  protected OutputStream createEncryptingOutputStream(EncryptedChannel channel) {
+    return new FastCompressedOutputStream(super.createEncryptingOutputStream(channel));
   }
 
   @Override
-  protected InputStream createDecryptingInputStream(InputStream inputStream) {
-    return new CompressedInputStream(super.createDecryptingInputStream(inputStream));
+  protected InputStream createDecryptingInputStream(EncryptedChannel channel) {
+    return new CompressedInputStream(super.createDecryptingInputStream(channel));
   }
 
 }

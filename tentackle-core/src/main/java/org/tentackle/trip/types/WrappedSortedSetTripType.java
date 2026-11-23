@@ -99,7 +99,7 @@ public class WrappedSortedSetTripType<T extends Collection> extends CollectionTr
   @Override
   @SuppressWarnings("unchecked")
   protected CollectionHeader<T> readHeader(TripStream stream, OpCode opCode) {
-    int size = checkSize(WrappedSortedSetTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
+    int size = checkSize(stream, WrappedSortedSetTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
     return new CollectionHeader<>(size, (T) new TreeSet<>(ComparatorSupport.read(stream)));
   }
 

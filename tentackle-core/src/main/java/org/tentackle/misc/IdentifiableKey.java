@@ -68,7 +68,9 @@ public class IdentifiableKey<T extends Identifiable> implements Comparable<Ident
    */
   @SuppressWarnings("unchecked")
   public IdentifiableKey(String identifiableClassName, long identifiableId) throws ClassNotFoundException {
-    this((Class<T>) Class.forName(identifiableClassName), identifiableId);
+    // not initialized before it is verified to be an Identifiable
+    this((Class<T>) Class.forName(identifiableClassName, false, IdentifiableKey.class.getClassLoader())
+                         .asSubclass(Identifiable.class), identifiableId);
   }
 
   /**

@@ -98,4 +98,14 @@ public interface Registry extends Remote, RemoteLookup {
    */
   UUID lookup(Remote remoteObject);
 
+  /**
+   * Looks up the name a remote object is registered with.<br>
+   * Remote objects registered by name are the public entry points of a server.
+   *
+   * @param id the unique ID of the remote delegate
+   * @return the name, null if not registered at all or without a name
+   * @see #register(Remote, String)
+   */
+  String lookupName(UUID id);
+
 }

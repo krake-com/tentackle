@@ -19,17 +19,18 @@ module's `QuicheKwikInteropTest` verifies on every build.
 
 ### Which of the two to use
 
-|                 | `tentackle-quic` (KWIK)    | `tentackle-quiche` (Cloudflare quiche)                                           |
-|-----------------|----------------------------|----------------------------------------------------------------------------------|
-| Implementation  | pure Java                  | Rust, called through FFM                                                         |
-| Platforms       | anywhere a JVM runs        | Linux and macOS on x86-64 and aarch64, Windows on x86-64                         |
-| Extra JVM flags | none                       | `--enable-native-access`                                                         |
-| Schemes         | `tripq`, `tripcq`          | `tripj`, `tripcj`                                                                |
-| Stalled paths   | waits for the idle timeout | migrates to a new source port, see [Connection migration](#connection-migration) |
+|                 | `tentackle-quic` (KWIK)                                                                                                          | `tentackle-quiche` (Cloudflare quiche)                                           |
+|-----------------|----------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
+| Implementation  | pure Java                                                                                                                        | Rust, called through FFM                                                         |
+| Platforms       | anywhere a JVM runs                                                                                                              | Linux and macOS on x86-64 and aarch64, Windows on x86-64                         |
+| Extra JVM flags | none                                                                                                                             | `--enable-native-access`                                                         |
+| Schemes         | `tripq`, `tripcq`                                                                                                                | `tripj`, `tripcj`                                                                |
+| Stalled paths   | migrates to a new source port, see [Connection migration](../../../../tentackle-quic/src/main/docs/quic.md#connection-migration) | migrates to a new source port, see [Connection migration](#connection-migration) |
 
-Start with `tentackle-quiche`: it migrates a stalled connection to a fresh source port instead of
-waiting for the idle timeout (see [Connection migration](#connection-migration)), and it brings the
-reference implementation's congestion control and packet processing. Reach for
+Both migrate a stalled connection to a fresh source port (see [Connection migration](#connection-migration)).
+Start with `tentackle-quiche`: it brings the reference implementation's congestion control and packet
+processing, and its server follows a migrating client without further ado, whereas KWIK still flags that
+part as experimental. Reach for
 [`tentackle-quic`](../../../../tentackle-quic/src/main/docs/quic.md) when you need a pure-Java stack —
 for example, when the platform is not among those quiche ships binaries for, or the operating system is
 too old to run them and cannot be upgraded. Nothing stops you from deploying both: they register
@@ -151,8 +152,14 @@ never comes cannot park it for good.
 ## Server side
 
 1. The keystore, alias and password are resolved by `SslParameters`, exactly as for the TCP transports.
-   The server never asks its clients for a certificate: they authenticate through TRIP once the
-   connection stands.
+   By default, the server does not ask its clients for a certificate: they authenticate through TRIP once
+   the connection stands. With `clientauth=want` or `need` it does, and BoringSSL verifies the certificate
+   against the truststore (`tsfile`, or the JVM's default CAs). The verified certificate reaches the
+   application via `TransportClientInfo.peerCertificates()`, see
+   [TRIP](../../../../tentackle-core/src/main/docs/trip.md#client-certificates-reach-the-application).
+   quiche's C API provides the peer's own certificate only, so the list holds just the leaf. BoringSSL
+   admits a client without a certificate even when it verifies the peer, so `need` is enforced when the
+   client opens a stream: a QUIC connection without a certificate is closed, without a reason phrase.
 2. Because quiche accepts **PEM file paths and nothing else**, `PemExporter` writes the certificate chain
    and the private key (PKCS#8) to temporary files with owner-only permissions. Quiche reads them right
    away, so they are deleted as soon as they are loaded, and only a JVM crash in between could leave one
@@ -171,7 +178,14 @@ never comes cannot park it for good.
      and port, the original connection ID and the time it was issued, keyed by a secret generated at
      startup — unforgeable, entirely stateless, valid for 10 seconds
      (`QuicheServer.RETRY_TOKEN_LIFETIME_SECONDS`), and worthless after a restart;
-   - **accept**, which finally creates the connection.
+   - **accept**, which finally creates the connection. The
+     [pre-authentication policy](../../../../tentackle-core/src/main/docs/trip.md#unauthenticated-peers)
+     admits it first, through a `MultiplexedConnectionGuard`, as an unauthenticated connection of the client's
+     host. A connection the policy refuses, because the host exceeds its connection rate, is dropped without an
+     answer before its handshake: the client repeats its initial packet, and gets in once its host is within its
+     rate again. An admitted connection must open a stream within the policy's `firstMessageTimeout`, and a new
+     one within its `idleTimeout` after the last one was closed, or it is closed (see
+     [Denial of service](../../../../tentackle-core/src/main/docs/trip.md#denial-of-service)).
 
    Any other packet for an unknown connection — a stray short header packet of a connection that is gone,
    say — is dropped. The server sends no stateless resets.
@@ -240,27 +254,28 @@ TRIP and the QUIC stream, controlled by `mincompress`. Identical to `tripcq`.
 tripj://host:port/service?parameter=value&...
 ```
 
-| Parameter        | Side   | Default                                        | Meaning                                                                                         |
-|------------------|--------|------------------------------------------------|-------------------------------------------------------------------------------------------------|
-| `ksfile`         | server | `tentackle.ssl.keyStore`                       | keystore holding the server certificate; required here or via the system property               |
-| `kspass`         | server | `tentackle.ssl.keyStorePassword`               | keystore password                                                                               |
-| `ksalias`        | server | sole key entry                                 | alias of the certificate to present; required only for a multi-entry keystore                   |
-| `kstype`         | server | `tentackle.ssl.keyStoreType` / JDK default     | keystore type                                                                                   |
-| `kmpass`         | server | `kspass`                                       | private key password                                                                            |
-| `tsfile`         | client | `tentackle.ssl.trustStore` / JVM's default CAs | truststore verifying the server, used when `certcheck=true`                                     |
-| `tspass`         | client | `tentackle.ssl.trustStorePassword`             | truststore password                                                                             |
-| `tstype`         | client | `tentackle.ssl.trustStoreType` / JDK default   | truststore type                                                                                 |
-| `alpnid`         | both   | the URI scheme                                 | ALPN protocol name; both ends must agree                                                        |
-| `maxstreams`     | both   | 128                                            | concurrent bidirectional streams granted to the peer, >= 1; the default of the pool's `maximum` |
-| `streamwindow`   | both   | 250000                                         | flow control window per stream in bytes, >= 1500                                                |
-| `certcheck`      | client | `true`                                         | verify the server's certificate; any value but `true` turns verification off                    |
-| `hostcheck`      | client | `tentackle.ssl.hostCheck` / `true`             | verify the server's host name, used when `certcheck=true`; any value but `true` turns it off    |
-| `connecttimeout` | client | 10                                             | seconds to wait for the QUIC handshake, > 0                                                     |
-| `quicidle`       | both   | 30                                             | QUIC max idle timeout in **seconds**; 0 disables the timeout (and the derived keep-alive)       |
-| `keepalive`      | client | -1                                             | keep-alive interval in seconds; negative derives it from `quicidle`, 0 disables                 |
-| `migrate`        | client | 2                                              | probe timeouts without any acknowledgment before migrating, >= 0; 0 disables                    |
-| `namedgroups`    | both   | `tentackle.ssl.namedGroups` / BoringSSL's      | key-exchange groups in preference order, e.g. `X25519MLKEM768`; see below                       |
-| `mincompress`    | both   | 1024                                           | smallest block to compress (`tripcj` only)                                                      |
+| Parameter        | Side   | Default                                        | Meaning                                                                                                                                                          |
+|------------------|--------|------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `ksfile`         | both   | `tentackle.ssl.keyStore`                       | server: the server certificate, required here or via the system property; client: the certificate to present                                                     |
+| `kspass`         | both   | `tentackle.ssl.keyStorePassword`               | keystore password; on a client, see the `KeyStorePasswordProvider`                                                                                               |
+| `ksalias`        | both   | sole key entry                                 | alias of the certificate to present; required only for a multi-entry keystore                                                                                    |
+| `kstype`         | both   | `tentackle.ssl.keyStoreType` / JDK default     | keystore type                                                                                                                                                    |
+| `kmpass`         | both   | `kspass`                                       | private key password                                                                                                                                             |
+| `tsfile`         | both   | `tentackle.ssl.trustStore` / JVM's default CAs | client: verifies the server, used when `certcheck=true`; server: verifies the client certificates                                                                |
+| `tspass`         | both   | `tentackle.ssl.trustStorePassword`             | truststore password                                                                                                                                              |
+| `tstype`         | both   | `tentackle.ssl.trustStoreType` / JDK default   | truststore type                                                                                                                                                  |
+| `clientauth`     | server | `none`                                         | client-certificate policy: `none`, `want` or `need`, see [Server side](#server-side)                                                                             |
+| `alpnid`         | both   | the URI scheme                                 | ALPN protocol name; both ends must agree. The default reveals the service, see [Fingerprinting](../../../../tentackle-core/src/main/docs/trip.md#fingerprinting) |
+| `maxstreams`     | both   | 128                                            | concurrent bidirectional streams granted to the peer, >= 1; the default of the pool's `maximum`                                                                  |
+| `streamwindow`   | both   | 250000                                         | flow control window per stream in bytes, >= 1500                                                                                                                 |
+| `certcheck`      | client | `true`                                         | verify the server's certificate; any value but `true` turns verification off                                                                                     |
+| `hostcheck`      | client | `tentackle.ssl.hostCheck` / `true`             | verify the server's host name, used when `certcheck=true`; any value but `true` turns it off                                                                     |
+| `connecttimeout` | client | 10                                             | seconds to wait for the QUIC handshake, > 0                                                                                                                      |
+| `quicidle`       | both   | 30                                             | QUIC max idle timeout in **seconds**; 0 disables the timeout (and the derived keep-alive)                                                                        |
+| `keepalive`      | client | -1                                             | keep-alive interval in seconds; negative derives it from `quicidle`, 0 disables                                                                                  |
+| `migrate`        | client | 2                                              | probe timeouts without any acknowledgment before migrating, >= 0; 0 disables                                                                                     |
+| `namedgroups`    | both   | `tentackle.ssl.namedGroups` / BoringSSL's      | key-exchange groups in preference order, e.g. `X25519MLKEM768`; see below                                                                                        |
+| `mincompress`    | both   | 1024                                           | smallest block to compress (`tripcj` only), at least 20                                                                                                          |
 
 The keystore and truststore parameters and `namedgroups` are resolved by the shared
 [`SslParameters`](../../../../tentackle-core/src/main/docs/trip.md#ssltls-configuration), exactly as for

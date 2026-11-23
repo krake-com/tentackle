@@ -29,6 +29,7 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.testng.ServerProcessWrapper;
 import org.tentackle.persist.app.ServerApplication;
 import org.tentackle.session.SessionInfo;
+import org.tentackle.session.auth.CertificateCredentials;
 import org.tentackle.session.auth.TokenCredentials;
 import org.tentackle.trip.Transport;
 
@@ -74,14 +75,16 @@ public class TestServer extends ServerApplication {
      * Verifies the client's credentials.
      * <p>
      * Most tests connect without any credentials, so the default is to let everybody in. A client
-     * that presents a token, however, goes through the real authentication provider chain — see
-     * {@link TestAuthenticationProvider} and {@code RemoteAuthenticationTest}.
+     * that presents a token or logs in by its certificate, however, goes through the real authentication
+     * provider chain — see {@link TestAuthenticationProvider}, {@link TestCertificateAuthenticationProvider},
+     * {@code RemoteAuthenticationTest} and {@code RemoteCertificateAuthenticationTest}.
      *
      * @param sessionInfo the session info
      */
     @Override
     public void verifySessionInfo(SessionInfo sessionInfo) {
-      if (sessionInfo.getCredentials() instanceof TokenCredentials) {
+      if (sessionInfo.getCredentials() instanceof TokenCredentials ||
+          sessionInfo.getCredentials() instanceof CertificateCredentials) {
         super.verifySessionInfo(sessionInfo);
       }
     }

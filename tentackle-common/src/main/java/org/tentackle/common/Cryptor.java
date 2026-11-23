@@ -21,13 +21,16 @@ package org.tentackle.common;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KDF;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
@@ -37,23 +40,6 @@ import java.util.Base64;
 import java.util.Objects;
 import java.util.StringTokenizer;
 import java.util.function.Function;
-
-interface CryptorHolder {
-
-  private static Cryptor loadCryptor() {
-    try {
-      return ServiceFactory.createService(Cryptor.class);
-    }
-    catch (TentackleRuntimeException rx) {
-      // No application-specific cryptor configured! That's ok, although not recommended.
-      // Notice: this also applies if the cryptor is configured, but its constructor failed.
-      return null;
-    }
-  }
-
-  Cryptor INSTANCE = loadCryptor();
-}
-
 
 /**
  * A simple en- and decryptor.<br>
@@ -71,8 +57,9 @@ interface CryptorHolder {
  *      }
  *    }
  * </pre>
- * Notice that if the constructor of the application's cryptor throws a {@link TentackleRuntimeException},
- * {@link #getInstance()} silently returns null, as if no cryptor were configured.
+ * Notice that if the application's cryptor is configured, but cannot be created (for example, because its
+ * constructor throws an exception), {@link #getInstance()} and {@link #getInstanceSafely()} throw a
+ * {@link TentackleRuntimeException}. A broken cryptor never silently disables the encryption of secrets.
  * <p>
  * Texts, salts, and passphrases are converted to bytes via {@link Settings#getEncodingCharset()}.
  * <p>
@@ -94,16 +81,17 @@ public class Cryptor implements Function<String, String> {
    * Gets the optional application-specific cryptor singleton.
    *
    * @return the cryptor, null if no {@code @Service(Cryptor.class)} configured
+   * @throws TentackleRuntimeException if a cryptor is configured, but could not be created
    */
   public static Cryptor getInstance() {
-    return CryptorHolder.INSTANCE;
+    return CryptorHolder.INSTANCE.get();
   }
 
   /**
    * Gets the application-specific cryptor singleton.
    *
    * @return the cryptor, never null
-   * @throws TentackleRuntimeException if no cryptor defined
+   * @throws TentackleRuntimeException if no cryptor defined, or it could not be created
    */
   public static Cryptor getInstanceSafely() {
     Cryptor cryptor = getInstance();
@@ -191,7 +179,6 @@ public class Cryptor implements Function<String, String> {
   }
 
 
-
   /**
    * Encrypts the data.
    *
@@ -265,6 +252,35 @@ public class Cryptor implements Function<String, String> {
     }
     catch (InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
       throw new TentackleRuntimeException("decryption failed", e);
+    }
+  }
+
+  /**
+   * Derives an AES key from the key of this cryptor via HKDF-SHA256 (RFC 5869).<br>
+   * The key of the cryptor never leaves this object. Different salts or infos yield independent keys,
+   * so that each purpose, such as an encrypted connection and its direction, gets a key of its own.
+   * <p>
+   * Unlike {@link #encrypt(byte[])}, the derived key is meant for authenticated encryption, such as AES-GCM.
+   *
+   * @param salt the salt, usually random
+   * @param info the context and purpose of the key
+   * @param keyStrength the key strength in bits (128, 192 or 256)
+   * @return the derived key
+   * @throws TentackleRuntimeException if the key could not be derived
+   */
+  public SecretKey deriveKey(byte[] salt, byte[] info, int keyStrength) {
+    if (keyStrength != 128 && keyStrength != 192 && keyStrength != 256) {
+      throw new IllegalArgumentException("invalid AES key strength " + keyStrength);
+    }
+    try {
+      KDF hkdf = KDF.getInstance("HKDF-SHA256");
+      return hkdf.deriveKey("AES", HKDFParameterSpec.ofExtract()
+                                                    .addIKM(key)
+                                                    .addSalt(salt)
+                                                    .thenExpand(info, keyStrength / 8));
+    }
+    catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException | RuntimeException e) {
+      throw new TentackleRuntimeException("deriving key failed", e);
     }
   }
 
@@ -366,7 +382,6 @@ public class Cryptor implements Function<String, String> {
     return new String(decrypt64ToBytes(encryptedText), Settings.getEncodingCharset());
   }
 
-
   /**
    * Encrypts a string.<br>
    * Provided for the tentackle-maven-plugin.
@@ -378,7 +393,6 @@ public class Cryptor implements Function<String, String> {
   public String apply(String s) {
     return encrypt64(s);
   }
-
 
   /**
    * Derives the unencrypted URL.<br>
@@ -471,7 +485,6 @@ public class Cryptor implements Function<String, String> {
       throw new TentackleRuntimeException("creating cipher failed", e);
     }
   }
-
 
   private char[] toChars(byte[] data) {
     ByteBuffer byteBuffer = ByteBuffer.wrap(data);

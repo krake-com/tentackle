@@ -22,6 +22,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputFilter;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
@@ -56,22 +57,47 @@ public class DefaultObjectSerializer implements ObjectSerializer {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The stream is deserialized through the filter created by {@link Settings#createDeserializationFilter(long)}.
+   */
   @Override
   public Object deserialize(InputStream in) {
-    try (ObjectInputStream is = new ObjectInputStream(in)) {
-      return is.readObject();
-    }
-    catch (IOException | ClassNotFoundException e) {
-      throw new TentackleRuntimeException(e);
-    }
+    return deserialize(in, Settings.createDeserializationFilter(0));
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Since the bytes are created from the given object, they are deserialized without the application's filter.
+   */
   @Override
   @SuppressWarnings("unchecked")
   public <T> T copy(T object) {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     serialize(object, out);
-    return (T) deserialize(new ByteArrayInputStream(out.toByteArray()));
+    return (T) deserialize(new ByteArrayInputStream(out.toByteArray()), null);
+  }
+
+
+  /**
+   * Deserializes an object from an input stream.
+   *
+   * @param in the input stream to read from, closed afterward
+   * @param filter the filter, null if none
+   * @return the deserialized object
+   */
+  private Object deserialize(InputStream in, ObjectInputFilter filter) {
+    try (ObjectInputStream is = new ObjectInputStream(in)) {
+      if (filter != null) {
+        is.setObjectInputFilter(filter);
+      }
+      return is.readObject();
+    }
+    catch (IOException | ClassNotFoundException e) {
+      throw new TentackleRuntimeException(e);
+    }
   }
 
 }

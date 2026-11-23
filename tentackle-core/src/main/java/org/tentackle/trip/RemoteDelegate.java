@@ -47,6 +47,18 @@ public interface RemoteDelegate<T extends Remote> {
   UUID getRemoteId();
 
   /**
+   * Gets the ID of the client transport that owns this delegate.
+   * <p>
+   * An unnamed remote object registered while serving a client call is private to that client:
+   * its owner is the calling client's transport UUID and only that client may invoke it.
+   * Remote objects registered by name, the registry itself, and objects registered without a
+   * client call in progress are public and return {@code null}.
+   *
+   * @return the owning client transport UUID, or {@code null} if the delegate is public
+   */
+  UUID getOwnerId();
+
+  /**
    * Gets the target object.
    *
    * @return the target object

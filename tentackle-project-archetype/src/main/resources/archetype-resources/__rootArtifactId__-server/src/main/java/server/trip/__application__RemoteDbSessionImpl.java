@@ -65,12 +65,22 @@ public class ${application}RemoteDbSessionImpl extends RemoteDbSessionImpl imple
       if (otherInfo != null) {
         throw new AlreadyLoggedInException(getSession(), otherInfo);
       }
+      DomainContext context = Pdo.createDomainContext(getSession());
+      User user = Application.getInstance().getUser(context, sessionInfo.getUserId());  // must exist!
+
+      // optionally add check for remote middle-tier tracker session here
+      // if (....) { setServerSession(true) }
+
+      // minimal solution -> change it to some more sophisticated one
+      if (user.isChangingPreferencesAllowed() && user.isSystemPreferencesOnly()) {
+        setPrivilegedSession(true);
+      }
+
       if (!getSession().isRemote()) {
-        DomainContext context = Pdo.createDomainContext(getSession());
-        User user = Application.getInstance().getUser(context, sessionInfo.getUserId());
-        String message=MessageFormat.format(ServerBundle.getString("user {0} logged in from {1} with {2}, session {3}"),
-        user,sessionInfo.getHostInfo(),sessionInfo.getApplicationName(),getSessionNumber());
-        Message.log(MessageType.LOGIN,user,message,user);
+        // log only in the database connected server
+        String message = MessageFormat.format(ServerBundle.getString("user {0} logged in from {1} with {2}, session {3}"),
+                                              user, sessionInfo.getHostInfo(), sessionInfo.getApplicationName(), getSessionNumber());
+        Message.log(MessageType.LOGIN, user, message, user);
       }
       loggedIn = true;
     }

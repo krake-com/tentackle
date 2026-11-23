@@ -114,10 +114,16 @@ public final class Binary<T extends Serializable> extends AbstractBinary<T> impl
   /**
    * Retrieves the object encapsulated by the {@code Binary}.<br>
    * The object is deserialized on first invocation and cached afterward.
+   * <p>
+   * The bytes are deserialized through the filter created by {@link Settings#createDeserializationFilter(long)}.
+   * Since they usually come from the database or a remote peer, applications should configure an allowlist
+   * via {@link Settings#setDeserializationFilter} or the system property
+   * {@value Settings#DESERIALIZATION_FILTER_PROPERTY}.
    *
    * @return the deserialized object (retrieved from the db), or null if NULL-value
    *
-   * @throws java.io.IOException if reading the object failed
+   * @throws java.io.IOException if reading the object failed, or it was rejected by the filter
+   *         ({@link java.io.InvalidClassException})
    * @throws ClassNotFoundException if the class of a serialized object cannot be found.
    */
   @SuppressWarnings("unchecked")
@@ -125,6 +131,7 @@ public final class Binary<T extends Serializable> extends AbstractBinary<T> impl
   public T getObject() throws IOException, ClassNotFoundException {
     if (object == null && data != null && length > 0) {
       try (ObjectInputStream is = new ObjectInputStream(getInputStream())) {
+        is.setObjectInputFilter(Settings.createDeserializationFilter(length));
         object = (T) is.readObject();
       }
     }

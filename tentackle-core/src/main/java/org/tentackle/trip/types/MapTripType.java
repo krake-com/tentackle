@@ -31,8 +31,11 @@ import org.tentackle.trip.impl.DefaultOpCode;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.EnumMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.function.Consumer;
 
 
@@ -50,6 +53,8 @@ interface MapTypeHolder {
  * its components precede the entries in the stream in this case, the other way round otherwise.
  * Either way the map is created before its entries are read, so keys and values may
  * back-reference the map itself.
+ * <p>
+ * The keys of a map that may hash them are read as hashed values (see {@link TripStream#enterHashed()}).
  *
  * @param <T> the map type
  */
@@ -59,6 +64,7 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
 
   private static final OpCode OP_CODE = DefaultOpCode.MAP;
 
+  private final boolean hashing;
   private Constructor<T> sizedConstructor;
   private Constructor<T> noArgsConstructor;
 
@@ -69,6 +75,9 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
    */
   public MapTripType(Class<T> clazz) {
     super(clazz);
+    // conservative: any unordered map may hash its keys, including the wrapped and immutable ones
+    hashing = !SortedMap.class.isAssignableFrom(clazz) && !EnumMap.class.isAssignableFrom(clazz) &&
+              !IdentityHashMap.class.isAssignableFrom(clazz);
     if (isInstantiable() && !isDelayedConstruction()) {
       try {
         sizedConstructor = clazz.getDeclaredConstructor(Integer.TYPE);
@@ -104,6 +113,17 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
    */
   public Constructor<T> getNoArgsConstructor() {
     return noArgsConstructor;
+  }
+
+  /**
+   * Returns whether the map may compute the hash codes of its keys.<br>
+   * If so, the keys are read as hashed values.
+   *
+   * @return true if the keys are hashed
+   * @see TripStream#enterHashed()
+   */
+  public boolean isHashing() {
+    return hashing;
   }
 
   @Override
@@ -259,40 +279,57 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
   @SuppressWarnings("unchecked")
   protected void readEntries(TripStream stream, T value, int size) {
     if (size > 0) {
-      OpCode opCode = stream.receiveOpCode();
-      int elementCount = 0;
-      while (elementCount < size) {
-        Object elementKey;
-        if (opCode == DefaultOpCode.NULL) {
-          elementKey = null;    // map allows null keys, obviously
-        }
-        else {
-          TripType<?> elementType = stream.deriveType(opCode);
-          if (elementType.isDictionaryBased()) {
-            opCode = stream.receiveOpCode();
+      stream.enterNested();
+      try {
+        OpCode opCode = stream.receiveOpCode();
+        int elementCount = 0;
+        while (elementCount < size) {
+          Object elementKey;
+          if (opCode == DefaultOpCode.NULL) {
+            elementKey = null;    // map allows null keys, obviously
           }
-          elementKey = elementType.read(stream, opCode);
-        }
-
-        opCode = stream.receiveOpCode();
-        Object elementValue;
-        if (opCode == DefaultOpCode.NULL) {
-          elementValue = null;    // map allows null values, obviously
-        }
-        else {
-          TripType<?> elementType = stream.deriveType(opCode);
-          if (elementType.isDictionaryBased()) {
-            opCode = stream.receiveOpCode();
+          else {
+            TripType<?> elementType = stream.deriveType(opCode);
+            if (elementType.isDictionaryBased()) {
+              opCode = stream.receiveOpCode();
+            }
+            if (hashing) {
+              stream.enterHashed();
+              try {
+                elementKey = elementType.read(stream, opCode);
+              }
+              finally {
+                stream.leaveHashed();
+              }
+            }
+            else {
+              elementKey = elementType.read(stream, opCode);
+            }
           }
-          elementValue = elementType.read(stream, opCode);
-        }
 
-        value.put(elementKey, elementValue);
-
-        if (++elementCount < size) {
-          // opcode for the next element
           opCode = stream.receiveOpCode();
+          Object elementValue;
+          if (opCode == DefaultOpCode.NULL) {
+            elementValue = null;    // map allows null values, obviously
+          }
+          else {
+            TripType<?> elementType = stream.deriveType(opCode);
+            if (elementType.isDictionaryBased()) {
+              opCode = stream.receiveOpCode();
+            }
+            elementValue = elementType.read(stream, opCode);
+          }
+
+          value.put(elementKey, elementValue);
+
+          if (++elementCount < size) {
+            // opcode for the next element
+            opCode = stream.receiveOpCode();
+          }
         }
+      }
+      finally {
+        stream.leaveNested();
       }
     }
   }
@@ -392,7 +429,7 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
    * @return the map header
    */
   protected MapHeader<T> readHeader(TripStream stream, OpCode opCode) {
-    int size = checkSize(MapTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
+    int size = checkSize(stream, MapTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
     // the map grows while its entries are read, so the size is only a capacity hint
     return new MapHeader<>(size, isDelayedConstruction() ? null : createMap(limitPreAllocation(size)));
   }

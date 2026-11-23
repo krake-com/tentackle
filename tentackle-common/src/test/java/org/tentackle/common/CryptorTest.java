@@ -21,6 +21,8 @@ package org.tentackle.common;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -102,4 +104,62 @@ public class CryptorTest {
     Assert.assertEquals(failures.size(), 0, "concurrent crypt failed " + failures.size() + " of " +
                         (THREADS * ROUNDTRIPS) + " times, first: " + failures.peek());
   }
+
+  /**
+   * Asserts that derived keys are deterministic and independent per salt and info,
+   * and that deriving keys leaves the plain encryption untouched.
+   */
+  @Test
+  public void deriveKey() {
+    Cryptor cryptor = new Cryptor("cage", "wave rod");
+    String encrypted = cryptor.encrypt64(MSG);
+
+    byte[] salt = "some salt".getBytes(StandardCharsets.US_ASCII);
+    byte[] otherSalt = "other salt".getBytes(StandardCharsets.US_ASCII);
+    byte[] info = "c2s".getBytes(StandardCharsets.US_ASCII);
+    byte[] otherInfo = "s2c".getBytes(StandardCharsets.US_ASCII);
+
+    SecretKey key = cryptor.deriveKey(salt, info, 256);
+    Assert.assertEquals(key.getAlgorithm(), "AES");
+    Assert.assertEquals(key.getEncoded().length, 32);
+    Assert.assertEquals(cryptor.deriveKey(salt, info, 256).getEncoded(), key.getEncoded());
+    Assert.assertEquals(new Cryptor("cage", "wave rod").deriveKey(salt, info, 256).getEncoded(), key.getEncoded());
+    Assert.assertNotEquals(cryptor.deriveKey(otherSalt, info, 256).getEncoded(), key.getEncoded());
+    Assert.assertNotEquals(cryptor.deriveKey(salt, otherInfo, 256).getEncoded(), key.getEncoded());
+    Assert.assertNotEquals(new Cryptor("cage", "other rod").deriveKey(salt, info, 256).getEncoded(), key.getEncoded());
+    Assert.assertEquals(cryptor.deriveKey(salt, info, 128).getEncoded().length, 16);
+    Assert.expectThrows(IllegalArgumentException.class, () -> cryptor.deriveKey(salt, info, 100));
+
+    Assert.assertEquals(cryptor.encrypt64(MSG), encrypted);
+    Assert.assertEquals(cryptor.decrypt64(encrypted), MSG);
+  }
+
+  @Test
+  public void testLoadNotConfigured() {
+    CryptorHolder.Loaded loaded = CryptorHolder.load(() -> false, () -> {
+      throw new AssertionError("must not be created");
+    });
+    Assert.assertNull(loaded.get());
+  }
+
+  @Test
+  public void testLoadConfigured() {
+    Cryptor cryptor = new TestCryptor();
+    Assert.assertSame(CryptorHolder.load(() -> true, () -> cryptor).get(), cryptor);
+  }
+
+  @Test
+  public void testLoadConfiguredButBrokenFailsClosed() {
+    CryptorHolder.Loaded loaded = CryptorHolder.load(() -> true, () -> {
+      throw new IllegalStateException("typo in salt");
+    });
+    TentackleRuntimeException ex = Assert.expectThrows(TentackleRuntimeException.class, loaded::get);
+    Assert.assertTrue(ex.getCause().getCause() instanceof IllegalStateException);
+    // repeatedly, not just once
+    Assert.assertThrows(TentackleRuntimeException.class, loaded::get);
+
+    CryptorHolder.Loaded nullLoaded = CryptorHolder.load(() -> true, () -> null);
+    Assert.assertThrows(TentackleRuntimeException.class, nullLoaded::get);
+  }
+
 }

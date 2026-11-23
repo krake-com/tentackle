@@ -21,7 +21,9 @@ package org.tentackle.pdo;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
 
+import org.tentackle.misc.TrackedList;
 import org.tentackle.ns.pdo.NumberPool;
+import org.tentackle.ns.pdo.NumberRange;
 import org.tentackle.pdo.testng.AbstractPdoTest;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.TripFactory;
@@ -91,6 +93,38 @@ public class InvocationHandlerTripTest extends AbstractPdoTest {
     assertEquals(info.delegateClass(), copy.getPersistenceDelegate().getClass());
     info = handler.determineInvocation(NumberPool.class.getMethod("isSlave"));
     assertEquals(info.delegateClass(), copy.getDomainDelegate().getClass());
+  }
+
+  @Test(groups = "local")
+  public void transferPdoWithRemovedComponent() {
+    Reporter.log("InvocationHandlerTripTest.transferPdoWithRemovedComponent <br>", true);
+
+    // The removed components of a tracked list are kept in a hash set. They share the domain
+    // context, which the hash guard must not refuse, because the hash code of a PDO depends on
+    // its class and ID only.
+    NumberPool numberPool = on(NumberPool.class);
+    numberPool.setName("removedtrip");
+    numberPool.setRealm("test");
+    NumberRange range1 = on(NumberRange.class);
+    range1.setBegin(1);
+    range1.setEnd(100);
+    NumberRange range2 = on(NumberRange.class);
+    range2.setBegin(100);
+    range2.setEnd(200);
+    numberPool.getNumberRangeList().add(range1);
+    numberPool.getNumberRangeList().add(range2);
+    numberPool.getNumberRangeList().remove(range2);
+    assertTrue(numberPool.getNumberRangeList().isSomeRemoved());
+
+    NumberPool copy = transfer(numberPool);
+    TrackedList<NumberRange> rangeList = copy.getNumberRangeList();
+    assertEquals(rangeList.size(), 1);
+    assertTrue(rangeList.isSomeRemoved());
+    assertEquals(rangeList.getRemovedObjects().size(), 1);
+    NumberRange removed = rangeList.getRemovedObjects().iterator().next();
+    assertEquals(removed.getBegin(), 100);
+    // numberPool wasn't persisted, hence non-root context
+    assertSame(removed.getDomainContext(), copy.getDomainContext().getNonRootContext());
   }
 
   @Test(groups = "local")

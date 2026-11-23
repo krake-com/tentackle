@@ -55,6 +55,9 @@ public abstract class AbstractTripType<T> implements TripType<T> {
    */
   private static final int MAX_PRE_ALLOCATED_SIZE = 4096;
 
+  /** Estimated size of an array's header in bytes. */
+  private static final int ARRAY_HEADER_BYTES = 16;
+
   @SuppressWarnings("rawtypes")
   private static final TripComponent[] NO_COMPONENTS = new TripComponent[0];
   private static final TripTypeCategory[] NO_CATEGORIES = new TripTypeCategory[0];
@@ -224,6 +227,42 @@ public abstract class AbstractTripType<T> implements TripType<T> {
       throw new TripRuntimeException("negative size " + size + " for " + this);
     }
     return size;
+  }
+
+  /**
+   * Validates a size or length read from the stream, also against the stream's read policy.<br>
+   * Must be invoked before anything is allocated for the elements.
+   *
+   * @param stream the stream
+   * @param size the size read from the stream
+   * @return the size, never negative
+   * @throws TripRuntimeException if the size is negative or exceeds the limit of the read policy
+   * @see TripStream#checkSize(int)
+   */
+  protected int checkSize(TripStream stream, int size) {
+    checkSize(size);
+    stream.checkSize(size);
+    return size;
+  }
+
+  /**
+   * Validates the length of an array read from the stream and accounts for the memory allocated for it.<br>
+   * Must be invoked before the array is allocated.
+   * <p>
+   * An array is allocated with the length announced by the sender, before its elements are read.
+   * Since default values are skipped, the memory is not backed by the data on the wire.
+   *
+   * @param stream the stream
+   * @param length the length read from the stream
+   * @param slotBytes the number of bytes per element: 1 to 8 for primitives, 8 for references
+   * @return the length, never negative
+   * @throws TripRuntimeException if the length is negative or exceeds the limits of the stream
+   * @see TripStream#checkAllocation(long)
+   */
+  protected int checkArrayLength(TripStream stream, int length, int slotBytes) {
+    checkSize(stream, length);
+    stream.checkAllocation((long) length * slotBytes + ARRAY_HEADER_BYTES);
+    return length;
   }
 
   /**

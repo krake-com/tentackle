@@ -23,7 +23,9 @@ import org.tentackle.log.Logger;
 import org.tentackle.misc.Pool;
 import org.tentackle.trip.Connection;
 import org.tentackle.trip.Dictionary;
+import org.tentackle.trip.PreAuthenticationPolicy;
 import org.tentackle.trip.Registry;
+import org.tentackle.trip.RejectionLog;
 import org.tentackle.trip.Remote;
 import org.tentackle.trip.RemoteLookup;
 import org.tentackle.trip.Transport;
@@ -37,6 +39,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.net.URI;
+import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -47,6 +51,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 /**
  * Base class for transport implementations.
@@ -73,6 +78,7 @@ public abstract class AbstractTransport implements Transport {
   private Registry registry;                          // the server's registry
   private RemoteLookup remoteLookup;                  // the cached remote lookup
   private volatile boolean closed;                    // true if the transport is closed (cannot be used anymore)
+  private volatile PreAuthenticationPolicy preAuthenticationPolicy;   // restrictions for unauthenticated clients [server]
 
   /**
    * A server-side map with weak UUIDs mapped to weak references to dictionaries.
@@ -191,8 +197,10 @@ public abstract class AbstractTransport implements Transport {
         // were closed and its dictionary was collected, or this server was restarted. Giving it a
         // new dictionary would make it send ordinals we never learned, so it has to establish a
         // new transport, which gives both sides a fresh dictionary.
-        LOGGER.warning("client transport {0} has a populated dictionary but {1} has none for it " +
-                       "-> the client must establish a new transport", id, this);
+        if (RejectionLog.isLoggable()) {
+          LOGGER.warning("client transport {0} has a populated dictionary but {1} has none for it " +
+                         "-> the client must establish a new transport", TransportClientInfo.redact(id), this);
+        }
         return null;
       }
       // Drop a stale entry first: put() would keep its collected UUID instance as the key, and
@@ -208,6 +216,16 @@ public abstract class AbstractTransport implements Transport {
   @Override
   public Registry getRegistry() {
     return registry;
+  }
+
+  @Override
+  public void setPreAuthenticationPolicy(PreAuthenticationPolicy policy) {
+    preAuthenticationPolicy = policy;
+  }
+
+  @Override
+  public PreAuthenticationPolicy getPreAuthenticationPolicy() {
+    return preAuthenticationPolicy;
   }
 
   @Override
@@ -236,8 +254,9 @@ public abstract class AbstractTransport implements Transport {
   }
 
   @Override
-  public Runnable createConnectionHandler(String connectionName, InputStream inputStream, OutputStream outputStream) {
-    return new ConnectionHandler(this, connectionName, inputStream, outputStream);
+  public Runnable createConnectionHandler(String connectionName, InputStream inputStream, OutputStream outputStream,
+                                          Supplier<List<X509Certificate>> peerCertificates) {
+    return new ConnectionHandler(this, connectionName, inputStream, outputStream, peerCertificates);
   }
 
   @Override

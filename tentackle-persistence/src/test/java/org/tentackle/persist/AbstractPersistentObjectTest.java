@@ -556,7 +556,8 @@ public class AbstractPersistentObjectTest {
     assertNull(po.orderBy(), "unordered by default");
     assertEquals(po.getSqlContextCondition(), "", "no context condition by default");
     assertNull(po.getValidClassIds(), "no inheritance, no class-ID restriction");
-    assertFalse(po.isComposite(), "no composite relations");
+    assertTrue(po.isComposite(), "the root entity of DemoComponent");
+    assertFalse(Pdo.create(DemoLockable.class).getPersistenceDelegate().isComposite(), "no composite relations by default");
     assertFalse(po.isAbstract());
     assertFalse(po.isExplicitIdAliasRequiredInJoins());
     assertFalse(po.containsPattern("whatever"), "no full-text search by default");

@@ -44,6 +44,30 @@ public class LoopbackCallHandler extends CallHandler {
     connectionPool = ((LoopbackTransport) getTransport()).getConnectionPool();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The loopback client runs in the same JVM and must get an answer.
+   *
+   * @return false
+   */
+  @Override
+  protected boolean isRejectingUnknownNames() {
+    return false;
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The loopback client waits for an answer.
+   *
+   * @return false
+   */
+  @Override
+  protected boolean isErrorSuppressed() {
+    return false;
+  }
+
   @Override
   public void finalizeResponse() {
     super.finalizeResponse();

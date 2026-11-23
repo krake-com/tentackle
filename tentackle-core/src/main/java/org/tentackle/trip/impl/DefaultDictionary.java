@@ -27,6 +27,7 @@ import org.tentackle.trip.TripComponent;
 import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripType;
+import org.tentackle.trip.transport.TransportClientInfo;
 
 import java.lang.ref.Cleaner;
 import java.lang.reflect.Proxy;
@@ -49,9 +50,9 @@ public class DefaultDictionary implements Dictionary {
 
   private static final Logger LOGGER = Logger.get(DefaultDictionary.class);
 
-  private static final long WAIT_TIME = 1000;     // wait time in ms
-  private static final int WARN_WAIT_LOOPS = 60;  // log a warning once a minute
-  private static final int MAX_WAIT_LOOPS = 300;  // 5-minutes max. wait time
+  private static final long WAIT_TIME = 1000;                 // wait time in ms
+  private static final int WARN_WAIT_LOOPS = 60;              // log a warning once a minute
+  private static final long MAX_WAIT_TIME = 300 * WAIT_TIME;  // 5-minutes max. wait time
 
   /**
    * Used to set the closed flag.
@@ -62,13 +63,13 @@ public class DefaultDictionary implements Dictionary {
 
     private Resources(UUID id) {
       this.id = id;
-      LOGGER.info("dictionary {0} created", id);
+      LOGGER.info("dictionary {0} created", TransportClientInfo.redact(id));
     }
 
     @Override
     public void run() {
       closed = true;
-      LOGGER.info("dictionary {0} closed", id);
+      LOGGER.info("dictionary {0} closed", TransportClientInfo.redact(id));
     }
   }
 
@@ -81,6 +82,7 @@ public class DefaultDictionary implements Dictionary {
   private final AtomicInteger ordinalCounter = new AtomicInteger();
   private final AtomicInteger temporaryOrdinalCounter = new AtomicInteger();
   private final Resources resources;
+  private volatile boolean authenticated;
 
   /**
    * Creates a dictionary.
@@ -112,8 +114,27 @@ public class DefaultDictionary implements Dictionary {
   }
 
   @Override
+  public boolean isAuthenticated() {
+    return authenticated;
+  }
+
+  @Override
+  public void setAuthenticated() {
+    if (!server) {
+      throw new TripRuntimeException("client dictionaries cannot be authenticated");
+    }
+    authenticated = true;
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The ID is abbreviated: the server grants the authentication state of a client to every
+   * connection presenting the ID of its transport, so the full ID must not show up in the logs.
+   */
+  @Override
   public String toString() {
-    return id.toString();
+    return TransportClientInfo.redact(id);
   }
 
   @Override
@@ -187,6 +208,11 @@ public class DefaultDictionary implements Dictionary {
 
   @Override
   public DictionaryEntry getEntry(int ordinal) {
+    return getEntry(ordinal, MAX_WAIT_TIME);
+  }
+
+  @Override
+  public DictionaryEntry getEntry(int ordinal, long maxWaitTime) {
     DictionaryEntry entry = entriesByOrdinal.get(ordinal);
     if (entry != null) {
       return entry;
@@ -200,15 +226,19 @@ public class DefaultDictionary implements Dictionary {
     // handled before connection#1.
     // At the receiving side the waiting thread is virtual (cheap), and when the
     // connections are closed, they are released to the GC together with their shared dictionary.
+
     int loops = 0;
     boolean interrupted = false;
-    while (entry == null && !resources.closed && loops < MAX_WAIT_LOOPS) {
+    long deadline = System.currentTimeMillis() + Math.min(maxWaitTime, MAX_WAIT_TIME);
+    long remaining;
+
+    while (entry == null && !resources.closed && (remaining = deadline - System.currentTimeMillis()) > 0) {
       if (++loops % WARN_WAIT_LOOPS == 0) {
         LOGGER.warning("still waiting for entry with ordinal " + ordinal + " for dictionary " + this + " ...");
       }
       synchronized (this) {
         try {
-          this.wait(WAIT_TIME);
+          this.wait(Math.min(WAIT_TIME, remaining));
           entry = entriesByOrdinal.get(ordinal);
         }
         catch (InterruptedException e) {

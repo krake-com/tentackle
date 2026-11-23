@@ -5,7 +5,7 @@ All notable changes to Tentackle are documented in this file. It covers every ta
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The entries are
 curated highlights, not a complete list of commits — refer to the git history for every detail.
-For the story behind the releases, see [The History of Tentackle](src/main/docs/history.md).
+For the story behind the releases, see [The History of Tentackle](HISTORY.md).
 
 ## Versioning
 
@@ -31,6 +31,134 @@ Releases before 8.2.2.0 use plain `2.x.y` version numbers. They require Java 8, 
 requires Java 11.
 
 ## [Unreleased]
+
+### Added
+
+- TRIP: a new `PreAuthenticationPolicy` restricts what a server accepts from a client that has not logged in yet.
+  See [Unauthenticated peers](tentackle-core/src/main/docs/trip.md#unauthenticated-peers).
+- `TripServer` installs an enforcing pre-authentication policy by default, and `RemoteDbSessionImpl` authenticates
+  the client once `verifySessionInfo` accepted the credentials. The backend property `preauth=enforce|audit|off`
+  selects the mode.
+- A failed remote login is answered after a random time within a configurable interval (backend properties
+  `loginfailmindelay`/`loginfailmaxdelay`, default 1–5 s). The response time no longer reveals whether a user
+  exists, and brute-force attacks are throttled.
+- TRIP: the same random delay (`RejectionDelay`) applies to the other rejections of an unauthenticated peer. A
+  connection with an invalid magic is closed after the delay. The lookup of an unknown remote object name is not
+  answered, and the connection is closed after the delay. The response time doesn't reveal which rejection occurred.
+  Every delay, including the one of a failed login, waits in the virtual thread of the connection and blocks no
+  regular thread of the call pool: a remote method answered late invokes `RejectionDelay.defer`.
+  DefaultPreAuthenticationPolicy.idleTimeout` (default 30 s) closes an unauthenticated connection that sends
+  no further message after a call.
+- TRIP: the [hash guard](tentackle-core/src/main/docs/trip.md#hashed-values) refuses back-references within the
+  elements of hash sets and the keys of hash maps, unless the referenced object's hash code doesn't depend on
+  other objects. It applies after the login as well, since a few kilobytes of shared containers make computing a
+  hash code take forever, whatever their nesting depth. It can be disabled with
+  `DefaultTripStream.setHashGuardEnabled(false)` or `-Dtentackle.trip.disableHashGuard=true`.
+- TRIP: the [allocation budget](tentackle-core/src/main/docs/trip.md#allocation-budget) limits the memory the
+  arrays of a single message allocate in total, since a sparse array is allocated with its full length before
+  its elements arrive. The default is 256 MiB per remote call after the login
+  (`DefaultTripStream.setDefaultAllocationLimit` or `-Dtentackle.trip.maxAllocation`), and
+  `DefaultPreAuthenticationPolicy.maxAllocation` (default 4 MiB) before.
+- `Cryptor.deriveKey` derives independent AES keys from the cryptor's key via HKDF-SHA256.
+- TRIP: a section on [fingerprinting](tentackle-core/src/main/docs/trip.md#fingerprinting) describes what a peer
+  that can't log in may still learn about a TRIP server, and how a deployment avoids it.
+- TRIP: `DefaultPreAuthenticationPolicy.connectionRate`/`connectionBurst` (default 20/s, bursts of 64) limit the
+  new connections per host.
+- TRIP: the QUIC connections of `tripq`/`tripcq`/`tripj`/`tripcj` are subject to the pre-authentication policy
+  themselves (`MultiplexedConnectionGuard`). A QUIC connection that opens no stream in time is closed, instead of
+  being kept open by its keep-alive forever.
+- TRIP: the log messages about unauthenticated peers are throttled by `RejectionLog` (default 100 per minute).
+- TRIP: a section on [denial of service](tentackle-core/src/main/docs/trip.md#denial-of-service) describes what
+  bounds the resources a peer that can't log in may bind, and what remains up to the deployment.
+- `tentackle-quic`: source port migration for stalled `tripq`/`tripcq` connections, based on the client migration
+  of KWIK 0.12.3. The URI parameter `migrate` (default 2) sets the probe timeouts before a client migrates. A
+  `tripq` server lets clients migrate unless `migrate=0`. See
+  [Connection migration](tentackle-quic/src/main/docs/quic.md#connection-migration).
+- `Binary.getObject()`, `DefaultObjectSerializer.deserialize()` and TRIP's `@TripViaJOS` objects (`JOSTripType`)
+  read through an `ObjectInputFilter`: depth
+  and reference limits, the binary's size as the byte and array limit, an application filter
+  (`Settings.setDeserializationFilter` or `-Dtentackle.serialFilter=<pattern>`), and the JVM-wide
+  `jdk.serialFilter`. These bytes bypass TRIP's allowlist, so applications reading them from untrusted sources
+  should configure an allowlist. See
+  [Deserialization filter](tentackle-common/src/main/docs/common.md#deserialization-filter).
+
+### Changed
+
+- KWIK was upgraded from 0.12.2 to 0.12.3, which adds client connection migration.
+
+- Applications that subclass `SessionInfo` or `Credentials` must annotate the subclass with `@TripPreAuth("login")`,
+  or the login is refused (or set `preauth=off`).
+- A TRIP server refuses dictionary entries with permanent ordinals from its clients, which only ever send temporary
+  ones.
+- The UUID of a client transport is logged abbreviated, since it now carries the client's authentication state.
+- The client's version is checked only after its credentials were verified: `RemoteDbSessionImpl` invokes
+  `RemoteDbConnectionImpl.checkClientVersion` after `verifySessionInfo`, so a `VersionIncompatibleException` reaches
+  authenticated users only, after the random delay of a failed login.
+- An unauthenticated client looking up a wrong service name gets a `TripStreamClosedException` instead of
+  "remote object not found".
+- `tripq`/`tripcq` validate the client's address with a Retry packet before the handshake (URI parameter
+  `retry=0` turns it off).
+- `ConnectionHandler.isAuthenticated` is public.
+- many improvements hardening TRIP service endpoints
+- `Cryptor.getInstance()` and `getInstanceSafely()` throw a `TentackleRuntimeException` if an application cryptor
+  is configured but cannot be created. Before, `getInstance()` returned `null`, as if no cryptor were configured,
+  and secrets were silently stored unencrypted.
+- TRIP announces the class of a `@TripViaJOS` object ahead of its Java-serialized form (wire format change). The
+  receiver accepts only a class it serializes via JOS itself, and refuses a Java-serialized root object of any other
+  class before it is instantiated.
+- TRIP refuses Java-serialized objects and lambdas before the login.
+- `tripe`/`tripce` servers refuse legacy (AES/ECB) clients unless started with the URI parameter `legacy=1`.
+- **Breaking:** remote clients can no longer get the delegates of the framework's internal tables
+  (`ModificationLog`, `DbModification`, `DbPreferencesNode`, `DbPreferencesKey`), unless the server marks the
+  session privileged with `RemoteDbSessionImpl.setPrivilegedSession(true)`. Tools processing the modification log
+  remotely must be given a privileged session. `ModificationLog` is no longer preloaded.
+  See [After the login](tentackle-database/src/main/docs/database.md#after-the-login).
+- **Breaking:** a remote client may read only the system preferences and its own user's preferences, and write only
+  its own user's, unless the session is privileged. Override `RemoteDbSessionImpl.isPreferencesAccessAllowed` to
+  change the rules, for example, for clients running in `systemOnly` mode.
+- `DbRemoteDelegate.groupWith` joins only a session of the same user and client JVM
+  (`RemoteDbSessionImpl.isGroupingAllowed`).
+- A `MultiUserDbPool` serves a login from a user's sub-pool only if its password matches the one the sub-pool's
+  sessions were opened with (`MultiUserDbPool.isMatchingCredentials`). Otherwise, the login gets a session of its
+  own, authenticated with the presented credentials.
+
+### Fixed
+
+- SQL injection: the name of a table counter (a "tracked name") was concatenated into the SQL statement creating its
+  row in the modification table. Any logged-in client could request an arbitrary name via the modification tracker
+  and thus execute SQL with the server's database user. The name is now bound as a parameter, and
+  `DbModificationTrackerRemoteDelegateImpl.validateTrackedName` refuses names that are empty, too long or contain
+  control characters.
+- The preferences of other users could be read and overwritten by any logged-in client, including the system
+  preferences, also by forging the IDs of persisted nodes and keys.
+- A logged-in client could tamper with the modification log through the generic `AbstractDbObject` delegate.
+- A logged-in client could join the session of another user into its session group, which got the other user's
+  session closed along with the client's own hanging transaction.
+- With a `MultiUserDbPool` (cascaded servers), the server's backend properties were copied into the client's
+  session info, which `RemoteDbSession.getClientSessionInfo` returns to the client.
+
+- TRIP: `Binary`, `TBinary`, `@TripViaJOS` objects, large `BigDecimal`s and empty `EnumMap`s are read while
+  their data arrives instead of being allocated with the length announced ahead of it. A forged length no longer
+  allocates up to 2 GiB per value, and receiving a binary no longer copies it through an intermediate array.
+- TRIP: the Java-serialized form of an empty `EnumMap` is read through an `ObjectInputFilter` that admits only
+  the `EnumMap` and its enum key type. Before, an authenticated peer could pass an arbitrary object graph to
+  `ObjectInputStream` this way.
+- TRIP: incomplete connection requests for the compressing transports (`tripc`, `tripcs`, `tripcq`, `tripcj`)
+  are now rejected after the rejection delay like any other rejections.
+- `tripq`/`tripcq`: the pre-authentication policy grouped the connection limits by stream number instead of by
+  the client's address, since KWIK names a stream by its number only.
+- `Binary`/`TBinary` read via Java Object Serialization reject a length exceeding their data. Reading a binary
+  larger than 2 GiB from a stream fails with an `IOException` instead of a `NegativeArraySizeException`.
+- `DefaultServiceFinder` checks that a provider implements its service before the provider class is initialized,
+  so the static initializers of a misconfigured class are not executed.
+- `NumericEvaluator` limits the nesting depth of an expression (`MAX_DEPTH`) and throws a
+  `TentackleRuntimeException` instead of a `StackOverflowError`.
+- `FileHelper.unzip` limits the number of entries and the total uncompressed size ("zip bomb" protection),
+  by default to 100,000 entries and 100 times the size of the zip file, but at least 64 MiB. A new overload
+  takes explicit limits.
+- `FileHelper.download` limits the size of the data read into memory, by default to 256 MiB. A content length
+  exceeding the limit fails before reading, and the bytes actually read are counted as well. A new overload takes
+  an explicit limit. The update service reads a checksum file of at most 64 KiB.
 
 
 ## Java 25 line (25.x)
@@ -1378,7 +1506,7 @@ Java 8 maintenance release with backports from 2.2.
 ### [2.0.0] – 2016-01-09
 
 The first release in the public git history.
-For what it already contained, see [The History of Tentackle](src/main/docs/history.md#origins-20012015).
+For what it already contained, see [The History of Tentackle](HISTORY.md#origins-20012015).
 
 [Unreleased]: https://github.com/krake-com/tentackle/compare/25.20.1.1...develop
 [25.20.1.1]: https://github.com/krake-com/tentackle/releases/tag/25.20.1.1

@@ -24,6 +24,7 @@ import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.trip.Registry;
 import org.tentackle.trip.Remote;
 import org.tentackle.trip.RemoteDelegate;
+import org.tentackle.trip.RemoteLookup;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.remote.DelegateDescriptor;
 import org.tentackle.trip.remote.IdentifiedRemoteCall;
@@ -71,6 +72,11 @@ public class DefaultRemoteDelegate<T extends Remote> implements RemoteDelegate<T
   private static final ClassValue<Collection<Class<? extends Remote>>> REMOTE_INTERFACES = new ClassValue<>() {
     @Override
     protected Collection<Class<? extends Remote>> computeValue(Class<?> type) {
+      if (Registry.class.isAssignableFrom(type)) {
+        // The registry is a special case, since it must export only the lookup method.
+        // All others are only used within the server.
+        return List.of(RemoteLookup.class);
+      }
       // immutable, since it is shared by all delegates of that class
       return List.copyOf(ReflectionHelper.findAllInterfaces(type, Remote.class));
     }
@@ -78,6 +84,7 @@ public class DefaultRemoteDelegate<T extends Remote> implements RemoteDelegate<T
 
   private final Registry registry;
   private final UUID remoteId;
+  private final UUID ownerId;
   private final T target;
   private final IndexedMethodCache methodCache;
   private final List<WeakReference<RemoteDelegate<?>>> registeredDelegates;
@@ -88,12 +95,14 @@ public class DefaultRemoteDelegate<T extends Remote> implements RemoteDelegate<T
    *
    * @param registry the registry
    * @param remoteId the ID of the remote object
+   * @param ownerId the owning client transport UUID, or null if the delegate is public
    * @param target the target object
    * @param methodCache the method cache for the target object
    */
-  public DefaultRemoteDelegate(Registry registry, UUID remoteId, T target, IndexedMethodCache methodCache) {
+  public DefaultRemoteDelegate(Registry registry, UUID remoteId, UUID ownerId, T target, IndexedMethodCache methodCache) {
     this.registry = registry;
     this.remoteId = remoteId;
+    this.ownerId = ownerId;
     this.target = target;
     this.methodCache = methodCache;
     registeredDelegates = new ArrayList<>();
@@ -111,28 +120,36 @@ public class DefaultRemoteDelegate<T extends Remote> implements RemoteDelegate<T
   }
 
   @Override
+  public UUID getOwnerId() {
+    return ownerId;
+  }
+
+  @Override
   public T getTarget() {
     return target;
   }
 
   @Override
   public InitialRemoteResponse invoke(InitialRemoteCall call) {
+    Method method;
     try {
-      Method method = findRemoteMethod(call.methodName(), call.parameterTypes());
-      int methodIndex = methodCache.add(method);
-      try {
-        return new InitialRemoteResponse(methodIndex,
-                                         processResult(method.invoke(target, call.parameters())), null);
-      }
-      catch (InvocationTargetException e) {
-        return new InitialRemoteResponse(methodIndex, null, e.getCause());
-      }
-      catch (IllegalAccessException e) {
-        return new InitialRemoteResponse(methodIndex, null, e);
-      }
+      method = findRemoteMethod(call.methodName(), call.parameterTypes());
     }
-    catch (NoSuchMethodException e) {
+    catch (NoSuchMethodException | RuntimeException e) {
+      // RuntimeException: a forged call without a method name or with null parameter types
       return new InitialRemoteResponse(-1, null, e);
+    }
+    int methodIndex = methodCache.add(method);
+    try {
+      return new InitialRemoteResponse(methodIndex,
+                                       processResult(method.invoke(target, call.parameters())), null);
+    }
+    catch (InvocationTargetException e) {
+      return new InitialRemoteResponse(methodIndex, null, e.getCause());
+    }
+    catch (IllegalAccessException | IllegalArgumentException e) {
+      // IllegalArgumentException: the arguments don't match the parameters, i.e. the call was forged
+      return new InitialRemoteResponse(methodIndex, null, e);
     }
   }
 
@@ -149,7 +166,8 @@ public class DefaultRemoteDelegate<T extends Remote> implements RemoteDelegate<T
     catch (InvocationTargetException e) {
       return new IdentifiedRemoteResponse(null, e.getCause());
     }
-    catch (IllegalAccessException e) {
+    catch (IllegalAccessException | IllegalArgumentException e) {
+      // IllegalArgumentException: the arguments don't match the parameters, i.e. the call was forged
       return new IdentifiedRemoteResponse(null, e);
     }
   }

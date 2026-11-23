@@ -18,12 +18,6 @@
 
 package org.tentackle.fx.rdc.security;
 
-import javafx.fxml.FXML;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.RadioButton;
-import javafx.scene.control.ToggleGroup;
-import javafx.scene.control.Tooltip;
-
 import org.tentackle.bind.Bindable;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
@@ -40,6 +34,11 @@ import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.pdo.Security;
 import org.tentackle.security.permissions.AllPermission;
 
+import javafx.fxml.FXML;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.Tooltip;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -49,8 +48,12 @@ import java.util.TreeMap;
 
 /**
  * Security permissions editor.<br>
- * Edits a single security rule: the grantee, the optional domain context object, whether the
- * permissions are allowed or denied, the permissions, and the message.
+ * Edits a single security rule: the grantee, the optional domain context object (or any context),
+ * whether the permissions are allowed or denied, the permissions, and the message.
+ * <p>
+ * A rule without a context object applies to the default context only.
+ * A rule for any context applies in every domain context, which is also
+ * required for an allow-rule to accept a permission requested for all contexts.
  * For each permission applying to the securable class, the editor shows whether it is
  * effectively granted or denied, including the permissions implied by others.
  * Permissions implied by other selected permissions are not stored in the rule.
@@ -87,6 +90,8 @@ public class SecurityEditor extends PdoEditor<Security> {
   private FxTextField secDomainContextObjectField;
   @FXML
   private FxButton contextButton;
+  @FXML
+  private FxCheckBox anyContextBox;
   @FXML
   private FxRadioButton allowButton;
   @FXML
@@ -157,13 +162,11 @@ public class SecurityEditor extends PdoEditor<Security> {
       permissionRadioButtons.put(permission, effectiveRadioButton);
     }
 
-    if (!SecurityDialogFactory.getInstance().isDomainContextUsed()) {
-      contextButton.setDisable(true);
-      secDomainContextObjectField.setDisable(true);
-    }
-    else {
-      contextButton.setOnAction(e -> selectContext());
-    }
+    secDomainContextObjectField.setChangeable(false);
+    contextButton.setOnAction(e -> selectContext());
+    anyContextBox.setBindable(false);
+    anyContextBox.addViewToModelListener(this::anyContextToModel);
+    updateContextControls();
   }
 
   @Override
@@ -175,6 +178,7 @@ public class SecurityEditor extends PdoEditor<Security> {
   public void setPdo(Security pdo) {
     this.sec = pdo;
     getBinder().putBindingProperty(DomainContext.class, pdo.getDomainContext());
+    anyContextBox.setSelected(pdo.getDomainContextId() < 0);
     if (pdo.isAllowed()) {
       allowButton.setSelected(true);
     }
@@ -194,6 +198,7 @@ public class SecurityEditor extends PdoEditor<Security> {
     }
     getContainer().updateView();
     updateEffectivePermissions();
+    updateContextControls();
   }
 
   /**
@@ -232,6 +237,7 @@ public class SecurityEditor extends PdoEditor<Security> {
   public void setChangeable(boolean changeable) {
     super.setChangeable(changeable);
     granteeButton.setDisable(!changeable);
+    updateContextControls();
   }
 
 
@@ -249,6 +255,32 @@ public class SecurityEditor extends PdoEditor<Security> {
       secDomainContextObjectField.updateView();
       getContainer().getDelegate().fireViewToModelListeners();  // SecurityRulesView listens
     });
+  }
+
+  /**
+   * Updates the model when the "any context" checkbox has been toggled.<br>
+   * Selected, the rule applies to any context. Deselected, it applies to the default context.
+   */
+  private void anyContextToModel() {
+    sec.setDomainContextObject(null);     // default context
+    if (anyContextBox.isSelected()) {
+      sec.setDomainContextId(-1);         // any context
+    }
+    secDomainContextObjectField.updateView();
+    updateContextControls();
+  }
+
+  /**
+   * Enables or disables the context selection.<br>
+   * A context object can only be selected if the application uses domain contexts in security rules
+   * and the rule does not apply to any context.
+   */
+  private void updateContextControls() {
+    boolean contextUsed = SecurityDialogFactory.getInstance().isDomainContextUsed();
+    anyContextBox.setChangeable(contextUsed);
+    boolean anyContext = anyContextBox.isSelected();
+    secDomainContextObjectField.setChangeable(contextUsed && !anyContext);
+    contextButton.setDisable(!contextUsed || anyContext || !isChangeable());
   }
 
   private void handleSelectionEvent() {

@@ -119,6 +119,36 @@ public interface Dictionary {
   DictionaryEntry getEntry(int ordinal);
 
   /**
+   * Returns the entry for the given ordinal, waiting at most the given time for it.
+   *
+   * @param ordinal the ordinal of the entry
+   * @param maxWaitTime the maximum time to wait for a missing entry in milliseconds
+   * @return the entry
+   * @throws TripRuntimeException if the ordinal is invalid
+   */
+  DictionaryEntry getEntry(int ordinal, long maxWaitTime);
+
+  /**
+   * Returns whether the client this server dictionary belongs to is authenticated.
+   * <p>
+   * The server keeps one dictionary per client transport, shared by all its connections.
+   * That's why the dictionary carries the authentication state of the client.
+   *
+   * @return true if authenticated, false if not or not a server dictionary
+   * @see PreAuthenticationPolicy
+   */
+  boolean isAuthenticated();
+
+  /**
+   * Marks the client this server dictionary belongs to as authenticated.<br>
+   * The state cannot be reset.
+   *
+   * @throws TripRuntimeException if not a server dictionary
+   * @see PreAuthenticationPolicy
+   */
+  void setAuthenticated();
+
+  /**
    * Returns the entry for the given class name.
    *
    * @param className the FQCN of the class

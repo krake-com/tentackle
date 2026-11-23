@@ -20,7 +20,9 @@ package org.tentackle.persist;
 
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
+import org.tentackle.misc.IdentifiableMap;
 import org.tentackle.pdo.DomainContext;
+import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentObjectService;
 import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
@@ -154,11 +156,16 @@ public class DemoEntityPersistenceImpl extends AbstractPersistentObject<DemoEnti
   }
 
   /**
-   * Gets the components of this aggregate.
-   *
-   * @return the components, null if not loaded
+   * {@inheritDoc}
+   * <p>
+   * The generated code selects via the root ID; here the context condition of
+   * {@link DemoComponentPersistenceImpl} restricts the select to this root.
    */
+  @Override
   public List<DemoComponent> getComponentList() {
+    if (componentList == null) {
+      componentList = isNew() ? new ArrayList<>() : new ArrayList<>(on(DemoComponent.class).selectAll());
+    }
     return componentList;
   }
 
@@ -170,6 +177,81 @@ public class DemoEntityPersistenceImpl extends AbstractPersistentObject<DemoEnti
   public void setComponentList(List<DemoComponent> componentList) {
     this.componentList = componentList == null ? null : new ArrayList<>(componentList);
   }
+
+
+  //<editor-fold defaultstate="collapsed" desc="composite relation">
+
+  /*
+   * A hand-written equivalent of what the PdoRelations wurblet generates for a composite list
+   * relation with delete = cascade (see NumberPoolPersistenceImpl). Removals are not tracked,
+   * since the list is a plain ArrayList. Since DemoComponent is untracked, all components are
+   * saved, not only the modified ones.
+   */
+
+  @Override
+  public void setSession(Session session) {
+    super.setSession(session);
+    if (session != null) {
+      session.applyTo(componentList);
+    }
+  }
+
+  @Override
+  public void setDomainContext(DomainContext context) {
+    super.setDomainContext(context);
+    if (context != null) {
+      context.applyTo(componentList);
+    }
+  }
+
+  @Override
+  public void deleteReferencingRelations() {
+    super.deleteReferencingRelations();
+    delete(getComponentList());
+  }
+
+  @Override
+  public void saveReferencingRelations(boolean update) {
+    super.saveReferencingRelations(update);
+    if (componentList != null) {
+      getDomainContext().applyTo(componentList);
+      save(componentList, false);
+    }
+  }
+
+  @Override
+  public boolean isComposite() {
+    return true;
+  }
+
+  @Override
+  public int addComponents(IdentifiableMap<PersistentDomainObject<?>> components, boolean onlyLoaded) {
+    int count = super.addComponents(components, onlyLoaded);
+    if (!onlyLoaded || componentList != null) {
+      count += addComponents(components, getComponentList(), onlyLoaded);
+    }
+    return count;
+  }
+
+  @Override
+  public void insertPlainWithComponents() {
+    insertPlain();
+    insertPlainWithComponents(getComponentList());
+  }
+
+  @Override
+  public void deletePlainWithComponents() {
+    deletePlainWithComponents(getComponentList());
+    deletePlain();
+  }
+
+  @Override
+  public void markDeleted() {
+    super.markDeleted();
+    markDeleted(componentList);
+  }
+
+  //</editor-fold>
 
 
   //<editor-fold defaultstate="collapsed" desc="mapping">

@@ -100,8 +100,8 @@ public final class BigDecimalTripType extends AbstractTripType<BigDecimal> {
         value = BigDecimal.valueOf(deserializer.deserializeLong(), deserializer.deserializeInt());
       }
       else {
-        byte[] bytes = new byte[deserializer.deserializeInt()];
-        deserializer.deserialize(bytes, 0, bytes.length);
+        // read while the bytes arrive: the length is not trusted
+        byte[] bytes = DeserializerInputStream.readBytes(deserializer, checkSize(stream, deserializer.deserializeInt()));
         value = new BigDecimal(new BigInteger(bytes), deserializer.deserializeInt());
       }
       if (typeCode == DMONEY_TYPE_CODE) {

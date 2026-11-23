@@ -122,7 +122,7 @@ public class PriorityQueueTripType<T extends Queue> extends CollectionTripType<T
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
   protected CollectionHeader<T> readHeader(TripStream stream, OpCode opCode) {
-    int size = checkSize(PriorityQueueTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
+    int size = checkSize(stream, PriorityQueueTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
     Comparator comparator = ComparatorSupport.read(stream);   // null means natural ordering
     try {
       // the priority queues reject a capacity below one

@@ -30,9 +30,10 @@ import org.tentackle.trip.Transport;
  * <li>client gets a reference to a {@link RemoteDbConnection} via a {@link org.tentackle.trip.Registry#lookup(String)}</li>
  * <li>the client invokes {@link RemoteDbConnection#login(SessionInfo)} and gets a reference to a {@link RemoteDbSession}.</li>
  * <li>the session verifies the credentials carried by the session info: {@link RemoteDbSessionImpl#verifySessionInfo(SessionInfo)}
- *     hands them to the {@link org.tentackle.session.auth.AuthenticationManager}, which drives the chain of configured
- *     {@link org.tentackle.session.auth.AuthenticationProvider}s. A refused login throws a
- *     {@link org.tentackle.session.LoginFailedException}.</li>
+ *     hands them, along with the {@link org.tentackle.session.auth.AuthenticationContext} of the connection (such as the
+ *     verified client certificate), to the {@link org.tentackle.session.auth.AuthenticationManager}, which drives the
+ *     chain of configured {@link org.tentackle.session.auth.AuthenticationProvider}s.
+ *     A refused login throws a {@link org.tentackle.session.LoginFailedException}.</li>
  * <li>all further client requests work through the session object and the remote delegates created within the session</li>
  * <li>the client invokes {@link RemoteDbSession#close()} to close the session and all its registered delegates.</li>
  * <li>in case the client terminates abnormally, the {@link RemoteDbSessionCleanupThread} will close the session.</li>
@@ -79,7 +80,9 @@ public abstract class RemoteDbConnectionImpl implements RemoteDbConnection {
    * Checks the client's version.
    * <p>
    * The default implementation does nothing.
-   * It is invoked only for remote connections.
+   * It is invoked only for remote connections, by the {@link RemoteDbSessionImpl} <em>after</em> the
+   * client's credentials were verified. Thus, an unauthenticated client never learns whether its
+   * version is compatible, nor the server's version, which the exception usually carries.
    * <p>
    * Throws {@link VersionIncompatibleException} if versions are not compatible.
    *
@@ -102,16 +105,8 @@ public abstract class RemoteDbConnectionImpl implements RemoteDbConnection {
   // ------------------ implements RemoteDbConnection -----------------
 
   @Override
-  public String getServerVersion() {
-    return null;
-  }
-
-
-  @Override
   public RemoteDbSession login(SessionInfo clientInfo) {
-    // check client compatibility
-    checkClientVersion(clientInfo.getClientVersion());
-    // create the session
+    // the session verifies the credentials, then checks the client's version (see checkClientVersion)
     return createSession(clientInfo);
   }
 

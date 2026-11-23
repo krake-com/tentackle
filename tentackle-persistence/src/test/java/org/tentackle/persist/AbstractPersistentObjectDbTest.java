@@ -15,7 +15,6 @@ package org.tentackle.persist;
 
 import org.testng.annotations.Test;
 
-import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.session.NotFoundException;
 import org.tentackle.session.PersistenceException;
@@ -206,95 +205,74 @@ public class AbstractPersistentObjectDbTest extends AbstractPersistenceDbTest {
   // --- components: root columns and the context condition -------------------------------------
 
   /**
-   * Creates a component in the root context of the given root entity.
+   * Creates and persists an aggregate.<br>
+   * Components are persisted only along with their root entity, i.e., by adding them to the
+   * component list of the root and persisting the root.
    *
-   * @param root the saved root entity
-   * @param text the component's text
-   * @return the persistence delegate of the component
+   * @param name the name of the root entity
+   * @param texts the texts of the components
+   * @return the persisted root entity
    */
-  private DemoComponentPersistenceImpl component(DemoEntityPersistenceImpl root, String text) {
-    DomainContext rootContext = getDomainContext().getRootContext(root.getPdo());
-    DemoComponent pdo = Pdo.create(DemoComponent.class, rootContext);
-    DemoComponentPersistenceImpl po = (DemoComponentPersistenceImpl) pdo.getPersistenceDelegate();
-    po.setText(text);
-    return po;
+  private DemoEntity aggregate(String name, String... texts) {
+    DemoEntity root = Pdo.create(DemoEntity.class, getDomainContext());
+    root.setName(name);
+    for (String text : texts) {
+      DemoComponent component = root.on(DemoComponent.class);
+      component.setText(text);
+      root.getComponentList().add(component);
+    }
+    return root.persist();
   }
 
   /**
-   * Creates an empty component to select with, in the root context of the given root entity.
+   * Gets the texts of the given components.
    *
-   * @param root the saved root entity
-   * @return the persistence delegate
+   * @param components the components
+   * @return the texts
    */
-  private DemoComponentPersistenceImpl componentFinder(DemoEntityPersistenceImpl root) {
-    return (DemoComponentPersistenceImpl) Pdo.create(DemoComponent.class,
-                                                     getDomainContext().getRootContext(root.getPdo()))
-                                              .getPersistenceDelegate();
+  private List<String> texts(List<DemoComponent> components) {
+    return components.stream().map(DemoComponent::getText).toList();
   }
 
   @Test
   public void testComponentGetsItsRootColumnsFromTheDomainContext() {
-    DemoEntityPersistenceImpl root = entity("root");
-    root.save();
+    DemoEntity root = aggregate("root", "c1");
 
-    DemoComponentPersistenceImpl comp = component(root, "c1");
-    comp.saveObject();
-
+    DemoComponent comp = root.getComponentList().getFirst();
+    assertFalse(comp.isNew());
     assertEquals(comp.getRootId(), root.getId());
     assertEquals(comp.getRootClassId(), 9001);
-    assertTrue(root.isRootEntityOf(comp.getPdo()));
+    assertTrue(root.isRootEntityOf(comp));
 
     // and the columns are persisted, not just set in memory
-    DemoComponentPersistenceImpl loaded =
-        (DemoComponentPersistenceImpl) componentFinder(root).select(comp.getId()).getPersistenceDelegate();
+    DemoEntity reloaded = Pdo.create(DemoEntity.class, getDomainContext()).select(root.getId());
+    assertEquals(reloaded.getComponentList().size(), 1);
+    DemoComponent loaded = reloaded.getComponentList().getFirst();
+    assertEquals(loaded.getId(), comp.getId());
     assertEquals(loaded.getRootId(), root.getId());
     assertEquals(loaded.getRootClassId(), 9001);
+    assertTrue(reloaded.isRootEntityOf(loaded));
   }
 
   @Test
   public void testComponentsAreSelectedWithinTheirRootContextOnly() {
-    DemoEntityPersistenceImpl rootA = entity("rootA");
-    rootA.save();
-    DemoEntityPersistenceImpl rootB = entity("rootB");
-    rootB.save();
+    DemoEntity rootA = aggregate("rootA", "b", "a");
+    aggregate("rootB", "z");
 
-    component(rootA, "b").saveObject();
-    component(rootA, "a").saveObject();
-    component(rootB, "z").saveObject();
-
-    List<DemoComponent> componentsOfA = componentFinder(rootA).selectAll();
     // the context condition restricts to rootA, orderBy() sorts by ctext
-    assertEquals(componentsOfA.stream()
-                              .map(pdo -> ((DemoComponentPersistenceImpl) pdo.getPersistenceDelegate()).getText())
-                              .toList(),
-                 List.of("a", "b"));
+    assertEquals(texts(rootA.on(DemoComponent.class).selectAll()), List.of("a", "b"));
   }
 
   @Test
   public void testSelectByNormText() {
-    DemoEntityPersistenceImpl root = entity("nt");
-    root.save();
+    DemoEntity root = aggregate("nt", "Mueller", "Schmidt");
+    DemoComponent finder = root.on(DemoComponent.class);
 
-    DemoComponentPersistenceImpl hit = component(root, "hit");
-    hit.setAttributesNormText(new StringBuilder("Mueller"));
-    hit.updateNormText();
-    hit.saveObject();
-
-    DemoComponentPersistenceImpl miss = component(root, "miss");
-    miss.setAttributesNormText(new StringBuilder("Schmidt"));
-    miss.updateNormText();
-    miss.saveObject();
-
-    DemoComponentPersistenceImpl finder = componentFinder(root);
-
-    List<DemoComponent> found = finder.selectByNormText("Mueller");
-    assertEquals(found.size(), 1);
-    assertEquals(((DemoComponentPersistenceImpl) found.get(0).getPersistenceDelegate()).getText(), "hit");
+    // the normtext is derived from the text when persisted
+    assertEquals(texts(finder.selectByNormText("Mueller")), List.of("Mueller"));
 
     // "!" inverts the search
-    List<DemoComponent> inverted = finder.selectByNormText("!Mueller");
-    assertEquals(inverted.size(), 1);
-    assertEquals(((DemoComponentPersistenceImpl) inverted.get(0).getPersistenceDelegate()).getText(), "miss");
+    assertEquals(texts(finder.selectByNormText("!Mueller")), List.of("Schmidt"));
 
     // an empty search matches all
     assertEquals(finder.selectByNormText("").size(), 2);

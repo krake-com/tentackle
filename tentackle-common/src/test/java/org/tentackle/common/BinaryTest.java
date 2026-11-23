@@ -21,7 +21,15 @@ package org.tentackle.common;
 import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InvalidClassException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputFilter;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.io.Serializable;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -198,6 +206,95 @@ public class BinaryTest {
     assertEquals(first, "cached");
     // deserialized only once, like Binary
     assertSame(binary.getObject(), first);
+  }
+
+  /**
+   * A class standing in for a deserialization gadget.
+   */
+  static class Gadget implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+    int value;
+  }
+
+  /**
+   * Runs the action with a filter rejecting {@link Gadget} only, so that concurrent tests are not affected.
+   */
+  static void withGadgetRejected(ThrowingRunnable action) throws Throwable {
+    Settings.setDeserializationFilter(info -> info.serialClass() == Gadget.class ?
+                                              ObjectInputFilter.Status.REJECTED : ObjectInputFilter.Status.UNDECIDED);
+    try {
+      action.run();
+    }
+    finally {
+      Settings.setDeserializationFilter(null);
+    }
+  }
+
+  @FunctionalInterface
+  interface ThrowingRunnable {
+    void run() throws Throwable;
+  }
+
+  @Test
+  public void testDeserializationFilter() throws Throwable {
+    Binary<Gadget> gadget = new Binary<>(new Gadget());
+    Binary<Gadget> restoredGadget = Binary.create(
+        new ByteArrayInputStream(gadget.getData(), 0, gadget.getLength()), 0, false);
+    Binary<String> string = new Binary<>("harmless");
+    Binary<String> restoredString = Binary.create(
+        new ByteArrayInputStream(string.getData(), 0, string.getLength()), 0, false);
+
+    withGadgetRejected(() -> {
+      assertThrows(InvalidClassException.class, restoredGadget::getObject);
+      assertEquals(restoredString.getObject(), "harmless");
+    });
+
+    // without an application filter the limits apply only
+    Binary<Gadget> again = Binary.create(
+        new ByteArrayInputStream(gadget.getData(), 0, gadget.getLength()), 0, false);
+    assertNotNull(again.getObject());
+  }
+
+  @Test
+  public void testForgedLengthRejected() throws Exception {
+    Binary<String> binary = new Binary<>("value");
+    binary.length = binary.getData().length + 1000;   // forged serialized form
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    try (ObjectOutputStream os = new ObjectOutputStream(bos)) {
+      os.writeObject(binary);
+    }
+    try (ObjectInputStream is = new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()))) {
+      assertThrows(InvalidObjectException.class, is::readObject);
+    }
+
+    binary.length = binary.getData().length;
+    bos = new ByteArrayOutputStream();
+    try (ObjectOutputStream os = new ObjectOutputStream(bos)) {
+      os.writeObject(binary);
+    }
+    try (ObjectInputStream is = new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()))) {
+      Binary<?> restored = (Binary<?>) is.readObject();
+      assertEquals(restored.getObject(), "value");
+    }
+  }
+
+  @Test
+  public void testDefaultObjectSerializerFilter() throws Throwable {
+    DefaultObjectSerializer serializer = new DefaultObjectSerializer();
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    serializer.serialize(new Gadget(), bos);
+    byte[] bytes = bos.toByteArray();
+
+    withGadgetRejected(() -> {
+      assertThrows(TentackleRuntimeException.class, () -> serializer.deserialize(new ByteArrayInputStream(bytes)));
+      // copies are created from trusted in-memory objects
+      Gadget gadget = new Gadget();
+      gadget.value = 42;
+      assertEquals(serializer.copy(gadget).value, 42);
+    });
+
+    assertNotNull(serializer.deserialize(new ByteArrayInputStream(bytes)));
   }
 
 }

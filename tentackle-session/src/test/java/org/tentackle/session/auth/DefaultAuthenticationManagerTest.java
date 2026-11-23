@@ -217,6 +217,68 @@ public class DefaultAuthenticationManagerTest {
   }
 
   @Test
+  public void testContextReachesTheProvider() {
+    Credentials credentials = credentials();
+    AuthenticationContext context = new DefaultAuthenticationContext("10.0.0.1", "trips", null);
+    List<AuthenticationContext> seen = new ArrayList<>();
+    AuthenticationProvider provider = new AuthenticationProvider() {
+      @Override
+      public boolean supports(Credentials c) {
+        return true;
+      }
+
+      @Override
+      public Authentication authenticate(Credentials c, AuthenticationContext ctx) {
+        seen.add(ctx);
+        return authentication(c);
+      }
+    };
+
+    manager(provider).authenticate(credentials, context);
+    Assert.assertEquals(seen, List.of(context));
+
+    // without a context, the provider gets the empty one
+    manager(provider).authenticate(credentials);
+    Assert.assertSame(seen.get(1), AuthenticationContext.NONE);
+    Assert.assertTrue(seen.get(1).getPeerCertificates().isEmpty());
+    Assert.assertNull(seen.get(1).getPeerCertificate());
+  }
+
+  @Test
+  public void testProviderWithoutContextStillWorks() {
+    // TestProvider overrides authenticate(Credentials) only
+    List<String> asked = new ArrayList<>();
+    Credentials credentials = credentials();
+    Authentication authentication = manager(new TestProvider("legacy", 0, true, authentication(credentials), null, asked))
+        .authenticate(credentials, new DefaultAuthenticationContext("10.0.0.1", "trips", List.of()));
+    Assert.assertEquals(asked, List.of("legacy"));
+    Assert.assertEquals(authentication.getProviderName(), "legacy");
+  }
+
+  @Test(expectedExceptions = AuthenticationException.class)
+  public void testProviderWithoutAuthenticateRefusesTheLogin() {
+    manager(credentials -> true).authenticate(credentials());
+  }
+
+  @Test
+  public void testManagerWithoutContextStillWorks() {
+    // a manager written before the context existed implements authenticate(Credentials) only
+    Credentials credentials = credentials();
+    AuthenticationManager legacy = new AuthenticationManager() {
+      @Override
+      public Authentication authenticate(Credentials c) {
+        return authentication(c);
+      }
+
+      @Override
+      public List<AuthenticationProvider> getProviders() {
+        return List.of();
+      }
+    };
+    Assert.assertEquals(legacy.authenticate(credentials, AuthenticationContext.NONE).getUserId(), USER_ID);
+  }
+
+  @Test
   public void testManagerIsProvidedByTheServiceApi() {
     Assert.assertTrue(AuthenticationManager.getInstance() instanceof DefaultAuthenticationManager);
   }

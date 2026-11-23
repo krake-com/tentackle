@@ -61,6 +61,12 @@ public final class TestHttpServer implements AutoCloseable {
   /** Paths answered with a redirect to another location. */
   private final Map<String, String> redirects = new ConcurrentHashMap<>();
 
+  /** Paths answered with the headers only, while the body never arrives. */
+  private final Map<String, Boolean> stalled = new ConcurrentHashMap<>();
+
+  /** Total number of requests. */
+  private final AtomicInteger totalRequestCount = new AtomicInteger();
+
   /**
    * Creates and starts a server bound to an ephemeral port on the loopback interface.
    *
@@ -136,6 +142,28 @@ public final class TestHttpServer implements AutoCloseable {
   public TestHttpServer serveRedirect(String path, String location) {
     redirects.put(path, location);
     return this;
+  }
+
+  /**
+   * Makes the given path answer with the headers, but never with the body.<br>
+   * This is what a hanging or deliberately slow host looks like. The connection is held
+   * until the client closes it.
+   *
+   * @param path the absolute request path
+   * @return this server
+   */
+  public TestHttpServer serveStalled(String path) {
+    stalled.put(path, Boolean.TRUE);
+    return this;
+  }
+
+  /**
+   * Gets the total number of requests received for any path.
+   *
+   * @return the request count
+   */
+  public int getTotalRequestCount() {
+    return totalRequestCount.get();
   }
 
   /**
@@ -220,11 +248,19 @@ public final class TestHttpServer implements AutoCloseable {
       String method = parts[0];
       String path = parts.length > 1 ? parts[1] : "/";
       requestCounts.computeIfAbsent(path, _ -> new AtomicInteger()).incrementAndGet();
+      totalRequestCount.incrementAndGet();
 
       byte[] content = resources.get(path);
       OutputStream out = new BufferedOutputStream(socket.getOutputStream());
       String location = redirects.get(path);
-      if (location != null) {
+      if (stalled.containsKey(path)) {
+        writeHeader(out, "200 OK", 64, false);
+        out.flush();
+        while (in.read() != -1) {
+          // hold the connection until the client gives up
+        }
+      }
+      else if (location != null) {
         out.write(("HTTP/1.1 302 Found\r\nLocation: " + location + "\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
                       .getBytes(StandardCharsets.ISO_8859_1));
       }

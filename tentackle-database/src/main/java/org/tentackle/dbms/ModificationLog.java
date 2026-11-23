@@ -25,7 +25,6 @@ import org.tentackle.common.RemoteMethod;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.trip.ModificationLogRemoteDelegate;
-import org.tentackle.dbms.trip.PreloadRemoteDelegate;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.SerialNumbered;
 import org.tentackle.session.ClassId;
@@ -92,7 +91,6 @@ import java.util.List;
  */
 @ClassId(/*@*/2/*@*/)               // @wurblet < Inject $classid
 @TableName(/*@*/"modlog"/*@*/)      // @wurblet < Inject --string $tablename
-@PreloadRemoteDelegate
 public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   @Serial

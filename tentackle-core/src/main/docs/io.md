@@ -85,8 +85,13 @@ A packet that would not fit fails with an `IOException` instead of corrupting th
 decrypting side adapts its buffer to the incoming packet size dynamically. Both default to
 `Cryptor.getInstance()` when no cryptor is passed.
 
-These are what the [`EncryptedTransport`](../java/org/tentackle/trip/transport/EncryptedTransport.java)
-and `CompressedEncryptedTransport` stack onto their sockets — see [trip.md](trip.md) for the
+The streams use the plain cipher of the `Cryptor`, which is AES/ECB by default: no IV and no
+authentication. Identical packets therefore encrypt identically, and a modified packet is not detected.
+That is why the [`EncryptedTransport`](../java/org/tentackle/trip/transport/EncryptedTransport.java)
+and `CompressedEncryptedTransport` wrap these streams via an
+[`EncryptedChannel`](../java/org/tentackle/trip/transport/EncryptedChannel.java) with per-connection keys
+and AES-GCM (see [PSK encryption](trip.md#psk-encryption)). Their servers still understand the
+format of these streams for clients of the previous version. See [trip.md](trip.md) for the
 transport variants (TCP, SSL, compressed, encrypted, loopback) and when each applies.
 
 ### SSL/TLS socket factories
@@ -101,7 +106,11 @@ verification).
 Constructed without arguments they behave as plain TCP factories; constructed with an
 [`SslParameters`](../java/org/tentackle/io/SslParameters.java) they build an `SSLContext` and produce
 configured `SSLSocket`/`SSLServerSocket`s. Client certificates are supported by simply providing a
-keystore (and optionally an alias) on the client side.
+keystore (and optionally an alias) on the client side. The server requests them with `clientauth`, and
+the TRIP transports hand the verified chain on to the application (see
+[TRIP](trip.md#client-certificates-reach-the-application)). A keystore password that is not configured is
+taken from the [`KeyStorePasswordProvider`](../java/org/tentackle/io/KeyStorePasswordProvider.java), so that
+the user can enter it instead.
 
 [`SslParameters`](../java/org/tentackle/io/SslParameters.java) resolves each configuration value from
 the transport URI's query string, falling back to a `tentackle.ssl.<name>` system property and then,
@@ -178,9 +187,9 @@ client-server deployment. `UriHelper` parses the query parameters of transport U
 A TRIP client connecting over a compressed, encrypted TCP link stacks the package like this:
 
 ```
-TRIP serializer  →  FastCompressedOutputStream  →  EncryptingOutputStream  →  socket
-                    (Deflater BEST_SPEED,          (Cryptor, 2-byte header)
-                     skips small/incompressible
+TRIP serializer  →  FastCompressedOutputStream  →  EncryptedChannel  →  socket
+                    (Deflater BEST_SPEED,          (AES-GCM, keys derived from the
+                     skips small/incompressible     Cryptor's key, 2-byte header)
                      packets)
 ```
 

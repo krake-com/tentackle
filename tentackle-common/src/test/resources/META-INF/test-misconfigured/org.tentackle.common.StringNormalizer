@@ -1,0 +1,2 @@
+# provider not implementing StringNormalizer: must not be initialized
+org.tentackle.common.ServiceProviderCacheTest$Misconfigured

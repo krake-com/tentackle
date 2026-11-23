@@ -285,6 +285,7 @@ public class QuicheConn implements AutoCloseable {
   private static final MethodHandle SOURCE_ID = accessor("quiche_conn_source_id");
   private static final MethodHandle DESTINATION_ID = accessor("quiche_conn_destination_id");
   private static final MethodHandle APPLICATION_PROTO = accessor("quiche_conn_application_proto");
+  private static final MethodHandle PEER_CERT = accessor("quiche_conn_peer_cert");
 
 
   private final Arena arena;              // owns the out-parameter scratch below
@@ -990,6 +991,19 @@ public class QuicheConn implements AutoCloseable {
    */
   public byte[] getDestinationId() {
     return bytes(DESTINATION_ID, "quiche_conn_destination_id");
+  }
+
+  /**
+   * Gets the certificate the peer presented in the handshake.
+   * <p>
+   * quiche's C API provides the peer's own certificate only, not the intermediate certificates of its chain.
+   * The certificate has been verified, if the configuration verifies the peer.
+   *
+   * @return the DER encoded certificate, null if the peer presented none or the handshake is not complete
+   */
+  public byte[] getPeerCertificate() {
+    byte[] certificate = bytes(PEER_CERT, "quiche_conn_peer_cert");
+    return certificate.length == 0 ? null : certificate;
   }
 
   /**

@@ -36,6 +36,7 @@ import org.tentackle.session.SessionDependable;
 import org.tentackle.session.SessionHolder;
 import org.tentackle.sql.Backend;
 import org.tentackle.trip.TripSerializable;
+import org.tentackle.trip.TripShallowHash;
 
 import java.io.Serial;
 import java.lang.reflect.InvocationTargetException;
@@ -71,6 +72,7 @@ import static org.tentackle.sql.Backend.SQL_WHEREALL;
  * @param <P> the persistent class type
  */
 @TripSerializable(validate = "clearFromThisJVM")
+@TripShallowHash    // hashCode and equals are final and depend on the class and ID only
 public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
        implements Immutable, SerialNumbered, SessionDependable, Comparable<P> {
 
@@ -1365,29 +1367,20 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Selects all objects with a tableSerial starting at a given serial.<br>
    * Useful to update expired objects in a batch.
+   * <p>
+   * This method is only allowed for local sessions, not remote sessions!
    *
    * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
    * @return the list of objects, never null
    */
   public List<P> selectObjectsWithExpiredTableSerials(long oldSerial) {
-    Db db = getSession();
-    if (db.isRemote()) {
-      List<P> list = getRemoteDelegate().selectObjectsWithExpiredTableSerials(oldSerial);
-      for (P obj : list) {
-        obj.setSession(db);
+    List<P> list = new ArrayList<>();
+    try (ResultSetWrapper rs = resultObjectsWithExpiredTableSerials(oldSerial)) {
+      P obj;
+      while ((obj = newInstance().selectNextObject(rs)) != null) {
+        list.add(obj);
       }
       return list;
-    }
-    else  {
-      // local
-      List<P> list = new ArrayList<>();
-      try (ResultSetWrapper rs = resultObjectsWithExpiredTableSerials(oldSerial)) {
-        P obj;
-        while ((obj = newInstance().selectNextObject(rs)) != null)  {
-          list.add(obj);
-        }
-        return list;
-      }
     }
   }
 
@@ -1873,11 +1866,11 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Saves this object.<br>
-   * This is the standard method applications should use to insert or update
-   * objects.<br>
    * If the ID is 0, a new ID is obtained and this object inserted.
    * Otherwise, this object is updated.
    * The modified attribute gets cleared if save() was successful.
+   * <p>
+   * Applications must not use this method for PDOs! Use {@code save()} instead.
    */
   @SuppressWarnings("unchecked")
   public void saveObject ()  {
@@ -1927,6 +1920,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Persists this object and returns it.
+   * <p>
+   * Applications must not use this method for PDOs! Use {@code persist()} instead.
    *
    * @return the persisted object, a new instance if remote, never null
    */
@@ -1980,6 +1975,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * A removed object will also get the modified attribute set by definition,
    * because it {@link #isNew} again.<br>
    * It is also verified that the object {@link #isPersistable} and is not new.
+   * <p>
+   * Applications must not use this method for PDOs! Use {@code delete()} instead.
    *
    * @throws PersistenceException if the object is new or not persistable
    * @throws NotFoundException if the object is not in the database or its serial is outdated
@@ -2057,19 +2054,16 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Counts a modification for the class of this object.
+   * <p>
+   * Invocation is only allowed for local sessions, not remote sessions!
    *
-   * @return the table serial,
-   *          -1 if isCountModificationAllowed() == false
+   * @return the table serial, -1 if isCountModificationAllowed() == false
    */
-  public long countModification ()  {
+  public long countModification() {
     Db db = getSession();
-    if (db.isRemote()) {
-      return getRemoteDelegate().countModification();
-    }
-    else {
-      return db.isCountModificationAllowed() ?
-               ModificationTracker.getInstance().countModification(db, getTableName()) : -1;
-    }
+    db.assertNotRemote();
+    return db.isCountModificationAllowed() ?
+             ModificationTracker.getInstance().countModification(db, getTableName()) : -1;
   }
 
   /**

@@ -41,7 +41,9 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.Principal;
 import java.security.PrivateKey;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Map;
 
@@ -91,7 +93,13 @@ import java.util.Map;
  * If no group is configured, the JDK default applies (see the {@code jdk.tls.namedGroups} system property).
  * <p>
  * Client certificates are supported by simply providing a keystore (and, if the certificate should be
- * chosen explicitly, an alias) on the client side.
+ * chosen explicitly, an alias) on the client side. The server requests them with {@code clientauth} and verifies
+ * them against its truststore, which therefore holds the CAs whose client certificates are accepted.
+ * The verified chain is handed to the application's authentication via
+ * {@link org.tentackle.trip.transport.TransportClientInfo#peerCertificates()}.
+ * <p>
+ * If the keystore password is not configured, it is taken from the {@link KeyStorePasswordProvider}, so that
+ * the user can enter it before the connection is established, instead of leaving it in a configuration file.
  *
  * @see TcpServerSocketFactory
  * @see TcpSocketFactory
@@ -103,8 +111,17 @@ public class SslParameters {
   /** The prefix for Tentackle SSL system properties. */
   public static final String SYSTEM_PROPERTY_PREFIX = "tentackle.ssl.";
 
-  /** Client-certificate policy on the server side. */
-  private enum ClientAuth { NONE, WANT, NEED }
+  /**
+   * Client-certificate policy on the server side.
+   */
+  public enum ClientAuth {
+    /** no client certificate is requested. */
+    NONE,
+    /** a client certificate is requested, but the client may present none. */
+    WANT,
+    /** the client must present a valid certificate. */
+    NEED
+  }
 
   private final URI uri;                        // the transport URI (for diagnostics)
   private final Map<String, String> query;      // the URI query parameters
@@ -195,14 +212,81 @@ public class SslParameters {
    */
   public synchronized KeyStore getKeyStore() {
     if (keyStore == null && keyStoreFile != null) {
+      char[] password = getKeyStorePassword();
       try {
-        keyStore = loadKeyStore(keyStoreFile, keyStoreType, keyStorePassword);
+        keyStore = loadKeyStore(keyStoreFile, keyStoreType, password);
       }
       catch (GeneralSecurityException | IOException e) {
-        throw new TentackleRuntimeException("cannot load keystore " + keyStoreFile + " for " + uri, e);
+        throw new TentackleRuntimeException("cannot load keystore " + keyStoreFile + " for " + UriHelper.uriToSafeString(uri), e);
+      }
+      finally {
+        wipe(password);
       }
     }
     return keyStore;
+  }
+
+  /**
+   * Returns whether the keystore password is configured.<br>
+   * If not, it is taken from the {@link KeyStorePasswordProvider}.
+   *
+   * @return true if configured via URI or system property
+   */
+  public boolean isKeyStorePasswordConfigured() {
+    return keyStorePassword != null;
+  }
+
+  /**
+   * Returns whether a keystore is configured, but its password is neither configured
+   * nor registered at the {@link KeyStorePasswordProvider}.<br>
+   * Used by the client to decide whether the user must enter the password.
+   *
+   * @return true if the password is missing
+   */
+  public boolean isKeyStorePasswordMissing() {
+    if (keyStoreFile == null || keyStorePassword != null) {
+      return false;
+    }
+    char[] password = KeyStorePasswordProvider.getInstance().getPassword(keyStoreFile);
+    wipe(password);
+    return password == null;
+  }
+
+  /**
+   * Checks whether a password opens the keystore.<br>
+   * Allows the client to verify the password entered by the user before it is registered at the
+   * {@link KeyStorePasswordProvider} and the connection is established.
+   *
+   * @param password the password to check
+   * @return true if the keystore could be loaded with the password, false if the password is wrong
+   * @throws TentackleRuntimeException if no keystore is configured or it cannot be read for another reason
+   */
+  public boolean checkKeyStorePassword(char[] password) {
+    if (keyStoreFile == null) {
+      throw new TentackleRuntimeException("no keystore configured for " + UriHelper.uriToSafeString(uri));
+    }
+    try {
+      loadKeyStore(keyStoreFile, keyStoreType, password);
+      return true;
+    }
+    catch (IOException e) {
+      if (e.getCause() instanceof UnrecoverableKeyException) {
+        return false;     // wrong password
+      }
+      throw new TentackleRuntimeException("cannot load keystore " + keyStoreFile + " for " + UriHelper.uriToSafeString(uri), e);
+    }
+    catch (GeneralSecurityException e) {
+      throw new TentackleRuntimeException("cannot load keystore " + keyStoreFile + " for " + UriHelper.uriToSafeString(uri), e);
+    }
+  }
+
+  /**
+   * Gets the server-side client-certificate policy.
+   *
+   * @return the policy, never null
+   */
+  public ClientAuth getClientAuth() {
+    return clientAuth;
   }
 
   /**
@@ -216,7 +300,8 @@ public class SslParameters {
   public synchronized KeyStore getTrustStore() {
     if (trustStore == null && trustStoreFile != null) {
       try {
-        trustStore = loadKeyStore(trustStoreFile, trustStoreType, trustStorePassword);
+        trustStore = loadKeyStore(trustStoreFile, trustStoreType,
+                                  trustStorePassword == null ? null : trustStorePassword.toCharArray());
       }
       catch (GeneralSecurityException | IOException e) {
         throw new TentackleRuntimeException("cannot load truststore " + trustStoreFile + " for " + uri, e);
@@ -268,22 +353,26 @@ public class SslParameters {
   }
 
   /**
-   * Gets the keystore password.
+   * Gets the keystore password.<br>
+   * If not configured, the password registered at the {@link KeyStorePasswordProvider} is returned.
    *
-   * @return the keystore password, or null if none is configured
+   * @return the keystore password the caller should wipe once done, or null if none is configured or registered
    */
   public char[] getKeyStorePassword() {
-    return keyStorePassword == null ? null : keyStorePassword.toCharArray();
+    if (keyStorePassword != null) {
+      return keyStorePassword.toCharArray();
+    }
+    return keyStoreFile == null ? null : KeyStorePasswordProvider.getInstance().getPassword(keyStoreFile);
   }
 
   /**
    * Gets the private key password, falling back to the keystore password.
    *
-   * @return the key password, or null if neither a key nor a keystore password is configured
+   * @return the key password the caller should wipe once done,
+   *         or null if neither a key nor a keystore password is configured or registered
    */
   public char[] getKeyPassword() {
-    String password = keyPassword != null ? keyPassword : keyStorePassword;
-    return password == null ? null : password.toCharArray();
+    return keyPassword != null ? keyPassword.toCharArray() : getKeyStorePassword();
   }
 
   /**
@@ -392,7 +481,13 @@ public class SslParameters {
       return null;    // no own certificate (typical for a plain SSL client)
     }
     KeyManagerFactory factory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-    factory.init(store, getKeyPassword());
+    char[] password = getKeyPassword();
+    try {
+      factory.init(store, password);
+    }
+    finally {
+      wipe(password);
+    }
     KeyManager[] keyManagers = factory.getKeyManagers();
     String alias = getCertificateAlias();
     if (alias != null) {
@@ -436,7 +531,8 @@ public class SslParameters {
     if (trustStoreFile == null) {
       return null;    // JSSE default trust store (cacerts / javax.net.ssl.trustStore)
     }
-    KeyStore trustStore = loadKeyStore(trustStoreFile, trustStoreType, trustStorePassword);
+    KeyStore trustStore = loadKeyStore(trustStoreFile, trustStoreType,
+                                       trustStorePassword == null ? null : trustStorePassword.toCharArray());
     TrustManagerFactory factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
     factory.init(trustStore);
     return factory.getTrustManagers();
@@ -450,13 +546,24 @@ public class SslParameters {
    * @param password the keystore password, or null
    * @return the loaded keystore
    */
-  private static KeyStore loadKeyStore(String file, String type, String password)
+  private static KeyStore loadKeyStore(String file, String type, char[] password)
          throws GeneralSecurityException, IOException {
     KeyStore keyStore = KeyStore.getInstance(type == null ? KeyStore.getDefaultType() : type);
     try (InputStream in = new FileInputStream(file)) {
-      keyStore.load(in, password == null ? null : password.toCharArray());
+      keyStore.load(in, password);
     }
     return keyStore;
+  }
+
+  /**
+   * Overwrites a password.
+   *
+   * @param password the password, null if none
+   */
+  private static void wipe(char[] password) {
+    if (password != null) {
+      Arrays.fill(password, ' ');
+    }
   }
 
   /**

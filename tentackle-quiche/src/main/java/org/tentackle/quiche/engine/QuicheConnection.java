@@ -27,10 +27,14 @@ import org.tentackle.quiche.ffm.QuicheException;
 import org.tentackle.quiche.ffm.RecvInfo;
 import org.tentackle.quiche.ffm.SendInfo;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.net.InetSocketAddress;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
@@ -146,6 +150,7 @@ public class QuicheConnection implements AutoCloseable {
   private long ptoBaseline;                         // the probe timeouts at the last progress, guarded by the lock
   private boolean migrationRefusedLogged;           // guarded by the lock
   private volatile boolean migrationExhausted;      // true once a migration used up the peer's spare connection IDs
+  private volatile List<X509Certificate> peerCertificates;  // the peer's certificate, null until determined
   private final AtomicInteger leases;               // the leases held, RETIRED once given up on
 
   /**
@@ -340,6 +345,47 @@ public class QuicheConnection implements AutoCloseable {
       fail(reason);
       closeGracefully(0, "no spare connection ID left");
     }
+  }
+
+  /**
+   * Gets the certificate the peer presented in the TLS handshake.
+   * <p>
+   * quiche provides the peer's own certificate only, so the list holds the leaf, without the intermediate
+   * certificates. It has been verified against the configured CAs, if the configuration verifies the peer.
+   * The certificate is determined once the handshake is complete and cached from then on.
+   *
+   * @return the certificate as a list, empty if the peer presented none or the handshake is not complete yet
+   * @throws QuicheException if the certificate cannot be parsed
+   */
+  public List<X509Certificate> getPeerCertificates() {
+    List<X509Certificate> certificates = peerCertificates;
+    if (certificates == null) {
+      byte[] der;
+      lock.lock();
+      try {
+        if (conn.isFreed() || !conn.isEstablished()) {
+          return List.of();   // not known yet: don't cache
+        }
+        der = conn.getPeerCertificate();
+      }
+      finally {
+        lock.unlock();
+      }
+      if (der == null) {
+        certificates = List.of();
+      }
+      else {
+        try {
+          certificates = List.of((X509Certificate) CertificateFactory.getInstance("X.509")
+                                                                     .generateCertificate(new ByteArrayInputStream(der)));
+        }
+        catch (CertificateException | ClassCastException e) {
+          throw new QuicheException("malformed peer certificate of " + this, e);
+        }
+      }
+      peerCertificates = certificates;
+    }
+    return certificates;
   }
 
   /**
@@ -797,9 +843,11 @@ public class QuicheConnection implements AutoCloseable {
    */
   @Override
   public void close() {
+    boolean freed = false;
     lock.lock();
     try {
       if (!conn.isFreed()) {
+        freed = true;
         failed = true;
         if (failure == null) {
           failure = "the connection was closed";
@@ -813,6 +861,15 @@ public class QuicheConnection implements AutoCloseable {
       lock.unlock();
     }
     streams.clear();
+    StreamListener listener = streamListener;
+    if (freed && listener != null) {
+      try {
+        listener.connectionClosed(this);
+      }
+      catch (RuntimeException e) {
+        LOGGER.warning("the listener of " + this + " failed", e);
+      }
+    }
   }
 
   @Override

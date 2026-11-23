@@ -23,8 +23,12 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import org.tentackle.trip.transport.TransportClientInfo;
+
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -85,6 +89,26 @@ public class QuicProtocolConnectionTest {
     // the handler ran on a virtual thread from the transport's connection thread pool
     assertTrue(transport.virtualThread.get(), "handler did not run on a virtual thread");
 
+    awaitStreamClosed(quicStream);
+  }
+
+  /**
+   * KWIK names a stream by its number only. The connection name must carry the peer's address, since
+   * the pre-authentication policy groups its connection limits by the host it finds in it.
+   */
+  @Test(timeOut = 60000)
+  public void namesTheConnectionByThePeer() throws Exception {
+    Reporter.log("namesTheConnectionByThePeer", true);
+    FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);
+    transport.expectHandler();
+    InetSocketAddress peer = new InetSocketAddress(InetAddress.ofLiteral("10.1.2.3"), 50000);
+
+    new QuicProtocolConnection(transport, peer).acceptPeerInitiatedStream(quicStream);
+
+    assertTrue(transport.awaitHandler(), "the connection handler was not invoked");
+    assertEquals(TransportClientInfo.getHost(transport.connectionName.get()), "10.1.2.3");
+    assertTrue(transport.connectionName.get().startsWith("stream " + quicStream.getStreamId() + " "),
+               transport.connectionName.get());
     awaitStreamClosed(quicStream);
   }
 

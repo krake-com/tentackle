@@ -776,15 +776,27 @@ public class Db implements Session, Cloneable {
         LOGGER.info("connecting to {0}", transport);
         rcon = transport.lookup(RemoteDbConnection.class, uri.getPath());
 
-        /*
-         * Check that the server matches the expected version.
-         * The server checks the client's version in rcon.login() below.
-         * So, we have a double check.
-         */
-        sessionInfo.checkServerVersion(rcon.getServerVersion());
-
         // get session
         rses = rcon.login(sessionInfo);    // throws exception if login denied
+
+        /*
+         * Check that the server matches the expected version.
+         * The server checked the client's version in rcon.login() above, after the credentials were verified.
+         * So, we have a double check.
+         * The server reveals its version to authenticated clients only.
+         */
+        try {
+          sessionInfo.checkServerVersion(rses.getServerVersion());
+        }
+        catch (RuntimeException ex) {
+          try {
+            rses.close();
+          }
+          catch (RuntimeException cx) {
+            LOGGER.warning("could not close the remote session of an incompatible server", cx);
+          }
+          throw ex;
+        }
 
         // get delegate
         rdel = rses.getRemoteDelegate();

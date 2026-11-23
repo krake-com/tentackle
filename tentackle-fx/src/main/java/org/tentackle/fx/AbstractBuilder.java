@@ -40,6 +40,13 @@ public class AbstractBuilder<T> extends PropertyMap<T> implements Builder<T> {
   /** some non-null value. */
   private static final Label DUMMY_LABEL = new Label();
 
+  /**
+   * The tooltip is an inner element of all controls and tabs with an initial null-value.<br>
+   * Supported by all builders.
+   */
+  private static final String TOOLTIP = "tooltip";
+
+
   /** inner elements with initial null-values. */
   private final Set<String> innerElements;
 
@@ -71,8 +78,9 @@ public class AbstractBuilder<T> extends PropertyMap<T> implements Builder<T> {
     /*
      * FXML-Loader treats inner elements as readonly and does not allow null-values.
      * This hack allows a builder to be used in such cases.
+     * Applies to the inner elements of the builder and the tooltip, if the bean provides one.
      */
-    if (object == null && innerElements != null && innerElements.contains(key)) {
+    if (object == null && (TOOLTIP.equals(key) || innerElements != null && innerElements.contains(key))) {
       object = DUMMY_LABEL;
     }
     return object;

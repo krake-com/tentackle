@@ -30,6 +30,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.URI;
+import java.security.cert.X509Certificate;
+import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Transport implementation for compressed SSL over TCP.<br>
@@ -67,10 +70,12 @@ public class CompressedSslTransport extends SslTransport {
   }
 
   @Override
-  public Runnable createConnectionHandler(String connectionName, InputStream inputStream, OutputStream outputStream) {
+  public Runnable createConnectionHandler(String connectionName, InputStream inputStream, OutputStream outputStream,
+                                          Supplier<List<X509Certificate>> peerCertificates) {
     return super.createConnectionHandler(connectionName,
-                                         createCompressedInputStream(inputStream),
-                                         createCompressedOutputStream(outputStream));
+                                         createCompressedInputStream(new CompressedRequestInputStream(inputStream)),
+                                         createCompressedOutputStream(outputStream),
+                                         peerCertificates);
   }
 
 
@@ -82,7 +87,8 @@ public class CompressedSslTransport extends SslTransport {
    */
   protected OutputStream createCompressedOutputStream(OutputStream outputStream) {
     return new FastCompressedOutputStream(outputStream,
-                                          getUriPars().getOrDefault("mincompress", 1024));
+                                          CompressedRequestInputStream.minCompressSize(
+                                              getUriPars().getOrDefault("mincompress", 1024)));
   }
 
   /**

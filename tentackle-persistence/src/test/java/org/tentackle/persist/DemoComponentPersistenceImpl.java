@@ -170,11 +170,30 @@ public class DemoComponentPersistenceImpl extends AbstractPersistentObject<DemoC
   /**
    * {@inheritDoc}
    * <p>
+   * Keeps the root context, if already set.<br>
+   * {@link #determineContextId()} uses the root ID as the context ID, which never matches the
+   * context ID of the domain context. Without this override, every component read from the
+   * database would be moved to a plain context and thus out of its root context.
+   * The generated code doesn't need that, because it never uses the root ID as the context ID.
+   */
+  @Override
+  public DomainContext createValidContext() {
+    DomainContext context = getDomainContext();
+    return context != null && context.isRootContext() ? context : super.createValidContext();
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
    * The default implementation of the generated code returns the normalized attributes.
-   * The tests set the value directly.
+   * The tests may set the value directly, otherwise it is derived from the text,
+   * like the generated code does for an attribute flagged {@code [NORMTEXT]}.
    */
   @Override
   public StringBuilder createAttributesNormText() {
+    if (attributesNormText == null && text != null) {
+      return new StringBuilder(text);
+    }
     return attributesNormText;
   }
 

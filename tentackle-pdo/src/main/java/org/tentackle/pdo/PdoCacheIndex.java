@@ -410,28 +410,24 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
   }
 
   /**
-   * Process the PDO.<br>
-   * If cache is readonly, the context will be replaced
-   * by a session-thread-local context and the pdo will be
-   * made immutable.<br>
-   * If the context is a root context, it will be replaced
-   * by the corresponding non-root context.
+   * Seals the PDO for read-only caches.<br>
+   * The context will be replaced by a non-root session-thread-local context,
+   * the pdo made finally immutable, and it's context and session made immutable.
+   * So nothing of the PDO can be changed anymore.
    *
    * @param pdo the PDO
    */
-  protected void processPdo(T pdo) {
+  protected void sealPdo(T pdo) {
     PersistentObject<T> pd = pdo.getPersistenceDelegate();
     DomainContext context = pd.getDomainContext();
-    DomainContext processedContext = cache.processContext(context);
-    if (processedContext != context) {
-      pd.setDomainContextImmutable(false);   // for sure
-      pd.setDomainContext(processedContext);
+    DomainContext sealedContext = cache.processContext(context);
+    if (sealedContext != context) {
+      pd.setDomainContextImmutable(false);
+      pd.setDomainContext(sealedContext);
     }
-    if (isReadOnly()) {
-      pd.setFinallyImmutable();
-      pd.setDomainContextImmutable(true);
-      pd.setSessionImmutable(true);
-    }
+    pd.setFinallyImmutable();
+    pd.setDomainContextImmutable(true);
+    pd.setSessionImmutable(true);
   }
 
   /**
@@ -465,7 +461,9 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    * @return true if added, false if the object was replaced in index or the key in the object evaluated to null
    */
   protected boolean add(T object) {
-    processPdo(object);
+    if (isReadOnly()) {
+      sealPdo(object);
+    }
     try {
       C keyValue = extract(object);
       if (keyValue != null) {
@@ -488,7 +486,9 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    * @param object the object to append (never null)
    */
   protected void addUnique(T object) {
-    processPdo(object);
+    if (isReadOnly()) {
+      sealPdo(object);
+    }
     C keyValue = extract(object);
     if (keyValue != null) {
       CacheKey ck;

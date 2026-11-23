@@ -7,17 +7,20 @@ topic-grouped listing of every document, see the
 
 ## A
 
-- **Address validation (QUIC retry tokens)** — [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md#server-side)
+- **Address validation (QUIC retry tokens)** — [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md#server-side), [Client Certificate Login](./client-certificate-login.md)
 - **Aggregates** — [PDO](../../../tentackle-pdo/src/main/docs/pdo.md), [rootId / rootClassId Columns](../../../tentackle-pdo/src/main/docs/root-columns.md)
 - **AI agents / coding agents (MCP, batch modes, skills)** — [AI Agent Tooling Support](./ai-agents.md), [MCP Maven Plugin](../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md), [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md)
+- **Allocation budget (sparse arrays, memory allocated per remote call)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#allocation-budget)
 - **Application bootstrap / lifecycle** — [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md), [Multi-Tier Cascade](./tiers.md)
 - **Annotation analysis (`@Analyze`, META-INF generation)** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md), [Build Support](../../../tentackle-build-support/src/main/docs/build-support.md), [Tentackle Maven Plugin](../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md)
 - **Annotation processors (compile-time validation)** — [Annotation Processors](../../../tentackle-core/src/main/docs/annotation-processors.md)
 - **Archetype (project scaffolding)** — [Tentackle Project Archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md), [Quickstart](./quickstart.md)
 - **AtlantaFX theme** — [tentackle-fx-atlanta](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md)
 - **Authentication (login, credentials, providers)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md)
+- **AuthenticationContext (client host, TLS client certificate)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#client-certificates)
 - **AuthenticationProvider / AuthenticationManager** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-provider-chain)
 - **Auto-completion (text field suggestions)** — [Auto-Completion](../../../tentackle-fx/src/main/docs/auto-completion.md), [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md)
+- **Auto-login after a restart (`RestartCredentials`)** — [FX RDC](../../../tentackle-fx-rdc/src/main/docs/rdc.md#restart-credentials), [FX RDC Update](../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)
 - **Auto-update** — [Tentackle Update](../../../tentackle-update/src/main/docs/update.md), [FX RDC Update](../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)
 - **Autologin (desktop clients)** — [Backend Properties](../../../tentackle-session/src/main/docs/backend-properties.md#desktop-client-keys)
 
@@ -39,20 +42,23 @@ topic-grouped listing of every document, see the
 - **Cache / caching** — [PDO Caching](../../../tentackle-pdo/src/main/docs/cache.md), [Multi-Tier Cascade](./tiers.md)
 - **Cache preloading (`@PreloadCache`)** — [PDO Caching](../../../tentackle-pdo/src/main/docs/cache.md#preloading-caches-at-startup-preloadcache), [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md)
 - **Canonical construction (`@CanonicalConstructor`, builders)** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md), [TRIP](../../../tentackle-core/src/main/docs/trip.md)
+- **CertificateCredentials / certificate login** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#client-certificates), [Client Certificate Login](./client-certificate-login.md)
+- **Certificate authority (CA), keystores and truststores for client certificates** — [Client Certificate Login](./client-certificate-login.md)
 - **Class variables (per-class persistence metadata)** — [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md#class-variables), [Persistence Wurblets](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md)
 - **ClassMapper / class mapping** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md), [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md)
+- **Client certificates (mutual TLS, `clientauth`, certificate login)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#client-certificates), [TRIP](../../../tentackle-core/src/main/docs/trip.md#client-certificates-reach-the-application), [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md#server-side)
 - **CockroachDB (backend peculiarities, selection by name)** — [The CockroachDB Backend](../../../tentackle-sql/src/main/docs/cockroachdb.md)
 - **Collections (tracked, copy-on-write, immutable)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md), [Immutable](../../../tentackle-core/src/main/docs/immutable.md)
 - **Column defaults (database)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md) (defaults stored as source text)
 - **Code generation** — [Wurblets](../../../tentackle-wurblets/src/main/docs/wurblets.md), [Persistence Wurblets](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [The Wurblet API](../../../tentackle-wurblets/src/main/docs/wurblet-api.md), [The Persistence Wurblet API](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblet-api.md)
 - **Common module (foundation)** — [Tentackle Common](../../../tentackle-common/src/main/docs/common.md)
 - **CompoundValue (constants, references, scripts in annotations)** — [CompoundValue](../../../tentackle-core/src/main/docs/compound-value.md), [Validation](../../../tentackle-core/src/main/docs/validation.md), [Tentackle Scripting](../../../tentackle-core/src/main/docs/scripting.md)
-- **Connection migration (QUIC, stalled paths)** — [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md#connection-migration), [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md)
+- **Connection migration (QUIC, stalled paths)** — [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md#connection-migration), [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md#connection-migration)
 - **Context menus (PDO tree and table items, `@PdoTreeContextMenuItemService`)** — [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#context-menus)
 - **Core module (runtime foundation)** — [Tentackle Core](../../../tentackle-core/src/main/docs/core.md)
 - **Correctness guarantees** — [Correctness First](./correctness-first.md)
 - **Cryptor / encryption of secrets** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md)
-- **Credentials (password, token, custom)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-credential-model)
+- **Credentials (password, token, certificate, custom)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-credential-model)
 - **Cursors (streaming large result sets)** — [Cursors](../../../tentackle-persistence/src/main/docs/cursors.md), [PdoSelectList / PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md)
 - **Combo / choice boxes (prefix selection, deselect, short/long text)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#combo-and-choice-boxes), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#pdo-bound-components)
 - **CRUD and search dialogs (`PdoCrud`, `PdoSearch`, `PdoEvent`, dialog caching)** — [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#configuring-crud-and-search-dialogs)
@@ -64,7 +70,9 @@ topic-grouped listing of every document, see the
 - **DataTypes (application-specific)** — [Embedded vs. DataType](./embedded-vs-datatype.md), [Binding](../../../tentackle-core/src/main/docs/binding.md), [Freezable](../../../tentackle-common/src/main/docs/freezable.md)
 - **Date/time parsing (smart syntax, shortcuts)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md)
 - **Date/time input (reference date `@`, sliding year window)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#date-and-time-input)
-- **Deserialization hardening (allowlisting, untrusted data)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md)
+- **Denial of service (connection rate, QUIC connections, log throttling)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#denial-of-service), [QUIC](../../../tentackle-quic/src/main/docs/quic.md#denial-of-service)
+- **Deserialization filter (`Binary`, `ObjectInputFilter`, `tentackle.serialFilter`)** — [Tentackle Common](../../../tentackle-common/src/main/docs/common.md#deserialization-filter)
+- **Deserialization hardening (allowlisting, untrusted data, unauthenticated clients)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#hardening-deserialization)
 - **DB2 (backend peculiarities)** — [The DB2 Backend](../../../tentackle-sql/src/main/docs/db2.md)
 - **DDL generation** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Deduplication (wire format)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md)
@@ -100,6 +108,7 @@ topic-grouped listing of every document, see the
 
 - **FFM API (native bindings)** — [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md), [OS Credential Stores](../../../tentackle-keyring/src/main/docs/platform-keyring.md)
 - **Final fields / JEP-500 (deserialization)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#final-fields-jep-500), [Reflection](../../../tentackle-core/src/main/docs/reflect.md#canonical-construction)
+- **Fingerprinting (hiding a TRIP server from probes)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#fingerprinting)
 - **Fetch size / `FetchList` (fetching cursor rows in blocks)** — [Cursors](../../../tentackle-persistence/src/main/docs/cursors.md#fetching-in-blocks-fetch)
 - **Filtering (column autofilter in table headers)** — [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md#column-filters-autofilter)
 - **Firebird (backend peculiarities)** — [The Firebird Backend](../../../tentackle-sql/src/main/docs/firebird.md)
@@ -117,7 +126,8 @@ topic-grouped listing of every document, see the
 ## H
 
 - **H2 (backend peculiarities, test database)** — [The H2 Backend](../../../tentackle-sql/src/main/docs/h2.md), [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md)
-- **History (origins, milestones, the move to GitHub)** — [The History of Tentackle](./history.md)
+- **Hash guard (hash bombs, back-references within hash keys and set elements)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#hashed-values)
+- **History (origins, milestones, the move to GitHub)** — [The History of Tentackle](../../../HISTORY.md)
 - **Hotfix releases (partial publishing, `tentackle.plugin.version`)** — [Tentackle BOM](../../../tentackle-bom/src/main/docs/bom.md#hotfix-releases)
 - **Host name verification (`hostcheck`, TLS)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#ssltls-configuration), [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md#client-side), [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md#client-side)
 
@@ -155,6 +165,7 @@ topic-grouped listing of every document, see the
 - **Keychain (macOS), Credential Manager (Windows), Secret Service (Linux)** — [OS Credential Stores](../../../tentackle-keyring/src/main/docs/platform-keyring.md)
 - **Keyring (secrets on the client)** — [Keyring](../../../tentackle-core/src/main/docs/keyring.md), [OS Credential Stores](../../../tentackle-keyring/src/main/docs/platform-keyring.md), [Single Sign-On with Google](./google-sso.md)
 - **Keyboard handling (ENTER navigation, `Ctrl-Z`/`Ctrl-Y`, `F1`)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#keyboard-handling), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#pdo-bound-components) (`F2`/`F3`)
+- **KeyStorePasswordProvider (keystore password entered by the user)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#the-keystore-password), [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-two-secrets)
 
 ## L
 
@@ -183,6 +194,7 @@ topic-grouped listing of every document, see the
 - **ModuleLayer (isolated dependency versions)** — [Isolated Module Layers](../../../tentackle-common/src/main/docs/layers.md), [jlinkpackage.md](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md#isolated-module-layers)
 - **Module ordering / service precedence (`@ModuleOrdinal`, `@ClasspathFirst`)** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#ordering-and-overriding)
 - **Modules** — [Tentackle Modules](./modules.md)
+- **mTLS (mutual TLS)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#client-certificates), [TRIP](../../../tentackle-core/src/main/docs/trip.md#client-certificates-reach-the-application), [Client Certificate Login](./client-certificate-login.md)
 - **Multi-tier deployment** — [Multi-Tier Cascade](./tiers.md)
 - **MySQL / MariaDB (backend peculiarities)** — [The MySQL and MariaDB Backends](../../../tentackle-sql/src/main/docs/mysql.md)
 
@@ -216,6 +228,7 @@ topic-grouped listing of every document, see the
 - **Parallel builds (`mvn -T`, thread-safe plugins and wurblets)** — [Tentackle Maven Support](../../../tentackle-maven-support/src/main/docs/tentackle-maven-support.md#parallel-builds), [Wurblets](../../../tentackle-wurblets/src/main/docs/wurblets.md#parallel-builds), [The Wurblet API](../../../tentackle-wurblets/src/main/docs/wurblet-api.md#thread-safety)
 - **Password input (`char[]`, `FxPasswordField`)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#secure-password-input)
 - **Passwords / credentials (storage, encryption)** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md), [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-credential-model), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
+- **PIN (second factor of a certificate login, `authenticationSecret`)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-two-secrets), [Backend Properties](../../../tentackle-session/src/main/docs/backend-properties.md)
 - **PKCE (authorization code flow with proof key)** — [Single Sign-On with Google](./google-sso.md)
 - **Permissions / grantees** — [Security](../../../tentackle-pdo/src/main/docs/security.md)
 - **Persistence layer** — [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md)
@@ -225,11 +238,14 @@ topic-grouped listing of every document, see the
 - **Printing (tables, tree tables)** — [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#table-popup-export-and-printing)
 - **Projection queries (plain data instead of PDOs)** — [The Query DSL](../../../tentackle-database/src/main/docs/query-dsl.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md)
 - **Properties (loading, change events)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md)
-- **Preferences (database-backed settings)** — [Preferences](../../../tentackle-core/src/main/docs/preferences.md)
+- **Preferences (database-backed settings)** — [Preferences](../../../tentackle-core/src/main/docs/preferences.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#after-the-login) (remote access rules)
 - **Preferenzr (preferences editor)** — [Preferences](../../../tentackle-core/src/main/docs/preferences.md#preferenzr--browsing-and-editing-the-store)
 - **Preloading PDO caches (`@PreloadCache`)** — [PDO Caching](../../../tentackle-pdo/src/main/docs/cache.md#preloading-caches-at-startup-preloadcache), [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md)
 - **Preloading remote delegates (`@PreloadRemoteDelegate`)** — [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#preloading-remote-delegates), [TRIP](../../../tentackle-core/src/main/docs/trip.md#returning-several-remote-objects-at-once)
 - **Pre-/post-commit methods (`@PreCommit`, `@PostCommit`)** — [Interceptors](../../../tentackle-core/src/main/docs/interceptors.md#precommit-and-postcommit--deferred-until-the-commit), [Transactions](../../../tentackle-pdo/src/main/docs/transaction.md)
+- **Privileged remote sessions (internal tables, remote modification log processing)** — [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#after-the-login)
+- **Pre-authentication policy (`@TripPreAuth`, unauthenticated clients, `preauth`)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#unauthenticated-peers), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#before-the-login), [Tentackle Update](../../../tentackle-update/src/main/docs/update.md#serverupdateutilities--registering-the-service)
+- **PSK encryption (`tripe`/`tripce`, `EncryptedChannel`, `Cryptor.deriveKey`)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#psk-encryption), [I/O and Networking](../../../tentackle-core/src/main/docs/io.md#encryption)
 - **PDO-bound components (`F2`/`F3`, drag and drop, self-loading combo boxes)** — [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#pdo-bound-components)
 - **Placeholders in property values (`@{name?default}`, `${…}`)** — [Backend Properties](../../../tentackle-session/src/main/docs/backend-properties.md#overview-and-motivation), [Tentackle Common](../../../tentackle-common/src/main/docs/common.md#helper-utilities)
 
@@ -245,6 +261,8 @@ topic-grouped listing of every document, see the
 - **Reflection (proxies, class mapping, helpers)** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md), [Interceptors](../../../tentackle-core/src/main/docs/interceptors.md)
 - **Relations (object, list, reversed, N:M)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [PdoSelectList / PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md), [Eager Relations](../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md)
 - **Reconnection (dead resources, policies)** — [I/O and Networking](../../../tentackle-core/src/main/docs/io.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md)
+- **Rejection delay (`RejectionDelay`, uniform response time of rejections)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#delayed-rejection)
+- **Rejection log (`RejectionLog`, throttled messages about unauthenticated peers)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#unauthenticated-peers)
 - **`@RecordDTO` (generating DTOs from records)** — [The DTO Wurblet and `@RecordDTO`](../../../tentackle-wurblets/src/main/docs/dto-wurblet.md)
 - **Remote delegates (naming, lookup, preloading)** — [Naming Rules](../../../tentackle-common/src/main/docs/naming-rules.md), [Multi-Tier Cascade](./tiers.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#preloading-remote-delegates)
 - **Remoting** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md), [QUIC on quiche](../../../tentackle-quiche/src/main/docs/quiche.md), [vs. REST, RMI and Spring Remoting](./remoting-comparison.md)
@@ -305,6 +323,7 @@ topic-grouped listing of every document, see the
 - **Transports (pluggable)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md), [QUIC on quiche](../../../tentackle-quiche/src/main/docs/quiche.md)
 - **Two-phase commit (XA)** — [Global Transactions — JTA and XA](../../../tentackle-jta/src/main/docs/jta.md)
 - **TripFilter (skipping components, PDOs without components)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#filtering-components-with-tripfilter)
+- **TripShallowHash (objects hashed by ID, hash guard)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#tripshallowhash)
 - **TRIP (remote invocation protocol)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md), [QUIC on quiche](../../../tentackle-quiche/src/main/docs/quiche.md), [Migrate from RMI to TRIP](./migrate_rmi_trip.md)
 - **TCP transport parameters (connection pool, backlog, compression)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#transport)
 - **Testing across JVMs (`ServerProcessWrapper`)** — [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md#client-server-tests-across-jvms-serverprocesswrapper)
@@ -312,15 +331,16 @@ topic-grouped listing of every document, see the
 ## U
 
 - **Unexpected (deviations from mainstream Java frameworks)** — [What a Seasoned Java Developer Would Not Expect](./unexpected.md)
+- **Unauthenticated clients (pre-authentication policy)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#unauthenticated-peers), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#before-the-login)
 - **Unique domain key (UDK)** — [Domain Keys](../../../tentackle-pdo/src/main/docs/domain-key.md)
-- **Update (self-update service)** — [Tentackle Update](../../../tentackle-update/src/main/docs/update.md), [FX RDC Update](../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)
+- **Update (self-update service)** — [Tentackle Update](../../../tentackle-update/src/main/docs/update.md), [threat model](../../../tentackle-update/src/main/docs/update.md#the-threat-model), [FX RDC Update](../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)
 - **UserResolver (principal → user entity)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#from-a-principal-to-a-user-the-userresolver), [Single Sign-On with Google](./google-sso.md)
 
 ## V
 
 - **Validation** — [Validation](../../../tentackle-core/src/main/docs/validation.md), [CompoundValue](../../../tentackle-core/src/main/docs/compound-value.md), [Check Maven Plugin](../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md), [InteractiveError](../../../tentackle-fx/src/main/docs/interactive-error.md) (showing results in the UI)
 - **Version negotiation (QUIC)** — [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md#server-side)
-- **Version numbering (Java LTS prefix, release lines)** — [The History of Tentackle](./history.md#the-version-scheme)
+- **Version numbering (Java LTS prefix, release lines)** — [The History of Tentackle](../../../HISTORY.md#the-version-scheme)
 - **View-modified tracking (dirty forms, `Ctrl-Z`)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#view-modified-tracking)
 
 ## W

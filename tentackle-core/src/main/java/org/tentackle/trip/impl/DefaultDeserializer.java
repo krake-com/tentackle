@@ -21,6 +21,7 @@ package org.tentackle.trip.impl;
 import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.TripFactory;
+import org.tentackle.trip.TripPolicyViolationException;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStreamClosedException;
 
@@ -53,6 +54,12 @@ public class DefaultDeserializer implements Deserializer {
 
   /** current position to read from within the deserialization buffer. */
   private int pos;
+
+  /** maximum number of bytes to read from the input stream, 0 if unlimited. */
+  private int readLimit;
+
+  /** number of bytes read from the input stream since the last {@link #setReadLimit(int)}. */
+  private long bytesRead;
 
 
   /**
@@ -91,6 +98,17 @@ public class DefaultDeserializer implements Deserializer {
     this.in = Objects.requireNonNull(in, "input stream must not be null");
     pos = 0;
     len = 0;
+  }
+
+  @Override
+  public void setReadLimit(int limit) {
+    readLimit = limit;
+    bytesRead = 0;
+  }
+
+  @Override
+  public long getBytesRead() {
+    return bytesRead;
   }
 
   @Override
@@ -315,6 +333,11 @@ public class DefaultDeserializer implements Deserializer {
           }
           len += read;
           wanted -= read;
+          bytesRead += read;
+          if (readLimit > 0 && bytesRead > readLimit) {
+            throw new TripPolicyViolationException("not allowed before authentication: message exceeds the maximum size of " +
+                                                   readLimit + " bytes");
+          }
         }
         else {
           int unprocessed = len - pos;

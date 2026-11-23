@@ -189,11 +189,6 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
   }
 
   @Override
-  public List<P> selectObjectsWithExpiredTableSerials(long oldSerial) {
-    return dbObject.selectObjectsWithExpiredTableSerials(oldSerial);
-  }
-
-  @Override
   public void deletePlain(long id, long serial) {
     dbObject.setId(id);
     dbObject.setSerial(serial);
@@ -240,11 +235,6 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
     obj.setSession(getSession());
     obj.deleteObject();
     return new DbObjectResult(obj);
-  }
-
-  @Override
-  public long countModification() {
-    return dbObject.countModification();
   }
 
   @Override

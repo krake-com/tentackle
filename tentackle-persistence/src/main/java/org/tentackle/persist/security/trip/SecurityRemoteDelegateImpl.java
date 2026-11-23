@@ -19,14 +19,18 @@
 package org.tentackle.persist.security.trip;
 
 import org.tentackle.dbms.trip.RemoteDbSessionImpl;
+import org.tentackle.log.Logger;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.persist.security.SecurityPersistenceImpl;
 import org.tentackle.persist.trip.AbstractPersistentObjectRemoteDelegateImpl;
+import org.tentackle.security.SecurityException;
 import org.tentackle.security.SecurityFactory;
+import org.tentackle.security.SecurityResult;
 import org.tentackle.security.pdo.Security;
 
 import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -35,6 +39,13 @@ import java.util.List;
 public class SecurityRemoteDelegateImpl
              extends AbstractPersistentObjectRemoteDelegateImpl<Security,SecurityPersistenceImpl>
              implements SecurityRemoteDelegate {
+
+  private static final Logger LOGGER = Logger.get(SecurityRemoteDelegateImpl.class);
+
+  /**
+   * The methods modifying the security rules, in addition to the {@code deleteBy...} methods.
+   */
+  private static final Set<String> WRITE_METHODS = Set.of("persistImpl", "saveImpl", "deleteImpl");
 
 
   /**
@@ -54,6 +65,61 @@ public class SecurityRemoteDelegateImpl
     setDomainContext(context);
     // sufficient to update the security manager's table
     dbObject.isPermissionAccepted(SecurityFactory.getInstance().getReadPermission());
+  }
+
+  @Override
+  public Security persistImpl(Security obj) {
+    assertWriteAllowed(obj);
+    return super.persistImpl(obj);
+  }
+
+  @Override
+  public long saveImpl(Security obj) {
+    assertWriteAllowed(obj);
+    return super.saveImpl(obj);
+  }
+
+  @Override
+  public long deleteImpl(Security obj) {
+    assertWriteAllowed(obj);
+    return super.deleteImpl(obj);
+  }
+
+  protected void assertWriteAllowed(Security obj) {
+    if (!isWriteAllowed(obj.getPersistenceDelegate().getDomainContext())) {
+      throw new SecurityException("no explicit write permission for " + Security.class.getName());
+    }
+  }
+
+  /**
+   * Determines whether the client is allowed to modify the security rules.
+   * <p>
+   * Modifying the security rules fails closed: the default implementation requires a security rule that explicitly
+   * grants the write permission for {@link Security}, or a privileged session (see
+   * {@link RemoteDbSessionImpl#setPrivilegedSession(boolean)}). A write permission accepted by default,
+   * because no rule fired, is not sufficient. Otherwise, any user could grant themselves any permission.
+   * <p>
+   * Notice that the first rule must therefore be created by a privileged session, or locally by the server
+   * or a 2-tier application.
+   *
+   * @param context the domain context, null if unknown
+   * @return true if allowed
+   */
+  protected boolean isWriteAllowed(DomainContext context) {
+    if (getServerSession().isPrivilegedSession()) {
+      return true;
+    }
+    if (context == null) {
+      return false;
+    }
+    SecurityFactory sf = SecurityFactory.getInstance();
+    SecurityResult sr = sf.getSecurityManager().evaluateAllObjects(context, sf.getWritePermission(), dbObject.getClassId());
+    if (!sr.isAccepted() || sr.isDefault()) {
+      LOGGER.warning("modifying the security rules denied for {0}: {1}", getServerSession(),
+                     sr.explain("no explicit write permission"));
+      return false;
+    }
+    return true;
   }
 
   // @wurblet inclrmi Include --missingok .$classname/methods
@@ -83,30 +149,6 @@ public class SecurityRemoteDelegateImpl
   public TrackedList<Security> selectByDomainContext(DomainContext context, int domainContextClassId, long domainContextId) {
     setDomainContext(context);
     return dbObject.selectByDomainContext(domainContextClassId, domainContextId);
-  }
-
-  @Override
-  public int deleteByGrantee(DomainContext context, int granteeClassId, long granteeId) {
-    setDomainContext(context);
-    return dbObject.deleteByGrantee(granteeClassId, granteeId);
-  }
-
-  @Override
-  public int deleteByObject(DomainContext context, int objectClassId, long objectId) {
-    setDomainContext(context);
-    return dbObject.deleteByObject(objectClassId, objectId);
-  }
-
-  @Override
-  public int deleteByObjectClass(DomainContext context, String objectClassName) {
-    setDomainContext(context);
-    return dbObject.deleteByObjectClass(objectClassName);
-  }
-
-  @Override
-  public int deleteByDomainContext(DomainContext context, int domainContextClassId, long domainContextId) {
-    setDomainContext(context);
-    return dbObject.deleteByDomainContext(domainContextClassId, domainContextId);
   }
 
   //</editor-fold>//GEN-END:inclrmi

@@ -24,11 +24,15 @@ import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.TransportService;
 import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripStream;
+import org.tentackle.trip.transport.CompressedRequestInputStream;
 import org.tentackle.trip.transport.FastCompressedOutputStream;
 
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.security.cert.X509Certificate;
+import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Transport implementation for QUIC over quiche with compression.
@@ -52,10 +56,12 @@ public class CompressedQuicheTripTransport extends QuicheTripTransport {
   }
 
   @Override
-  public Runnable createConnectionHandler(String connectionName, InputStream inputStream, OutputStream outputStream) {
+  public Runnable createConnectionHandler(String connectionName, InputStream inputStream, OutputStream outputStream,
+                                          Supplier<List<X509Certificate>> peerCertificates) {
     return super.createConnectionHandler(connectionName,
-                                         createCompressedInputStream(inputStream),
-                                         createCompressedOutputStream(outputStream));
+                                         createCompressedInputStream(new CompressedRequestInputStream(inputStream)),
+                                         createCompressedOutputStream(outputStream),
+                                         peerCertificates);
   }
 
   @Override
@@ -75,7 +81,8 @@ public class CompressedQuicheTripTransport extends QuicheTripTransport {
    */
   protected OutputStream createCompressedOutputStream(OutputStream outputStream) {
     return new FastCompressedOutputStream(outputStream,
-                                          getUriPars().getOrDefault("mincompress", 1024));
+                                          CompressedRequestInputStream.minCompressSize(
+                                              getUriPars().getOrDefault("mincompress", 1024)));
   }
 
   /**

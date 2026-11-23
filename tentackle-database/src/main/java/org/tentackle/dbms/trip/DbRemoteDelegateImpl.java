@@ -73,7 +73,16 @@ public class DbRemoteDelegateImpl extends RemoteDbDelegateImpl<Db>
 
   @Override
   public void groupWith(int sessionGroupId) {
-    DbUtilities.getInstance().addToSessionGroup(getSession(), sessionGroupId, true);
+    Db session = getSession();
+    if (sessionGroupId > 0) {   // else: rejected by addToSessionGroup
+      Db otherSession = Db.getOpenSession(sessionGroupId, session.getUrl());
+      RemoteDbSessionImpl otherRemoteSession = RemoteDbSessionImpl.getRemoteSession(otherSession);
+      // same message for missing and foreign sessions: the client must not learn which sessions exist
+      if (otherRemoteSession == null || !getServerSession().isGroupingAllowed(otherRemoteSession)) {
+        throw new PersistenceException(session, "cannot group with session " + sessionGroupId);
+      }
+    }
+    DbUtilities.getInstance().addToSessionGroup(session, sessionGroupId, true);
   }
 
   @Override

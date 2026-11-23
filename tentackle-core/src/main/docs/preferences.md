@@ -75,6 +75,11 @@ The shadowing works in both directions:
 With `systemOnly` (per instance, or globally via `PersistedPreferencesFactory.setSystemOnly`),
 user space is skipped entirely and writes go to the system tree.
 
+A remote client may write only its own user's tree: the server refuses to flush the system tree, unless the
+session is privileged or the application overrides `RemoteDbSessionImpl.isPreferencesAccessAllowed`, for example
+for administrators. A remote client running in `systemOnly` mode therefore needs such an override to save anything.
+See [After the login](../../../../tentackle-database/src/main/docs/database.md#after-the-login).
+
 ## The Database Implementation (DbPreferences)
 
 The promise "settings roam with the user" is kept by
