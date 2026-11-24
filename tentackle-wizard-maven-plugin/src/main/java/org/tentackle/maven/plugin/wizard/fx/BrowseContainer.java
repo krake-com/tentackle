@@ -29,6 +29,7 @@ import javafx.collections.ListChangeListener;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
@@ -85,10 +86,8 @@ public class BrowseContainer {
    */
   public Stage show() throws MojoExecutionException {
     stage = Fx.createStage(Modality.NONE, null);
-    hBox = Fx.create(HBox.class);
     initialBrowser = Fx.load(PdoBrowser.class);
-    hBox.getChildren().add(initialBrowser.getView());
-    stage.setScene(Fx.createScene(hBox));
+    showInitialBrowserWithoutTabs();
     stage.setTitle("PDO Browser");
     initialBrowser.setContext(this);
     initialBrowser.getContainer().updateView();
@@ -137,12 +136,22 @@ public class BrowseContainer {
    */
   private void tabRemoved() {
     if (tabPane != null && tabPane.getTabs().size() <= 1) {
-      hBox = Fx.create(HBox.class);
       initialBrowser.setContainerTab(null);
-      hBox.getChildren().add(initialBrowser.getView());
-      stage.setScene(Fx.createScene(hBox));
+      showInitialBrowserWithoutTabs();
       tabPane = null;
     }
+  }
+
+  /**
+   * Shows the initial browser view without a tab pane.<br>
+   * The view is wrapped in an HBox, because a scene's root node cannot be moved into a tab later.
+   * The view must grow horizontally, since an HBox lays out its children at their preferred width.
+   */
+  private void showInitialBrowserWithoutTabs() {
+    hBox = Fx.create(HBox.class);
+    HBox.setHgrow(initialBrowser.getView(), Priority.ALWAYS);
+    hBox.getChildren().add(initialBrowser.getView());
+    stage.setScene(Fx.createScene(hBox));
   }
 
 }
