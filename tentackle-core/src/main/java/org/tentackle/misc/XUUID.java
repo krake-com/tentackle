@@ -18,6 +18,9 @@
 
 package org.tentackle.misc;
 
+import org.tentackle.reflect.CanonicalConstructor;
+import org.tentackle.reflect.CanonicalName;
+
 import java.io.Serial;
 import java.util.Objects;
 import java.util.UUID;
@@ -26,10 +29,11 @@ import java.util.UUID;
  * Extended UUID.<br>
  * An {@code XUUID} is a combination of an ID and a {@link UUID}.
  * The external representation is {@code "id-uuid"}, i.e. the ID prepended to the UUID separated by a dash.
- * With {@code XUUID}s, the internal logic (domain/persistence) does not need to be changed, but an additional check for the UUID
- * can be applied to prevent brute force attacks.
- * <p>
- * Equality refers to the ID and the UUID only, not to the optional {@link Identifiable}.
+ * With {@code XUUID}s, the internal logic (domain/persistence) does not need to be changed,
+ * but an additional check for the UUID can be applied to prevent brute force attacks.<br>
+ * The second constructor derives the ID and the generic string representation from an {@link Identifiable},
+ * such as a PDO.<br>
+ * The optional string representation is not part of {@code equals/hashCode} but travels over the wire as well.
  */
 public class XUUID implements Identifiable {
 
@@ -37,6 +41,9 @@ public class XUUID implements Identifiable {
    * The NIL XUUID.
    */
   public static final XUUID NIL = new XUUID(0, new UUID(0, 0));
+
+  private static final String NULL_UUID = "uuid is null";
+  private static final String NULL_IDENTIFIABLE = "identifiable is null";
 
 
   /**
@@ -75,8 +82,8 @@ public class XUUID implements Identifiable {
   private static final long serialVersionUID = 1L;
 
   private final long id;
-  private final Identifiable identifiable;
   private final UUID uuid;
+  private String identifiableStr;   // not final, transferred by TRIP only if identifiable was given
 
   /**
    * Creates an extended UUID.
@@ -85,10 +92,10 @@ public class XUUID implements Identifiable {
    * @param uuid the UUID
    * @throws NullPointerException if uuid is null
    */
-  public XUUID(long id, UUID uuid) {
+  @CanonicalConstructor
+  public XUUID(@CanonicalName("id") long id, @CanonicalName("uuid") UUID uuid) {
     this.id = id;
-    this.uuid = Objects.requireNonNull(uuid, "uuid");
-    this.identifiable = null;
+    this.uuid = Objects.requireNonNull(uuid, NULL_UUID);
   }
 
   /**
@@ -99,9 +106,9 @@ public class XUUID implements Identifiable {
    * @throws NullPointerException if identifiable or uuid is null
    */
   public XUUID(Identifiable identifiable, UUID uuid) {
-    this.identifiable = Objects.requireNonNull(identifiable, "identifiable");
+    this.identifiableStr = Objects.requireNonNull(identifiable, NULL_IDENTIFIABLE).toGenericString();
     this.id = identifiable.getId();
-    this.uuid = Objects.requireNonNull(uuid, "uuid");
+    this.uuid = Objects.requireNonNull(uuid, NULL_UUID);
   }
 
   @Override
@@ -112,8 +119,8 @@ public class XUUID implements Identifiable {
   @Override
   public String toGenericString() {
     StringBuilder buf = new StringBuilder();
-    if (identifiable != null) {
-      buf.append(identifiable.toGenericString());
+    if (identifiableStr != null) {
+      buf.append(identifiableStr);
     }
     else {
       buf.append('[').append(id).append(']');
