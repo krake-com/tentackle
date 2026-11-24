@@ -21,8 +21,13 @@ package org.tentackle.trip;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
+import org.tentackle.bind.BindingVetoException;
 import org.tentackle.common.ParameterString;
 import org.tentackle.misc.CopyOnWriteList;
+import org.tentackle.misc.Identifiable;
+import org.tentackle.misc.IdentifiableKey;
+import org.tentackle.misc.IdentifiableMap;
+import org.tentackle.misc.XUUID;
 import org.tentackle.trip.impl.EchoTransceiver;
 import org.tentackle.trip.impl.FieldTripComponent;
 import org.tentackle.validate.ValidationContextFactory;
@@ -40,10 +45,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.UUID;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotSame;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
@@ -73,6 +80,39 @@ public class FinalFieldTripTest {
 
     public String getName() {
       return name;
+    }
+  }
+
+  /**
+   * An identifiable with non-final fields.
+   */
+  public static class Item implements Identifiable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    private long id;
+    private String name;
+
+    public Item() {
+    }
+
+    public Item(long id, String name) {
+      this.id = id;
+      this.name = name;
+    }
+
+    @Override
+    public long getId() {
+      return id;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    @Override
+    public String toGenericString() {
+      return name + "[" + id + "]";
     }
   }
 
@@ -157,6 +197,65 @@ public class FinalFieldTripTest {
     ps.setParameter("b", "2");
     ParameterString tunneled = tunnel(ps);
     assertEquals(tunneled.toString(), ps.toString());
+  }
+
+  @Test
+  void testBindingVetoException() {
+    BindingVetoException tunneled = tunnel(new BindingVetoException("veto", new IllegalStateException("cause"), true, true));
+    assertEquals(tunneled.getMessage(), "veto");
+    assertEquals(tunneled.getCause().getClass(), IllegalStateException.class);
+    assertEquals(tunneled.getCause().getMessage(), "cause");
+    assertTrue(tunneled.isResyncRequested());
+    assertTrue(tunneled.isRethrowEnabled());
+
+    tunneled = tunnel(new BindingVetoException(true, "rethrow"));
+    assertEquals(tunneled.getMessage(), "rethrow");
+    assertNull(tunneled.getCause());
+    assertFalse(tunneled.isResyncRequested());
+    assertTrue(tunneled.isRethrowEnabled());
+  }
+
+  @Test
+  void testIdentifiableKey() {
+    IdentifiableKey<Item> key = new IdentifiableKey<>(Item.class, 42);
+    IdentifiableKey<Item> tunneled = tunnel(key);
+    assertNotSame(tunneled, key);
+    assertEquals(tunneled, key);
+    assertEquals(tunneled.getIdentifiableClass(), Item.class);
+    assertEquals(tunneled.getIdentifiableId(), 42);
+  }
+
+  @Test
+  void testIdentifiableMap() {
+    IdentifiableMap<Item> map = new IdentifiableMap<>();
+    map.add(new Item(1, "one"));
+    map.add(new Item(2, "two"));
+    IdentifiableMap<Item> tunneled = tunnel(map);
+    assertEquals(tunneled.getAll().size(), 2);
+    assertEquals(tunneled.get(Item.class, 1).getName(), "one");
+    assertEquals(tunneled.get(Item.class, 2).getName(), "two");
+  }
+
+  @Test
+  void testXUUID() {
+    UUID uuid = UUID.randomUUID();
+    XUUID xuuid = new XUUID(42, uuid);
+    XUUID tunneled = tunnel(xuuid);
+    assertNotSame(tunneled, xuuid);
+    assertEquals(tunneled, xuuid);
+    assertEquals(tunneled.getId(), 42);
+    assertEquals(tunneled.toGenericString(), xuuid.toGenericString());
+
+    // the identifiable is not transferred
+    xuuid = new XUUID(new Item(7, "seven"), uuid);
+    assertEquals(xuuid.toGenericString(), "seven[7]{" + uuid + "}");
+    tunneled = tunnel(xuuid);
+    assertEquals(tunneled, xuuid);
+    assertEquals(tunneled.getId(), 7);
+    assertEquals(tunneled.toGenericString(), "[7]{" + uuid + "}");
+
+    tunneled = tunnel(XUUID.NIL);
+    assertEquals(tunneled, XUUID.NIL);
   }
 
 

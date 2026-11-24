@@ -18,6 +18,9 @@
 
 package org.tentackle.misc;
 
+import org.tentackle.reflect.CanonicalConstructor;
+import org.tentackle.reflect.CanonicalName;
+
 import java.io.Serial;
 import java.io.Serializable;
 
@@ -43,7 +46,9 @@ public class IdentifiableKey<T extends Identifiable> implements Comparable<Ident
    * @param identifiableClass the identifiable's class
    * @param identifiableId the identifiable's id
    */
-  public IdentifiableKey(Class<T> identifiableClass, long identifiableId) {
+  @CanonicalConstructor
+  public IdentifiableKey(@CanonicalName("identifiableClass") Class<T> identifiableClass,
+                         @CanonicalName("identifiableId") long identifiableId) {
     this.identifiableClass = identifiableClass;
     this.identifiableId    = identifiableId;
   }

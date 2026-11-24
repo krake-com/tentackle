@@ -18,6 +18,9 @@
 
 package org.tentackle.bind;
 
+import org.tentackle.reflect.CanonicalConstructor;
+import org.tentackle.reflect.CanonicalName;
+
 import java.io.Serial;
 
 /**
@@ -37,7 +40,7 @@ public class BindingVetoException extends Exception {
 
 
   private final boolean rethrowEnabled;       // true if rethrowEnabled as Binding(Runtime)Exception
-  private final boolean resyncRequested;      // true if model/view should be resync'd
+  private final boolean resyncRequested;      // true if model/view should be resynced
 
 
   /**
@@ -71,6 +74,26 @@ public class BindingVetoException extends Exception {
   public BindingVetoException(boolean rethrowEnabled, String message) {
     super(message);
     this.resyncRequested = false;
+    this.rethrowEnabled = rethrowEnabled;
+  }
+
+  /**
+   * Constructs a <code>BindingVetoException</code> with a cause and both options.<br>
+   * This is also the canonical constructor used by TRIP, since the final fields cannot be
+   * deserialized otherwise (JEP-500).
+   *
+   * @param message a descriptive message
+   * @param cause the cause, null if none
+   * @param resyncRequested true if resync model/view
+   * @param rethrowEnabled true to rethrow as a {@link BindingException}, false to process silently
+   */
+  @CanonicalConstructor
+  public BindingVetoException(@CanonicalName("message") String message,
+                              @CanonicalName("cause") Throwable cause,
+                              @CanonicalName("resyncRequested") boolean resyncRequested,
+                              @CanonicalName("rethrowEnabled") boolean rethrowEnabled) {
+    super(message, cause);
+    this.resyncRequested = resyncRequested;
     this.rethrowEnabled = rethrowEnabled;
   }
 
