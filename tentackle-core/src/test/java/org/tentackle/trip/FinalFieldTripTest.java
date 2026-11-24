@@ -252,7 +252,7 @@ public class FinalFieldTripTest {
     tunneled = tunnel(xuuid);
     assertEquals(tunneled, xuuid);
     assertEquals(tunneled.getId(), 7);
-    assertEquals(tunneled.toGenericString(), "[7]{" + uuid + "}");
+    assertEquals(tunneled.toGenericString(), "seven[7]{" + uuid + "}");
 
     tunneled = tunnel(XUUID.NIL);
     assertEquals(tunneled, XUUID.NIL);
