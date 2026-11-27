@@ -182,7 +182,17 @@ Like [BundleMonkey](../../../../tentackle-i18n/src/main/docs/bundlemonkey.md), i
 separate open-source project at
 [github.com/krake-com/preferenzr](https://github.com/krake-com/preferenzr) and distributed as
 a self-contained [jlink](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md)
-image; to build it yourself, clone the repository and run `mvn -Pjlink clean install`.
+images:
+
+- [Linux x64](https://github.com/krake-com/preferenzr/releases/latest/download/preferenzr-linux-x64.zip)
+- [Linux ARM64](https://github.com/krake-com/preferenzr/releases/latest/download/preferenzr-linux-aarch64.zip)
+- [Windows x64](https://github.com/krake-com/preferenzr/releases/latest/download/preferenzr-windows-x64.zip)
+- [macOS ARM64](https://github.com/krake-com/preferenzr/releases/latest/download/preferenzr-macos-aarch64.zip)
+
+Older versions are available on the [releases page](https://github.com/krake-com/preferenzr/releases).
+
+
+To build it yourself, clone the repository and run `mvn -Pjlink clean install`.
 
 ## See also
 
