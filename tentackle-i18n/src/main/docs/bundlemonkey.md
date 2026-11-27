@@ -49,7 +49,16 @@ application, not a library or a Maven plugin, so it is **not published to Maven 
 
 It is distributed as a self-contained, platform-specific
 [jlink](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md) image that bundles its
-own Java runtime — nothing else needs to be installed.
+own Java runtime — nothing else needs to be installed. 
+
+Download links to the latest versions:
+
+- [Linux x64](https://github.com/krake-com/bundlemonkey/releases/latest/download/bundlemonkey-linux-x64.zip)
+- [Linux ARM64](https://github.com/krake-com/bundlemonkey/releases/latest/download/bundlemonkey-linux-aarch64.zip)
+- [Windows x64](https://github.com/krake-com/bundlemonkey/releases/latest/download/bundlemonkey-windows-x64.zip)
+- [macOS ARM64](https://github.com/krake-com/bundlemonkey/releases/latest/download/bundlemonkey-macos-aarch64.zip)
+
+Older versions are available on the [releases page](https://github.com/krake-com/bundlemonkey/releases).
 
 To build the image yourself, clone the repository and run `mvn clean install -Prelease,jlink`; the
 ZIP is produced under `jlink/target/`.
